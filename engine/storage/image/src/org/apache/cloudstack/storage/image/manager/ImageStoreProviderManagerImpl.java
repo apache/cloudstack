@@ -64,9 +64,8 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     public ImageStoreEntity getImageStore(long dataStoreId) {
         ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         String providerName = dataStore.getProviderName();
-        ImageStoreProvider provider = (ImageStoreProvider) providerManager.getDataStoreProvider(providerName);
-        ImageStoreEntity imgStore = ImageStoreImpl
-                .getDataStore(dataStore, driverMaps.get(provider.getName()), provider);
+        ImageStoreProvider provider = (ImageStoreProvider)providerManager.getDataStoreProvider(providerName);
+        ImageStoreEntity imgStore = ImageStoreImpl.getDataStore(dataStore, driverMaps.get(provider.getName()), provider);
         return imgStore;
     }
 

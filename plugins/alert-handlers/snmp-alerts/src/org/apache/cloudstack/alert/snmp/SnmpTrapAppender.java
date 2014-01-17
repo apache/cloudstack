@@ -17,14 +17,15 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import com.cloud.utils.net.NetUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LoggingEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import com.cloud.utils.net.NetUtils;
 
 public class SnmpTrapAppender extends AppenderSkeleton {
     private String _delimiter = ",";
@@ -47,13 +48,12 @@ public class SnmpTrapAppender extends AppenderSkeleton {
         SnmpEnhancedPatternLayout snmpEnhancedPatternLayout;
 
         if (getLayout() == null) {
-            errorHandler.error("No layout set for the Appender named [" + getName() + ']', null,
-                ErrorCode.MISSING_LAYOUT);
+            errorHandler.error("No layout set for the Appender named [" + getName() + ']', null, ErrorCode.MISSING_LAYOUT);
             return;
         }
 
         if (getLayout() instanceof SnmpEnhancedPatternLayout) {
-            snmpEnhancedPatternLayout = (SnmpEnhancedPatternLayout) getLayout();
+            snmpEnhancedPatternLayout = (SnmpEnhancedPatternLayout)getLayout();
         } else {
             return;
         }
@@ -76,16 +76,14 @@ public class SnmpTrapAppender extends AppenderSkeleton {
     }
 
     void setSnmpHelpers() {
-        if (_snmpManagerIpAddresses == null || _snmpManagerIpAddresses.trim().isEmpty() || _snmpManagerCommunities ==
-            null || _snmpManagerCommunities.trim().isEmpty() || _snmpManagerPorts == null ||
-            _snmpManagerPorts.trim().isEmpty()) {
+        if (_snmpManagerIpAddresses == null || _snmpManagerIpAddresses.trim().isEmpty() || _snmpManagerCommunities == null || _snmpManagerCommunities.trim().isEmpty() ||
+            _snmpManagerPorts == null || _snmpManagerPorts.trim().isEmpty()) {
             reset();
             return;
         }
 
         if (_oldSnmpManagerIpAddresses != null && _oldSnmpManagerIpAddresses.equals(_snmpManagerIpAddresses) &&
-            _oldSnmpManagerCommunities.equals(_snmpManagerCommunities) &&
-            _oldSnmpManagerPorts.equals(_snmpManagerPorts)) {
+            _oldSnmpManagerCommunities.equals(_snmpManagerCommunities) && _oldSnmpManagerPorts.equals(_snmpManagerPorts)) {
             return;
         }
 
@@ -99,8 +97,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
 
         if (!(_ipAddresses.size() == _communities.size() && _ipAddresses.size() == _ports.size())) {
             reset();
-            errorHandler.error(" size of ip addresses , communities, " + "and ports list doesn't match, " +
-                "setting all to null");
+            errorHandler.error(" size of ip addresses , communities, " + "and ports list doesn't match, " + "setting all to null");
             return;
         }
 
@@ -131,7 +128,8 @@ public class SnmpTrapAppender extends AppenderSkeleton {
 
     @Override
     public void close() {
-        if (!closed) closed = true;
+        if (!closed)
+            closed = true;
     }
 
     @Override

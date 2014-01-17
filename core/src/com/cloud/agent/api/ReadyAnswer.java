@@ -17,15 +17,15 @@
 package com.cloud.agent.api;
 
 public class ReadyAnswer extends Answer {
-	protected ReadyAnswer() {
-	}
+    protected ReadyAnswer() {
+    }
 
-	public ReadyAnswer(ReadyCommand cmd) {
-		super(cmd, true, null);
-	}
+    public ReadyAnswer(ReadyCommand cmd) {
+        super(cmd, true, null);
+    }
 
-	public ReadyAnswer(ReadyCommand cmd, String details) {
-		super(cmd, false, details);
-	}
+    public ReadyAnswer(ReadyCommand cmd, String details) {
+        super(cmd, false, details);
+    }
 
 }

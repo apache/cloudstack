@@ -76,7 +76,7 @@ public class XmlObject {
             if (!(e instanceof XmlObject)) {
                 throw new CloudRuntimeException(String.format("%s doesn't reference to a XmlObject", it.next()));
             }
-            return recurGet((XmlObject) e, it);
+            return recurGet((XmlObject)e, it);
         }
     }
 
@@ -122,14 +122,15 @@ public class XmlObject {
         for (Map.Entry<String, Object> e : elements.entrySet()) {
             String key = e.getKey();
             Object val = e.getValue();
-            if (val instanceof String)  {
+            if (val instanceof String) {
                 sb.append(String.format(" %s=\"%s\"", key, val.toString()));
             } else if (val instanceof XmlObject) {
-                children.add((XmlObject) val);
+                children.add((XmlObject)val);
             } else if (val instanceof List) {
-                children.addAll((Collection<? extends XmlObject>) val);
+                children.addAll((Collection<? extends XmlObject>)val);
             } else {
-                throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key, val.getClass().getName()));
+                throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key,
+                    val.getClass().getName()));
             }
         }
 

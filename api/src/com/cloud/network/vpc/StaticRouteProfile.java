@@ -32,20 +32,19 @@ public class StaticRouteProfile implements StaticRoute {
     String netmask;
     String ipAddress;
 
-
     public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
-        this.id = staticRoute.getId();
-        this.uuid = staticRoute.getUuid();
-        this.targetCidr = staticRoute.getCidr();
-        this.accountId = staticRoute.getAccountId();
-        this.domainId = staticRoute.getDomainId();
-        this.gatewayId = staticRoute.getVpcGatewayId();
-        this.state = staticRoute.getState();
-        this.vpcId = staticRoute.getVpcId();
-        this.vlanTag = gateway.getBroadcastUri();
+        id = staticRoute.getId();
+        uuid = staticRoute.getUuid();
+        targetCidr = staticRoute.getCidr();
+        accountId = staticRoute.getAccountId();
+        domainId = staticRoute.getDomainId();
+        gatewayId = staticRoute.getVpcGatewayId();
+        state = staticRoute.getState();
+        vpcId = staticRoute.getVpcId();
+        vlanTag = gateway.getBroadcastUri();
         this.gateway = gateway.getGateway();
-        this.netmask = gateway.getNetmask();
-        this.ipAddress = gateway.getIp4Address();
+        netmask = gateway.getNetmask();
+        ipAddress = gateway.getIp4Address();
     }
 
     @Override
@@ -82,7 +81,6 @@ public class StaticRouteProfile implements StaticRoute {
     public long getId() {
         return id;
     }
-
 
     @Override
     public String getUuid() {

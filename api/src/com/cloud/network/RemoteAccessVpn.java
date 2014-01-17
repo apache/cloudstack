@@ -22,16 +22,20 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Identity {
     enum State {
-        Added,
-        Running,
-        Removed
+        Added, Running, Removed
     }
 
     long getServerAddressId();
+
     String getIpRange();
+
     String getIpsecPresharedKey();
+
     String getLocalIp();
+
     Long getNetworkId();
+
     Long getVpcId();
+
     State getState();
 }

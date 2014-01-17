@@ -21,17 +21,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "listProjects", description="Lists projects and provides detailed information for listed projects", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "listProjects",
+            description = "Lists projects and provides detailed information for listed projects",
+            responseObject = ProjectResponse.class,
+            since = "3.0.0")
 public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectsCmd.class.getName());
     private static final String s_name = "listprojectsresponse";
@@ -40,17 +44,16 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            description="list projects by project ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list projects by project ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list projects by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list projects by name")
     private String name;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list projects by display text")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "list projects by display text")
     private String displayText;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list projects by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list projects by state")
     private String state;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
@@ -72,7 +75,6 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         return displayText;
     }
 
-
     public String getState() {
         return state;
     }
@@ -89,7 +91,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
             Collection<?> servicesCollection = tags.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                HashMap<String, String> services = (HashMap<String, String>)iter.next();
                 String key = services.get("key");
                 String value = services.get("value");
                 if (value == null) {
@@ -106,7 +108,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<ProjectResponse> response = _queryService.listProjects(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

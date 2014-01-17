@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class ManageSnapshotAnswer extends Answer {
     // For create Snapshot
     private String _snapshotPath;
 
-    public ManageSnapshotAnswer() {}
+    public ManageSnapshotAnswer() {
+    }
 
     public ManageSnapshotAnswer(Command cmd, boolean success, String result) {
         super(cmd, success, result);
@@ -29,12 +29,12 @@ public class ManageSnapshotAnswer extends Answer {
 
     // For XenServer
     public ManageSnapshotAnswer(ManageSnapshotCommand cmd, long snapshotId, String snapshotPath, boolean success, String result) {
-    	super(cmd, success, result);
-    	_snapshotPath = snapshotPath;
+        super(cmd, success, result);
+        _snapshotPath = snapshotPath;
     }
 
     public String getSnapshotPath() {
-    	return _snapshotPath;
+        return _snapshotPath;
     }
 
 }

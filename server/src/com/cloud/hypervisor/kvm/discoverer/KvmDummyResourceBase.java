@@ -23,6 +23,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -33,86 +34,89 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 
 public class KvmDummyResourceBase extends ServerResourceBase implements ServerResource {
-	private String _zoneId;
-	private String _podId;
-	private String _clusterId;
-	private String _guid;
-	private String _agentIp;
-	@Override
-	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private String _zoneId;
+    private String _podId;
+    private String _clusterId;
+    private String _guid;
+    private String _agentIp;
 
-	@Override
-	public StartupCommand[] initialize() {
-		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.KVM, new HashMap<String, String>(), new HashMap<String, VmState>());
-		cmd.setDataCenter(_zoneId);
-		cmd.setPod(_podId);
-		cmd.setCluster(_clusterId);
-		cmd.setGuid(_guid);
-		cmd.setName(_agentIp);
-		cmd.setPrivateIpAddress(_agentIp);
-		cmd.setStorageIpAddress(_agentIp);
-		cmd.setVersion(KvmDummyResourceBase.class.getPackage().getImplementationVersion());
-		return new StartupCommand[] { cmd };
-	}
+    @Override
+    public Type getType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public StartupCommand[] initialize() {
+        StartupRoutingCommand cmd =
+            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.KVM, new HashMap<String, String>(), new HashMap<String, VmState>(),
+                new HashMap<String, HostVmStateReportEntry>());
+        cmd.setDataCenter(_zoneId);
+        cmd.setPod(_podId);
+        cmd.setCluster(_clusterId);
+        cmd.setGuid(_guid);
+        cmd.setName(_agentIp);
+        cmd.setPrivateIpAddress(_agentIp);
+        cmd.setStorageIpAddress(_agentIp);
+        cmd.setVersion(KvmDummyResourceBase.class.getPackage().getImplementationVersion());
+        return new StartupCommand[] {cmd};
+    }
 
-	@Override
-	public Answer executeRequest(Command cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public PingCommand getCurrentStatus(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	protected String getDefaultScriptsDir() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-		_zoneId = (String)params.get("zone");
-		_podId = (String)params.get("pod");
-		_clusterId = (String)params.get("cluster");
-		_guid = (String)params.get("guid");
-		_agentIp = (String)params.get("agentIp");
-		return true;
-	}
+    @Override
+    public Answer executeRequest(Command cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    protected String getDefaultScriptsDir() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        _zoneId = (String)params.get("zone");
+        _podId = (String)params.get("pod");
+        _clusterId = (String)params.get("cluster");
+        _guid = (String)params.get("guid");
+        _agentIp = (String)params.get("agentIp");
+        return true;
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 }

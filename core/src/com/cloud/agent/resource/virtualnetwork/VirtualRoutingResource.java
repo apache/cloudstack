@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -169,8 +170,9 @@ public class VirtualRoutingResource implements Manager {
                 return execute((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
                 return execute((CheckS2SVpnConnectionsCommand)cmd);
-            }
-            else {
+            } else if (cmd instanceof SetMonitorServiceCommand) {
+                return execute((SetMonitorServiceCommand) cmd);
+            } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
@@ -447,10 +449,8 @@ public class VirtualRoutingResource implements Manager {
                 cfgFilePath = tmpCfgFile.getAbsolutePath();
             }
 
-            final String result = setLoadBalancerConfig(cfgFilePath,
-                    rules[LoadBalancerConfigurator.ADD],
-                    rules[LoadBalancerConfigurator.REMOVE],
-                    rules[LoadBalancerConfigurator.STATS],
+            final String result =
+                setLoadBalancerConfig(cfgFilePath, rules[LoadBalancerConfigurator.ADD], rules[LoadBalancerConfigurator.REMOVE], rules[LoadBalancerConfigurator.STATS],
                     routerIp);
 
             return new Answer(cmd, result == null, result);
@@ -490,9 +490,9 @@ public class VirtualRoutingResource implements Manager {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         for (IpAddressTO ip : ips) {
-            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(),
-                    ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(), ip.getVlanNetmask(),
-                    ip.getVifMacAddress(), 2, false);
+            result =
+                assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
+                    ip.getVlanNetmask(), ip.getVifMacAddress(), 2, false);
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
@@ -503,8 +503,7 @@ public class VirtualRoutingResource implements Manager {
         return new IpAssocAnswer(cmd, results);
     }
 
-    private String setLoadBalancerConfig(final String cfgFile,
-            final String[] addRules, final String[] removeRules, final String[] statsRules, String routerIp) {
+    private String setLoadBalancerConfig(final String cfgFile, final String[] addRules, final String[] removeRules, final String[] statsRules, String routerIp) {
 
         if (routerIp == null) {
             routerIp = "none";
@@ -551,7 +550,7 @@ public class VirtualRoutingResource implements Manager {
 
         String args = "-v " + vmIpAddress;
         args += " -p " + password;
-        
+
         String result = routerProxy("savepassword.sh", routerPrivateIPAddress, args);
         if (result != null) {
             return new Answer(cmd, false, "Unable to save password to DomR.");
@@ -667,7 +666,7 @@ public class VirtualRoutingResource implements Manager {
         }
 
         final String result = routerProxy("checkbatchs2svpn.sh", routerIP, args);
-        if (result != null) {
+        if (result == null || result.isEmpty()) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
         return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
@@ -762,7 +761,7 @@ public class VirtualRoutingResource implements Manager {
                 args += "0";
             }
             if (cmd.isPassive()) {
-            	args += " -p ";
+                args += " -p ";
             }
         } else {
             args = "-D";
@@ -818,9 +817,14 @@ public class VirtualRoutingResource implements Manager {
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
-    public String assignGuestNetwork(final String dev, final String routerIP,
-            final String routerGIP, final String gateway, final String cidr,
-            final String netmask, final String dns, final String domainName) {
+    public String configureMonitor(final String routerIP, final String config) {
+
+        String args = " -c " + config;
+        return routerProxy("monitor_service.sh", routerIP, args);
+    }
+
+    public String assignGuestNetwork(final String dev, final String routerIP, final String routerGIP, final String gateway, final String cidr, final String netmask,
+        final String dns, final String domainName) {
 
         String args = " -C";
         args += " -d " + dev;
@@ -837,8 +841,7 @@ public class VirtualRoutingResource implements Manager {
         return routerProxy("vpc_guestnw.sh", routerIP, args);
     }
 
-    public String assignNetworkACL(final String routerIP, final String dev,
-            final String routerGIP, final String netmask, final String rule, String privateGw) {
+    public String assignNetworkACL(final String routerIP, final String dev, final String routerGIP, final String netmask, final String rule, String privateGw) {
         String args = " -d " + dev;
         if (privateGw != null) {
             args += " -a " + rule;
@@ -886,8 +889,8 @@ public class VirtualRoutingResource implements Manager {
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
 
-    public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
-            final String nicname, final String gateway, final String netmask, final String subnet, boolean sourceNat) throws InternalErrorException {
+    public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP, final String nicname, final String gateway, final String netmask,
+        final String subnet, boolean sourceNat) throws InternalErrorException {
         String args = "";
         String snatArgs = "";
 
@@ -956,11 +959,22 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-    public String assignPublicIpAddress(final String vmName,
-            final String privateIpAddress, final String publicIpAddress,
-            final boolean add, final boolean firstIP, final boolean sourceNat,
-            final String broadcastUri, final String vlanGateway,
-            final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic) {
+    private Answer execute(SetMonitorServiceCommand cmd) {
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String config = cmd.getConfiguration();
+
+        String result = configureMonitor(routerIp, config);
+
+        if (result != null) {
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed");
+        }
+        return new Answer(cmd);
+
+    }
+
+    public String assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
+        final boolean sourceNat, final String broadcastUri, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic) {
 
         String args = "";
         if (add) {
@@ -1019,54 +1033,54 @@ public class VirtualRoutingResource implements Manager {
     }
 
     //    protected Answer execute(final SetFirewallRuleCommand cmd) {
-    //    	String args;
-    //    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
-    //    		//1:1 NAT needs instanceip;publicip;domrip;op
-    //    		if(cmd.isCreate()) {
+    //        String args;
+    //        if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+    //            //1:1 NAT needs instanceip;publicip;domrip;op
+    //            if(cmd.isCreate()) {
     //                args = "-A";
     //            } else {
     //                args = "-D";
     //            }
     //
-    //    		args += " -l " + cmd.getPublicIpAddress();
-    //    		args += " -i " + cmd.getRouterIpAddress();
-    //    		args += " -r " + cmd.getPrivateIpAddress();
-    //    		args += " -G " + cmd.getProtocol();
-    //    	}else{
-    //    		if (cmd.isEnable()) {
-    //    			args = "-A";
-    //    		} else {
-    //    			args = "-D";
-    //    		}
+    //            args += " -l " + cmd.getPublicIpAddress();
+    //            args += " -i " + cmd.getRouterIpAddress();
+    //            args += " -r " + cmd.getPrivateIpAddress();
+    //            args += " -G " + cmd.getProtocol();
+    //        }else{
+    //            if (cmd.isEnable()) {
+    //                args = "-A";
+    //            } else {
+    //                args = "-D";
+    //            }
     //
-    //    		args += " -P " + cmd.getProtocol().toLowerCase();
-    //    		args += " -l " + cmd.getPublicIpAddress();
-    //    		args += " -p " + cmd.getPublicPort();
-    //    		args += " -n " + cmd.getRouterName();
-    //    		args += " -i " + cmd.getRouterIpAddress();
-    //    		args += " -r " + cmd.getPrivateIpAddress();
-    //    		args += " -d " + cmd.getPrivatePort();
-    //    		args += " -N " + cmd.getVlanNetmask();
+    //            args += " -P " + cmd.getProtocol().toLowerCase();
+    //            args += " -l " + cmd.getPublicIpAddress();
+    //            args += " -p " + cmd.getPublicPort();
+    //            args += " -n " + cmd.getRouterName();
+    //            args += " -i " + cmd.getRouterIpAddress();
+    //            args += " -r " + cmd.getPrivateIpAddress();
+    //            args += " -d " + cmd.getPrivatePort();
+    //            args += " -N " + cmd.getVlanNetmask();
     //
-    //    		String oldPrivateIP = cmd.getOldPrivateIP();
-    //    		String oldPrivatePort = cmd.getOldPrivatePort();
+    //            String oldPrivateIP = cmd.getOldPrivateIP();
+    //            String oldPrivatePort = cmd.getOldPrivatePort();
     //
-    //    		if (oldPrivateIP != null) {
-    //    			args += " -w " + oldPrivateIP;
-    //    		}
+    //            if (oldPrivateIP != null) {
+    //                args += " -w " + oldPrivateIP;
+    //            }
     //
-    //    		if (oldPrivatePort != null) {
-    //    			args += " -x " + oldPrivatePort;
-    //    		}
-    //    	}
+    //            if (oldPrivatePort != null) {
+    //                args += " -x " + oldPrivatePort;
+    //            }
+    //        }
     //
-    //    	final Script command = new Script(_firewallPath, _timeout, s_logger);
-    //    	String [] argsArray = args.split(" ");
-    //    	for (String param : argsArray) {
-    //    		command.add(param);
-    //    	}
-    //    	String result = command.execute();
-    //    	return new Answer(cmd, result == null, result);
+    //        final Script command = new Script(_firewallPath, _timeout, s_logger);
+    //        String [] argsArray = args.split(" ");
+    //        for (String param : argsArray) {
+    //            command.add(param);
+    //        }
+    //        String result = command.execute();
+    //        return new Answer(cmd, result == null, result);
     //    }
 
     protected String getDefaultScriptsDir() {
@@ -1226,7 +1240,8 @@ public class VirtualRoutingResource implements Manager {
                 if (sch != null) {
                     try {
                         sch.close();
-                    } catch (final IOException e) {}
+                    } catch (final IOException e) {
+                    }
                 }
             }
             try {

@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.template;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import javax.inject.Inject;
 
@@ -74,24 +74,42 @@ import com.cloud.vm.dao.UserVmDao;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
     private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
-    protected @Inject DomainDao _domainDao;
-    protected @Inject AccountDao _accountDao;
-    protected @Inject ConfigurationDao _configDao;
-    protected @Inject UserDao _userDao;
-    protected @Inject AccountManager _accountMgr;
-    protected @Inject DataCenterDao _dcDao;
-    protected @Inject VMTemplateDao _tmpltDao;
-    protected @Inject TemplateDataStoreDao _tmpltStoreDao;
-    protected @Inject VMTemplateZoneDao _tmpltZoneDao;
-    protected @Inject UsageEventDao _usageEventDao;
-    protected @Inject HostDao _hostDao;
-    protected @Inject UserVmDao _userVmDao;
-    protected @Inject GuestOSHypervisorDao _osHyperDao;
-    protected @Inject ResourceLimitService _resourceLimitMgr;
-    protected @Inject ImageStoreDao _imgStoreDao;
-    @Inject TemplateManager templateMgr;
-    @Inject ConfigurationServer _configServer;
-    @Inject ProjectManager _projectMgr;
+    protected @Inject
+    DomainDao _domainDao;
+    protected @Inject
+    AccountDao _accountDao;
+    protected @Inject
+    ConfigurationDao _configDao;
+    protected @Inject
+    UserDao _userDao;
+    protected @Inject
+    AccountManager _accountMgr;
+    protected @Inject
+    DataCenterDao _dcDao;
+    protected @Inject
+    VMTemplateDao _tmpltDao;
+    protected @Inject
+    TemplateDataStoreDao _tmpltStoreDao;
+    protected @Inject
+    VMTemplateZoneDao _tmpltZoneDao;
+    protected @Inject
+    UsageEventDao _usageEventDao;
+    protected @Inject
+    HostDao _hostDao;
+    protected @Inject
+    UserVmDao _userVmDao;
+    protected @Inject
+    GuestOSHypervisorDao _osHyperDao;
+    protected @Inject
+    ResourceLimitService _resourceLimitMgr;
+    protected @Inject
+    ImageStoreDao _imgStoreDao;
+    @Inject
+    TemplateManager templateMgr;
+    @Inject
+    ConfigurationServer _configServer;
+    @Inject
+    ProjectManager _projectMgr;
 
     @Override
     public boolean stop() {
@@ -99,20 +117,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
-            Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
-            Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
-        return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
-                chksum, bootable, null, null, details, false, null, false, TemplateType.USER);
+    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType, String accountName,
+        Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
+        return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
+            hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER);
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
-            Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
-            Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled,
-            String imageStoreUuid, Boolean isDynamicallyScalable, TemplateType templateType) throws ResourceAllocationException {
+    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType, String chksum,
+        Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
+        TemplateType templateType) throws ResourceAllocationException {
         //Long accountId = null;
         // parameters verification
 
@@ -129,10 +145,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 bootable = Boolean.TRUE;
             }
             GuestOS noneGuestOs = ApiDBUtils.findGuestOSByDisplayName(ApiConstants.ISO_GUEST_OS_NONE);
-            if ((guestOSId == null || guestOSId == noneGuestOs.getId()) && bootable == true){
+            if ((guestOSId == null || guestOSId == noneGuestOs.getId()) && bootable == true) {
                 throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
             }
-            if (bootable == false){
+            if (bootable == false) {
                 guestOSId = noneGuestOs.getId(); //Guest os id of None.
             }
         } else {
@@ -210,13 +226,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
         }
 
-        if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer) ) {
-            if(  details == null || !details.containsKey("hypervisortoolsversion")
-                    || details.get("hypervisortoolsversion") == null
-                    || ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none") ) {
+        if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer)) {
+            if (details == null || !details.containsKey("hypervisortoolsversion") || details.get("hypervisortoolsversion") == null ||
+                ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none")) {
                 String hpvs = _configDao.getValue(Config.XenPVdriverVersion.key());
-                if ( hpvs != null) {
-                    if ( details == null ) {
+                if (hpvs != null) {
+                    if (details == null) {
                         details = new HashMap<String, String>();
                     }
                     details.put("hypervisortoolsversion", hpvs);
@@ -227,8 +242,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
         return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneId,
-            hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, null,
-            isDynamicallyScalable, templateType);
+            hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
+            sshkeyEnabled, null, isDynamicallyScalable, templateType);
 
     }
 
@@ -248,11 +263,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneId = -1L;
         }
 
-        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
-                cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
-                cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, HypervisorType.getType(cmd.getHypervisor()),
-                cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(),
-                isRouting ? TemplateType.ROUTING : TemplateType.USER);
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
+            cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
+            HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
+            cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
 
@@ -270,20 +284,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneId = -1L;
         }
 
-        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
-                true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-                zoneId, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(),
-                TemplateType.USER);
+        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false, true, cmd.getUrl(), cmd.isPublic(),
+            cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneId, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
+            owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER);
     }
 
     protected VMTemplateVO persistTemplate(TemplateProfile profile) {
         Long zoneId = profile.getZoneId();
-        VMTemplateVO template = new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(),
-                profile.getFeatured(), profile.getIsExtractable(), profile.getTemplateType(), profile.getUrl(), profile.getRequiresHVM(),
-                profile.getBits(), profile.getAccountId(), profile.getCheckSum(), profile.getDisplayText(),
-                profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag(),
-                profile.getDetails(), profile.getSshKeyEnabled(), profile.IsDynamicallyScalable());
-
+        VMTemplateVO template =
+            new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(), profile.getFeatured(), profile.getIsExtractable(),
+                profile.getTemplateType(), profile.getUrl(), profile.getRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
+                profile.getDisplayText(), profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(),
+                profile.getTemplateTag(), profile.getDetails(), profile.getSshKeyEnabled(), profile.IsDynamicallyScalable());
 
         if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();
@@ -303,9 +315,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return _tmpltDao.findById(template.getId());
     }
 
-
-    private Long accountAndUserValidation(Account account, long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg)
-            throws PermissionDeniedException {
+    private Long accountAndUserValidation(Account account, long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) throws PermissionDeniedException {
 
         if (account != null) {
             if (!_accountMgr.isAdmin(account.getType())) {
@@ -313,8 +323,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
 
-                if ((template != null)
-                        && (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
+                if ((template != null) &&
+                    (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
                     //special handling for the project case
                     Account owner = _accountMgr.getAccount(template.getAccountId());
                     if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -411,7 +421,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
     @Override
     abstract public VMTemplateVO create(TemplateProfile profile);
-    
+
     @Override
     abstract public boolean delete(TemplateProfile profile);
 }

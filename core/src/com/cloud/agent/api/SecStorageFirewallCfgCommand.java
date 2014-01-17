@@ -21,62 +21,67 @@ import java.util.List;
 
 public class SecStorageFirewallCfgCommand extends Command {
 
-	public static class PortConfig {
-		boolean add;
-		String sourceIp;
-		String port;
-		String intf;
-		public PortConfig(String sourceIp, String port, boolean add, String intf) {
-			this.add = add;
-			this.sourceIp = sourceIp;
-			this.port = port;
-			this.intf = intf;
-		}
-		public PortConfig() {
+    public static class PortConfig {
+        boolean add;
+        String sourceIp;
+        String port;
+        String intf;
 
-		}
-		public boolean isAdd() {
-			return add;
-		}
-		public String getSourceIp() {
-			return sourceIp;
-		}
-		public String getPort() {
-			return port;
-		}
-		public String getIntf() {
-			return intf;
-		}
-	}
+        public PortConfig(String sourceIp, String port, boolean add, String intf) {
+            this.add = add;
+            this.sourceIp = sourceIp;
+            this.port = port;
+            this.intf = intf;
+        }
 
-	private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
-	private boolean isAppendAIp = false;
+        public PortConfig() {
 
-	public SecStorageFirewallCfgCommand() {
+        }
 
-	}
+        public boolean isAdd() {
+            return add;
+        }
 
-	public SecStorageFirewallCfgCommand(boolean isAppend) {
-    	this.isAppendAIp = isAppend;
-	}
+        public String getSourceIp() {
+            return sourceIp;
+        }
 
-    public void addPortConfig(String sourceIp, String port, boolean add, String intf) {
-    	PortConfig pc = new PortConfig(sourceIp, port, add, intf);
-    	this.portConfigs.add(pc);
+        public String getPort() {
+            return port;
+        }
+
+        public String getIntf() {
+            return intf;
+        }
+    }
+
+    private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
+    private boolean isAppendAIp = false;
+
+    public SecStorageFirewallCfgCommand() {
 
     }
 
-	public boolean getIsAppendAIp() {
-		return isAppendAIp;
-	}
+    public SecStorageFirewallCfgCommand(boolean isAppend) {
+        this.isAppendAIp = isAppend;
+    }
 
-	@Override
+    public void addPortConfig(String sourceIp, String port, boolean add, String intf) {
+        PortConfig pc = new PortConfig(sourceIp, port, add, intf);
+        this.portConfigs.add(pc);
+
+    }
+
+    public boolean getIsAppendAIp() {
+        return isAppendAIp;
+    }
+
+    @Override
     public boolean executeInSequence() {
         return false;
     }
 
-
-	public List<PortConfig> getPortConfigs() {
-		return portConfigs;
-	}
+    public List<PortConfig> getPortConfigs() {
+        return portConfigs;
+    }
 }

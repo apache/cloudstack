@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage pools and templates
- * 
+ *
  */
 @Entity
 @Table(name = "template_spool_ref")
@@ -177,9 +177,8 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         this.markedForGC = false;
     }
 
-    public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent,
-            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
-            long templateSize) {
+    public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath,
+            String errorString, String jobId, String installPath, long templateSize) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;
@@ -242,7 +241,7 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof VMTemplateStoragePoolVO) {
-            VMTemplateStoragePoolVO other = (VMTemplateStoragePoolVO) obj;
+            VMTemplateStoragePoolVO other = (VMTemplateStoragePoolVO)obj;
             return (this.templateId == other.getTemplateId() && this.poolId == other.getPoolId());
         }
         return false;
@@ -257,8 +256,7 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append(poolId)
-                .append("-").append(installPath).append("]").toString();
+        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append(poolId).append("-").append(installPath).append("]").toString();
     }
 
     @Override

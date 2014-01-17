@@ -18,25 +18,25 @@
 package com.cloud.hypervisor.vmware.mo;
 
 public class VirtualMachineDiskInfo {
-	String diskDeviceBusName;
-	String[] diskChain;
-	
-	public VirtualMachineDiskInfo() {
-	}
-	
-	public String getDiskDeviceBusName() {
-		return diskDeviceBusName;
-	}
+    String diskDeviceBusName;
+    String[] diskChain;
 
-	public void setDiskDeviceBusName(String diskDeviceBusName) {
-		this.diskDeviceBusName = diskDeviceBusName;
-	}
+    public VirtualMachineDiskInfo() {
+    }
 
-	public String[] getDiskChain() {
-		return diskChain;
-	}
+    public String getDiskDeviceBusName() {
+        return diskDeviceBusName;
+    }
 
-	public void setDiskChain(String[] diskChain) {
-		this.diskChain = diskChain;
-	}
+    public void setDiskDeviceBusName(String diskDeviceBusName) {
+        this.diskDeviceBusName = diskDeviceBusName;
+    }
+
+    public String[] getDiskChain() {
+        return diskChain;
+    }
+
+    public void setDiskChain(String[] diskChain) {
+        this.diskChain = diskChain;
+    }
 }

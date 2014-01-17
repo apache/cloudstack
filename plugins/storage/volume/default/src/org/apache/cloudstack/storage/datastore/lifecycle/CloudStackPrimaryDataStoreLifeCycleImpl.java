@@ -128,11 +128,11 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     @SuppressWarnings("unchecked")
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        Long clusterId = (Long) dsInfos.get("clusterId");
-        Long podId = (Long) dsInfos.get("podId");
-        Long zoneId = (Long) dsInfos.get("zoneId");
-        String url = (String) dsInfos.get("url");
-        String providerName = (String) dsInfos.get("providerName");
+        Long clusterId = (Long)dsInfos.get("clusterId");
+        Long podId = (Long)dsInfos.get("podId");
+        Long zoneId = (Long)dsInfos.get("zoneId");
+        String url = (String)dsInfos.get("url");
+        String providerName = (String)dsInfos.get("providerName");
         if (clusterId != null && podId == null) {
             throw new InvalidParameterValueException("Cluster id requires pod id");
         }
@@ -154,15 +154,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 // Don't validate against a URI encoded URI.
                 URI cifsUri = new URI(url);
                 String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
-                if (warnMsg != null)
-                {
+                if (warnMsg != null) {
                     throw new InvalidParameterValueException(warnMsg);
                 }
             } else if (uri.getScheme().equalsIgnoreCase("sharedMountPoint")) {
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
-                    throw new InvalidParameterValueException(
-                            "host or path is null, should be sharedmountpoint://localhost/path");
+                    throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
             } else if (uri.getScheme().equalsIgnoreCase("rbd")) {
                 String uriPath = uri.getPath();
@@ -174,8 +172,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             throw new InvalidParameterValueException(url + " is not a valid uri");
         }
 
-        String tags = (String) dsInfos.get("tags");
-        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+        String tags = (String)dsInfos.get("tags");
+        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         parameters.setTags(tags);
         parameters.setDetails(details);
@@ -186,13 +184,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
             hostPath = hostPath.replaceFirst("/", "");
-            hostPath = hostPath.replace("+"," ");
+            hostPath = hostPath.replace("+", " ");
         }
         String userInfo = uri.getUserInfo();
         int port = uri.getPort();
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("createPool Params @ scheme - " + scheme + " storageHost - " + storageHost + " hostPath - "
-                    + hostPath + " port - " + port);
+            s_logger.debug("createPool Params @ scheme - " + scheme + " storageHost - " + storageHost + " hostPath - " + hostPath + " port - " + port);
         }
         if (scheme.equalsIgnoreCase("nfs")) {
             if (port == -1) {
@@ -268,8 +265,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                         throw new IllegalArgumentException("Not enough information for discovery " + uri, e);
                     }
                     if (pools != null) {
-                        Map.Entry<? extends StoragePool, Map<String, String>> entry = pools.entrySet().iterator()
-                                .next();
+                        Map.Entry<? extends StoragePool, Map<String, String>> entry = pools.entrySet().iterator().next();
                         details = entry.getValue();
                         break;
                     }
@@ -312,8 +308,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(storageHost, hostPath);
             if (!pools.isEmpty() && !scheme.equalsIgnoreCase("sharedmountpoint")) {
                 Long oldPodId = pools.get(0).getPodId();
-                throw new CloudRuntimeException("Storage pool " + uri + " already in use by another pod (id="
-                        + oldPodId + ")");
+                throw new CloudRuntimeException("Storage pool " + uri + " already in use by another pod (id=" + oldPodId + ")");
             }
         }
 
@@ -321,7 +316,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         String uuid = null;
 
         if (existingUuid != null) {
-            uuid = (String) existingUuid;
+            uuid = (String)existingUuid;
         } else if (scheme.equalsIgnoreCase("sharedmountpoint") || scheme.equalsIgnoreCase("clvm")) {
             uuid = UUID.randomUUID().toString();
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
@@ -338,7 +333,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             throw new CloudRuntimeException("Another active pool with the same uuid already exists");
         }
 
-        String poolName = (String) dsInfos.get("name");
+        String poolName = (String)dsInfos.get("name");
 
         parameters.setUuid(uuid);
         parameters.setZoneId(zoneId);
@@ -352,11 +347,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     protected boolean createStoragePool(long hostId, StoragePool pool) {
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
-        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem
-                && pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi
-                && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2
-                && pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM) {
+        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
+            pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
+            pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 &&
+            pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
@@ -371,8 +365,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
                 s_logger.warn(msg);
             } else {
-                msg = "Can not create storage pool through host " + hostId
-                        + " due to CreateStoragePoolCommand returns null";
+                msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
                 s_logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
@@ -381,14 +374,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo) store;
+        PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo)store;
         // Check if there is host up in this cluster
-        List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primarystore.getClusterId(),
-                primarystore.getPodId(), primarystore.getDataCenterId());
+        List<HostVO> allHosts =
+            _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
         if (allHosts.isEmpty()) {
             primaryDataStoreDao.expunge(primarystore.getId());
-            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster "
-                    + primarystore.getClusterId());
+            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + primarystore.getClusterId());
         }
 
         if (primarystore.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(allHosts, primarystore)) {
@@ -417,8 +409,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         }
 
         if (poolHosts.isEmpty()) {
-            s_logger.warn("No host can access storage pool " + primarystore + " on cluster "
-                    + primarystore.getClusterId());
+            s_logger.warn("No host can access storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
             primaryDataStoreDao.expunge(primarystore.getId());
             throw new CloudRuntimeException("Failed to access storage pool");
         }
@@ -467,14 +458,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     @Override
     public boolean deleteDataStore(DataStore store) {
         List<StoragePoolHostVO> hostPoolRecords = _storagePoolHostDao.listByPoolId(store.getId());
-        StoragePool pool = (StoragePool) store;
+        StoragePool pool = (StoragePool)store;
         boolean deleteFlag = false;
         // find the hypervisor where the storage is attached to.
         HypervisorType hType = null;
-        if(hostPoolRecords.size() > 0 ){
+        if (hostPoolRecords.size() > 0) {
             hType = getHypervisorType(hostPoolRecords.get(0).getHostId());
-        } else {
-            return false;
         }
 
         // Remove the SR associated with the Xenserver
@@ -495,7 +484,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             }
         }
 
-        if (!deleteFlag) {
+        if (!hostPoolRecords.isEmpty() && !deleteFlag) {
             throw new CloudRuntimeException("Failed to delete storage pool on host");
         }
 

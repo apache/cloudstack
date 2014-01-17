@@ -30,30 +30,25 @@ import com.cloud.utils.component.PluggableService;
 
 public interface LdapManager extends PluggableService {
 
-	LdapConfigurationResponse addConfiguration(String hostname, int port)
-			throws InvalidParameterValueException;
+    LdapConfigurationResponse addConfiguration(String hostname, int port) throws InvalidParameterValueException;
 
-	boolean canAuthenticate(String username, String password);
+    boolean canAuthenticate(String username, String password);
 
-	LdapConfigurationResponse createLdapConfigurationResponse(
-			LdapConfigurationVO configuration);
+    LdapConfigurationResponse createLdapConfigurationResponse(LdapConfigurationVO configuration);
 
-	LdapUserResponse createLdapUserResponse(LdapUser user);
+    LdapUserResponse createLdapUserResponse(LdapUser user);
 
-	LdapConfigurationResponse deleteConfiguration(String hostname)
-			throws InvalidParameterValueException;
+    LdapConfigurationResponse deleteConfiguration(String hostname) throws InvalidParameterValueException;
 
-	LdapUser getUser(final String username) throws NamingException;
+    LdapUser getUser(final String username) throws NamingException;
 
-	List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
+    List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
 
     List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException;
 
-	boolean isLdapEnabled();
+    boolean isLdapEnabled();
 
-	Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(
-			LdapListConfigurationCmd cmd);
+    Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(LdapListConfigurationCmd cmd);
 
-	List<LdapUser> searchUsers(String query)
-			throws NoLdapUserMatchingQueryException;
+    List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 }

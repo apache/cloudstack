@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,13 +17,36 @@
 """ P1 tests for Snapshots
 """
 #Import Local Modules
-from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.integration.lib.utils import is_snapshot_on_nfs
+from nose.plugins.attrib import             attr
+from marvin.cloudstackTestCase import       cloudstackTestCase, unittest
+
+from marvin.integration.lib.base import     (Snapshot,
+                                             Template,
+                                             VirtualMachine,
+                                             Account,
+                                             ServiceOffering,
+                                             DiskOffering,
+                                             Volume)
+
+from marvin.integration.lib.common import   (get_domain,
+                                             get_zone,
+                                             get_template,
+                                             list_events,
+                                             list_volumes,
+                                             list_snapshots,
+                                             list_templates,
+                                             list_virtual_machines,
+                                             )
+
+from marvin.integration.lib.utils import    (cleanup_resources,
+                                             format_volume_to_ext3,
+                                             random_gen,
+                                             is_snapshot_on_nfs,
+                                             get_hypervisor_type)
+
+from marvin.cloudstackAPI import            detachVolume
+import time
+
 
 
 class Services:
@@ -104,7 +127,18 @@ class Services:
                         "volume": {
                                    "diskname": "APP Data Volume",
                                    "size": 1,   # in GBs
-                                   "diskdevice": ['/dev/xvdb', '/dev/sdb', '/dev/hdb', '/dev/vdb' ],   # Data Disk
+                                   "xenserver": {"rootdiskdevice":"/dev/xvda",
+                                                 "datadiskdevice_1": '/dev/xvdb',
+                                                 "datadiskdevice_2": '/dev/xvdc',   # Data Disk
+                                                 },
+                                   "kvm":       {"rootdiskdevice": "/dev/vda",
+                                                 "datadiskdevice_1": "/dev/vdb",
+                                                 "datadiskdevice_2": "/dev/vdc"
+                                                 },
+                                   "vmware":    {"rootdiskdevice": "/dev/hda",
+                                                 "datadiskdevice_1": "/dev/hdb",
+                                                 "datadiskdevice_2": "/dev/hdc"
+                                                 }
                         },
                         "paths": {
                                     "mount_dir": "/mnt/tmp",
@@ -139,7 +173,7 @@ class TestSnapshots(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        
+
         cls.services["domainid"] = cls.domain.id
         cls.services["volume"]["zoneid"] = cls.services["server_with_disk"]["zoneid"] = cls.zone.id
         cls.services["server_with_disk"]["diskoffering"] = cls.disk_offering.id
@@ -173,6 +207,9 @@ class TestSnapshots(cloudstackTestCase):
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
+
+        # Get Hypervisor Type
+        cls.hypervisor = (get_hypervisor_type(cls.api_client)).lower()
 
         cls._cleanup = [
                         cls.service_offering,
@@ -259,14 +296,23 @@ class TestSnapshots(cloudstackTestCase):
         # Validate the following
         #1. Create a virtual machine and data volume
         #2. Attach data volume to VM
-        #3. Login to machine; create temp/test directories on data volume
+        #3. Login to machine; create temp/test directories on data volume and write some random data
         #4. Snapshot the Volume
         #5. Create another Volume from snapshot
-        #6. Mount/Attach volume to another server
-        #7. Compare data
+        #6. Mount/Attach volume to another virtual machine
+        #7. Compare data, data should match
 
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
+
+        self.debug("random_data_0 : %s" % random_data_0)
+        self.debug("random_data_1: %s" % random_data_1)
+
+        try:
+            ssh_client = self.virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for VM: %s" %
+                      self.virtual_machine.ipaddress)
 
         volume = Volume.create(
                                self.apiclient,
@@ -285,22 +331,18 @@ class TestSnapshots(cloudstackTestCase):
                                 (volume.id, self.virtual_machine.id))
 
 
-        try:
-            ssh_client = self.virtual_machine.get_ssh_client()
-        except Exception as e:
-            self.fail("SSH failed for VM: %s" %
-                      self.virtual_machine.ipaddress)
-
         self.debug("Formatting volume: %s to ext3" % volume.id)
         #Format partition using ext3
+        # Note that this is the second data disk partition of virtual machine as it was already containing
+        # data disk before attaching the new volume, Hence datadiskdevice_2
         format_volume_to_ext3(
                               ssh_client,
-                              self.services["volume"]["diskdevice"]
+                              self.services["volume"][self.hypervisor]["datadiskdevice_2"]
                               )
-        cmds = [
+        cmds = [    "fdisk -l",
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                    "mount %s1 %s" % (
-                                      self.services["volume"]["diskdevice"],
+                    "mount -t ext3 %s1 %s" % (
+                                      self.services["volume"][self.hypervisor]["datadiskdevice_2"],
                                       self.services["paths"]["mount_dir"]
                                       ),
                     "mkdir -p %s/%s/{%s,%s} " % (
@@ -323,10 +365,17 @@ class TestSnapshots(cloudstackTestCase):
                                     self.services["paths"]["sub_lvl_dir2"],
                                     self.services["paths"]["random_data"]
                                     ),
+                    "cat %s/%s/%s/%s" % (
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir1"],
+                                    self.services["paths"]["random_data"]
+                                    )
                 ]
         for c in cmds:
             self.debug("Command: %s" % c)
-            ssh_client.execute(c)
+            result = ssh_client.execute(c)
+            self.debug(result)
 
         # Unmount the Sec Storage
         cmds = [
@@ -340,7 +389,7 @@ class TestSnapshots(cloudstackTestCase):
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
-                                    listall=True
+                                    id=volume.id
                                     )
 
         self.assertEqual(
@@ -365,6 +414,15 @@ class TestSnapshots(cloudstackTestCase):
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
+
+        # Detach the volume from virtual machine
+        self.virtual_machine.detach_volume(
+                                           self.apiclient,
+                                           volume
+                                           )
+        self.debug("Detached volume: %s from VM: %s" %
+                                (volume.id, self.virtual_machine.id))
+
         self.debug("Created Volume: %s from Snapshot: %s" % (
                                             volume_from_snapshot.id,
                                             snapshot.id))
@@ -399,7 +457,7 @@ class TestSnapshots(cloudstackTestCase):
                                     mode=self.services["mode"]
                                 )
         self.debug("Deployed new VM for account: %s" % self.account.name)
-        self.cleanup.append(new_virtual_machine)
+        #self.cleanup.append(new_virtual_machine)
 
         self.debug("Attaching volume: %s to VM: %s" % (
                                             volume_from_snapshot.id,
@@ -411,21 +469,28 @@ class TestSnapshots(cloudstackTestCase):
                                            volume_from_snapshot
                                            )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.debug("Rebooting : %s" % new_virtual_machine.id)
+
+        new_virtual_machine.reboot(self.apiclient)
+
         try:
             #Login to VM to verify test directories and files
             ssh = new_virtual_machine.get_ssh_client()
 
-            cmds = [
+            # Mount datadiskdevice_1 because this is the first data disk of the new virtual machine
+            cmds = ["fdisk -l",
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                    "mount %s1 %s" % (
-                                      self.services["volume"]["diskdevice"],
+                    "mount -t ext3 %s1 %s" % (
+                                      self.services["volume"][self.hypervisor]["datadiskdevice_1"],
                                       self.services["paths"]["mount_dir"]
                                       ),
                ]
 
             for c in cmds:
                 self.debug("Command: %s" % c)
-                ssh.execute(c)
+                result = ssh.execute(c)
+                self.debug(result)
 
             returned_data_0 = ssh.execute(
                             "cat %s/%s/%s/%s" % (
@@ -442,8 +507,12 @@ class TestSnapshots(cloudstackTestCase):
                                     self.services["paths"]["random_data"]
                             ))
         except Exception as e:
-            self.fail("SSH access failed for VM: %s" %
-                                new_virtual_machine.ipaddress)
+            self.fail("SSH access failed for VM: %s, Exception: %s" %
+                                (new_virtual_machine.ipaddress, e))
+
+        self.debug("returned_data_0: %s" % returned_data_0[0])
+        self.debug("returned_data_1: %s" % returned_data_1[0])
+
         #Verify returned data
         self.assertEqual(
                 random_data_0,
@@ -475,11 +544,29 @@ class TestSnapshots(cloudstackTestCase):
         #3. Verify snapshot is removed by calling List Snapshots API
         #4. Verify snapshot was removed from image store
 
+        self.debug("Creating volume under account: %s" % self.account.name)
+        volume = Volume.create(
+                               self.apiclient,
+                               self.services["volume"],
+                               zoneid=self.zone.id,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               diskofferingid=self.disk_offering.id
+                               )
+        self.debug("Created volume: %s" % volume.id)
+        self.debug("Attaching volume to vm: %s" % self.virtual_machine.id)
+
+        self.virtual_machine.attach_volume(
+                                           self.apiclient,
+                                           volume
+                                           )
+        self.debug("Volume attached to vm")
+
         volumes = list_volumes(
                                self.apiclient,
                                virtualmachineid=self.virtual_machine.id,
                                type='DATADISK',
-                               listall=True
+                               id=volume.id
                                )
         self.assertEqual(
                             isinstance(volumes, list),
@@ -512,7 +599,7 @@ class TestSnapshots(cloudstackTestCase):
         """
         # Validate the following
         # 1. login in VM  and write some data on data disk(use fdisk to
-        #    partition datadisk,fdisk /dev/sdb, and make filesystem using
+        #    partition datadisk,fdisk, and make filesystem using
         #    mkfs.ext3)
         # 2. Detach the data disk and write some data on data disk
         # 3. perform the snapshot on the detached volume
@@ -540,12 +627,12 @@ class TestSnapshots(cloudstackTestCase):
             #Format partition using ext3
             format_volume_to_ext3(
                               ssh_client,
-                              self.services["volume"]["diskdevice"]
+                              self.services["volume"][self.hypervisor]["datadiskdevice_1"]
                               )
             cmds = [
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["volume"]["diskdevice"],
+                                      self.services["volume"][self.hypervisor]["datadiskdevice_1"],
                                       self.services["paths"]["mount_dir"]
                                       ),
                     "pushd %s" % self.services["paths"]["mount_dir"],
@@ -567,6 +654,7 @@ class TestSnapshots(cloudstackTestCase):
                                                 self.services["paths"]["random_data"]
                                             ),
                     "sync",
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
             for c in cmds:
                 self.debug(ssh_client.execute(c))
@@ -641,7 +729,7 @@ class TestSnapshots(cloudstackTestCase):
         #3. Create Template from snapshot
         #4. Deploy Virtual machine using this template
         #5. Login to newly created virtual machine
-        #6. Compare data
+        #6. Compare data in the root disk with the one that was written on the volume, it should match
 
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
@@ -653,7 +741,7 @@ class TestSnapshots(cloudstackTestCase):
             cmds = [
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["volume"]["diskdevice"],
+                                      self.services["volume"][self.hypervisor]["rootdiskdevice"],
                                       self.services["paths"]["mount_dir"]
                                       ),
                     "mkdir -p %s/%s/{%s,%s} " % (
@@ -767,7 +855,7 @@ class TestSnapshots(cloudstackTestCase):
             cmds = [
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["volume"]["diskdevice"],
+                                      self.services["volume"][self.hypervisor]["rootdiskdevice"],
                                       self.services["paths"]["mount_dir"]
                                       )
                ]
@@ -813,8 +901,8 @@ class TestSnapshots(cloudstackTestCase):
                 ssh_client.execute(c)
 
         except Exception as e:
-            self.fail("SSH failed for VM with IP address: %s" %
-                                    new_virtual_machine.ipaddress)
+            self.fail("SSH failed for VM with IP address: %s, Exception: %s" %
+                                    (new_virtual_machine.ipaddress, e))
         return
 
 
@@ -920,7 +1008,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
-        snapshot = Snapshot.create(self.apiclient, volumes[0].id)
+        snapshot = Snapshot.create(self.apiclient, volume.id)
         self.debug("Snapshot created: ID - %s" % snapshot.id)
         self.cleanup.append(snapshot)
 
@@ -1016,7 +1104,6 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot_uuid))
         return
 
-
 class TestSnapshotEvents(cloudstackTestCase):
 
     @classmethod
@@ -1087,7 +1174,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-    
+
     @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns"])
     def test_05_snapshot_events(self):
@@ -1113,7 +1200,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
-        snapshot = Snapshot.create(self.apiclient, volumes[0].id)
+        snapshot = Snapshot.create(self.apiclient, volume.id)
         self.debug("Snapshot created with ID: %s" % snapshot.id)
 
         snapshots = list_snapshots(

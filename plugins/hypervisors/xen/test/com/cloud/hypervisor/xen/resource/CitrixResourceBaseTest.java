@@ -19,39 +19,51 @@
 
 package com.cloud.hypervisor.xen.resource;
 
-import org.junit.Test;
-import org.junit.Before;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.MockitoAnnotations;
-import static org.mockito.Mockito.*;
-
-import com.cloud.hypervisor.xen.resource.CitrixResourceBase.XsHost;
-import com.cloud.agent.api.ScaleVmCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.ScaleVmAnswer;
-import com.xensource.xenapi.*;
-import org.apache.xmlrpc.XmlRpcException;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
 
+import org.apache.xmlrpc.XmlRpcException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.XenAPIObject;
 
+import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.xen.resource.CitrixResourceBase.XsHost;
 
 public class CitrixResourceBaseTest {
 
-    @Spy CitrixResourceBase _resource = new CitrixResourceBase() {
+    @Spy
+    CitrixResourceBase _resource = new CitrixResourceBase() {
 
         @Override
         public ScaleVmAnswer execute(ScaleVmCommand cmd) {
             return super.execute(cmd);
         }
+
+        @Override
         public String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
             return "Success";
         }
+
         @Override
         protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws Types.XenAPIException, XmlRpcException {
             _host.speed = 500;
@@ -63,15 +75,21 @@ public class CitrixResourceBaseTest {
             return true;
         }
     };
-    @Mock XsHost _host;
-    @Mock Host host;
-    @Mock ScaleVmCommand cmd;
-    @Mock VirtualMachineTO vmSpec;
-    @Mock Connection conn;
-    @Mock VM vm;
+    @Mock
+    XsHost _host;
+    @Mock
+    Host host;
+    @Mock
+    ScaleVmCommand cmd;
+    @Mock
+    VirtualMachineTO vmSpec;
+    @Mock
+    Connection conn;
+    @Mock
+    VM vm;
 
     @Before
-    public void setup(){
+    public void setup() {
 
         MockitoAnnotations.initMocks(this);
 
@@ -80,17 +98,13 @@ public class CitrixResourceBaseTest {
 
     }
 
-
     // Expecting XmlRpcException while trying to get the record of vm using connection
     @Test(expected = XmlRpcException.class)
-    public void testScaleVMF1()  throws
-            Types.BadServerResponse,
-            Types.XenAPIException,
-            XmlRpcException {
+    public void testScaleVMF1() throws Types.BadServerResponse, Types.XenAPIException, XmlRpcException {
         doReturn(conn).when(_resource).getConnection();
-        Set<VM> vms = (Set<VM> )mock(Set.class);
+        Set<VM> vms = mock(Set.class);
 
-        Iterator iter =  mock(Iterator.class);
+        Iterator iter = mock(Iterator.class);
         doReturn(iter).when(vms).iterator();
         when(iter.hasNext()).thenReturn(true).thenReturn(false);
         doReturn(vm).when(iter).next();
@@ -122,7 +136,7 @@ public class CitrixResourceBaseTest {
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getMinSpeed();
         doReturn(false).when(vmSpec).getLimitCpuUse();
-        Map<String, String> args = (Map<String, String>)mock(HashMap.class);
+        Map<String, String> args = mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
 
@@ -144,9 +158,10 @@ public class CitrixResourceBaseTest {
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getMinSpeed();
+        doReturn(500).when(vmSpec).getMaxSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
-        Map<String, String> args = (Map<String, String>)mock(HashMap.class);
+        Map<String, String> args = mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
 

@@ -19,9 +19,10 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -41,7 +41,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -63,6 +62,7 @@ public class SnapshotObject implements SnapshotInfo {
     private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
     private SnapshotVO snapshot;
     private DataStore store;
+    private Object payload;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -79,6 +79,7 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
 
     public SnapshotObject() {
 
@@ -102,8 +103,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public SnapshotInfo getParent() {
 
-        SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(),
-                store.getId(), snapshot.getId());
+        SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
         Long parentId = null;
         if (snapStoreVO != null) {
             parentId = snapStoreVO.getParentSnapshotId();
@@ -118,10 +118,10 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public SnapshotInfo getChild() {
         QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
-        sc.and(sc.entity().getDataStoreId(), Op.EQ,store.getId());
-        sc.and(sc.entity().getRole(), Op.EQ,store.getRole());
+        sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        sc.and(sc.entity().getRole(), Op.EQ, store.getRole());
         sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
-        sc.and(sc.entity().getParentSnapshotId(), Op.EQ,getId());
+        sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());
         SnapshotDataStoreVO vo = sc.find();
         if (vo == null) {
             return null;
@@ -200,11 +200,18 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getPath() {
+        if (installPath != null)
+            return installPath;
+
         DataObjectInStore objectInStore = objectInStoreMgr.findObject(this, getDataStore());
         if (objectInStore != null) {
             return objectInStore.getInstallPath();
         }
         return null;
+    }
+
+    public void setPath(String installPath) {
+        this.installPath = installPath;
     }
 
     @Override
@@ -272,26 +279,26 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(
-                    getDataStore().getRole(), getDataStore().getId(), getId());
+            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(getDataStore().getRole(), getDataStore().getId(), getId());
             if (answer instanceof CreateObjectAnswer) {
-                SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CreateObjectAnswer) answer).getData();
+                SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer)answer).getData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
                 snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
             } else if (answer instanceof CopyCmdAnswer) {
-                SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CopyCmdAnswer) answer).getNewData();
+                SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
+                snapshotStore.setSize(snapshotTO.getPhysicalSize());
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }
                 snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
 
                 // update side-effect of snapshot operation
-                if(snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
+                if (snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
                     VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
-                    if(vol != null) {
-                        s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
-                                + vol.getPath() + "->" + snapshotTO.getVolume().getPath());
+                    if (vol != null) {
+                        s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: " + vol.getPath() + "->" +
+                            snapshotTO.getVolume().getPath());
                         vol.setPath(snapshotTO.getVolume().getPath());
                         volumeDao.update(vol.getId(), vol);
                     } else {
@@ -317,8 +324,7 @@ public class SnapshotObject implements SnapshotInfo {
         }
 
         if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    getId());
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -331,8 +337,7 @@ public class SnapshotObject implements SnapshotInfo {
             return;
         }
         if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    getId());
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -345,8 +350,7 @@ public class SnapshotObject implements SnapshotInfo {
             return null;
         }
         if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    getId());
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), getId());
             return store.getRefCnt();
         }
         return null;
@@ -359,6 +363,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void addPayload(Object data) {
+        payload = data;
+    }
+
+    @Override
+    public Object getPayload() {
+        return payload;
     }
 
     @Override

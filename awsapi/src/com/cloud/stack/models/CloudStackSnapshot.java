@@ -55,61 +55,61 @@ public class CloudStackSnapshot {
     public CloudStackSnapshot() {
     }
 
-	public String getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public String getDomainId() {
-		return domainId;
-	}
+    public String getDomainId() {
+        return domainId;
+    }
 
-	public String getDomainName() {
-		return domainName;
-	}
+    public String getDomainName() {
+        return domainName;
+    }
 
-	public String getSnapshotType() {
-		return snapshotType;
-	}
+    public String getSnapshotType() {
+        return snapshotType;
+    }
 
-	public String getVolumeId() {
-		return volumeId;
-	}
+    public String getVolumeId() {
+        return volumeId;
+    }
 
-	public String getVolumeName() {
-		return volumeName;
-	}
+    public String getVolumeName() {
+        return volumeName;
+    }
 
-	public String getVolumeType() {
-		return volumeType;
-	}
+    public String getVolumeType() {
+        return volumeType;
+    }
 
-	public String getCreated() {
-		return created;
-	}
+    public String getCreated() {
+        return created;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getJobId() {
-		return jobId;
-	}
+    public String getJobId() {
+        return jobId;
+    }
 
-	public Integer getJobStatus() {
-		return jobStatus;
-	}
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
 
-	public String getIntervalType() {
-		return intervalType;
-	}
+    public String getIntervalType() {
+        return intervalType;
+    }
 
-	public String getState() {
-		return state;
-	}
+    public String getState() {
+        return state;
+    }
 
     public List<CloudStackKeyValue> getTags() {
         return tags;

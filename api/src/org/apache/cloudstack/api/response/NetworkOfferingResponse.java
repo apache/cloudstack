@@ -20,78 +20,100 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=NetworkOffering.class)
+@EntityReference(value = NetworkOffering.class)
 @SuppressWarnings("unused")
 public class NetworkOfferingResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the id of the network offering")
+    @SerializedName("id")
+    @Param(description = "the id of the network offering")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the network offering")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the network offering")
     private String name;
 
-    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="an alternate display text of the network offering.")
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @Param(description = "an alternate display text of the network offering.")
     private String displayText;
 
-    @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the network offering")
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the tags for the network offering")
     private String tags;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date this network offering was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this network offering was created")
     private Date created;
 
-    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
+    @SerializedName(ApiConstants.TRAFFIC_TYPE)
+    @Param(description = "the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String trafficType;
 
-    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if network offering is default, false otherwise")
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "true if network offering is default, false otherwise")
     private Boolean isDefault;
 
-    @SerializedName(ApiConstants.SPECIFY_VLAN) @Param(description="true if network offering supports vlans, false otherwise")
+    @SerializedName(ApiConstants.SPECIFY_VLAN)
+    @Param(description = "true if network offering supports vlans, false otherwise")
     private Boolean specifyVlan;
 
-    @SerializedName(ApiConstants.CONSERVE_MODE) @Param(description="true if network offering is ip conserve mode enabled")
+    @SerializedName(ApiConstants.CONSERVE_MODE)
+    @Param(description = "true if network offering is ip conserve mode enabled")
     private Boolean conserveMode;
 
-    @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network offering supports specifying ip ranges, false otherwise")
+    @SerializedName(ApiConstants.SPECIFY_IP_RANGES)
+    @Param(description = "true if network offering supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
 
-    @SerializedName(ApiConstants.AVAILABILITY) @Param(description="availability of the network offering")
+    @SerializedName(ApiConstants.AVAILABILITY)
+    @Param(description = "availability of the network offering")
     private String availability;
 
-    @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
+    @SerializedName(ApiConstants.NETWORKRATE)
+    @Param(description = "data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the network offering. Can be Disabled/Enabled/Inactive")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the network offering. Can be Disabled/Enabled/Inactive")
     private String state;
 
-    @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="guest type of the network offering, can be Shared or Isolated")
+    @SerializedName(ApiConstants.GUEST_IP_TYPE)
+    @Param(description = "guest type of the network offering, can be Shared or Isolated")
     private String guestIpType;
 
-    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering used by virtual router provider")
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering used by virtual router provider")
     private String serviceOfferingId;
 
-    @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
+    @SerializedName(ApiConstants.SERVICE)
+    @Param(description = "the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
-    @SerializedName(ApiConstants.FOR_VPC) @Param(description="true if network offering can be used by VPC networks only")
+    @SerializedName(ApiConstants.FOR_VPC)
+    @Param(description = "true if network offering can be used by VPC networks only")
     private Boolean forVpc;
 
-    @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="true if network offering supports persistent networks, false otherwise")
+    @SerializedName(ApiConstants.IS_PERSISTENT)
+    @Param(description = "true if network offering supports persistent networks, false otherwise")
     private Boolean isPersistent;
-    
-    @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with network offering", since="4.2.0")
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "additional key/value details tied with network offering", since = "4.2.0")
     private Map details;
 
-    @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY) @Param(description="true if network offering supports persistent networks, false otherwise")
+    @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY)
+    @Param(description = "true if network offering supports persistent networks, false otherwise")
     private Boolean egressDefaultPolicy;
 
-    @SerializedName(ApiConstants.MAX_CONNECTIONS) @Param(description = "maximum number of concurrents connections to be handled by lb")
+    @SerializedName(ApiConstants.MAX_CONNECTIONS)
+    @Param(description = "maximum number of concurrents connections to be handled by lb")
     private Integer concurrentConnections;
 
     public void setId(String id) {
@@ -150,7 +172,6 @@ public class NetworkOfferingResponse extends BaseResponse {
         this.guestIpType = type;
     }
 
-
     public void setServiceOfferingId(String serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
@@ -166,7 +187,7 @@ public class NetworkOfferingResponse extends BaseResponse {
     public void setIsPersistent(Boolean isPersistent) {
         this.isPersistent = isPersistent;
     }
-    
+
     public void setDetails(Map details) {
         this.details = details;
     }
@@ -175,8 +196,8 @@ public class NetworkOfferingResponse extends BaseResponse {
         this.egressDefaultPolicy = egressDefaultPolicy;
     }
 
-    public  void setConcurrentConnections(Integer concurrentConnections) {
-       this.concurrentConnections = concurrentConnections;
+    public void setConcurrentConnections(Integer concurrentConnections) {
+        this.concurrentConnections = concurrentConnections;
     }
 
 }

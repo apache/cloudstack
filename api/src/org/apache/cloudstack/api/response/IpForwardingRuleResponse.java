@@ -16,41 +16,52 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class IpForwardingRuleResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the port forwarding rule")
     private String id;
 
-    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
+    @SerializedName(ApiConstants.PROTOCOL)
+    @Param(description = "the protocol of the port forwarding rule")
     private String protocol;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the VM ID for the port forwarding rule")
     private String virtualMachineId;
 
-    @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
+    @SerializedName("virtualmachinename")
+    @Param(description = "the VM name for the port forwarding rule")
     private String virtualMachineName;
 
-    @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
+    @SerializedName("virtualmachinedisplayname")
+    @Param(description = "the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
 
-    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    @Param(description = "the public ip address id for the port forwarding rule")
     private Long publicIpAddressId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the public ip address for the port forwarding rule")
     private String publicIpAddress;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the start port of the rule")
+    @SerializedName(ApiConstants.START_PORT)
+    @Param(description = "the start port of the rule")
     private Integer startPort;
 
-    @SerializedName(ApiConstants.END_PORT) @Param(description="the end port of the rule")
+    @SerializedName(ApiConstants.END_PORT)
+    @Param(description = "the end port of the rule")
     private Integer endPort;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the ip forwarding rule")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the ip forwarding rule")
     private String state;
 
     public String getId() {

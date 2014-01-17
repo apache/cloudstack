@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
 
 public class LdapUserResponse extends BaseResponse {
     @SerializedName("email")
@@ -46,64 +48,64 @@ public class LdapUserResponse extends BaseResponse {
     private String domain;
 
     public LdapUserResponse() {
-	super();
+        super();
     }
 
     public LdapUserResponse(final String username, final String email, final String firstname, final String lastname, final String principal, String domain) {
-	super();
-	this.username = username;
-	this.email = email;
-	this.firstname = firstname;
-	this.lastname = lastname;
-	this.principal = principal;
-	this.domain = domain;
+        super();
+        this.username = username;
+        this.email = email;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.principal = principal;
+        this.domain = domain;
     }
 
     public String getEmail() {
-	return email;
+        return email;
     }
 
     public String getFirstname() {
-	return firstname;
+        return firstname;
     }
 
     public String getLastname() {
-	return lastname;
+        return lastname;
     }
 
     public String getPrincipal() {
-	return principal;
+        return principal;
     }
 
     public String getUsername() {
-	return username;
+        return username;
     }
 
     public String getDomain() {
-	return domain;
+        return domain;
     }
 
     public void setEmail(final String email) {
-	this.email = email;
+        this.email = email;
     }
 
     public void setFirstname(final String firstname) {
-	this.firstname = firstname;
+        this.firstname = firstname;
     }
 
     public void setLastname(final String lastname) {
-	this.lastname = lastname;
+        this.lastname = lastname;
     }
 
     public void setPrincipal(final String principal) {
-	this.principal = principal;
+        this.principal = principal;
     }
 
     public void setUsername(final String username) {
-	this.username = username;
+        this.username = username;
     }
 
     public void setDomain(String domain) {
-	this.domain = domain;
+        this.domain = domain;
     }
 }

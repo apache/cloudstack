@@ -20,9 +20,9 @@ import com.cloud.host.Host;
 
 public class StartupProxyCommand extends StartupCommand {
     private int proxyPort;
-	private long proxyVmId;
+    private long proxyVmId;
 
-	public StartupProxyCommand() {
+    public StartupProxyCommand() {
         super(Host.Type.ConsoleProxy);
         setIqn("NoIqn");
     }
@@ -41,9 +41,10 @@ public class StartupProxyCommand extends StartupCommand {
     }
 
     public long getProxyVmId() {
-		return proxyVmId;
-	}
-	public void setProxyVmId(long proxyVmId) {
-		this.proxyVmId = proxyVmId;
-	}
+        return proxyVmId;
+    }
+
+    public void setProxyVmId(long proxyVmId) {
+        this.proxyVmId = proxyVmId;
+    }
 }

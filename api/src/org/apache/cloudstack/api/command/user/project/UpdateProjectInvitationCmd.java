@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,8 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -39,14 +39,15 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-            required = true, description = "id of the project to join")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to join")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that is joining the project")
     private String accountName;
 
-    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING, description = "list invitations for specified account; this parameter has to be specified with domainId")
+    @Parameter(name = ApiConstants.TOKEN,
+               type = CommandType.STRING,
+               description = "list invitations for specified account; this parameter has to be specified with domainId")
     private String token;
 
     @Parameter(name = ApiConstants.ACCEPT, type = CommandType.BOOLEAN, description = "if true, accept the invitation, decline if false. True by default")

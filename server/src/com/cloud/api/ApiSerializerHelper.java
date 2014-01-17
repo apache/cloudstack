@@ -32,7 +32,7 @@ public class ApiSerializerHelper {
             Gson gson = ApiGsonHelper.getBuilder().create();
 
             if (result instanceof ResponseObject) {
-                return clz.getName() + token + ((ResponseObject) result).getObjectName() + token + gson.toJson(result);
+                return clz.getName() + token + ((ResponseObject)result).getObjectName() + token + gson.toJson(result);
             } else {
                 return clz.getName() + token + gson.toJson(result);
             }
@@ -70,7 +70,7 @@ public class ApiSerializerHelper {
                 Gson gson = ApiGsonHelper.getBuilder().create();
                 Object obj = gson.fromJson(content, clz);
                 if (nameField != null) {
-                    ((ResponseObject) obj).setObjectName(nameField);
+                    ((ResponseObject)obj).setObjectName(nameField);
                 }
                 return obj;
             }

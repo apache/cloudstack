@@ -17,57 +17,57 @@
 package com.cloud.utils;
 
 public class Ternary<T, U, V> {
-	private T t;
-	private U u;
-	private V v;
-	
-	
-	public Ternary(T t, U u, V v) {
-		this.t = t;
-		this.u = u;
-		this.v = v;
-	}
-	
-	public T first() {
-		return t;
-	}
-	
-	public void first(T t) {
-		this.t = t;
-	}
-	
-	public U second() {
-		return u;
-	}
-	
-	public void second(U u) {
-		this.u = u;
-	}
-	
-	public V third() {
-		return v;
-	}
-	
-	public void third(V v) {
-		this.v = v;
-	}
-	
+    private T t;
+    private U u;
+    private V v;
+
+    public Ternary(T t, U u, V v) {
+        this.t = t;
+        this.u = u;
+        this.v = v;
+    }
+
+    public T first() {
+        return t;
+    }
+
+    public void first(T t) {
+        this.t = t;
+    }
+
+    public U second() {
+        return u;
+    }
+
+    public void second(U u) {
+        this.u = u;
+    }
+
+    public V third() {
+        return v;
+    }
+
+    public void third(V v) {
+        this.v = v;
+    }
+
     @Override
     // Note: This means any two pairs with null for both values will match each
     // other but what can I do?  This is due to stupid type erasure.
-    public int hashCode() {
+        public
+        int hashCode() {
         return (t != null ? t.hashCode() : 0) | (u != null ? u.hashCode() : 0) | (v != null ? v.hashCode() : 0);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Ternary)) {
             return false;
         }
         Ternary<?, ?, ?> that = (Ternary<?, ?, ?>)obj;
-        return (t != null ? t.equals(that.t) : that.t == null) && (u != null ? u.equals(that.u) : that.u == null) && (v != null ? v.equals(that.v): that.v == null);
+        return (t != null ? t.equals(that.t) : that.t == null) && (u != null ? u.equals(that.u) : that.u == null) && (v != null ? v.equals(that.v) : that.v == null);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder("T[");

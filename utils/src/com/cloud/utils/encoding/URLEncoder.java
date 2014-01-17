@@ -1,11 +1,11 @@
 /*
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,12 +20,12 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.BitSet;
-    
+
 /**
  *
  * This class is very similar to the java.net.URLEncoder class.
  *
- * Unfortunately, with java.net.URLEncoder there is no way to specify to the 
+ * Unfortunately, with java.net.URLEncoder there is no way to specify to the
  * java.net.URLEncoder which characters should NOT be encoded.
  *
  * This code was moved from DefaultServlet.java
@@ -35,11 +35,9 @@ import java.util.BitSet;
  */
 
 public class URLEncoder {
-    protected static final char[] hexadecimal = { '0', '1', '2', '3',
-        '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    protected static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    static CharsetEncoder asciiEncoder = 
-        Charset.forName("US-ASCII").newEncoder(); // or "ISO-8859-1" for ISO Latin 1
+    static CharsetEncoder asciiEncoder = Charset.forName("US-ASCII").newEncoder(); // or "ISO-8859-1" for ISO Latin 1
 
     //Array containing the safe characters set.
     protected BitSet safeCharacters = new BitSet(256);
@@ -55,7 +53,7 @@ public class URLEncoder {
             addSafeCharacter(i);
         }
     }
-    
+
     private void addSafeCharacter(char c) {
         safeCharacters.set(c);
     }
@@ -73,15 +71,15 @@ public class URLEncoder {
         }
 
         for (int i = 0; i < path.length(); i++) {
-            int c = (int) path.charAt(i);
+            int c = path.charAt(i);
             // NOTICE - !isPureAscii(path.charAt(i)) check was added by
             // CloudStack
             if (safeCharacters.get(c) || !isPureAscii(path.charAt(i))) {
-                rewrittenPath.append((char) c);
+                rewrittenPath.append((char)c);
             } else {
                 // convert to external encoding before hex conversion
                 try {
-                    writer.write((char) c);
+                    writer.write((char)c);
                     writer.flush();
                 } catch (IOException e) {
                     buf.reset();
@@ -92,8 +90,8 @@ public class URLEncoder {
                     // Converting each byte in the buffer
                     byte toEncode = ba[j];
                     rewrittenPath.append('%');
-                    int low = (int) (toEncode & 0x0f);
-                    int high = (int) ((toEncode & 0xf0) >> 4);
+                    int low = toEncode & 0x0f;
+                    int high = (toEncode & 0xf0) >> 4;
                     rewrittenPath.append(hexadecimal[high]);
                     rewrittenPath.append(hexadecimal[low]);
                 }
@@ -101,7 +99,7 @@ public class URLEncoder {
             }
         }
         return rewrittenPath.toString();
-    }        
+    }
 
     // NOTICE - this part was added by CloudStack
     public static boolean isPureAscii(Character v) {

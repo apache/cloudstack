@@ -26,7 +26,7 @@ public class LicenseManagerMO extends BaseMO {
 
     private static final Logger s_logger = Logger.getLogger(LicenseManagerMO.class);
     private ManagedObjectReference _licenseAssignmentManager = null;
-    
+
     public LicenseManagerMO(VmwareContext context, ManagedObjectReference mor) {
         super(context, mor);
     }
@@ -42,4 +42,3 @@ public class LicenseManagerMO extends BaseMO {
         return _licenseAssignmentManager;
     }
 }
-

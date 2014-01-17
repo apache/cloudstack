@@ -17,7 +17,7 @@
 
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
@@ -197,7 +197,7 @@ class TestLoadBalance(cloudstackTestCase):
            # If Round Robin Algorithm is chosen,
             # each ssh command should alternate between VMs
 
-            ssh_1  = remoteSSHClient(
+            ssh_1  = SshClient(
                 ip_addr,
                 self.services['lbrule']["publicport"],
                 self.vm_1.username,

@@ -16,12 +16,11 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 import com.cloud.host.Host;
 
 /**
  * Implementation of bootstrap command sent from management server to agent running on
- * System Center Virtual Machine Manager host 
+ * System Center Virtual Machine Manager host
  **/
 
 public class StartupVMMAgentCommand extends Command {
@@ -33,9 +32,9 @@ public class StartupVMMAgentCommand extends Command {
     String managementServerIP;
     String port;
     String version;
-    
+
     public StartupVMMAgentCommand() {
-    	
+
     }
 
     public StartupVMMAgentCommand(long dataCenter, Long pod, String clusterName, String guid, String managementServerIP, String port, String version) {
@@ -50,29 +49,29 @@ public class StartupVMMAgentCommand extends Command {
     }
 
     public long getDataCenter() {
-    	return dataCenter;
+        return dataCenter;
     }
- 
+
     public Long getPod() {
-    	return pod;
+        return pod;
     }
 
     public String getClusterName() {
-    	return clusterName;
+        return clusterName;
     }
-    
+
     public String getGuid() {
-    	return guid;
+        return guid;
     }
 
     public String getManagementServerIP() {
-    	return managementServerIP;
+        return managementServerIP;
     }
 
     public String getport() {
-    	return port;
+        return port;
     }
-    
+
     public void setVersion(String version) {
         this.version = version;
     }

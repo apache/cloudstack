@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.network.Network;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Full)
 public class ListNetworksCmdByAdmin extends ListNetworksCmd {
@@ -35,15 +36,14 @@ public class ListNetworksCmdByAdmin extends ListNetworksCmd {
 
     @Override
     public void execute(){
-        List<? extends Network> networks = _networkService.searchForNetworks(this);
+        Pair<List<? extends Network>, Integer> networks = _networkService.searchForNetworks(this);
         ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-        for (Network network : networks) {
+        for (Network network : networks.first()) {
             NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
             networkResponses.add(networkResponse);
         }
-
-        response.setResponses(networkResponses);
+        response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

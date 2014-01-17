@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -31,8 +33,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -53,11 +53,17 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               required = true,
+               description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               required = true,
+               description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of firewall rule")
@@ -82,7 +88,6 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-
     public Long getIpAddressId() {
         return ipAddressId;
     }
@@ -92,6 +97,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return protocol.trim();
     }
 
+    @Override
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             return cidrlist;
@@ -112,7 +118,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return s_name;
     }
 
-    public void setSourceCidrList(List<String> cidrs){
+    public void setSourceCidrList(List<String> cidrs) {
         cidrlist = cidrs;
     }
 
@@ -151,7 +157,6 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         // FIXME: We should allow for end user to specify Xid.
         return null;
     }
-
 
     @Override
     public String getUuid() {
@@ -231,8 +236,8 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public void create() {
         if (getSourceCidrList() != null) {
-            for (String cidr: getSourceCidrList()){
-                if (!NetUtils.isValidCIDR(cidr)){
+            for (String cidr : getSourceCidrList()) {
+                if (!NetUtils.isValidCIDR(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
@@ -257,7 +262,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Creating firewall rule for Ip: " + ip.getAddress() + " for protocol:" + this.getProtocol());
+        return ("Creating firewall rule for Ip: " + ip.getAddress() + " for protocol:" + getProtocol());
     }
 
     @Override

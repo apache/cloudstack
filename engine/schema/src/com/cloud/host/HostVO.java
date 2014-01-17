@@ -37,110 +37,108 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="host")
-@Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
-@DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
+@Table(name = "host")
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class HostVO implements Host {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="disconnected")
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "disconnected")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date disconnectedOn;
 
-    @Column(name="name", nullable=false)
+    @Column(name = "name", nullable = false)
     private String name = null;
 
     /**
      * Note: There is no setter for status because it has to be set in the dao code.
      */
-    @Column(name="status", nullable=false)
+    @Column(name = "status", nullable = false)
     private Status status = null;
 
-    @Column(name="type", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "type", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private Type type;
 
-    @Column(name="private_ip_address", nullable=false)
+    @Column(name = "private_ip_address", nullable = false)
     private String privateIpAddress;
 
-    @Column(name="private_mac_address", nullable=false)
+    @Column(name = "private_mac_address", nullable = false)
     private String privateMacAddress;
 
-    @Column(name="private_netmask", nullable=false)
+    @Column(name = "private_netmask", nullable = false)
     private String privateNetmask;
 
-    @Column(name="public_netmask")
+    @Column(name = "public_netmask")
     private String publicNetmask;
 
-    @Column(name="public_ip_address")
+    @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="public_mac_address")
+    @Column(name = "public_mac_address")
     private String publicMacAddress;
 
-    @Column(name="storage_ip_address")
+    @Column(name = "storage_ip_address")
     private String storageIpAddress;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
 
-    @Column(name="storage_netmask")
+    @Column(name = "storage_netmask")
     private String storageNetmask;
 
-    @Column(name="storage_mac_address")
+    @Column(name = "storage_mac_address")
     private String storageMacAddress;
 
-    @Column(name="storage_ip_address_2")
+    @Column(name = "storage_ip_address_2")
     private String storageIpAddressDeux;
 
-    @Column(name="storage_netmask_2")
+    @Column(name = "storage_netmask_2")
     private String storageNetmaskDeux;
 
-    @Column(name="storage_mac_address_2")
+    @Column(name = "storage_mac_address_2")
     private String storageMacAddressDeux;
 
-    @Column(name="hypervisor_type", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="proxy_port")
+    @Column(name = "proxy_port")
     private Integer proxyPort;
 
-    @Column(name="resource")
+    @Column(name = "resource")
     private String resource;
 
-    @Column(name="fs_type")
+    @Column(name = "fs_type")
     private StoragePoolType fsType;
 
-    @Column(name="available")
+    @Column(name = "available")
     private boolean available = true;
 
-    @Column(name="setup")
+    @Column(name = "setup")
     private boolean setup = false;
 
-    @Column(name="resource_state", nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "resource_state", nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private ResourceState resourceState;
 
-    @Column(name="hypervisor_version")
+    @Column(name = "hypervisor_version")
     private String hypervisorVersion;
 
-    @Column(name="update_count", updatable = true, nullable=false)
-    protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+    @Column(name = "update_count", updatable = true, nullable = false)
+    protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     // This is a delayed load value.  If the value is null,
@@ -315,52 +313,55 @@ public class HostVO implements Host {
         this.hostTags = hostTags;
     }
 
-    @Column(name="data_center_id", nullable=false)
+    @Column(name = "data_center_id", nullable = false)
     private long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private Long podId;
 
-    @Column(name="cpus")
+    @Column(name = "cpu_sockets")
+    private Integer cpuSockets;
+
+    @Column(name = "cpus")
     private Integer cpus;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String storageUrl;
 
-    @Column(name="speed")
+    @Column(name = "speed")
     private Long speed;
 
-    @Column(name="ram")
+    @Column(name = "ram")
     private long totalMemory;
 
-    @Column(name="parent", nullable=false)
+    @Column(name = "parent", nullable = false)
     private String parent;
 
-    @Column(name="guid", updatable=true, nullable=false)
+    @Column(name = "guid", updatable = true, nullable = false)
     private String guid;
 
-    @Column(name="capabilities")
+    @Column(name = "capabilities")
     private String caps;
 
-    @Column(name="total_size")
+    @Column(name = "total_size")
     private Long totalSize;
 
-    @Column(name="last_ping")
+    @Column(name = "last_ping")
     private long lastPinged;
 
-    @Column(name="mgmt_server_id")
+    @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
-    @Column(name="dom0_memory")
+    @Column(name = "dom0_memory")
     private long dom0MinMemory;
 
-    @Column(name="version")
+    @Column(name = "version")
     private String version;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     public HostVO(String guid) {
@@ -376,66 +377,46 @@ public class HostVO implements Host {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public HostVO(long id,
-            String name,
-            Type type,
-            String privateIpAddress,
-            String privateNetmask,
-            String privateMacAddress,
-            String publicIpAddress,
-            String publicNetmask,
-            String publicMacAddress,
-            String storageIpAddress,
-            String storageNetmask,
-            String storageMacAddress,
-            String deuxStorageIpAddress,
-            String duxStorageNetmask,
-            String deuxStorageMacAddress,
-            String guid,
-            Status status,
-            String version,
-            String iqn,
-            Date disconnectedOn,
-            long dcId,
-            Long podId,
-            long serverId,
-            long ping,
-            String parent,
-            long totalSize,
-            StoragePoolType fsType) {
-        this(id, name, type, privateIpAddress, privateNetmask, privateMacAddress, publicIpAddress, publicNetmask, publicMacAddress, storageIpAddress, storageNetmask, storageMacAddress, guid, status, version, iqn, disconnectedOn, dcId, podId, serverId, ping, null, null, null, 0, null);
+    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress,
+            String publicNetmask, String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String deuxStorageIpAddress,
+            String duxStorageNetmask, String deuxStorageMacAddress, String guid, Status status, String version, String iqn, Date disconnectedOn, long dcId, Long podId,
+            long serverId, long ping, String parent, long totalSize, StoragePoolType fsType) {
+        this(id,
+            name,
+            type,
+            privateIpAddress,
+            privateNetmask,
+            privateMacAddress,
+            publicIpAddress,
+            publicNetmask,
+            publicMacAddress,
+            storageIpAddress,
+            storageNetmask,
+            storageMacAddress,
+            guid,
+            status,
+            version,
+            iqn,
+            disconnectedOn,
+            dcId,
+            podId,
+            serverId,
+            ping,
+            null,
+            null,
+            null,
+            0,
+            null);
         this.parent = parent;
         this.totalSize = totalSize;
         this.fsType = fsType;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public HostVO(long id,
-            String name,
-            Type type,
-            String privateIpAddress,
-            String privateNetmask,
-            String privateMacAddress,
-            String publicIpAddress,
-            String publicNetmask,
-            String publicMacAddress,
-            String storageIpAddress,
-            String storageNetmask,
-            String storageMacAddress,
-            String guid,
-            Status status,
-            String version,
-            String url,
-            Date disconnectedOn,
-            long dcId,
-            Long podId,
-            long serverId,
-            long ping,
-            Integer cpus,
-            Long speed,
-            Long totalMemory,
-            long dom0MinMemory,
-            String caps) {
+    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress,
+            String publicNetmask, String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String guid, Status status,
+            String version, String url, Date disconnectedOn, long dcId, Long podId, long serverId, long ping, Integer cpus, Long speed, Long totalMemory,
+            long dom0MinMemory, String caps) {
         this.id = id;
         this.name = name;
         this.status = status;
@@ -499,6 +480,10 @@ public class HostVO implements Host {
 
     public void setPrivateIpAddress(String ipAddress) {
         this.privateIpAddress = ipAddress;
+    }
+
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
     }
 
     public void setCpus(Integer cpus) {
@@ -622,6 +607,11 @@ public class HostVO implements Host {
     }
 
     @Override
+    public Integer getCpuSockets() {
+        return cpuSockets;
+    }
+
+    @Override
     public Integer getCpus() {
         return cpus;
     }
@@ -691,11 +681,11 @@ public class HostVO implements Host {
         return hypervisorVersion;
     }
 
-	@Override
-	@Transient
-	public Status getState() {
-		return status;
-	}
+    @Override
+    @Transient
+    public Status getState() {
+        return status;
+    }
 
     @Override
     public ResourceState getResourceState() {
@@ -703,30 +693,29 @@ public class HostVO implements Host {
     }
 
     public void setResourceState(ResourceState state) {
-    	resourceState = state;
+        resourceState = state;
     }
 
     @Override
     public boolean isInMaintenanceStates() {
-        return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
-                || getResourceState() == ResourceState.PrepareForMaintenance);
+        return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance || getResourceState() == ResourceState.PrepareForMaintenance);
     }
 
     public long getUpdated() {
-    	return updated;
+        return updated;
     }
 
-	public long incrUpdated() {
-		updated++;
-		return updated;
-	}
+    public long incrUpdated() {
+        updated++;
+        return updated;
+    }
 
-	@Override
-	public String getUuid() {
-		return this.uuid;
-	}
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

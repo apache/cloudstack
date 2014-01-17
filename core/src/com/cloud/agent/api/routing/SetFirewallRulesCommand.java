@@ -41,58 +41,55 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
         return rules;
     }
 
-	public String[][] generateFwRules() {
-		String [][] result = new String [2][];
-		Set<String> toAdd = new HashSet<String>();
+    public String[][] generateFwRules() {
+        String[][] result = new String[2][];
+        Set<String> toAdd = new HashSet<String>();
 
+        for (FirewallRuleTO fwTO : rules) {
+            /* example  :  172.16.92.44:tcp:80:80:0.0.0.0/0:,200.16.92.44:tcp:220:220:0.0.0.0/0:,
+             *  each entry format      <ip>:protocol:srcport:destport:scidr:
+             *  reverted entry format  <ip>:reverted:0:0:0:
+             */
+            if (fwTO.revoked() == true) {
+                StringBuilder sb = new StringBuilder();
+                /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
+                sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:");
+                String fwRuleEntry = sb.toString();
+                toAdd.add(fwRuleEntry);
+                continue;
+            }
 
-		for (FirewallRuleTO fwTO: rules) {
-		/* example  :  172.16.92.44:tcp:80:80:0.0.0.0/0:,200.16.92.44:tcp:220:220:0.0.0.0/0:,
-		 *  each entry format      <ip>:protocol:srcport:destport:scidr:
-		 *  reverted entry format  <ip>:reverted:0:0:0:
-		 */
-			if (fwTO.revoked() == true)
-			{
-				StringBuilder sb = new StringBuilder();
-				/* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
-				sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:");
-				String fwRuleEntry = sb.toString();
-				toAdd.add(fwRuleEntry);
-				continue;
-			}
+            List<String> cidr;
+            StringBuilder sb = new StringBuilder();
+            sb.append(fwTO.getSrcIp()).append(":").append(fwTO.getProtocol()).append(":");
+            if ("icmp".compareTo(fwTO.getProtocol()) == 0) {
+                sb.append(fwTO.getIcmpType()).append(":").append(fwTO.getIcmpCode()).append(":");
 
-			List<String> cidr;
-			StringBuilder sb = new StringBuilder();
-			sb.append(fwTO.getSrcIp()).append(":").append(fwTO.getProtocol()).append(":");
-			if ("icmp".compareTo(fwTO.getProtocol()) == 0)
-			{
-				sb.append(fwTO.getIcmpType()).append(":").append(fwTO.getIcmpCode()).append(":");
+            } else if (fwTO.getStringSrcPortRange() == null)
+                sb.append("0:0").append(":");
+            else
+                sb.append(fwTO.getStringSrcPortRange()).append(":");
 
-			}else if (fwTO.getStringSrcPortRange() == null)
-				sb.append("0:0").append(":");
-			else
-			    sb.append(fwTO.getStringSrcPortRange()).append(":");
+            cidr = fwTO.getSourceCidrList();
+            if (cidr == null || cidr.isEmpty()) {
+                sb.append("0.0.0.0/0");
+            } else {
+                Boolean firstEntry = true;
+                for (String tag : cidr) {
+                    if (!firstEntry)
+                        sb.append("-");
+                    sb.append(tag);
+                    firstEntry = false;
+                }
+            }
+            sb.append(":");
+            String fwRuleEntry = sb.toString();
 
-			cidr = fwTO.getSourceCidrList();
-			if (cidr == null || cidr.isEmpty())
-			{
-				sb.append("0.0.0.0/0");
-			}else{
-				Boolean firstEntry = true;
-	            for (String tag : cidr) {
-	            	if (!firstEntry) sb.append("-");
-	        	   sb.append(tag);
-	        	   firstEntry = false;
-	            }
-			}
-			sb.append(":");
-			String fwRuleEntry = sb.toString();
+            toAdd.add(fwRuleEntry);
 
-			toAdd.add(fwRuleEntry);
+        }
+        result[0] = toAdd.toArray(new String[toAdd.size()]);
 
-		}
-		result[0] = toAdd.toArray(new String[toAdd.size()]);
-
-		return result;
-	}
+        return result;
+    }
 }

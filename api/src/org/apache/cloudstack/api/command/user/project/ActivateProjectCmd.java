@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,13 +27,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "activateProject", description="Activates a project", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "activateProject", description = "Activates a project", responseObject = ProjectResponse.class, since = "3.0.0")
 public class ActivateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ActivateProjectCmd.class.getName());
 
@@ -41,8 +41,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            required=true, description="id of the project to be modified")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -58,10 +57,9 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(getId());
+        Project project = _projectService.getProject(getId());
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + getId());
@@ -70,14 +68,13 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
         return _projectService.getProjectOwner(getId()).getId();
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Project id: "+ getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Project id: " + getId());
         Project project = _projectService.activateProject(getId());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
@@ -95,6 +92,6 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Activating project: " + id;
+        return "Activating project: " + id;
     }
 }

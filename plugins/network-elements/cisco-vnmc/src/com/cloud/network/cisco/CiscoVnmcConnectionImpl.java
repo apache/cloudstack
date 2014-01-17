@@ -41,12 +41,12 @@ import com.cloud.utils.script.Script;
 
 public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
-    private String _ip;
-    private String _username;
-    private String _password;
+    private final String _ip;
+    private final String _username;
+    private final String _password;
     private String _cookie;
 
-    private final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
+    private static final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
 
     private enum VnmcXml {
         LOGIN("login.xml", "mgmt-controller"),
@@ -108,14 +108,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         ASSIGN_ASA1000V("assoc-asa1000v.xml", "resource-mgr"),
         UNASSIGN_ASA1000V("disassoc-asa1000v.xml", "resource-mgr");
 
-        private String scriptsDir = "scripts/network/cisco";
+        private final String scriptsDir = "scripts/network/cisco";
         private String xml;
         private String service;
-        private final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
-
 
         private VnmcXml(String filename, String service) {
-            this.xml = getXml(filename);
+            xml = getXml(filename);
             this.service = service;
         }
 
@@ -154,10 +152,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     public CiscoVnmcConnectionImpl(String hostIp, String userName, String password) {
-        this._ip = hostIp;
-        this._username = userName;
-        this._password = password;
-        
+        _ip = hostIp;
+        _username = userName;
+        _password = password;
+
     }
 
     public boolean login() throws ExecutionException {
@@ -165,7 +163,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String service = VnmcXml.LOGIN.getService();
         xml = replaceXmlValue(xml, "username", _username);
         xml = replaceXmlValue(xml, "password", _password);
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         Map<String, String> checked = checkResponse(response, "outCookie", "errorCode", "response");
 
         if (checked.get("errorCode") != null)
@@ -227,11 +225,11 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getDnForDnsService(String tenantName) {
-        return getDnForDhcpServerPolicy(tenantName) + "/dns-svc-" + getNameForDNSService(tenantName); 
+        return getDnForDhcpServerPolicy(tenantName) + "/dns-svc-" + getNameForDNSService(tenantName);
     }
 
     private String getDnForDnsServer(String tenantName, String dnsip) {
-        return getDnForDnsService(tenantName) + "/dns-" + dnsip; 
+        return getDnForDnsService(tenantName) + "/dns-" + dnsip;
     }
 
     private String getNameForTenantVDC(String tenantName) {
@@ -259,7 +257,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", tenantName);
         xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -271,7 +269,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", tenantName);
         xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -284,7 +282,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", getNameForTenantVDC(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -296,7 +294,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", getNameForTenantVDC(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -309,7 +307,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceServiceProfile(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -322,13 +320,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "routepolicydn", getDnForEdgeDeviceRoutingPolicy(tenantName));
         xml = replaceXmlValue(xml, "descr", "Routing Policy for Edge Device for Tenant " + tenantName);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
-   }
+    }
 
     @Override
-    public boolean createTenantVDCEdgeStaticRoute(String tenantName,
-            String nextHopIp, String destination, String netmask) throws ExecutionException {
+    public boolean createTenantVDCEdgeStaticRoute(String tenantName, String nextHopIp, String destination, String netmask) throws ExecutionException {
         String xml = VnmcXml.CREATE_EDGE_ROUTE.getXml();
         String service = VnmcXml.CREATE_EDGE_ROUTE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -338,7 +335,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "destination", destination);
         xml = replaceXmlValue(xml, "netmask", netmask);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -351,7 +348,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
         xml = replaceXmlValue(xml, "routepolicyname", getNameForEdgeDeviceRoutePolicy(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -363,13 +360,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "dhcpdn", getDnForDhcpPolicy(tenantName, intfName));
         xml = replaceXmlValue(xml, "insideintf", intfName);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, 
-            String startIp, String endIp, String subnet, String nameServerIp, String domain) throws ExecutionException {
+    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, String startIp, String endIp, String subnet, String nameServerIp, String domain)
+        throws ExecutionException {
         String xml = VnmcXml.CREATE_DHCP_POLICY.getXml();
         String service = VnmcXml.CREATE_DHCP_POLICY.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -386,7 +383,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "nameserverip", nameServerIp);
         xml = replaceXmlValue(xml, "nameserverdn", getDnForDnsServer(tenantName, nameServerIp));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -399,7 +396,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "insideintf", intfName);
         xml = replaceXmlValue(xml, "dhcpserverpolicyname", getNameForDhcpServer(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -414,7 +411,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "egressref", "default-egress");
         xml = replaceXmlValue(xml, "ingressref", "default-ingress"); //FIXME: allows everything
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -426,7 +423,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -439,17 +436,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createTenantVDCSourceNatIpPool(String tenantName, String identifier,
-            String publicIp) throws ExecutionException {
-        return createTenantVDCIpPool(
-                getDnForSourceNatPool(tenantName),
-                getNameForSourceNatIpPool(tenantName),
-                "Source NAT ip pool for Tenant VDC " + tenantName,
-                publicIp);
+    public boolean createTenantVDCSourceNatIpPool(String tenantName, String identifier, String publicIp) throws ExecutionException {
+        return createTenantVDCIpPool(getDnForSourceNatPool(tenantName), getNameForSourceNatIpPool(tenantName), "Source NAT ip pool for Tenant VDC " + tenantName,
+            publicIp);
     }
 
     private String getNameForSourceNatPolicy(String tenantName) {
-       return "SNAT-Policy-" + tenantName;
+        return "SNAT-Policy-" + tenantName;
     }
 
     private String getDnForSourceNatPolicy(String tenantName) {
@@ -469,16 +462,15 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getDnForNatPolicySet(String tenantName) {
-        return getDnForTenantVDC(tenantName) + "/natpset-" + getNameForNatPolicySet(tenantName) ;
+        return getDnForTenantVDC(tenantName) + "/natpset-" + getNameForNatPolicySet(tenantName);
     }
 
     private String getDnForSourceNatPolicyRef(String tenantName) {
-        return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForSourceNatPolicy(tenantName) ;
+        return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForSourceNatPolicy(tenantName);
     }
 
     @Override
-    public boolean createTenantVDCSourceNatRule(String tenantName, String identifier,
-            String startSourceIp, String endSourceIp) throws ExecutionException {
+    public boolean createTenantVDCSourceNatRule(String tenantName, String identifier, String startSourceIp, String endSourceIp) throws ExecutionException {
 
         String xml = VnmcXml.CREATE_SOURCE_NAT_RULE.getXml();
         String service = VnmcXml.CREATE_SOURCE_NAT_RULE.getService();
@@ -493,24 +485,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
     public boolean createTenantVDCSourceNatPolicyRef(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicyRef(
-                getDnForSourceNatPolicyRef(tenantName),
-                getNameForSourceNatPolicy(tenantName),
-                tenantName,
-                true);
+        return createTenantVDCNatPolicyRef(getDnForSourceNatPolicyRef(tenantName), getNameForSourceNatPolicy(tenantName), tenantName, true);
     }
 
     @Override
     public boolean createTenantVDCSourceNatPolicy(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicy(
-                getDnForSourceNatPolicy(tenantName),
-                getNameForSourceNatPolicy(tenantName));
+        return createTenantVDCNatPolicy(getDnForSourceNatPolicy(tenantName), getNameForSourceNatPolicy(tenantName));
     }
 
     @Override
@@ -522,7 +508,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
         xml = replaceXmlValue(xml, "natpolicysetdn", getDnForNatPolicySet(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -534,7 +520,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
         xml = replaceXmlValue(xml, "natpolicysetdn", getDnForNatPolicySet(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -548,7 +534,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -557,7 +543,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getDnForAclPolicySet(String tenantName, boolean ingress) {
-        return getDnForTenantVDC(tenantName) + "/pset-" + getNameForAclPolicySet(tenantName, ingress) ;
+        return getDnForTenantVDC(tenantName) + "/pset-" + getNameForAclPolicySet(tenantName, ingress);
     }
 
     private String getNameForAclPolicy(String tenantName, String identifier) {
@@ -588,7 +574,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, identifier));
         xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -600,7 +586,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, identifier));
         xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -620,7 +606,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         }
         xml = replaceXmlValue(xml, "order", Integer.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -633,7 +619,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicysetname", getNameForAclPolicySet(tenantName, ingress));
         xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -645,7 +631,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicysetname", getNameForAclPolicySet(tenantName, ingress));
         xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -661,15 +647,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ingresspolicysetname", getNameForAclPolicySet(tenantName, true));
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCIngressAclRule(String tenantName,
-            long ruleId, String policyIdentifier,
-            String protocol, String sourceStartIp, String sourceEndIp,
-            String destStartPort, String destEndPort) throws ExecutionException {
+    public boolean createTenantVDCIngressAclRule(String tenantName, long ruleId, String policyIdentifier, String protocol, String sourceStartIp, String sourceEndIp,
+        String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_INGRESS_ACL_RULE.getService();
 
@@ -688,14 +672,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCIngressAclRule(String tenantName,
-            long ruleId, String policyIdentifier,
-            String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
+    public boolean createTenantVDCIngressAclRule(String tenantName, long ruleId, String policyIdentifier, String protocol, String sourceStartIp, String sourceEndIp)
+        throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getService();
 
@@ -712,15 +695,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCEgressAclRule(String tenantName,
-            long ruleId, String policyIdentifier,
-            String protocol, String sourceStartIp, String sourceEndIp,
-            String destStartPort, String destEndPort) throws ExecutionException {
+    public boolean createTenantVDCEgressAclRule(String tenantName, long ruleId, String policyIdentifier, String protocol, String sourceStartIp, String sourceEndIp,
+        String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_EGRESS_ACL_RULE.getService();
 
@@ -739,14 +720,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCEgressAclRule(String tenantName,
-            long ruleId, String policyIdentifier,
-            String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
+    public boolean createTenantVDCEgressAclRule(String tenantName, long ruleId, String policyIdentifier, String protocol, String sourceStartIp, String sourceEndIp)
+        throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getService();
         if (protocol.equalsIgnoreCase("all")) { // any protocol
@@ -768,16 +748,14 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
     public boolean deleteTenantVDCAclRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException {
         String identifier = Long.toString(ruleId);
-        return deleteTenantVDCRule(
-                getDnForAclRule(tenantName, identifier, policyIdentifier),
-                getNameForAclRule(tenantName, identifier));
+        return deleteTenantVDCRule(getDnForAclRule(tenantName, identifier, policyIdentifier), getNameForAclRule(tenantName, identifier));
     }
 
     private String getNameForPFPortPool(String tenantName, String identifier) {
@@ -796,8 +774,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForPFIpPool(tenantName, identifier);
     }
 
-    private boolean createTenantVDCPortPool(String poolDn, String name,
-            String description, String startPort, String endPort) throws ExecutionException {
+    private boolean createTenantVDCPortPool(String poolDn, String name, String description, String startPort, String endPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_PORT_POOL.getXml();
         String service = VnmcXml.CREATE_PORT_POOL.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -807,12 +784,11 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "startport", startPort);
         xml = replaceXmlValue(xml, "endport", endPort);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
-    private boolean createTenantVDCIpPool(String poolDn, String name,
-            String description, String ipAddress) throws ExecutionException {
+    private boolean createTenantVDCIpPool(String poolDn, String name, String description, String ipAddress) throws ExecutionException {
         String xml = VnmcXml.CREATE_IP_POOL.getXml();
         String service = VnmcXml.CREATE_IP_POOL.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -821,7 +797,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", description);
         xml = replaceXmlValue(xml, "ipvalue", ipAddress);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -845,7 +821,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         }
         xml = replaceXmlValue(xml, "order", Integer.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -856,7 +832,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicydn", policyDn);
         xml = replaceXmlValue(xml, "natpolicyname", name);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -867,7 +843,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicydn", policyDn);
         xml = replaceXmlValue(xml, "natpolicyname", name);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -878,7 +854,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ruledn", ruledn);
         xml = replaceXmlValue(xml, "rulename", ruleName);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -895,7 +871,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         Document xmlDoc = getDocument(response);
         xmlDoc.normalize();
         NodeList policyList = xmlDoc.getElementsByTagName("pair");
-        for (int i=0; i < policyList.getLength(); i++) {
+        for (int i = 0; i < policyList.getLength(); i++) {
             Node policyNode = policyList.item(i);
             result.add(policyNode.getAttributes().getNamedItem("key").getNodeValue());
         }
@@ -916,7 +892,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         Document xmlDoc = getDocument(response);
         xmlDoc.normalize();
         NodeList policyList = xmlDoc.getElementsByTagName("pair");
-        for (int i=0; i < policyList.getLength(); i++) {
+        for (int i = 0; i < policyList.getLength(); i++) {
             Node policyNode = policyList.item(i);
             result.add(policyNode.getAttributes().getNamedItem("key").getNodeValue());
         }
@@ -937,7 +913,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         Document xmlDoc = getDocument(response);
         xmlDoc.normalize();
         NodeList policyList = xmlDoc.getElementsByTagName("policyRule");
-        for (int i=0; i < policyList.getLength(); i++) {
+        for (int i = 0; i < policyList.getLength(); i++) {
             Node policyNode = policyList.item(i);
             result.add(policyNode.getAttributes().getNamedItem("name").getNodeValue());
         }
@@ -946,23 +922,15 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createTenantVDCPFPortPool(String tenantName, String identifier,
-            String startPort, String endPort) throws ExecutionException {
-        return createTenantVDCPortPool(
-                getDnForPFPortPool(tenantName, identifier),
-                getNameForPFPortPool(tenantName, identifier),
-                "PF port pool for " + getNameForPFPortPool(tenantName, identifier),
-                startPort, endPort);
+    public boolean createTenantVDCPFPortPool(String tenantName, String identifier, String startPort, String endPort) throws ExecutionException {
+        return createTenantVDCPortPool(getDnForPFPortPool(tenantName, identifier), getNameForPFPortPool(tenantName, identifier), "PF port pool for " +
+            getNameForPFPortPool(tenantName, identifier), startPort, endPort);
     }
 
     @Override
-    public boolean createTenantVDCPFIpPool(String tenantName, String identifier,
-            String ipAddress) throws ExecutionException {
-        return createTenantVDCIpPool(
-                getDnForPFIpPool(tenantName, identifier),
-                getNameForPFIpPool(tenantName, identifier),
-                "PF ip pool for " + getNameForPFIpPool(tenantName, identifier),
-                ipAddress);
+    public boolean createTenantVDCPFIpPool(String tenantName, String identifier, String ipAddress) throws ExecutionException {
+        return createTenantVDCIpPool(getDnForPFIpPool(tenantName, identifier), getNameForPFIpPool(tenantName, identifier),
+            "PF ip pool for " + getNameForPFIpPool(tenantName, identifier), ipAddress);
     }
 
     private String getNameForPFPolicy(String tenantName, String identifier) {
@@ -986,10 +954,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createTenantVDCPFRule(String tenantName,
-            long ruleId, String policyIdentifier,
-            String protocol, String publicIp,
-            String startPort, String endPort) throws ExecutionException {
+    public boolean createTenantVDCPFRule(String tenantName, long ruleId, String policyIdentifier, String protocol, String publicIp, String startPort, String endPort)
+        throws ExecutionException {
         String xml = VnmcXml.CREATE_PF_RULE.getXml();
         String service = VnmcXml.CREATE_PF_RULE.getService();
 
@@ -1008,23 +974,19 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
     public boolean deleteTenantVDCPFRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException {
         String identifier = Long.toString(ruleId);
-        return deleteTenantVDCRule(
-                getDnForPFRule(tenantName, identifier, policyIdentifier),
-                getNameForPFRule(tenantName, identifier));
+        return deleteTenantVDCRule(getDnForPFRule(tenantName, identifier, policyIdentifier), getNameForPFRule(tenantName, identifier));
     }
 
     @Override
-    public boolean createTenantVDCAclRuleForPF(String tenantName,
-            long ruleId, String policyIdentifier, String protocol,
-            String ipAddress, String startPort, String endPort)
-            throws ExecutionException {
+    public boolean createTenantVDCAclRuleForPF(String tenantName, long ruleId, String policyIdentifier, String protocol, String ipAddress, String startPort,
+        String endPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_RULE_FOR_PF.getXml();
         String service = VnmcXml.CREATE_ACL_RULE_FOR_PF.getService();
 
@@ -1042,31 +1004,23 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
     public boolean createTenantVDCPFPolicyRef(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicyRef(
-                getDnForPFPolicyRef(tenantName, identifier),
-                getNameForPFPolicy(tenantName, identifier),
-                tenantName,
-                false);
+        return createTenantVDCNatPolicyRef(getDnForPFPolicyRef(tenantName, identifier), getNameForPFPolicy(tenantName, identifier), tenantName, false);
     }
 
     @Override
     public boolean createTenantVDCPFPolicy(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicy(
-                getDnForPFPolicy(tenantName, identifier),
-                getNameForPFPolicy(tenantName, identifier));
+        return createTenantVDCNatPolicy(getDnForPFPolicy(tenantName, identifier), getNameForPFPolicy(tenantName, identifier));
     }
 
     @Override
     public boolean deleteTenantVDCPFPolicy(String tenantName, String identifier) throws ExecutionException {
-        return deleteTenantVDCNatPolicy(
-                getDnForPFPolicy(tenantName, identifier),
-                getNameForPFPolicy(tenantName, identifier));
+        return deleteTenantVDCNatPolicy(getDnForPFPolicy(tenantName, identifier), getNameForPFPolicy(tenantName, identifier));
     }
 
     private String getNameForDNatIpPool(String tenantName, String identifier) {
@@ -1078,13 +1032,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createTenantVDCDNatIpPool(String tenantName,
-            String identifier, String ipAddress) throws ExecutionException {
-        return createTenantVDCIpPool(
-                getDnForDNatIpPool(tenantName, identifier),
-                getNameForDNatIpPool(tenantName, identifier),
-                "DNAT ip pool for " + getNameForDNatIpPool(tenantName, identifier),
-                ipAddress);
+    public boolean createTenantVDCDNatIpPool(String tenantName, String identifier, String ipAddress) throws ExecutionException {
+        return createTenantVDCIpPool(getDnForDNatIpPool(tenantName, identifier), getNameForDNatIpPool(tenantName, identifier), "DNAT ip pool for " +
+            getNameForDNatIpPool(tenantName, identifier), ipAddress);
     }
 
     private String getNameForDNatRule(String tenantName, String identifier) {
@@ -1108,9 +1058,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createTenantVDCDNatRule(String tenantName,
-            long ruleId, String policyIdentifier, String publicIp)
-            throws ExecutionException {
+    public boolean createTenantVDCDNatRule(String tenantName, long ruleId, String policyIdentifier, String publicIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_DNAT_RULE.getXml();
         String service = VnmcXml.CREATE_DNAT_RULE.getService();
 
@@ -1125,23 +1073,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean deleteTenantVDCDNatRule(String tenantName, long ruleId, String policyIdentifier)
-            throws ExecutionException {
+    public boolean deleteTenantVDCDNatRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException {
         String identifier = Long.toString(ruleId);
-        return deleteTenantVDCRule(
-                getDnForDNatRule(tenantName, identifier, policyIdentifier),
-                getNameForDNatRule(tenantName, identifier));
+        return deleteTenantVDCRule(getDnForDNatRule(tenantName, identifier, policyIdentifier), getNameForDNatRule(tenantName, identifier));
     }
 
     @Override
-    public boolean createTenantVDCAclRuleForDNat(String tenantName,
-            long ruleId, String policyIdentifier, String ipAddress)
-            throws ExecutionException {
+    public boolean createTenantVDCAclRuleForDNat(String tenantName, long ruleId, String policyIdentifier, String ipAddress) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_RULE_FOR_DNAT.getXml();
         String service = VnmcXml.CREATE_ACL_RULE_FOR_DNAT.getService();
 
@@ -1156,34 +1099,23 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         long order = 100 + ruleId;
         xml = replaceXmlValue(xml, "order", Long.toString(order));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean createTenantVDCDNatPolicyRef(String tenantName,
-            String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicyRef(
-                getDnForDNatPolicyRef(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier),
-                tenantName,
-                false);
+    public boolean createTenantVDCDNatPolicyRef(String tenantName, String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicyRef(getDnForDNatPolicyRef(tenantName, identifier), getNameForDNatPolicy(tenantName, identifier), tenantName, false);
     }
 
     @Override
-    public boolean createTenantVDCDNatPolicy(String tenantName,
-            String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicy(
-                getDnForDNatPolicy(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier));
+    public boolean createTenantVDCDNatPolicy(String tenantName, String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicy(getDnForDNatPolicy(tenantName, identifier), getNameForDNatPolicy(tenantName, identifier));
     }
 
     @Override
-    public boolean deleteTenantVDCDNatPolicy(String tenantName,
-            String identifier) throws ExecutionException {
-        return deleteTenantVDCNatPolicy(
-                getDnForDNatPolicy(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier));
+    public boolean deleteTenantVDCDNatPolicy(String tenantName, String identifier) throws ExecutionException {
+        return deleteTenantVDCNatPolicy(getDnForDNatPolicy(tenantName, identifier), getNameForDNatPolicy(tenantName, identifier));
     }
 
     private String getNameForEdgeFirewall(String tenantName) {
@@ -1211,8 +1143,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createEdgeFirewall(String tenantName, String publicIp, String insideIp, 
-            String publicSubnet, String insideSubnet) throws ExecutionException {
+    public boolean createEdgeFirewall(String tenantName, String publicIp, String insideIp, String publicSubnet, String insideSubnet) throws ExecutionException {
         String xml = VnmcXml.CREATE_EDGE_FIREWALL.getXml();
         String service = VnmcXml.CREATE_EDGE_FIREWALL.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -1226,7 +1157,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "outsideintfdn", getDnForOutsideIntf(tenantName));
 
         xml = replaceXmlValue(xml, "deviceserviceprofiledn", getDnForEdgeFirewall(tenantName) + "/device-service-profile");
-        xml = replaceXmlValue(xml, "outsideintfsp", getDnForOutsideIntf(tenantName)  + "/interface-service-profile");
+        xml = replaceXmlValue(xml, "outsideintfsp", getDnForOutsideIntf(tenantName) + "/interface-service-profile");
 
         xml = replaceXmlValue(xml, "secprofileref", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "deviceserviceprofile", getNameForEdgeDeviceServiceProfile(tenantName));
@@ -1236,7 +1167,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "insidesubnet", insideSubnet);
         xml = replaceXmlValue(xml, "outsidesubnet", publicSubnet);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -1248,7 +1179,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "edgefwname", getNameForEdgeFirewall(tenantName));
         xml = replaceXmlValue(xml, "edgefwdn", getDnForEdgeFirewall(tenantName));
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -1258,16 +1189,15 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String service = VnmcXml.LIST_UNASSOC_ASA1000V.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
 
         Map<String, String> result = new HashMap<String, String>();
         Document xmlDoc = getDocument(response);
         xmlDoc.normalize();
         NodeList fwList = xmlDoc.getElementsByTagName("fwInstance");
-        for (int j=0; j < fwList.getLength(); j++) {
+        for (int j = 0; j < fwList.getLength(); j++) {
             Node fwNode = fwList.item(j);
-            result.put(fwNode.getAttributes().getNamedItem("mgmtIp").getNodeValue(),
-                    fwNode.getAttributes().getNamedItem("dn").getNodeValue());
+            result.put(fwNode.getAttributes().getNamedItem("mgmtIp").getNodeValue(), fwNode.getAttributes().getNamedItem("dn").getNodeValue());
         }
 
         return result;
@@ -1281,7 +1211,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
         xml = replaceXmlValue(xml, "fwdn", firewallDn);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -1293,28 +1223,27 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
         xml = replaceXmlValue(xml, "fwdn", firewallDn);
 
-        String response =  sendRequest(service, xml);
+        String response = sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
-        org.apache.commons.httpclient.protocol.Protocol myhttps = 
-                new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
+        org.apache.commons.httpclient.protocol.Protocol myhttps = new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
         HttpClient client = new HttpClient();
         client.getHostConfiguration().setHost(_ip, 443, myhttps);
         byte[] response = null;
         PostMethod method = new PostMethod("/xmlIM/" + service);
-        
+
         method.setRequestBody(xmlRequest);
-        
-        try{
+
+        try {
             int statusCode = client.executeMethod(method);
-                     
+
             if (statusCode != HttpStatus.SC_OK) {
                 throw new Exception("Error code : " + statusCode);
             }
             response = method.getResponseBody();
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             throw new ExecutionException(e.getMessage());
         }
@@ -1327,9 +1256,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         Map<String, String> result = new HashMap<String, String>();
         Node topElement = xmlDoc.getChildNodes().item(0);
         if (topElement != null) {
-            for (String key: keys){
+            for (String key : keys) {
                 Node valueNode = topElement.getAttributes().getNamedItem(key);
-                result.put(key, valueNode==null?null:valueNode.getNodeValue());
+                result.put(key, valueNode == null ? null : valueNode.getNodeValue());
             }
         }
         return result;
@@ -1353,15 +1282,15 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     /*
      * XML utils
      */
-    
+
     private Document getDocument(String xml) throws ExecutionException {
         StringReader xmlReader = new StringReader("<?xml version=\"1.0\"?> \n" + xml.trim());
         InputSource xmlSource = new InputSource(xmlReader);
-        Document doc = null; 
+        Document doc = null;
 
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlSource);
-            
+
         } catch (Exception e) {
             s_logger.error(e);
             throw new ExecutionException(e.getMessage());
@@ -1372,7 +1301,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         } else {
             return doc;
         }
-    }    
+    }
 
     private String replaceXmlTag(String xml, String oldTag, String newTag) {
         return xml.replaceAll(oldTag, newTag);

@@ -42,7 +42,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "migrateVirtualMachine", description="Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool", responseObject=UserVmResponse.class)
+@APICommand(name = "migrateVirtualMachine",
+            description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
+            responseObject = UserVmResponse.class)
 public class MigrateVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 
@@ -52,16 +54,25 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               required = false,
+               description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               required = true,
+               description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               required = false,
+               description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -79,7 +90,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public Long getStoragePoolId() {
         return storageId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -107,11 +117,11 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
+        return "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         if (getHostId() == null && getStoragePoolId() == null) {
             throw new InvalidParameterValueException("either hostId or storageId must be specified");
         }
@@ -131,7 +141,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
         }
 
         StoragePool destStoragePool = null;
@@ -140,10 +150,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destStoragePool == null) {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
         }
 
-        try{
+        try {
             VirtualMachine migratedVm = null;
             if (getHostId() != null) {
                 migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);

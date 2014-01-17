@@ -46,6 +46,7 @@ public class ConditionDaoImpl extends GenericDaoBase<ConditionVO, Long> implemen
         return findOneBy(sc);
     }
 
+    @Override
     public int removeByAccountId(long accountId) {
         SearchCriteria<ConditionVO> sc = createSearchCriteria();
 

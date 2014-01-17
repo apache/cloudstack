@@ -23,6 +23,7 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 
 public interface IAgentControlListener {
-	public Answer processControlRequest(Request request, AgentControlCommand cmd);
-	public void processControlResponse(Response response, AgentControlAnswer answer);
+    public Answer processControlRequest(Request request, AgentControlCommand cmd);
+
+    public void processControlResponse(Response response, AgentControlAnswer answer);
 }

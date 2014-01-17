@@ -67,7 +67,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account can access the object.
-     * 
+     *
      * @param caller
      *            account to check against.
      * @param entity
@@ -85,7 +85,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account can access the object.
-     * 
+     *
      * @param caller
      *            account to check against.
      * @param entity

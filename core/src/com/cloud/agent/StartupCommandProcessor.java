@@ -31,9 +31,8 @@ public interface StartupCommandProcessor extends Adapter {
      * @param agentId id of the agent
      * @param cmd command sent by the agent to the server on startup.
      * @return true if handled by the creator
-     * @throws ConnectionException if host has problems 
+     * @throws ConnectionException if host has problems
      */
     boolean processInitialConnect(StartupCommand[] cmd) throws ConnectionException;
-    
-    
+
 }

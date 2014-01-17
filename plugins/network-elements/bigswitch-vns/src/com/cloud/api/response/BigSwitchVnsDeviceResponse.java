@@ -16,29 +16,36 @@
 // under the License.
 package com.cloud.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.api.commands.VnsConstants;
 import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=BigSwitchVnsDeviceVO.class)
+@EntityReference(value = BigSwitchVnsDeviceVO.class)
 public class BigSwitchVnsDeviceResponse extends BaseResponse {
-    @SerializedName(VnsConstants.BIGSWITCH_VNS_DEVICE_ID) @Param(description="device id of the BigSwitch Vns")
+    @SerializedName(VnsConstants.BIGSWITCH_VNS_DEVICE_ID)
+    @Param(description = "device id of the BigSwitch Vns")
     private String id;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this BigSwitch Vns belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network to which this BigSwitch Vns belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "name of the provider")
     private String providerName;
 
-    @SerializedName(VnsConstants.BIGSWITCH_VNS_DEVICE_NAME) @Param(description="device name")
+    @SerializedName(VnsConstants.BIGSWITCH_VNS_DEVICE_NAME)
+    @Param(description = "device name")
     private String deviceName;
 
-    @SerializedName(ApiConstants.HOST_NAME) @Param(description="the controller Ip address")
+    @SerializedName(ApiConstants.HOST_NAME)
+    @Param(description = "the controller Ip address")
     private String hostName;
 
     public String getId() {

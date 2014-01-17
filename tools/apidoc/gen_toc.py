@@ -79,6 +79,7 @@ known_categories = {
     'ServiceOffering': 'Service Offering',
     'DiskOffering': 'Disk Offering',
     'LoadBalancer': 'Load Balancer',
+    'SslCert': 'Load Balancer',
     'Router': 'Router',
     'SystemVm': 'System VM',
     'Configuration': 'Configuration',
@@ -148,9 +149,9 @@ known_categories = {
     'createSecondaryStagingStore': 'Image Store',
     'deleteSecondaryStagingStore': 'Image Store',
     'listSecondaryStagingStores': 'Image Store',
-    'prepareSecondaryStorageForMigration' : 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
+	'ObjectStore': 'Image Store',
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
     'releaseDedicatedHost': 'Dedicate Resources',
@@ -159,7 +160,8 @@ known_categories = {
     'Ucs' : 'UCS',
     'CacheStores' : 'Cache Stores',
     'CacheStore' : 'Cache Store',
-    'Acl' : 'Acl'
+    'Acl' : 'Acl',
+    'OvsElement' : 'Ovs Element'
     }
 
 

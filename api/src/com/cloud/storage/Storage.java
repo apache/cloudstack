@@ -28,6 +28,8 @@ public class Storage {
         OVA(true, true, true, "ova"),
         VHDX(true, true, true, "vhdx"),
         BAREMETAL(false, false, false, "BAREMETAL"),
+        VMDK(true, true, false, "vmdk"),
+        VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar");
 
         private final boolean thinProvisioned;
@@ -67,22 +69,11 @@ public class Storage {
 
             return fileExtension;
         }
-        
+
     }
 
     public static enum FileSystem {
-        Unknown,
-        ext3,
-        ntfs,
-        fat,
-        fat32,
-        ext2,
-        ext4,
-        cdfs,
-        hpfs,
-        ufs,
-        hfs,
-        hfsp
+        Unknown, ext3, ntfs, fat, fat32, ext2, ext4, cdfs, hpfs, ufs, hfs, hfsp
     }
 
     public static enum TemplateType {

@@ -40,9 +40,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
         Expunged("The volume is being expunging"),
-        Destroy("The volume is destroyed, and can't be recovered."), 
-        Destroying("The volume is destroying, and can't be recovered."),  
-        UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage"),
+        Destroy("The volume is destroyed, and can't be recovered."),
+        Destroying("The volume is destroying, and can't be recovered."),
+        UploadOp("The volume upload operation is in progress or in short the volume is on secondary storage"),
         Uploading("volume is uploading"),
         Copying("volume is copying from image store to primary, in case it's an uploaded volume"),
         Uploaded("volume is uploaded");
@@ -69,12 +69,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);            
+            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
             s_fsm.addTransition(Ready, Event.ResizeRequested, Resizing);
             s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);          
+            s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);
             s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
-            s_fsm.addTransition(Uploaded, Event.CopyRequested, Copying);            
+            s_fsm.addTransition(Uploaded, Event.CopyRequested, Copying);
             s_fsm.addTransition(Copying, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Copying, Event.OperationFailed, Uploaded);
             s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
@@ -154,6 +154,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Long getPoolId();
 
+    @Override
     State getState();
 
     Date getAttached();
@@ -174,15 +175,19 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     public Date getUpdated();
 
-	/**
-	 * @return
-	 */
-	String getReservationId();
+    /**
+     * @return
+     */
+    String getReservationId();
 
-	/**
-	 * @param reserv
-	 */
-	void setReservationId(String reserv);
-	Storage.ImageFormat getFormat();
-	Long getVmSnapshotChainSize();
+    /**
+     * @param reserv
+     */
+    void setReservationId(String reserv);
+
+    Storage.ImageFormat getFormat();
+
+    Long getVmSnapshotChainSize();
+
+    Integer getHypervisorSnapshotReserve();
 }

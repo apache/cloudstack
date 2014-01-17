@@ -16,7 +16,11 @@
 // under the License.
 package com.cloud.network.bigswitch;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -42,7 +46,7 @@ public class BigSwitchApiTest {
     @Before
     public void setUp() {
         HttpClientParams hmp = mock(HttpClientParams.class);
-        when (_client.getParams()).thenReturn(hmp);
+        when(_client.getParams()).thenReturn(hmp);
         _api = new BigSwitchVnsApi() {
             @Override
             protected HttpClient createHttpClient() {
@@ -56,19 +60,19 @@ public class BigSwitchApiTest {
         };
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteUpdateObjectWithoutHostname() throws BigSwitchVnsApiException {
         _api.setControllerAddress(null);
         _api.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteCreateObjectWithoutHostname() throws BigSwitchVnsApiException {
         _api.setControllerAddress(null);
         _api.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteDeleteObjectWithoutHostname() throws BigSwitchVnsApiException {
         _api.setControllerAddress(null);
         _api.executeDeleteObject("/");
@@ -86,7 +90,7 @@ public class BigSwitchApiTest {
     /* Bit of a roundabout way to ensure that login is called after an un authorized result
      * It not possible to properly mock login()
      */
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void executeMethodTestWithLogin() throws BigSwitchVnsApiException, HttpException, IOException {
         GetMethod gm = mock(GetMethod.class);
         when(_client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
@@ -106,7 +110,7 @@ public class BigSwitchApiTest {
 
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteCreateObjectFailure() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         NetworkData network = new NetworkData();
@@ -124,11 +128,11 @@ public class BigSwitchApiTest {
         }
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteCreateObjectException() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         NetworkData network = new NetworkData();
-        when(_client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
+        when(_client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
         _method = mock(PostMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
@@ -153,7 +157,7 @@ public class BigSwitchApiTest {
         verify(_client, times(1)).executeMethod(_method);
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteUpdateObjectFailure() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         NetworkData network = new NetworkData();
@@ -171,13 +175,13 @@ public class BigSwitchApiTest {
         }
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteUpdateObjectException() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         NetworkData network = new NetworkData();
         _method = mock(PutMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(_client.executeMethod((HttpMethod) any())).thenThrow(new IOException());
+        when(_client.executeMethod((HttpMethod)any())).thenThrow(new IOException());
         try {
             _api.executeUpdateObject(network, "/", Collections.<String, String> emptyMap());
         } finally {
@@ -195,7 +199,7 @@ public class BigSwitchApiTest {
         verify(_client, times(1)).executeMethod(_method);
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteDeleteObjectFailure() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         _method = mock(DeleteMethod.class);
@@ -212,12 +216,12 @@ public class BigSwitchApiTest {
         }
     }
 
-    @Test (expected=BigSwitchVnsApiException.class)
+    @Test(expected = BigSwitchVnsApiException.class)
     public void testExecuteDeleteObjectException() throws BigSwitchVnsApiException, IOException {
         _api.setControllerAddress("10.10.0.10");
         _method = mock(DeleteMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(_client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
+        when(_client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
         try {
             _api.executeDeleteObject("/");
         } finally {

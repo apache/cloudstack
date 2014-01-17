@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
-
 public class AddNicToVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmd.class);
     private static final String s_name = "addnictovirtualmachineresponse";
@@ -54,11 +53,10 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
-            required=true, description="Network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "Network ID")
     private Long netId;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="IP Address for the new network")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
 
     /////////////////////////////////////////////////////
@@ -110,7 +108,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Network Id: " + getNetworkId());
         UserVm result = _userVmService.addNicToVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();

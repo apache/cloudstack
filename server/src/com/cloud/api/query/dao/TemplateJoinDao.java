@@ -23,7 +23,10 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
 
 public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
@@ -39,8 +42,10 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl, long zoneId, boolean readyOnly);
 
-    List<TemplateJoinVO> searchByTemplateZonePair(String... pairs);
+    List<TemplateJoinVO> searchByTemplateZonePair( Boolean showRemoved, String... pairs);
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
+
+    Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
 }

@@ -43,19 +43,23 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject=NetworkResponse.class, description="lists network that are using a nicira nvp device")
+@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a nicira nvp device")
 public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNiciraNvpDeviceNetworksCmd.class.getName());
     private static final String s_name = "listniciranvpdevicenetworks";
-    @Inject NiciraNvpElementService _niciraNvpElementService;
+    @Inject
+    protected NiciraNvpElementService niciraNvpElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.UUID, entityType = NiciraNvpDeviceResponse.class,
-            required = true, description="nicira nvp device ID")
+    @Parameter(name = ApiConstants.NICIRA_NVP_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NiciraNvpDeviceResponse.class,
+               required = true,
+               description = "nicira nvp device ID")
     private Long niciraNvpDeviceId;
 
     /////////////////////////////////////////////////////
@@ -71,9 +75,10 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
+            List<? extends Network> networks = niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 

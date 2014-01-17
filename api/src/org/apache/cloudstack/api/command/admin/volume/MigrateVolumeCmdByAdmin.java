@@ -32,16 +32,16 @@ public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd {
 
     @Override
     public void execute(){
-    	Volume result;
+        Volume result;
 
-    	result = _volumeService.migrateVolume(this);
-    	if (result != null) {
+        result = _volumeService.migrateVolume(this);
+        if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
-    		response.setResponseName(getCommandName());
-    		setResponseObject(response);
-    	} else {
-    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
-    	}
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
+        }
     }
 
 }

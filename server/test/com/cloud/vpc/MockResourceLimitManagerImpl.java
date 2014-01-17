@@ -34,7 +34,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = { ResourceLimitService.class })
+@Local(value = {ResourceLimitService.class})
 public class MockResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
 
     /* (non-Javadoc)
@@ -72,7 +72,6 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
         // TODO Auto-generated method stub
         return 0;
     }
-
 
     @Override
     public long findCorrectResourceLimitForAccount(long accountId, Long limit, ResourceType type) {
@@ -147,6 +146,26 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     public long getResourceCount(Account account, ResourceType type) {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void incrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /* (non-Javadoc)

@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,8 +27,11 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.trilead.ssh2.SCPClient;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -36,17 +39,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalKickStartPxeResource.class);
-    private static final String _name = "BaremetalKickStartPxeResource";
+    private static final String Name = "BaremetalKickStartPxeResource";
     String _tftpDir;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _tftpDir = (String) params.get(BaremetalPxeService.PXE_PARAM_TFTP_DIR);
+        _tftpDir = (String)params.get(BaremetalPxeService.PXE_PARAM_TFTP_DIR);
         if (_tftpDir == null) {
             throw new ConfigurationException("No tftp directory specified");
         }
@@ -58,8 +60,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
                 s_logger.debug("SSH Failed to authenticate");
-                throw new ConfigurationException(String.format("Cannot connect to kickstart PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username,
-                        "******"));
+                throw new ConfigurationException(String.format("Cannot connect to kickstart PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
             }
 
             String cmd = String.format("[ -f /%1$s/pxelinux.0 ]", _tftpDir);
@@ -106,7 +107,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             return null;
         } else {
             SSHCmdHelper.releaseSshConnection(sshConnection);
-            return new PingRoutingCommand(getType(), id, new HashMap<String, State>());
+            return new PingRoutingCommand(getType(), id, new HashMap<String, State>(), new HashMap<String, HostVmStateReportEntry>());
         }
     }
 
@@ -133,8 +134,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
                 s_logger.debug("SSH Failed to authenticate");
-                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username,
-                        _password));
+                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
             String script = String.format("python /usr/bin/baremetal_user_data.py '%s'", arg);
@@ -143,7 +143,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             }
 
             return new Answer(cmd, true, "Success");
-        }  catch (Exception e){
+        } catch (Exception e) {
             s_logger.debug("Prepare for creating baremetal template failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {
@@ -156,7 +156,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof PrepareKickstartPxeServerCommand) {
-            return execute((PrepareKickstartPxeServerCommand) cmd);
+            return execute((PrepareKickstartPxeServerCommand)cmd);
         } else if (cmd instanceof VmDataCommand) {
             return execute((VmDataCommand)cmd);
         } else {
@@ -170,8 +170,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
                 s_logger.debug("SSH Failed to authenticate");
-                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username,
-                        _password));
+                throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
             String copyTo = String.format("%s/%s", _tftpDir, cmd.getTemplateUuid());
@@ -183,14 +182,16 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
 
             String kernelPath = String.format("%s/vmlinuz", cmd.getTemplateUuid());
             String initrdPath = String.format("%s/initrd.img", cmd.getTemplateUuid());
-            script = String.format("python /usr/bin/prepare_kickstart_bootfile.py %s %s %s %s %s %s", _tftpDir, cmd.getMac(), kernelPath, initrdPath, cmd.getKsFile(), cmd.getMac());
+            script =
+                String.format("python /usr/bin/prepare_kickstart_bootfile.py %s %s %s %s %s %s", _tftpDir, cmd.getMac(), kernelPath, initrdPath, cmd.getKsFile(),
+                    cmd.getMac());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new Answer(cmd, false, "prepare kickstart at pxe server " + _ip + " failed, command:" + script);
             }
 
             s_logger.debug("Prepare kickstart PXE server successfully");
             return new Answer(cmd, true, "Success");
-        }  catch (Exception e){
+        } catch (Exception e) {
             s_logger.debug("Prepare for kickstart server failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {

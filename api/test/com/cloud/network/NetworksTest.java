@@ -16,20 +16,20 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloud.dc.Vlan;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * @author dhoogland
- * 
+ *
  */
 public class NetworksTest {
 
@@ -40,9 +40,7 @@ public class NetworksTest {
     @Test
     public void emptyBroadcastDomainTypeTest() throws URISyntaxException {
         BroadcastDomainType type = BroadcastDomainType.getTypeOf("");
-        Assert.assertEquals(
-                "an empty uri should mean a broadcasttype of undecided",
-                BroadcastDomainType.UnDecided, type);
+        Assert.assertEquals("an empty uri should mean a broadcasttype of undecided", BroadcastDomainType.UnDecided, type);
     }
 
     @Test
@@ -53,10 +51,23 @@ public class NetworksTest {
         BroadcastDomainType type1 = BroadcastDomainType.getTypeOf(uri1);
         String id1 = BroadcastDomainType.getValue(uri1);
         String id2 = BroadcastDomainType.getValue(uri2);
-        Assert.assertEquals("uri1 should be of broadcasttype vlan",
-                BroadcastDomainType.Vlan, type1);
+        Assert.assertEquals("uri1 should be of broadcasttype vlan", BroadcastDomainType.Vlan, type1);
         Assert.assertEquals("id1 should be \"1\"", "1", id1);
         Assert.assertEquals("id2 should be \"2\"", "2", id2);
+    }
+
+    @Test
+    public void vlanValueTest() throws URISyntaxException {
+        String uri1 = "vlan://1";
+        String uri2 = "1";
+        String vtag = BroadcastDomainType.Vlan.getValueFrom(BroadcastDomainType.fromString(uri1));
+        Assert.assertEquals("vtag should be \"1\"", "1", vtag);
+        BroadcastDomainType tiep1 = BroadcastDomainType.getTypeOf(uri1);
+        Assert.assertEquals("the type of uri1 should be 'Vlan'", BroadcastDomainType.Vlan, tiep1);
+        BroadcastDomainType tiep2 = BroadcastDomainType.getTypeOf(uri2);
+        Assert.assertEquals("the type of uri1 should be 'Undecided'", BroadcastDomainType.UnDecided, tiep2);
+        BroadcastDomainType tiep3 = BroadcastDomainType.getTypeOf(Vlan.UNTAGGED);
+        Assert.assertEquals("the type of uri1 should be 'vlan'", BroadcastDomainType.Native, tiep3);
     }
 
     @Test
@@ -75,18 +86,15 @@ public class NetworksTest {
         String uri2 = "mido://2";
         BroadcastDomainType type = BroadcastDomainType.getTypeOf(bogeyUri);
         String id = BroadcastDomainType.getValue(bogeyUri);
-        Assert.assertEquals("uri0 should be of broadcasttype vlan",
-                BroadcastDomainType.Lswitch, type);
+        Assert.assertEquals("uri0 should be of broadcasttype vlan", BroadcastDomainType.Lswitch, type);
         Assert.assertEquals("id0 should be \"//0\"", "//0", id);
         type = BroadcastDomainType.getTypeOf(uri1);
         id = BroadcastDomainType.getValue(uri1);
-        Assert.assertEquals("uri1 should be of broadcasttype vlan",
-                BroadcastDomainType.Lswitch, type);
+        Assert.assertEquals("uri1 should be of broadcasttype vlan", BroadcastDomainType.Lswitch, type);
         Assert.assertEquals("id1 should be \"1\"", "1", id);
         type = BroadcastDomainType.getTypeOf(uri2);
         id = BroadcastDomainType.getValue(uri2);
-        Assert.assertEquals("uri2 should be of broadcasttype vlan",
-                BroadcastDomainType.Mido, type);
+        Assert.assertEquals("uri2 should be of broadcasttype vlan", BroadcastDomainType.Mido, type);
         Assert.assertEquals("id2 should be \"2\"", "2", id);
     }
 
@@ -96,18 +104,14 @@ public class NetworksTest {
         String uri2 = "bla:0";
         BroadcastDomainType type = BroadcastDomainType.getTypeOf(uri1);
         try {
-            /* URI result = */ BroadcastDomainType.fromString(uri1);
+            /* URI result = */BroadcastDomainType.fromString(uri1);
         } catch (CloudRuntimeException e) {
-            Assert.assertEquals("unexpected parameter exception",
-                    "string 'https://1' has an unknown BroadcastDomainType.",
-                    e.getMessage());
+            Assert.assertEquals("unexpected parameter exception", "string 'https://1' has an unknown BroadcastDomainType.", e.getMessage());
         }
         try {
-            /* URI result = */ BroadcastDomainType.fromString(uri2);
+            /* URI result = */BroadcastDomainType.fromString(uri2);
         } catch (CloudRuntimeException e) {
-            Assert.assertEquals("unexpected parameter exception",
-                    "string 'bla:0' has an unknown BroadcastDomainType.",
-                    e.getMessage());
+            Assert.assertEquals("unexpected parameter exception", "string 'bla:0' has an unknown BroadcastDomainType.", e.getMessage());
         }
     }
 }

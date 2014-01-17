@@ -33,51 +33,51 @@ import org.apache.cloudstack.acl.AclEntityType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="account")
+@Table(name = "account")
 public class AccountVO implements Account {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="type")
+    @Column(name = "type")
     private short type = ACCOUNT_TYPE_NORMAL;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="cleanup_needed")
+    @Column(name = "cleanup_needed")
     private boolean needsCleanup = false;
 
-    @Column(name="network_domain")
+    @Column(name = "network_domain")
     private String networkDomain;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="default_zone_id")
+    @Column(name = "default_zone_id")
     private Long defaultZoneId = null;
 
     @Column(name = "default")
     boolean isDefault;
 
     public AccountVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AccountVO(long id) {
         this.id = id;
-    	this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid) {
@@ -85,16 +85,16 @@ public class AccountVO implements Account {
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
-        this.state = State.enabled;
+        state = State.enabled;
         this.uuid = uuid;
     }
 
     public void setNeedsCleanup(boolean value) {
-    	needsCleanup = value;
+        needsCleanup = value;
     }
 
     public boolean getNeedsCleanup() {
-    	return needsCleanup;
+        return needsCleanup;
     }
 
     @Override
@@ -103,10 +103,10 @@ public class AccountVO implements Account {
     }
 
     public void setId(long id) {
-		this.id = id;
-	}
+        this.id = id;
+    }
 
-	@Override
+    @Override
     public String getAccountName() {
         return accountName;
     }
@@ -135,11 +135,11 @@ public class AccountVO implements Account {
 
     @Override
     public Long getDefaultZoneId() {
-    	return defaultZoneId;
+        return defaultZoneId;
     }
 
     public void setDefaultZoneId(Long defaultZoneId) {
-    	this.defaultZoneId = defaultZoneId;
+        this.defaultZoneId = defaultZoneId;
     }
 
     @Override
@@ -177,11 +177,11 @@ public class AccountVO implements Account {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     @Override

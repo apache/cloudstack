@@ -18,28 +18,28 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2DeleteKeyPair {
-	
-	private String keyName;
 
-	/**
-	 * 
-	 */
-	public EC2DeleteKeyPair() {
-		// TODO Auto-generated constructor stub
-	}
+    private String keyName;
 
-	/**
-	 * @return the keyName
-	 */
-	public String getKeyName() {
-		return keyName;
-	}
+    /**
+     *
+     */
+    public EC2DeleteKeyPair() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @param keyName the keyName to set
-	 */
-	public void setKeyName(String keyName) {
-		this.keyName = keyName;
-	}
+    /**
+     * @return the keyName
+     */
+    public String getKeyName() {
+        return keyName;
+    }
+
+    /**
+     * @param keyName the keyName to set
+     */
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
 
 }

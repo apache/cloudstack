@@ -18,28 +18,27 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2CreateKeyPair {
-	private String keyName;
+    private String keyName;
 
-	/**
-	 * 
-	 */
-	public EC2CreateKeyPair() {
-		// TODO Auto-generated constructor stub
-	}
+    /**
+     *
+     */
+    public EC2CreateKeyPair() {
+        // TODO Auto-generated constructor stub
+    }
 
-	
-	/**
-	 * @return the keyName
-	 */
-	public String getKeyName() {
-		return keyName;
-	}
+    /**
+     * @return the keyName
+     */
+    public String getKeyName() {
+        return keyName;
+    }
 
-	/**
-	 * @param keyName the keyName to set
-	 */
-	public void setKeyName(String keyName) {
-		this.keyName = keyName;
-	}
+    /**
+     * @param keyName the keyName to set
+     */
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
 
 }

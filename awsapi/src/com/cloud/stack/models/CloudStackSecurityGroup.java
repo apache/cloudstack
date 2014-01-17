@@ -42,45 +42,44 @@ public class CloudStackSecurityGroup {
     @SerializedName(ApiConstants.TAGS)
     private List<CloudStackKeyValue> tags;
 
-    
     public CloudStackSecurityGroup() {
     }
-    
-	public String getId() {
-		return id;
-	}
 
-	public String getName() {
-		return name;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public String getDomainId() {
-		return domainId;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public String getDomainName() {
-		return domainName;
-	}
+    public String getDomainId() {
+        return domainId;
+    }
 
-	public String getJobId() {
-		return jobId;
-	}
+    public String getDomainName() {
+        return domainName;
+    }
 
-	public Integer getJobStatus() {
-		return jobStatus;
-	}
+    public String getJobId() {
+        return jobId;
+    }
 
-	public List<CloudStackIngressRule> getIngressRules() {
-		return ingressRules;
-	}
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    public List<CloudStackIngressRule> getIngressRules() {
+        return ingressRules;
+    }
 
     public List<CloudStackKeyValue> getTags() {
         return tags;

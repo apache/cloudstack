@@ -37,6 +37,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId);
 
+    long getVMSnapshotSizeByPool(long poolId);
+
     List<VolumeVO> findByInstance(long id);
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
@@ -76,10 +78,12 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
 
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
+
     List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
+
     /**
      * Gets the Total Primary Storage space allocated for an account
-     * 
+     *
      * @param account
      * @param list of ids of virtual router VMs under this account
      * @return total Primary Storage space (in bytes) used
@@ -89,7 +93,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     /**
      * Gets the Total Secondary Storage space used by volumes allocated for an
      * account
-     * 
+     *
      * @param account
      * @return total Secondary Storage space (in bytes) used
      */

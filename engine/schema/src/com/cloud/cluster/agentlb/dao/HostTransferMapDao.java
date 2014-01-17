@@ -32,14 +32,14 @@ public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> 
     HostTransferMapVO startAgentTransfering(long hostId, long currentOwner, long futureOwner);
 
     boolean completeAgentTransfer(long hostId);
-    
+
     List<HostTransferMapVO> listBy(long futureOwnerId, HostTransferState state);
-    
+
     HostTransferMapVO findActiveHostTransferMapByHostId(long hostId, Date cutTime);
-    
+
     boolean startAgentTransfer(long hostId);
-    
+
     HostTransferMapVO findByIdAndFutureOwnerId(long id, long futureOwnerId);
-    
+
     HostTransferMapVO findByIdAndCurrentOwnerId(long id, long currentOwnerId);
 }

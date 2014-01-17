@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,136 +33,132 @@ import javax.persistence.Transient;
 /**
  * Holds the relation
  *  Id,
- *  Name, 
+ *  Name,
  *  OwnerCanonicalId,
- *  SHost, 
- *  CreateTime, 
+ *  SHost,
+ *  CreateTime,
  *  VersioningStatus
  * For ORM see "com/cloud/bridge/model/SHost.hbm.xml"
  */
 
 @Entity
-@Table(name="sbucket")
+@Table(name = "sbucket")
 public class SBucketVO implements SBucket {
-    	
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="ID")
-	private Long id;
-	
-	@Column(name="Name")
-	private String name;
-	
-	@Column(name="OwnerCanonicalID")
-	private String ownerCanonicalId;
-	
-	@Column(name="SHostID")
-	private long shostID;
-	
-	@Column(name="CreateTime")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private  Date createTime;
-	
-	@Column(name="VersioningStatus")
-	private int versioningStatus;
-	
-	@Transient
-	private SHostVO shost;
-	
-	@Transient
-	private Set<SObjectVO> objectsInBucket = new HashSet<SObjectVO>();
 
-	public SBucketVO() {
-		versioningStatus = VERSIONING_NULL;
-		this.createTime = new Date();
-	}
-	
-	
-	public SBucketVO(String bucketName, Date currentGMTTime,
-		String canonicalUserId, SHostVO first) {
-	    this.versioningStatus = VERSIONING_NULL;
-	    this.name = bucketName;
-	    this.createTime = new Date();
-	    this.ownerCanonicalId = canonicalUserId;
-	    this.shost = first;
-	    this.shostID = shost.getId();
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private Long id;
 
+    @Column(name = "Name")
+    private String name;
 
-	public Long getId() {
-		return id;
-	}
+    @Column(name = "OwnerCanonicalID")
+    private String ownerCanonicalId;
 
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getName() {
-		return name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public String getOwnerCanonicalId() {
-		return ownerCanonicalId;
-	}
-	
-	public void setOwnerCanonicalId(String ownerCanonicalId) {
-		this.ownerCanonicalId = ownerCanonicalId;
-	}
-	
-	public long getShostID() {
-	    return shostID;
-	}
+    @Column(name = "SHostID")
+    private long shostID;
 
-	public void setShostID(long shostID) {
-	    this.shostID = shostID;
-	}
+    @Column(name = "CreateTime")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date createTime;
 
-	public SHostVO getShost() {
-		return shost;
-	}
-	
-	public void setShost(SHostVO shost) {
-		this.shost = shost;
-	}
-	
-	public Date getCreateTime() {
-		return createTime;
-	}
-	
+    @Column(name = "VersioningStatus")
+    private int versioningStatus;
 
-	public int getVersioningStatus() {
-		return versioningStatus;
-	}
-	
-	public void setVersioningStatus( int versioningStatus ) {
-		this.versioningStatus = versioningStatus;
-	}
-	
-	public Set<SObjectVO> getObjectsInBucket() {
-		return objectsInBucket;
-	}
+    @Transient
+    private SHostVO shost;
 
-	public void setObjectsInBucket(Set<SObjectVO> objectsInBucket) {
-		this.objectsInBucket = objectsInBucket;
-	}
-	
-	@Override
-	public boolean equals(Object other) {
-		if(this == other)
-			return true;
-		
-		if(!(other instanceof SBucketVO))
-			return false;
-		
-		return getName().equals(((SBucketVO)other).getName());
-	}
-	
-	@Override
-	public int hashCode() {
-		return getName().hashCode();
-	}
+    @Transient
+    private Set<SObjectVO> objectsInBucket = new HashSet<SObjectVO>();
+
+    public SBucketVO() {
+        versioningStatus = VERSIONING_NULL;
+        this.createTime = new Date();
+    }
+
+    public SBucketVO(String bucketName, Date currentGMTTime, String canonicalUserId, SHostVO first) {
+        this.versioningStatus = VERSIONING_NULL;
+        this.name = bucketName;
+        this.createTime = new Date();
+        this.ownerCanonicalId = canonicalUserId;
+        this.shost = first;
+        this.shostID = shost.getId();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    private void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getOwnerCanonicalId() {
+        return ownerCanonicalId;
+    }
+
+    public void setOwnerCanonicalId(String ownerCanonicalId) {
+        this.ownerCanonicalId = ownerCanonicalId;
+    }
+
+    public long getShostID() {
+        return shostID;
+    }
+
+    public void setShostID(long shostID) {
+        this.shostID = shostID;
+    }
+
+    public SHostVO getShost() {
+        return shost;
+    }
+
+    public void setShost(SHostVO shost) {
+        this.shost = shost;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public int getVersioningStatus() {
+        return versioningStatus;
+    }
+
+    public void setVersioningStatus(int versioningStatus) {
+        this.versioningStatus = versioningStatus;
+    }
+
+    public Set<SObjectVO> getObjectsInBucket() {
+        return objectsInBucket;
+    }
+
+    public void setObjectsInBucket(Set<SObjectVO> objectsInBucket) {
+        this.objectsInBucket = objectsInBucket;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof SBucketVO))
+            return false;
+
+        return getName().equals(((SBucketVO)other).getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
 }

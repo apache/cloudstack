@@ -20,17 +20,18 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.storage.Volume;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Volume.class)
+@EntityReference(value = Volume.class)
 @SuppressWarnings("unused")
-public class VolumeResponse extends BaseResponse implements ControlledViewEntityResponse{
+public class VolumeResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the disk volume")
     private String id;
@@ -95,10 +96,12 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "the account associated with the disk volume")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vpn")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -113,16 +116,20 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "shared or local storage")
     private String storageType;
 
-    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk volume")
+    @SerializedName("diskBytesReadRate")
+    @Param(description = "bytes read rate of the disk volume")
     private Long bytesReadRate;
 
-    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk volume")
+    @SerializedName("diskBytesWriteRate")
+    @Param(description = "bytes write rate of the disk volume")
     private Long bytesWriteRate;
 
-    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk volume")
+    @SerializedName("diskIopsReadRate")
+    @Param(description = "io requests read rate of the disk volume")
     private Long iopsReadRate;
 
-    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk volume")
+    @SerializedName("diskIopsWriteRate")
+    @Param(description = "io requests write rate of the disk volume")
     private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.HYPERVISOR)
@@ -174,23 +181,23 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     private Boolean extractable;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description="the status of the volume")
+    @Param(description = "the status of the volume")
     private String status;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
+    @Param(description = "the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
-    @Param(description="an optional field whether to the display the volume to the end user or not.")
+    @Param(description = "an optional field whether to the display the volume to the end user or not.")
     private Boolean displayVm;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description="The path of the volume")
+    @Param(description = "The path of the volume")
     private String path;
-    
+
     @SerializedName(ApiConstants.STORAGE_ID)
-    @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since="4.3")
+    @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since = "4.3")
     private String storagePoolId;
 
     public String getPath() {
@@ -201,7 +208,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.path = path;
     }
 
-    public VolumeResponse(){
+    public VolumeResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
@@ -278,6 +285,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.created = created;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -287,6 +295,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -393,7 +402,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.tags = tags;
     }
 
-    public void addTag(ResourceTagResponse tag){
+    public void addTag(ResourceTagResponse tag) {
         this.tags.add(tag);
     }
 

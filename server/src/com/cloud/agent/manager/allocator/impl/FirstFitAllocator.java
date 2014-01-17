@@ -106,14 +106,12 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     CapacityManager _capacityMgr;
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-            ExcludeList avoid, int returnUpTo) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo,
-            boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
@@ -196,8 +194,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan,
-            Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+        boolean considerReservedCapacity) {
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
@@ -235,15 +233,14 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (!hosts.isEmpty()) {
-            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity,
-                    account);
+            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity, account);
         }
 
         return suitableHosts;
     }
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-            boolean considerReservedCapacity, Account account) {
+        boolean considerReservedCapacity, Account account) {
         if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
             // Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
@@ -283,14 +280,12 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId()
-                            + " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
+                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
             }
 
-            boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
-            boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
             int cpu_requested = offering.getCpu() * offering.getSpeed();
             long ram_requested = offering.getRamSize() * 1024L * 1024L;
             Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -299,17 +294,18 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
             Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
 
+            boolean hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
             boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                    considerReservedCapacity);
+                considerReservedCapacity);
 
-            if (numCpusGood && cpuFreqGood && hostHasCapacity) {
+            if (hostHasCpuCapability && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }

@@ -42,10 +42,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={DataCenterJoinDao.class})
+@Local(value = {DataCenterJoinDao.class})
 public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long> implements DataCenterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);
-
 
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
     @Inject
@@ -59,8 +58,6 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
 
         _count = "select count(distinct id) from data_center_view WHERE ";
     }
-
-
 
     @Override
     public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
@@ -103,20 +100,19 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
         zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
-        
+
         // update tag information
         List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
         for (ResourceTagJoinVO resourceTag : resourceTags) {
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
         }
-        
+
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
-        
+
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }
-
 
     @Override
     public DataCenterJoinVO newDataCenterView(DataCenter dataCenter) {
@@ -126,6 +122,5 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         assert dcs != null && dcs.size() == 1 : "No data center found for data center id " + dataCenter.getId();
         return dcs.get(0);
     }
-
 
 }

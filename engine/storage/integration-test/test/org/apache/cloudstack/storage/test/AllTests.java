@@ -23,7 +23,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ volumeServiceTest.class })
+@SuiteClasses({VolumeServiceTest.class})
 public class AllTests {
 
 }

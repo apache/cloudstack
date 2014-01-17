@@ -125,6 +125,8 @@ Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Requires: perl
 Requires: libvirt-python
+Requires: qemu-img
+Requires: qemu-kvm
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0
@@ -448,6 +450,12 @@ if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
     fi
 else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
+fi
+
+if [ -f "%{_sysconfdir}/cloud.rpmsave/management/cloud.keystore" ]; then
+    cp -p %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore.rpmsave
 fi
 
 %preun agent

@@ -32,7 +32,7 @@ public class UpdateVolumeCmdByAdmin extends UpdateVolumeCmd {
     @Override
     public void execute(){
         CallContext.current().setEventDetails("Volume Id: "+getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(), getCustomId(), getEntityOwnerId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());

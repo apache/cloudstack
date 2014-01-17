@@ -93,11 +93,6 @@ class trafficType(object):
                 if 'vmware' in labeldict.keys() else None
             self.simulator = labeldict['simulator']\
                 if 'simulator' in labeldict.keys() else None
-        #{
-        #    'xen' : 'cloud-xen',
-        #    'kvm' : 'cloud-kvm',
-        #    'vmware' : 'cloud-vmware'
-        #}
 
 
 class pod(object):
@@ -335,7 +330,10 @@ class ConfigManager(object):
     '''
 
     def __init__(self):
-        self.filePath = "config/config.cfg"
+        # Joining path with current directory will avoid relative path issue
+        # It will take correct path irrespective of from where the test case is run
+        dirPath = os.path.dirname(__file__)
+        self.filePath = os.path.join(dirPath, 'config/config.cfg')
         self.parsedDict = None
         if self.__verifyFile(self.filePath) is not False:
             self.parsedDict = self.__parseConfig(self.filePath)
@@ -534,18 +532,6 @@ def descSetupInBasicMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 
@@ -669,18 +655,6 @@ def descSetupInEipMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 
@@ -801,18 +775,6 @@ def descSetupInAdvancedMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 '''sample code to generate setup configuration file'''
@@ -925,18 +887,6 @@ def descSetupInAdvancedsgMode():
         cfg.name = k
         cfg.value = v
         zs.globalConfig.append(cfg)
-
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
 
     return zs
 

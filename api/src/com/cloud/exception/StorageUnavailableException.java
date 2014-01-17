@@ -30,6 +30,7 @@ public class StorageUnavailableException extends ResourceUnavailableException {
     public StorageUnavailableException(String msg, long poolId) {
         this(msg, poolId, null);
     }
+
     public StorageUnavailableException(String msg, long poolId, Throwable cause) {
         this(msg, StoragePool.class, poolId, cause);
     }

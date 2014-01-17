@@ -1177,9 +1177,15 @@
                             label: 'id'
                         }
                     },
-                    dataProvider: function(args) {
+                    dataProvider: function(args) {                    	                  	
+                    	var data = {
+                    		vpcid: args.context.vpc[0].id
+                    	};                    	
+                        listViewDataProvider(args, data);
+                                            	
                         $.ajax({
-                            url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
+                            url: createURL('listNetworkACLLists'),
+                            data: data,
                             success: function(json) {
                                 var items = json.listnetworkacllistsresponse.networkacllist;
 
@@ -2858,13 +2864,13 @@
                                         id: {
                                             label: 'label.id'
                                         },
-
-                                        //s2svpngatewayid: { label: 'VPN gateway ID' },
+                                        passive: {
+                                            label: 'Passive',
+                                            converter: cloudStack.converters.toBooleanText
+                                        },                                                                                
                                         publicip: {
                                             label: 'label.ip.address'
-                                        },
-
-                                        //s2scustomergatewayid: { label: 'Customer gateway ID' },
+                                        },                                        
                                         gateway: {
                                             label: 'label.gateway'
                                         },

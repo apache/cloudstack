@@ -22,13 +22,13 @@ import java.util.List;
  *
  */
 public class LogicalRouterPort {
-    private String display_name;
+    private String displayName;
     private List<NiciraNvpTag> tags;
     private Integer portno;
-    private boolean admin_status_enabled;
-    private List<String> ip_addresses;
-    private String mac_address;
-    private String type = "LogicalRouterPortConfig";
+    private boolean adminStatusEnabled;
+    private List<String> ipAddresses;
+    private String macAddress;
+    private final String type = "LogicalRouterPortConfig";
     private String uuid;
 
     public int getPortno() {
@@ -40,35 +40,35 @@ public class LogicalRouterPort {
     }
 
     public boolean isAdminStatusEnabled() {
-        return admin_status_enabled;
+        return adminStatusEnabled;
     }
 
-    public void setAdminStatusEnabled(boolean admin_status_enabled) {
-        this.admin_status_enabled = admin_status_enabled;
+    public void setAdminStatusEnabled(boolean adminStatusEnabled) {
+        this.adminStatusEnabled = adminStatusEnabled;
     }
 
     public List<String> getIpAddresses() {
-        return ip_addresses;
+        return ipAddresses;
     }
 
-    public void setIpAddresses(List<String> ip_addresses) {
-        this.ip_addresses = ip_addresses;
+    public void setIpAddresses(List<String> ipAddresses) {
+        this.ipAddresses = ipAddresses;
     }
 
     public String getMacAddress() {
-        return mac_address;
+        return macAddress;
     }
 
-    public void setMacAddress(String mac_address) {
-        this.mac_address = mac_address;
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
     }
 
     public String getDisplayName() {
-        return display_name;
+        return displayName;
     }
 
-    public void setDisplayName(String display_name) {
-        this.display_name = display_name;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public List<NiciraNvpTag> getTags() {

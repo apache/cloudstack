@@ -43,10 +43,9 @@ public class TransactionTest {
         try {
             conn = TransactionLegacy.getStandaloneConnection();
 
-            pstmt = conn.prepareStatement("CREATE TABLE `cloud`.`test` ("
-                    + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT," + "`fld_int` int unsigned,"
-                    + "`fld_long` bigint unsigned," + "`fld_string` varchar(255)," + "PRIMARY KEY (`id`)"
-                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+            pstmt =
+                conn.prepareStatement("CREATE TABLE `cloud`.`test` (" + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT," + "`fld_int` int unsigned,"
+                    + "`fld_long` bigint unsigned," + "`fld_string` varchar(255)," + "PRIMARY KEY (`id`)" + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 
             pstmt.execute();
 

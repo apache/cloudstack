@@ -15,12 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
-import org.apache.cloudstack.api.ACL;
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -52,11 +51,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
             description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name=ApiConstants.DEVICE_ID, type=CommandType.LONG, description="the device ID on the virtual machine where volume is detached from")
+    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "the device ID on the virtual machine where volume is detached from")
     private Long deviceId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            description="the ID of the virtual machine where the volume is detached from")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine where the volume is detached from")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -136,8 +137,8 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
+    public void execute() {
+        CallContext.current().setEventDetails("Volume Id: " + getId() + " VmId: " + getVirtualMachineId());
         Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);

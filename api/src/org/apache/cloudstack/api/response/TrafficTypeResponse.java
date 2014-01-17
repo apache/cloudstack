@@ -16,35 +16,45 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=PhysicalNetworkTrafficType.class)
+@EntityReference(value = PhysicalNetworkTrafficType.class)
 public class TrafficTypeResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="id of the network provider")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "id of the network provider")
     private String id;
 
-    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the trafficType to be added to the physical network")
+    @SerializedName(ApiConstants.TRAFFIC_TYPE)
+    @Param(description = "the trafficType to be added to the physical network")
     private String trafficType;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.XEN_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a XenServer host")
+    @SerializedName(ApiConstants.XEN_NETWORK_LABEL)
+    @Param(description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
 
-    @SerializedName(ApiConstants.KVM_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a KVM host")
+    @SerializedName(ApiConstants.KVM_NETWORK_LABEL)
+    @Param(description = "The network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmNetworkLabel;
 
-    @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a VMware host")
+    @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL)
+    @Param(description = "The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
+    @SerializedName(ApiConstants.HYPERV_NETWORK_LABEL)
+    @Param(description = "The network name label of the physical device dedicated to this traffic on a HyperV host")
+    private String hypervNetworkLabel;
 
     @Override
     public String getObjectId() {
@@ -83,8 +93,16 @@ public class TrafficTypeResponse extends BaseResponse {
         return kvmNetworkLabel;
     }
 
+    public String getHypervLabel() {
+        return hypervNetworkLabel;
+    }
+
     public void setXenLabel(String xenLabel) {
         this.xenNetworkLabel = xenLabel;
+    }
+
+    public void setHypervLabel(String hypervLabel) {
+        this.hypervNetworkLabel = hypervLabel;
     }
 
     public void setKvmLabel(String kvmLabel) {

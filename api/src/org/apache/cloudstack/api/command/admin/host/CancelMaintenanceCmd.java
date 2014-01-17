@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,14 +28,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "cancelHostMaintenance", description="Cancels host maintenance.", responseObject=HostResponse.class)
-public class CancelMaintenanceCmd extends BaseAsyncCmd  {
+@APICommand(name = "cancelHostMaintenance", description = "Cancels host maintenance.", responseObject = HostResponse.class)
+public class CancelMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 
     private static final String s_name = "cancelhostmaintenanceresponse";
@@ -42,8 +42,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=true, description="the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -84,7 +83,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
 
     @Override
     public String getEventDescription() {
-        return  "canceling maintenance for host: " + getId();
+        return "canceling maintenance for host: " + getId();
     }
 
     @Override
@@ -98,7 +97,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Host result = _resourceService.cancelMaintenance(this);
         if (result != null) {
             HostResponse response = _responseGenerator.createHostResponse(result);

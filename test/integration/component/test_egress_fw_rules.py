@@ -27,19 +27,22 @@ from marvin.integration.lib.base   import (Account,
                                            Network,
                                            ServiceOffering,
                                            NetworkOffering,
-                                           VirtualMachine)
+                                           VirtualMachine,
+                                           FireWallRule,
+                                           NATRule,
+                                           PublicIPAddress)
 from marvin.integration.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
-                                           list_hosts,
-                                           rebootRouter,
                                            list_routers,
                                            wait_for_cleanup,
-                                           cleanup_resources)
+                                           list_virtual_machines
+                                           )
+from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
-
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.codes import PASS
 import time
 
 class Services:
@@ -115,6 +118,11 @@ class Services:
                                           "name": "Test Network",
                                           "displaytext": "Test Network",
                                          },
+                          "natrule"   :   {
+                                          "privateport": 22,
+                                          "publicport": 22,
+                                          "protocol": "TCP"
+                                          },
                          "sleep" :  30,
                          "ostype":  'CentOS 5.3 (64-bit)',
                          "host_password": 'password',
@@ -164,6 +172,8 @@ class TestEgressFWRules(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.api_client
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup_vms = []
+        self.cleanup_networks = []
         self.cleanup   = []
         self.snapshot  = None
         self.egressruleid = None
@@ -200,6 +210,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                       domainid=self.account.domainid,
                                       networkofferingid=self.network_offering.id,
                                       zoneid=self.zone.id)
+        self.cleanup_networks.append(self.network)
         self.debug("Created network with ID: %s" % self.network.id)
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
@@ -213,99 +224,58 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype if pfrule else 'basic',
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
+            self.cleanup_vms.append(self.virtual_machine)
         except Exception as e:
-            self.debug('error=%s' % e)
-        self.debug("Deployed instance in account: %s" % self.account.name)
+            self.fail("Virtual machine deployment failed with exception: %s" % e)
+        self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
+
+        # Checking if VM is running or not, in case it is deployed in error state, test case fails
+        self.vm_list = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(validateList(self.vm_list)[0], PASS, "vm list validation failed, vm list is %s" % self.vm_list)
+        self.assertEqual(str(self.vm_list[0].state).lower(),'running',"VM state should be running, it is %s" % self.vm_list[0].state)
+
+        self.public_ip = PublicIPAddress.create(
+                                    self.apiclient,
+                                    accountid=self.account.name,
+                                    zoneid=self.zone.id,
+                                    domainid=self.account.domainid,
+                                    networkid=self.network.id
+                                    )
+
+        # Open up firewall port for SSH
+        FireWallRule.create(
+                            self.apiclient,
+                            ipaddressid=self.public_ip.ipaddress.id,
+                            protocol=self.services["natrule"]["protocol"],
+                            cidrlist=['0.0.0.0/0'],
+                            startport=self.services["natrule"]["publicport"],
+                            endport=self.services["natrule"]["publicport"]
+                            )
+
+        self.debug("Creating NAT rule for VM ID: %s" % self.virtual_machine.id)
+        #Create NAT rule
+        NATRule.create(
+                        self.apiclient,
+                        self.virtual_machine,
+                        self.services["natrule"],
+                        self.public_ip.ipaddress.id
+                        )
+        return
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
         try:
-
-            vm_network_id = self.virtual_machine.nic[0].networkid
-            vm_ipaddress  = self.virtual_machine.nic[0].ipaddress
-            list_routers_response = list_routers(self.apiclient,
-                                                 account=self.account.name,
-                                                 domainid=self.account.domainid,
-                                                 networkid=vm_network_id)
-            self.assertEqual(isinstance(list_routers_response, list),
-                             True,
-                             "Check for list routers response return valid data")
-            router = list_routers_response[0]
-
-            #Once host or mgt server is reached, SSH to the router connected to VM
-            # look for Router for Cloudstack VM network.
-            if self.apiclient.hypervisor.lower() == 'vmware':
-                #SSH is done via management server for Vmware
-                sourceip = self.apiclient.connection.mgtSvr
-            else:
-                #For others, we will have to get the ipaddress of host connected to vm
-                hosts = list_hosts(self.apiclient,
-                                   id=router.hostid)
-                self.assertEqual(isinstance(hosts, list),
-                                 True,
-                                 "Check list response returns a valid list")
-                host = hosts[0]
-                sourceip = host.ipaddress
-
-            self.debug("Sleep %s seconds for network on router to be up"
-                        % self.services['sleep'])
-            time.sleep(self.services['sleep'])
-
-            if self.apiclient.hypervisor.lower() == 'vmware':
-                key_file = " -i /var/cloudstack/management/.ssh/id_rsa "
-            else:
-                key_file = " -i /root/.ssh/id_rsa.cloud "
-
-            ssh_cmd = "ssh -o UserKnownHostsFile=/dev/null  -o StrictHostKeyChecking=no -o LogLevel=quiet"
-            expect_script = "#!/usr/bin/expect\n" + \
-                          "spawn %s %s -p 3922 root@%s\n"  % (ssh_cmd, key_file, router.linklocalip) + \
-                          "expect \"root@%s:~#\"\n"   % (router.name) + \
-                          "send \"%s root@%s %s; exit $?\r\"\n" % (ssh_cmd, vm_ipaddress, script) + \
-                          "expect \"root@%s's password: \"\n"  % (vm_ipaddress) + \
-                          "send \"password\r\"\n" + \
-                          "interact\n"
-            self.debug("expect_script>>\n%s<<expect_script" % expect_script)
-
-            script_file = '/tmp/expect_script.exp'
-            fd = open(script_file,'w')
-            fd.write(expect_script)
-            fd.close()
-
-            ssh = remoteSSHClient(host=sourceip,
-                                  port=22,
-                                  user='root',
-                                  passwd=self.services["host_password"])
-            self.debug("SSH client to : %s obtained" % sourceip)
-            ssh.scp(script_file, script_file)
-            ssh.execute('chmod +x %s' % script_file)
-            self.debug("%s %s" % (script_file, exec_cmd_params))
-
             exec_success = False
-            #Timeout set to 3 minutes
-            timeout = 180
-            while timeout:
-                self.debug('sleep %s seconds for egress rule to affect on Router.' % self.services['sleep'])
-                time.sleep(self.services['sleep'])
-                result = ssh.execute("%s %s" % (script_file, exec_cmd_params))
-                self.debug('Result is=%s' % result)
-                self.debug('Expected result is=%s' % expected_result)
-                
-                if str(result).strip() == expected_result:
-                    exec_success = True
-                    break
-                else:
-                    if result == []:
-                        self.fail("Router is not accessible")
-                    # This means router network did not come up as yet loop back.
-                    if "send" in result[0]:
-                        timeout -= self.services['sleep']
-                    else: # Failed due to some other error
-                        break
-            #end while
-            
-            if timeout == 0:
-                self.fail("Router network failed to come up after 3 minutes.")
 
-            ssh.execute('rm -rf %s' % script_file)
+            self.debug("getting SSH client for Vm: %s with ip %s" % (self.virtual_machine.id,self.public_ip.ipaddress.ipaddress))
+            sshClient = self.virtual_machine.get_ssh_client(ipaddress=self.public_ip.ipaddress.ipaddress)
+            result = sshClient.execute(script+exec_cmd_params)
+
+            self.debug("script: %s" % script+exec_cmd_params)
+            self.debug("result: %s" % result)
+
+            if str(result).strip() == expected_result:
+                exec_success = True
 
             if negative_test:
                 self.assertEqual(exec_success,
@@ -373,19 +343,44 @@ class TestEgressFWRules(cloudstackTestCase):
             if self.egressruleid:
                 self.debug('remove egress rule id=%s' % self.egressruleid)
                 self.deleteEgressRule()
+
             self.debug("Cleaning up the resources")
-            self.virtual_machine.delete(self.apiclient)
-            wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
-            self.debug("Sleep for VM cleanup to complete.")
-            #time.sleep(self.services['sleep'])
-            self.network.delete(self.apiclient)
+
+            #below components is not a part of cleanup because to mandate the order and to cleanup network
+            try:
+                for vm in self.cleanup_vms:
+                    if str(vm.state).lower() != "error":
+                        vm.delete(self.api_client)
+            except Exception as e:
+                self.fail("Warning: Exception during virtual machines cleanup : %s" % e)
+
+            # Wait for VMs to expunge
+            wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
+
+            if len(self.cleanup_vms) > 0:
+                retriesCount = 10
+                while True:
+                    vms = list_virtual_machines(self.api_client, id=self.virtual_machine.id)
+                    if vms is None:
+                        break
+                    elif retriesCount == 0:
+                        self.fail("Failed to expunge vm even after 10 minutes")
+                    time.sleep(60)
+                    retriesCount -= 1
+
+            try:
+                for network in self.cleanup_networks:
+                    network.delete(self.api_client)
+            except Exception as e:
+                self.fail("Warning: Exception during networks cleanup : %s" % e)
+
             self.debug("Sleep for Network cleanup to complete.")
             wait_for_cleanup(self.apiclient, ["network.gc.wait", "network.gc.interval"])
-            #time.sleep(self.services['sleep'])
+
             cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.debug("Cleanup complete!")
         except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+            self.fail("Warning! Cleanup failed: %s" % e)
 
     @attr(tags = ["advanced"])
     def test_01_egress_fr1(self):
@@ -468,7 +463,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
         self.createEgressRule()
         #Egress rule is set for ICMP other traffic is allowed
-        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico',
+        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "[]",
                                     negative_test=False)
@@ -489,7 +484,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
         self.createEgressRule()
         #Egress rule is set for ICMP other traffic is not allowed
-        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico',
+        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
@@ -648,7 +643,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. access to public network should not be successfull.
         self.create_vm()
         self.createEgressRule(protocol='tcp', start_port=80)
-        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico',
+        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
@@ -664,7 +659,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. access to public network for tcp port 80 is blocked.
         self.create_vm()
         self.createEgressRule(protocol='tcp', start_port=80)
-        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico',
+        self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
@@ -785,7 +780,6 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create PF/SNAT/LB.
         # 3. All should work fine.
         self.create_vm(pfrule=True, egress_policy=False)
-
 
     @attr(tags = ["advanced"])
     def test_12_egress_fr12(self):

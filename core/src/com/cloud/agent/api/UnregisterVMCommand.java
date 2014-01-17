@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 public class UnregisterVMCommand extends Command {
     String vmName;
 
-    public UnregisterVMCommand(String vmName){
+    public UnregisterVMCommand(String vmName) {
         this.vmName = vmName;
     }
 

@@ -20,8 +20,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -34,17 +33,19 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -52,6 +53,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.storage.encoding.EncodingType;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeObject implements VolumeInfo {
@@ -88,7 +90,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String getAttachedVmName() {
-        Long vmId = this.volumeVO.getInstanceId();
+        Long vmId = volumeVO.getInstanceId();
         if (vmId != null) {
             VMInstanceVO vm = vmInstanceDao.findById(vmId);
 
@@ -100,6 +102,15 @@ public class VolumeObject implements VolumeInfo {
         return null;
     }
 
+    @Override
+    public VirtualMachine getAttachedVM() {
+        Long vmId = volumeVO.getInstanceId();
+        if (vmId != null) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+            return vm;
+        }
+        return null;
+    }
     @Override
     public String getUuid() {
         return volumeVO.getUuid();
@@ -143,6 +154,15 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getMaxIops();
     }
 
+    public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
+        volumeVO.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+    }
+
+    @Override
+    public Integer getHypervisorSnapshotReserve() {
+        return volumeVO.getHypervisorSnapshotReserve();
+    }
+
     public long getVolumeId() {
         return volumeVO.getId();
     }
@@ -155,7 +175,7 @@ public class VolumeObject implements VolumeInfo {
             result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
             volumeVO = volumeDao.findById(volumeVO.getId());
         } catch (NoTransitionException e) {
-            String errorMessage = "Failed to transit volume: " + this.getVolumeId() + ", due to: " + e.toString();
+            String errorMessage = "Failed to transit volume: " + getVolumeId() + ", due to: " + e.toString();
             s_logger.debug(errorMessage);
             throw new CloudRuntimeException(errorMessage);
         }
@@ -206,6 +226,15 @@ public class VolumeObject implements VolumeInfo {
         return null;
     }
 
+    @Override
+    public DiskCacheMode getCacheMode() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getCacheMode();
+        }
+        return null;
+    }
+
     public void update() {
         volumeDao.update(volumeVO.getId(), volumeVO);
         volumeVO = volumeDao.findById(volumeVO.getId());
@@ -213,28 +242,25 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public long getId() {
-        return this.volumeVO.getId();
+        return volumeVO.getId();
     }
 
     @Override
     public boolean isAttachedVM() {
-        return (this.volumeVO.getInstanceId() == null) ? false : true;
+        return (volumeVO.getInstanceId() == null) ? false : true;
     }
 
     @Override
     public String getUri() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME,
-                this.dataStore.getId(), this.dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(volumeVO.getId(), DataObjectType.VOLUME, dataStore.getId(), dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&"
-                    + EncodingType.SIZE + "=" + this.volumeVO.getSize() + "&" + EncodingType.NAME + "="
-                    + this.volumeVO.getName();
+            return dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.SIZE + "=" + volumeVO.getSize() + "&" +
+                EncodingType.NAME + "=" + volumeVO.getName();
         } else {
-            return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&"
-                    + EncodingType.PATH + "=" + obj.getInstallPath();
+            return dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.PATH + "=" + obj.getInstallPath();
         }
     }
 
@@ -245,19 +271,19 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event) {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return;
         }
         try {
             Volume.Event volEvent = null;
-            if (this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            if (dataStore.getRole() == DataStoreRole.ImageCache) {
                 objectInStoreMgr.update(this, event);
                 return;
             }
-            if (this.dataStore.getRole() == DataStoreRole.Image) {
+            if (dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
-                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying || this.volumeVO.getState() == Volume.State.Uploaded
-                        || this.volumeVO.getState() == Volume.State.Expunged) {
+                if (volumeVO.getState() == Volume.State.Migrating || volumeVO.getState() == Volume.State.Copying ||
+                    volumeVO.getState() == Volume.State.Uploaded || volumeVO.getState() == Volume.State.Expunged) {
                     return;
                 }
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
@@ -266,8 +292,7 @@ public class VolumeObject implements VolumeInfo {
                     volEvent = Volume.Event.CopyRequested;
                 }
             } else {
-                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested
-                        || event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested || event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     volEvent = Volume.Event.CreateRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.CopyingRequested) {
                     volEvent = Volume.Event.CopyRequested;
@@ -287,14 +312,14 @@ public class VolumeObject implements VolumeInfo {
             } else if (event == ObjectInDataStoreStateMachine.Event.ResizeRequested) {
                 volEvent = Volume.Event.ResizeRequested;
             }
-            this.stateTransit(volEvent);
+            stateTransit(volEvent);
         } catch (Exception e) {
             s_logger.debug("Failed to update state", e);
             throw new CloudRuntimeException("Failed to update state:" + e.toString());
         } finally {
             // in case of OperationFailed, expunge the entry
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed
-                    && (this.volumeVO.getState() != Volume.State.Copying && this.volumeVO.getState() != Volume.State.Uploaded)) {
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed &&
+                (volumeVO.getState() != Volume.State.Copying && volumeVO.getState() != Volume.State.Uploaded)) {
                 objectInStoreMgr.deleteIfNotReady(this);
             }
         }
@@ -318,25 +343,25 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String getName() {
-        return this.volumeVO.getName();
+        return volumeVO.getName();
     }
 
     @Override
     public Long getInstanceId() {
-        return this.volumeVO.getInstanceId();
+        return volumeVO.getInstanceId();
     }
 
     @Override
     public String getFolder() {
-        return this.volumeVO.getFolder();
+        return volumeVO.getFolder();
     }
 
     @Override
     public String getPath() {
-        if (this.dataStore.getRole() == DataStoreRole.Primary) {
-            return this.volumeVO.getPath();
+        if (dataStore.getRole() == DataStoreRole.Primary) {
+            return volumeVO.getPath();
         } else {
-            DataObjectInStore objInStore = this.objectInStoreMgr.findObject(this, dataStore);
+            DataObjectInStore objInStore = objectInStoreMgr.findObject(this, dataStore);
             if (objInStore != null) {
                 return objInStore.getInstallPath();
             } else {
@@ -347,121 +372,121 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public Long getPodId() {
-        return this.volumeVO.getPodId();
+        return volumeVO.getPodId();
     }
 
     @Override
     public long getDataCenterId() {
-        return this.volumeVO.getDataCenterId();
+        return volumeVO.getDataCenterId();
     }
 
     @Override
     public Type getVolumeType() {
-        return this.volumeVO.getVolumeType();
+        return volumeVO.getVolumeType();
     }
 
     @Override
     public Long getPoolId() {
-        return this.volumeVO.getPoolId();
+        return volumeVO.getPoolId();
     }
 
     @Override
     public Date getAttached() {
-        return this.volumeVO.getAttached();
+        return volumeVO.getAttached();
     }
 
     @Override
     public Long getDeviceId() {
-        return this.volumeVO.getDeviceId();
+        return volumeVO.getDeviceId();
     }
 
     @Override
     public Date getCreated() {
-        return this.volumeVO.getCreated();
+        return volumeVO.getCreated();
     }
 
     @Override
     public Long getDiskOfferingId() {
-        return this.volumeVO.getDiskOfferingId();
+        return volumeVO.getDiskOfferingId();
     }
 
     @Override
     public String getChainInfo() {
-        return this.volumeVO.getChainInfo();
+        return volumeVO.getChainInfo();
     }
 
     @Override
     public boolean isRecreatable() {
-        return this.volumeVO.isRecreatable();
+        return volumeVO.isRecreatable();
     }
 
     @Override
     public long getUpdatedCount() {
-        return this.volumeVO.getUpdatedCount();
+        return volumeVO.getUpdatedCount();
     }
 
     @Override
     public void incrUpdatedCount() {
-        this.volumeVO.incrUpdatedCount();
+        volumeVO.incrUpdatedCount();
     }
 
     @Override
     public Date getUpdated() {
-        return this.volumeVO.getUpdated();
+        return volumeVO.getUpdated();
     }
 
     @Override
     public String getReservationId() {
-        return this.volumeVO.getReservationId();
+        return volumeVO.getReservationId();
     }
 
     @Override
     public void setReservationId(String reserv) {
-        this.volumeVO.setReservationId(reserv);
+        volumeVO.setReservationId(reserv);
     }
 
     @Override
     public long getAccountId() {
-        return this.volumeVO.getAccountId();
+        return volumeVO.getAccountId();
     }
 
     @Override
     public long getDomainId() {
-        return this.volumeVO.getDomainId();
+        return volumeVO.getDomainId();
     }
 
     @Override
     public Long getTemplateId() {
-        return this.volumeVO.getTemplateId();
+        return volumeVO.getTemplateId();
     }
 
     @Override
     public void addPayload(Object data) {
-        this.payload = data;
+        payload = data;
     }
 
     @Override
     public Object getpayload() {
-        return this.payload;
+        return payload;
     }
 
     public VolumeVO getVolume() {
-        return this.volumeVO;
+        return volumeVO;
     }
 
     @Override
     public HypervisorType getHypervisorType() {
-        return this.volumeDao.getHypervisorType(this.volumeVO.getId());
+        return volumeDao.getHypervisorType(volumeVO.getId());
     }
 
     @Override
     public Long getLastPoolId() {
-        return this.volumeVO.getLastPoolId();
+        return volumeVO.getLastPoolId();
     }
 
     @Override
     public DataTO getTO() {
-        DataTO to = this.getDataStore().getDriver().getTO(this);
+        DataTO to = getDataStore().getDriver().getTO(this);
         if (to == null) {
             to = new VolumeObjectTO(this);
         }
@@ -471,11 +496,11 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            if (this.dataStore.getRole() == DataStoreRole.Primary) {
+            if (dataStore.getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    VolumeVO vol = this.volumeDao.findById(this.getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    VolumeVO vol = volumeDao.findById(getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                     vol.setPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         vol.setSize(newVol.getSize());
@@ -483,17 +508,17 @@ public class VolumeObject implements VolumeInfo {
                     if (newVol.getFormat() != null) {
                         vol.setFormat(newVol.getFormat());
                     }
-                    vol.setPoolId(this.getDataStore().getId());
+                    vol.setPoolId(getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 } else if (answer instanceof CreateObjectAnswer) {
-                    CreateObjectAnswer createAnswer = (CreateObjectAnswer) answer;
-                    VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
-                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    CreateObjectAnswer createAnswer = (CreateObjectAnswer)answer;
+                    VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
+                    VolumeVO vol = volumeDao.findById(getId());
                     vol.setPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         vol.setSize(newVol.getSize());
                     }
-                    vol.setPoolId(this.getDataStore().getId());
+                    vol.setPoolId(getDataStore().getId());
                     if (newVol.getFormat() != null) {
                         vol.setFormat(newVol.getFormat());
                     }
@@ -502,22 +527,20 @@ public class VolumeObject implements VolumeInfo {
             } else {
                 // image store or imageCache store
                 if (answer instanceof DownloadAnswer) {
-                    DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
-                            this.getId());
+                    DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
+                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
                     volStore.setInstallPath(dwdAnswer.getInstallPath());
                     volStore.setChecksum(dwdAnswer.getCheckSum());
-                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                    volumeStoreDao.update(volStore.getId(), volStore);
                 } else if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
-                            this.getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         volStore.setSize(newVol.getSize());
                     }
-                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                    volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
         } catch (RuntimeException ex) {
@@ -532,12 +555,12 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void incRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return;
         }
 
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             volumeStoreDao.update(store.getId(), store);
@@ -546,11 +569,11 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void decRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             volumeStoreDao.update(store.getId(), store);
@@ -559,11 +582,11 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public Long getRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return null;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
             return store.getRefCnt();
         }
         return null;
@@ -572,47 +595,45 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            if (this.dataStore.getRole() == DataStoreRole.Primary) {
+            if (dataStore.getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    VolumeVO vol = this.volumeDao.findById(this.getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    VolumeVO vol = volumeDao.findById(getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                     vol.setPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         vol.setSize(newVol.getSize());
                     }
-                    vol.setPoolId(this.getDataStore().getId());
+                    vol.setPoolId(getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 } else if (answer instanceof CreateObjectAnswer) {
-                    CreateObjectAnswer createAnswer = (CreateObjectAnswer) answer;
-                    VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
-                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    CreateObjectAnswer createAnswer = (CreateObjectAnswer)answer;
+                    VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
+                    VolumeVO vol = volumeDao.findById(getId());
                     vol.setPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         vol.setSize(newVol.getSize());
                     }
-                    vol.setPoolId(this.getDataStore().getId());
+                    vol.setPoolId(getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 }
             } else {
                 // image store or imageCache store
                 if (answer instanceof DownloadAnswer) {
-                    DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
-                            this.getId());
+                    DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
+                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
                     volStore.setInstallPath(dwdAnswer.getInstallPath());
                     volStore.setChecksum(dwdAnswer.getCheckSum());
-                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                    volumeStoreDao.update(volStore.getId(), volStore);
                 } else if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
-                            this.getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
                     if (newVol.getSize() != null) {
                         volStore.setSize(newVol.getSize());
                     }
-                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                    volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
         } catch (RuntimeException ex) {
@@ -627,7 +648,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public ImageFormat getFormat() {
-        return this.volumeVO.getFormat();
+        return volumeVO.getFormat();
     }
 
     @Override
@@ -640,7 +661,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public Long getVmSnapshotChainSize() {
-        return this.volumeVO.getVmSnapshotChainSize();
+        return volumeVO.getVmSnapshotChainSize();
     }
 
     @Override

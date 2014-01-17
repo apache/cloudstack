@@ -24,21 +24,21 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="cluster_details")
+@Table(name = "cluster_details")
 public class ClusterDetailsVO {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private long clusterId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value")
+    @Column(name = "value")
     private String value;
 
     protected ClusterDetailsVO() {

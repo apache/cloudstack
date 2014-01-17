@@ -51,121 +51,130 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=DeploymentPlanner.class)
+@Local(value = DeploymentPlanner.class)
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
-	private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
-	@Inject protected DataCenterDao _dcDao;
-	@Inject protected HostPodDao _podDao;
-	@Inject protected ClusterDao _clusterDao;
-	@Inject protected HostDao _hostDao;
-	@Inject protected ConfigurationDao _configDao;
-	@Inject protected CapacityManager _capacityMgr;
-	@Inject protected ResourceManager _resourceMgr;
-    @Inject protected ClusterDetailsDao _clusterDetailsDao;
-	
-	@Override
+    private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
+    @Inject
+    protected DataCenterDao _dcDao;
+    @Inject
+    protected HostPodDao _podDao;
+    @Inject
+    protected ClusterDao _clusterDao;
+    @Inject
+    protected HostDao _hostDao;
+    @Inject
+    protected ConfigurationDao _configDao;
+    @Inject
+    protected CapacityManager _capacityMgr;
+    @Inject
+    protected ResourceManager _resourceMgr;
+    @Inject
+    protected ClusterDetailsDao _clusterDetailsDao;
+
+    @Override
     public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
-		VirtualMachine vm = vmProfile.getVirtualMachine();
-		ServiceOffering offering = vmProfile.getServiceOffering();
-		String hostTag = null;
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        String hostTag = null;
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-        
-		if (vm.getLastHostId() != null && haVmTag == null) {
-			HostVO h = _hostDao.findById(vm.getLastHostId());
-			DataCenter dc = _dcDao.findById(h.getDataCenterId());
-			Pod pod = _podDao.findById(h.getPodId());
-			Cluster c =  _clusterDao.findById(h.getClusterId());
-			s_logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
-			return new DeployDestination(dc, pod, c, h);
-		}
-		
-		if (haVmTag != null) {
-		    hostTag = haVmTag;
-		} else if (offering.getHostTag() != null) {
-			String[] tags = offering.getHostTag().split(",");
-			if (tags.length > 0) {
-				hostTag = tags[0];
-			}
-		}
-		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
-		int cpu_requested;
-		long ram_requested;
-		HostVO target = null;
-		List<HostVO> hosts;
-		for (ClusterVO cluster : clusters) {
-			hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
-			if (hostTag != null) {
-				for (HostVO h : hosts) {
-					_hostDao.loadDetails(h);
-					if (h.getDetail("hostTag") != null && h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
-						target = h;
-						break;
-					}
-				}
-			}
-		}
 
-		if (target == null) {
-			s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
-			cpu_requested = offering.getCpu() * offering.getSpeed();
-			ram_requested = offering.getRamSize() * 1024L * 1024L;
-		} else {
-			cpu_requested = target.getCpus() * target.getSpeed().intValue();
-			ram_requested = target.getTotalMemory();
-		}
-		
-		for (ClusterVO cluster : clusters) {
-		    if (haVmTag == null) {
-		        hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
-		    } else {
-		        s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" + cluster.getDataCenterId());
-		        return null;
-		    }
-			for (HostVO h : hosts) {
+        if (vm.getLastHostId() != null && haVmTag == null) {
+            HostVO h = _hostDao.findById(vm.getLastHostId());
+            DataCenter dc = _dcDao.findById(h.getDataCenterId());
+            Pod pod = _podDao.findById(h.getPodId());
+            Cluster c = _clusterDao.findById(h.getClusterId());
+            s_logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
+            return new DeployDestination(dc, pod, c, h);
+        }
+
+        if (haVmTag != null) {
+            hostTag = haVmTag;
+        } else if (offering.getHostTag() != null) {
+            String[] tags = offering.getHostTag().split(",");
+            if (tags.length > 0) {
+                hostTag = tags[0];
+            }
+        }
+
+        List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
+        int cpu_requested;
+        long ram_requested;
+        HostVO target = null;
+        List<HostVO> hosts;
+        for (ClusterVO cluster : clusters) {
+            hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+            if (hostTag != null) {
+                for (HostVO h : hosts) {
+                    _hostDao.loadDetails(h);
+                    if (h.getDetail("hostTag") != null && h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
+                        target = h;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (target == null) {
+            s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
+            cpu_requested = offering.getCpu() * offering.getSpeed();
+            ram_requested = offering.getRamSize() * 1024L * 1024L;
+        } else {
+            cpu_requested = target.getCpus() * target.getSpeed().intValue();
+            ram_requested = target.getTotalMemory();
+        }
+
+        for (ClusterVO cluster : clusters) {
+            if (haVmTag == null) {
+                hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+            } else {
+                s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
+                    cluster.getDataCenterId());
+                return null;
+            }
+            for (HostVO h : hosts) {
                 long cluster_id = h.getClusterId();
-                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio") ;
-                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
+                ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
+                ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-				if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-					s_logger.debug("Find host " + h.getId() + " has enough capacity");
-					DataCenter dc = _dcDao.findById(h.getDataCenterId());
-					Pod pod = _podDao.findById(h.getPodId());
-					return new DeployDestination(dc, pod, cluster, h);
-				}
-			}
-		}
+                if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                    s_logger.debug("Find host " + h.getId() + " has enough capacity");
+                    DataCenter dc = _dcDao.findById(h.getDataCenterId());
+                    Pod pod = _podDao.findById(h.getPodId());
+                    return new DeployDestination(dc, pod, cluster, h);
+                }
+            }
+        }
 
-		s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
-		return null;
-	}
+        s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
+        return null;
+    }
 
-	@Override
+    @Override
     public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
-		return vm.getHypervisorType() == HypervisorType.BareMetal;
-	}
+        return vm.getHypervisorType() == HypervisorType.BareMetal;
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		return true;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
-	@Override
+    @Override
     public boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

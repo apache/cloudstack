@@ -48,54 +48,64 @@ public class RegisterIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if this ISO is bootable. If not passed explicitly its assumed to be true")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if this ISO is bootable. If not passed explicitly its assumed to be true")
     private Boolean bootable;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the ISO. This is usually used for display purposes.", length=4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT,
+               type = CommandType.STRING,
+               required = true,
+               description = "the display text of the ISO. This is usually used for display purposes.",
+               length = 4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true if you want this ISO to be featured")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if you want this ISO to be featured")
     private Boolean featured;
 
-    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if you want to register the ISO to be publicly available to all users, false otherwise.")
+    @Parameter(name = ApiConstants.IS_PUBLIC,
+               type = CommandType.BOOLEAN,
+               description = "true if you want to register the ISO to be publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name=ApiConstants.IS_EXTRACTABLE, type=CommandType.BOOLEAN, description="true if the iso or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the iso or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the ISO")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the ISO")
     private String isoName;
 
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.UUID, entityType = GuestOSResponse.class,
-            description="the ID of the OS Type that best represents the OS of this ISO. If the iso is bootable this parameter needs to be passed")
+    @Parameter(name = ApiConstants.OS_TYPE_ID,
+               type = CommandType.UUID,
+               entityType = GuestOSResponse.class,
+               description = "the ID of the OS Type that best represents the OS of this ISO. If the iso is bootable this parameter needs to be passed")
     private Long osTypeId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL to where the ISO is currently being hosted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL to where the ISO is currently being hosted")
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the ID of the zone you wish to register the ISO to.")
     protected Long zoneId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="an optional domainId. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "an optional domainId. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account name. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account name. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this ISO")
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this ISO")
     private String checksum;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="Register iso for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register iso for the project")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
-            description="Image store uuid")
+    @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store uuid")
     private String imageStoreUuid;
 
-    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
@@ -178,7 +188,7 @@ public class RegisterIsoCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
+    public void execute() throws ResourceAllocationException {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();

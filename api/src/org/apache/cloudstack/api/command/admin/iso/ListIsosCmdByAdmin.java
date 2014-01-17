@@ -23,5 +23,4 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
 public class ListIsosCmdByAdmin extends ListIsosCmd {
-
 }

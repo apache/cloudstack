@@ -17,34 +17,40 @@
 
 package com.cloud.network.vpc;
 
-import javax.persistence.*;
 import java.util.UUID;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 @Entity
-@Table(name="network_acl")
-public class NetworkACLVO implements NetworkACL{
+@Table(name = "network_acl")
+public class NetworkACLVO implements NetworkACL {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     Long vpcId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
 
-    public NetworkACLVO(){
+    public NetworkACLVO() {
     }
 
-    protected NetworkACLVO(String name, String description, long vpcId){
+    protected NetworkACLVO(String name, String description, long vpcId) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;

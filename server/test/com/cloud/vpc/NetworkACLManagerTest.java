@@ -24,11 +24,11 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -57,7 +57,11 @@ import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.NetworkACLManagerImpl;
 import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -71,7 +75,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class NetworkACLManagerTest extends TestCase{
+public class NetworkACLManagerTest extends TestCase {
     @Inject
     NetworkACLManager _aclMgr;
 
@@ -93,17 +97,19 @@ public class NetworkACLManagerTest extends TestCase{
     NetworkModel _networkModel;
     @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
+    @Inject
+    VpcService _vpcSvc;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
-
-    private static final Logger s_logger = Logger.getLogger( NetworkACLManagerTest.class);
 
     @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "testdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
         CallContext.register(user, account);
@@ -119,29 +125,109 @@ public class NetworkACLManagerTest extends TestCase{
 
     @Test
     public void testCreateACL() throws Exception {
-        Mockito.when(_networkACLDao.persist(Mockito.any(NetworkACLVO.class))).thenReturn(acl);
+        Mockito.when(_networkACLDao.persist(Matchers.any(NetworkACLVO.class))).thenReturn(acl);
         assertNotNull(_aclMgr.createNetworkACL("acl_new", "acl desc", 1L));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testApplyACL() throws Exception {
         NetworkVO network = Mockito.mock(NetworkVO.class);
-        Mockito.when(_networkDao.findById(Mockito.anyLong())).thenReturn(network);
-        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Mockito.anyLong(), Mockito.any(Network.Service.class), Mockito.any(Network.Provider.class))).thenReturn(true);
-        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Mockito.any(Network.class), Mockito.anyList())).thenReturn(true);
+        Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Matchers.anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class)))
+            .thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
     }
 
     @Test
+    public void testApplyNetworkACL() throws Exception {
+        driveTestApplyNetworkACL(true, true, true);
+        driveTestApplyNetworkACL(false, false, true);
+        driveTestApplyNetworkACL(false, true, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void driveTestApplyNetworkACL(boolean result, boolean applyNetworkACLs, boolean applyACLToPrivateGw) throws Exception {
+        // In order to test ONLY our scope method, we mock the others
+        NetworkACLManager aclManager = Mockito.spy(_aclMgr);
+
+        // Prepare
+        // Reset mocked objects to reuse
+        Mockito.reset(_networkACLItemDao);
+
+        // Make sure it is handled
+        long aclId = 1L;
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        List<NetworkVO> networks = new ArrayList<NetworkVO>();
+        networks.add(network);
+        Mockito.when(_networkDao.listByAclId(Matchers.anyLong()))
+            .thenReturn(networks);
+        Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Matchers.anyLong(),
+                Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class)))
+                .thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class),
+                Matchers.anyList())).thenReturn(applyNetworkACLs);
+
+        // Make sure it applies ACL to private gateway
+        List<VpcGatewayVO> vpcGateways = new ArrayList<VpcGatewayVO>();
+        VpcGatewayVO vpcGateway = Mockito.mock(VpcGatewayVO.class);
+        PrivateGateway privateGateway = Mockito.mock(PrivateGateway.class);
+        Mockito.when(_vpcSvc.getVpcPrivateGateway(Mockito.anyLong())).thenReturn(privateGateway);
+        vpcGateways.add(vpcGateway);
+        Mockito.when(_vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private))
+            .thenReturn(vpcGateways);
+
+        // Create 4 rules to test all 4 scenarios: only revoke should
+        // be deleted, only add should update
+        List<NetworkACLItemVO> rules = new ArrayList<NetworkACLItemVO>();
+        NetworkACLItemVO ruleActive = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO ruleStaged = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO rule2Revoke = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO rule2Add = Mockito.mock(NetworkACLItemVO.class);
+        Mockito.when(ruleActive.getState()).thenReturn(NetworkACLItem.State.Active);
+        Mockito.when(ruleStaged.getState()).thenReturn(NetworkACLItem.State.Staged);
+        Mockito.when(rule2Add.getState()).thenReturn(NetworkACLItem.State.Add);
+        Mockito.when(rule2Revoke.getState()).thenReturn(NetworkACLItem.State.Revoke);
+        rules.add(ruleActive);
+        rules.add(ruleStaged);
+        rules.add(rule2Add);
+        rules.add(rule2Revoke);
+
+        long revokeId = 8;
+        Mockito.when(rule2Revoke.getId()).thenReturn(revokeId);
+
+        long addId = 9;
+        Mockito.when(rule2Add.getId()).thenReturn(addId);
+        Mockito.when(_networkACLItemDao.findById(addId)).thenReturn(rule2Add);
+
+        Mockito.when(_networkACLItemDao.listByACL(aclId))
+            .thenReturn(rules);
+        // Mock methods to avoid
+        Mockito.doReturn(applyACLToPrivateGw).when(aclManager).applyACLToPrivateGw(privateGateway);
+
+        // Execute
+        assertEquals("Result was not congruent with applyNetworkACLs and applyACLToPrivateGw", result, aclManager.applyNetworkACL(aclId));
+
+        // Assert if conditions met, network ACL was applied
+        int timesProcessingDone = (applyNetworkACLs && applyACLToPrivateGw) ? 1 : 0;
+        Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).remove(revokeId);
+        Mockito.verify(rule2Add, Mockito.times(timesProcessingDone)).setState(NetworkACLItem.State.Active);
+        Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).update(addId, rule2Add);
+    }
+
+
+    @Test
     public void testRevokeACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Mockito.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
         assertTrue(_aclMgr.revokeNetworkACLItem(1L));
     }
 
     @Test
     public void testUpdateACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Mockito.anyLong())).thenReturn(aclItem);
-        Mockito.when(_networkACLItemDao.update(Mockito.anyLong(), Mockito.any(NetworkACLItemVO.class))).thenReturn(true);
+        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkACLItemDao.update(Matchers.anyLong(), Matchers.any(NetworkACLItemVO.class))).thenReturn(true);
         assertNotNull(_aclMgr.updateNetworkACLItem(1L, "UDP", null, NetworkACLItem.TrafficType.Ingress, "Deny", 10, 22, 32, null, null));
     }
 
@@ -149,15 +235,14 @@ public class NetworkACLManagerTest extends TestCase{
     public void deleteNonEmptyACL() throws Exception {
         List<NetworkACLItemVO> aclItems = new ArrayList<NetworkACLItemVO>();
         aclItems.add(aclItem);
-        Mockito.when(_networkACLItemDao.listByACL(Mockito.anyLong())).thenReturn(aclItems);
+        Mockito.when(_networkACLItemDao.listByACL(Matchers.anyLong())).thenReturn(aclItems);
         _aclMgr.deleteNetworkACL(acl);
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses={NetworkACLManagerImpl.class},
-            includeFilters={@ComponentScan.Filter(value=NetworkACLTestConfiguration.Library.class, type= FilterType.CUSTOM)},
-            useDefaultFilters=false)
-    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration{
+    @ComponentScan(basePackageClasses = {NetworkACLManagerImpl.class}, includeFilters = {@ComponentScan.Filter(value = NetworkACLTestConfiguration.Library.class,
+                                                                                                               type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
         public AccountManager accountManager() {
@@ -215,8 +300,13 @@ public class NetworkACLManagerTest extends TestCase{
         }
 
         @Bean
-        public VpcGatewayDao vpcGatewayDao () {
+        public VpcGatewayDao vpcGatewayDao() {
             return Mockito.mock(VpcGatewayDao.class);
+        }
+
+        @Bean
+        public VpcService vpcService() {
+            return Mockito.mock(VpcService.class);
         }
 
         public static class Library implements TypeFilter {

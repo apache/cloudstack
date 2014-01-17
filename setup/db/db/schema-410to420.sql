@@ -2103,6 +2103,18 @@ CREATE TABLE `cloud`.`vm_disk_statistics` (
 insert into `cloud`.`vm_disk_statistics`(data_center_id,account_id,vm_id,volume_id) 
 select volumes.data_center_id, volumes.account_id, vm_instance.id, volumes.id from volumes,vm_instance where vm_instance.vm_type="User" and vm_instance.state<>"Expunging" and volumes.instance_id=vm_instance.id order by vm_instance.id;
 
+DROP TABLE IF EXISTS `cloud`.`ovs_providers`;
+CREATE TABLE `cloud`.`ovs_providers` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `uuid` varchar(40),
+  `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_ovs_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_ovs_providers__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `cloud_usage`.`vm_disk_statistics`;
 CREATE TABLE `cloud_usage`.`vm_disk_statistics` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -2314,25 +2326,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.interval', '86400', 'time interval between cache replacement threads (in seconds).');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', 'vmware.nested.virtualization', 'false', 'When set to true this will enable nested virtualization when this is supported by the hypervisor');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.bind.principal', NULL, 'Specifies the bind principal to use for bind to LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.bind.password', NULL, 'Specifies the password to use for binding to LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.username.attribute', 'uid', 'Sets the username attribute used within LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.email.attribute', 'mail', 'Sets the email attribute used within LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.firstname.attribute', 'givenname', 'Sets the firstname attribute used within LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.lastname.attribute', 'sn', 'Sets the lastname attribute used within LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.user.object', 'inetOrgPerson', 'Sets the object type of users within LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.basedn', NULL, 'Sets the basedn for LDAP');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.search.group.principle', NULL, 'Sets the principle of the group that users must be a member of');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.truststore', NULL, 'Sets the path to the truststore to use for LDAP SSL');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.truststore.password', NULL, 'Sets the password for the truststore');
-
-
-CREATE TABLE `cloud`.`ldap_configuration` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
-  `port` int(10) COMMENT 'port that the ldap server is listening on',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`data_center_view`;
 CREATE VIEW `cloud`.`data_center_view` AS

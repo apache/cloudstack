@@ -24,20 +24,20 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="data_center_details")
+@Table(name = "data_center_details")
 public class DcDetailVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="dc_id")
+    @Column(name = "dc_id")
     private long dcId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value")
+    @Column(name = "value")
     private String value;
 
     protected DcDetailVO() {

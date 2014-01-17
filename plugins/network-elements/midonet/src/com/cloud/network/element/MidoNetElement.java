@@ -19,6 +19,40 @@
 
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.log4j.Logger;
+import org.midonet.client.MidonetApi;
+import org.midonet.client.dto.DtoRule;
+import org.midonet.client.dto.DtoRule.DtoRange;
+import org.midonet.client.exception.HttpInternalServerError;
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.DhcpHost;
+import org.midonet.client.resource.DhcpSubnet;
+import org.midonet.client.resource.Port;
+import org.midonet.client.resource.ResourceCollection;
+import org.midonet.client.resource.Route;
+import org.midonet.client.resource.Router;
+import org.midonet.client.resource.RouterPort;
+import org.midonet.client.resource.Rule;
+import org.midonet.client.resource.RuleChain;
+import org.springframework.stereotype.Component;
+
+import com.sun.jersey.core.util.MultivaluedMapImpl;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.configuration.Config;
@@ -41,71 +75,24 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import org.midonet.client.MidonetApi;
-import org.midonet.client.exception.HttpInternalServerError;
-import org.midonet.client.dto.DtoRule;
-import org.midonet.client.dto.DtoRule.DtoRange;
-import org.midonet.client.resource.Bridge;
-import org.midonet.client.resource.BridgePort;
-import org.midonet.client.resource.DhcpHost;
-import org.midonet.client.resource.DhcpSubnet;
-import org.midonet.client.resource.Port;
-import org.midonet.client.resource.ResourceCollection;
-import org.midonet.client.resource.Route;
-import org.midonet.client.resource.Router;
-import org.midonet.client.resource.RouterPort;
-import org.midonet.client.resource.Rule;
-import org.midonet.client.resource.RuleChain;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.ws.rs.core.MultivaluedMap;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 
 @Component
-@Local(value = {NetworkElement.class,
-                ConnectivityProvider.class,
-                FirewallServiceProvider.class,
-                SourceNatServiceProvider.class,
-                DhcpServiceProvider.class,
-                StaticNatServiceProvider.class,
-                PortForwardingServiceProvider.class,
-                IpDeployer.class} )
-public class MidoNetElement extends AdapterBase implements
-                                        ConnectivityProvider,
-                                        DhcpServiceProvider,
-                                        SourceNatServiceProvider,
-                                        StaticNatServiceProvider,
-                                        IpDeployer,
-                                        PortForwardingServiceProvider,
-                                        FirewallServiceProvider,
-                                        PluggableService {
+@Local(value = {NetworkElement.class, ConnectivityProvider.class, FirewallServiceProvider.class, SourceNatServiceProvider.class, DhcpServiceProvider.class,
+    StaticNatServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class})
+public class MidoNetElement extends AdapterBase implements ConnectivityProvider, DhcpServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, IpDeployer,
+        PortForwardingServiceProvider, FirewallServiceProvider, PluggableService {
 
     private static final Logger s_logger = Logger.getLogger(MidoNetElement.class);
 
@@ -118,12 +105,7 @@ public class MidoNetElement extends AdapterBase implements
     private static final Provider MidoNet = new Provider("MidoNet", false);
 
     public enum RuleChainCode {
-        TR_PRE,
-        TR_PRENAT,
-        TR_PREFILTER,
-        TR_POST,
-        ACL_INGRESS,
-        ACL_EGRESS
+        TR_PRE, TR_PRENAT, TR_PREFILTER, TR_POST, ACL_INGRESS, ACL_EGRESS
     }
 
     @Inject
@@ -153,19 +135,17 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String routerIdValue = (String) _configDao.getValue(Config.MidoNetProviderRouterId.key());
-        if(routerIdValue != null)
+        String routerIdValue = _configDao.getValue(Config.MidoNetProviderRouterId.key());
+        if (routerIdValue != null)
             _providerRouterId = UUID.fromString(routerIdValue);
 
-        String value = (String) _configDao.getValue(Config.MidoNetAPIServerAddress.key());
+        String value = _configDao.getValue(Config.MidoNetAPIServerAddress.key());
 
         if (value == null) {
-            throw new ConfigurationException(
-                "Could not find midonet API location in config");
+            throw new ConfigurationException("Could not find midonet API location in config");
         }
 
         if (this.api == null) {
@@ -178,12 +158,10 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     public boolean midoInNetwork(Network network) {
-        if((network.getTrafficType() == Networks.TrafficType.Public) &&
-           (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)){
+        if ((network.getTrafficType() == Networks.TrafficType.Public) && (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)) {
             return true;
         }
-        if((network.getTrafficType() == Networks.TrafficType.Guest) &&
-           (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)){
+        if ((network.getTrafficType() == Networks.TrafficType.Guest) && (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)) {
             return true;
         }
         return false;
@@ -206,8 +184,7 @@ public class MidoNetElement extends AdapterBase implements
             }
         } else {
             if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName()
-                        + " in the network " + network);
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
@@ -215,9 +192,8 @@ public class MidoNetElement extends AdapterBase implements
         return true;
     }
 
-    public void applySourceNat(Router tenantRouter, Router providerRouter,
-                               RouterPort tenantUplink, RouterPort providerDownlink,
-                               RuleChain pre, RuleChain post, PublicIpAddress addr) {
+    public void applySourceNat(Router tenantRouter, Router providerRouter, RouterPort tenantUplink, RouterPort providerDownlink, RuleChain pre, RuleChain post,
+        PublicIpAddress addr) {
 
         boolean needAdd = true;
         String SNtag = "/SourceNat";
@@ -257,33 +233,50 @@ public class MidoNetElement extends AdapterBase implements
         Map<String, String> ruleProps = new HashMap<String, String>();
         ruleProps.put(SNkey, CsDesc);
 
-        DtoRule.DtoNatTarget[] targets = new DtoRule.DtoNatTarget[]{
-            new DtoRule.DtoNatTarget(snatIp,
-                    snatIp, 1, 65535)};
+        DtoRule.DtoNatTarget[] targets = new DtoRule.DtoNatTarget[] {new DtoRule.DtoNatTarget(snatIp, snatIp, 1, 65535)};
 
         // Set inbound (reverse SNAT) rule
-        pre.addRule().type(DtoRule.RevSNAT).flowAction(DtoRule.Accept)
-            .nwDstAddress(snatIp).nwDstLength(32)
-            .inPorts(new UUID[] {tenantUplink.getId()}).position(1)
-            .properties(ruleProps).create();
+        pre.addRule()
+            .type(DtoRule.RevSNAT)
+            .flowAction(DtoRule.Accept)
+            .nwDstAddress(snatIp)
+            .nwDstLength(32)
+            .inPorts(new UUID[] {tenantUplink.getId()})
+            .position(1)
+            .properties(ruleProps)
+            .create();
 
         // Set outbound (SNAT) rule
-        post.addRule().type(DtoRule.SNAT).flowAction(DtoRule.Accept)
-            .outPorts(new UUID[]{tenantUplink.getId()})
-            .natTargets(targets).position(1)
-            .properties(ruleProps).create();
+        post.addRule()
+            .type(DtoRule.SNAT)
+            .flowAction(DtoRule.Accept)
+            .outPorts(new UUID[] {tenantUplink.getId()})
+            .natTargets(targets)
+            .position(1)
+            .properties(ruleProps)
+            .create();
 
         // Set up default route from tenant router to provider router
-        tenantRouter.addRoute().type("Normal").weight(100)
-            .srcNetworkAddr("0.0.0.0").srcNetworkLength(0)
-            .dstNetworkAddr("0.0.0.0").dstNetworkLength(0)
-            .nextHopPort(tenantUplink.getId()).create();
+        tenantRouter.addRoute()
+            .type("Normal")
+            .weight(100)
+            .srcNetworkAddr("0.0.0.0")
+            .srcNetworkLength(0)
+            .dstNetworkAddr("0.0.0.0")
+            .dstNetworkLength(0)
+            .nextHopPort(tenantUplink.getId())
+            .create();
 
         // Set routes for traffic to the SNAT IP to come back from provider router
-        providerRouter.addRoute().type("Normal").weight(100)
-            .srcNetworkAddr("0.0.0.0").srcNetworkLength(0)
-            .dstNetworkAddr(snatIp).dstNetworkLength(32)
-            .nextHopPort(providerDownlink.getId()).create();
+        providerRouter.addRoute()
+            .type("Normal")
+            .weight(100)
+            .srcNetworkAddr("0.0.0.0")
+            .srcNetworkLength(0)
+            .dstNetworkAddr(snatIp)
+            .dstNetworkLength(32)
+            .nextHopPort(providerDownlink.getId())
+            .create();
 
         // Default rule to accept traffic that has been DNATed
         post.addRule().type(DtoRule.RevDNAT).flowAction(DtoRule.Accept).create();
@@ -294,8 +287,7 @@ public class MidoNetElement extends AdapterBase implements
         return acc.getUuid();
     }
 
-    public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress)
-        throws ResourceUnavailableException {
+    public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
 
         s_logger.debug("associatePublicIP called with network: " + network.toString());
         /*
@@ -321,7 +313,7 @@ public class MidoNetElement extends AdapterBase implements
         // Set Source NAT rules on router
         for (PublicIpAddress ip : ipAddress) {
             // ip is the external one we sourcenat to
-            if(ip.isSourceNat()){
+            if (ip.isSourceNat()) {
                 if (resources == false) {
                     tenantRouter = getOrCreateGuestNetworkRouter(network);
                     providerRouter = api.getRouter(_providerRouterId);
@@ -341,9 +333,9 @@ public class MidoNetElement extends AdapterBase implements
                 }
 
                 applySourceNat(tenantRouter, providerRouter,    // Routers
-                               tenantUplink, providerDownlink,  // Ports
-                               preNat, post,                       // Chains
-                               ip);                             // The IP
+                    tenantUplink, providerDownlink,  // Ports
+                    preNat, post,                       // Chains
+                    ip);                             // The IP
             }
         }
 
@@ -360,9 +352,7 @@ public class MidoNetElement extends AdapterBase implements
      * @throws ResourceUnavailableException
      */
     @Override
-    public boolean applyIps(Network network,
-                            List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-            throws ResourceUnavailableException {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
 
         s_logger.debug("applyIps called with network: " + network.toString());
         if (!this.midoInNetwork(network)) {
@@ -376,7 +366,7 @@ public class MidoNetElement extends AdapterBase implements
                 break;
             }
         }
-        if(canHandle) {
+        if (canHandle) {
             return associatePublicIP(network, ipAddress);
         } else {
             return false;
@@ -396,8 +386,7 @@ public class MidoNetElement extends AdapterBase implements
      * From interface DHCPServiceProvider
      */
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm,
-                                DeployDestination dest, ReservationContext context)
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         s_logger.debug("addDhcpEntry called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
@@ -416,10 +405,10 @@ public class MidoNetElement extends AdapterBase implements
 
         DhcpSubnet sub = null;
 
-        if(!res.isEmpty()){
-            sub = (DhcpSubnet) res.get(0);
+        if (!res.isEmpty()) {
+            sub = (DhcpSubnet)res.get(0);
         } else {
-            Pair<String,Integer> cidrInfo = NetUtils.getCidr(network.getCidr());
+            Pair<String, Integer> cidrInfo = NetUtils.getCidr(network.getCidr());
             sub = netBridge.addDhcpSubnet();
 
             sub.subnetLength(cidrInfo.second());
@@ -433,7 +422,7 @@ public class MidoNetElement extends AdapterBase implements
         }
 
         // On DHCP subnet, add host using host details
-        if(sub == null){
+        if (sub == null) {
             s_logger.error("Failed to create DHCP subnet on Midonet bridge");
             return false;
         } else {
@@ -441,13 +430,13 @@ public class MidoNetElement extends AdapterBase implements
             boolean isNewDhcpHost = true;
 
             for (DhcpHost dhcpHost : sub.getDhcpHosts()) {
-                if(dhcpHost.getIpAddr().equals(nic.getIp4Address())){
+                if (dhcpHost.getIpAddr().equals(nic.getIp4Address())) {
                     isNewDhcpHost = false;
                     break;
                 }
             }
 
-            if(isNewDhcpHost){
+            if (isNewDhcpHost) {
                 DhcpHost host = sub.addDhcpHost();
                 host.ipAddr(nic.getIp4Address());
                 host.macAddr(nic.getMacAddress());
@@ -462,7 +451,8 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -471,9 +461,7 @@ public class MidoNetElement extends AdapterBase implements
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    private void removeMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat,
-                                        String floatingIp, String fixedIp,
-                                        Router providerRouter) {
+    private void removeMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat, String floatingIp, String fixedIp, Router providerRouter) {
 
         // Delete filter (firewall) rules for this IP
         for (Rule rule : preFilter.getRules()) {
@@ -508,52 +496,39 @@ public class MidoNetElement extends AdapterBase implements
         }
     }
 
-    private void addMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat,
-                                     String floatingIp, String fixedIp,
-                                     RouterPort tenantUplink,
-                                     RouterPort providerDownlink,
-                                     Router providerRouter,
-                                     Network network) {
+    private void addMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat, String floatingIp, String fixedIp, RouterPort tenantUplink,
+        RouterPort providerDownlink, Router providerRouter, Network network) {
 
-        DtoRule.DtoNatTarget[] preTargets = new DtoRule.DtoNatTarget[]{
-            new DtoRule.DtoNatTarget(fixedIp, fixedIp, 0, 0)};
+        DtoRule.DtoNatTarget[] preTargets = new DtoRule.DtoNatTarget[] {new DtoRule.DtoNatTarget(fixedIp, fixedIp, 0, 0)};
 
         // Set inbound filter rule (allow return traffic to this IP)
         //     Implemented as "jump to NAT chain" instead of ACCEPT;
         //     this is to enforce that filter / firewall rules are evaluated
         //     before NAT rules.
-        preFilter.addRule().type(DtoRule.Jump)
-                .jumpChainId(preNat.getId())
-                .nwDstAddress(floatingIp)
-                .nwDstLength(32)
-                .matchReturnFlow(true)
-                .position(1)
-                .create();
+        preFilter.addRule().type(DtoRule.Jump).jumpChainId(preNat.getId()).nwDstAddress(floatingIp).nwDstLength(32).matchReturnFlow(true).position(1).create();
 
         // Allow ICMP replies (ICMP type 0, code 0 is ICMP reply)
-        preFilter.addRule().type(DtoRule.Jump)
-                .jumpChainId(preNat.getId())
-                .nwDstAddress(floatingIp)
-                .nwDstLength(32)
-                .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
-                .tpSrc(new DtoRange<Integer>(0,0))
-                .tpDst(new DtoRange<Integer>(0,0))
-                .position(2)
-                .create();
+        preFilter.addRule()
+            .type(DtoRule.Jump)
+            .jumpChainId(preNat.getId())
+            .nwDstAddress(floatingIp)
+            .nwDstLength(32)
+            .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
+            .tpSrc(new DtoRange<Integer>(0, 0))
+            .tpDst(new DtoRange<Integer>(0, 0))
+            .position(2)
+            .create();
 
         // We only want to set the default DROP rule for static NAT if
         // Firewall is handled by the Midonet plugin.
         // Set inbound filter rule (drop all traffic to this IP)
         if (canHandle(network, Service.Firewall)) {
-            preFilter.addRule().type(DtoRule.Drop)
-                .nwDstAddress(floatingIp)
-                .nwDstLength(32)
-                .position(3)
-                .create();
+            preFilter.addRule().type(DtoRule.Drop).nwDstAddress(floatingIp).nwDstLength(32).position(3).create();
         }
 
         // Set inbound (DNAT) rule
-        preNat.addRule().type(DtoRule.DNAT)
+        preNat.addRule()
+            .type(DtoRule.DNAT)
             .flowAction(DtoRule.Accept)
             .nwDstAddress(floatingIp)
             .nwDstLength(32)
@@ -562,48 +537,51 @@ public class MidoNetElement extends AdapterBase implements
             .position(1)
             .create();
 
-        DtoRule.DtoNatTarget[] postTargets = new DtoRule.DtoNatTarget[]{
-            new DtoRule.DtoNatTarget(floatingIp, floatingIp, 0, 0)};
+        DtoRule.DtoNatTarget[] postTargets = new DtoRule.DtoNatTarget[] {new DtoRule.DtoNatTarget(floatingIp, floatingIp, 0, 0)};
 
         // Set outbound (SNAT) rule
         //    Match forward flow so that return traffic will be recognized
-        postNat.addRule().type(DtoRule.SNAT)
+        postNat.addRule()
+            .type(DtoRule.SNAT)
             .flowAction(DtoRule.Accept)
             .matchForwardFlow(true)
             .nwSrcAddress(fixedIp)
             .nwSrcLength(32)
-            .outPorts(new UUID[]{tenantUplink.getId()})
+            .outPorts(new UUID[] {tenantUplink.getId()})
             .natTargets(postTargets)
             .position(1)
             .create();
 
         // Set outbound (SNAT) rule
         //    Match return flow to also allow out traffic which was marked as forward flow on way in
-        postNat.addRule().type(DtoRule.SNAT)
+        postNat.addRule()
+            .type(DtoRule.SNAT)
             .flowAction(DtoRule.Accept)
             .matchReturnFlow(true)
             .nwSrcAddress(fixedIp)
             .nwSrcLength(32)
-            .outPorts(new UUID[]{tenantUplink.getId()})
+            .outPorts(new UUID[] {tenantUplink.getId()})
             .natTargets(postTargets)
             .position(2)
             .create();
 
         // Set routes for traffic to the SNAT IP to come back from provider router
-        providerRouter.addRoute().type("Normal").weight(100)
-            .srcNetworkAddr("0.0.0.0").srcNetworkLength(0)
-            .dstNetworkAddr(floatingIp).dstNetworkLength(32)
-            .nextHopPort(providerDownlink.getId()).create();
+        providerRouter.addRoute()
+            .type("Normal")
+            .weight(100)
+            .srcNetworkAddr("0.0.0.0")
+            .srcNetworkLength(0)
+            .dstNetworkAddr(floatingIp)
+            .dstNetworkLength(32)
+            .nextHopPort(providerDownlink.getId())
+            .create();
     }
-
 
     /**
      * From interface StaticNatServiceProvider
      */
     @Override
-    public boolean applyStaticNats(Network network,
-                                   List<? extends StaticNat> rules)
-            throws ResourceUnavailableException {
+    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         s_logger.debug("applyStaticNats called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -652,15 +630,9 @@ public class MidoNetElement extends AdapterBase implements
             }
 
             if (rule.isForRevoke()) {
-                removeMidonetStaticNAT(preFilter, preNat, post,
-                                       sourceIpAddr, rule.getDestIpAddress(),
-                                       providerRouter);
+                removeMidonetStaticNAT(preFilter, preNat, post, sourceIpAddr, rule.getDestIpAddress(), providerRouter);
             } else {
-                addMidonetStaticNAT(preFilter, preNat, post,
-                                    sourceIpAddr, rule.getDestIpAddress(),
-                                    tenantUplink, providerDownlink,
-                                    providerRouter,
-                                    network);
+                addMidonetStaticNAT(preFilter, preNat, post, sourceIpAddr, rule.getDestIpAddress(), tenantUplink, providerDownlink, providerRouter, network);
             }
         }
 
@@ -683,7 +655,7 @@ public class MidoNetElement extends AdapterBase implements
 
             for (Rule existingRule : preFilter.getRules()) {
                 // The "whitelist" rules we're interested in are the Jump rules where src address is specified
-                if(existingRule.getType().equals(DtoRule.Jump) && existingRule.getNwSrcAddress() != null){
+                if (existingRule.getType().equals(DtoRule.Jump) && existingRule.getNwSrcAddress() != null) {
                     String ruleString = new SimpleFirewallRule(existingRule).toStringArray()[0];
                     existingRules.put(ruleString, existingRule);
                 }
@@ -700,24 +672,25 @@ public class MidoNetElement extends AdapterBase implements
 
                     if (rule.getState() == FirewallRule.State.Revoke) {
                         // Lookup in existingRules, delete if present
-                        for(String revokeRuleString : ruleStrings){
+                        for (String revokeRuleString : ruleStrings) {
                             Rule foundRule = existingRules.get(revokeRuleString);
-                            if(foundRule != null){
+                            if (foundRule != null) {
                                 foundRule.delete();
                             }
                         }
                     } else if (rule.getState() == FirewallRule.State.Add) {
                         // Lookup in existingRules, add if not present
-                        for(int i = 0; i < ruleStrings.length; i++){
+                        for (int i = 0; i < ruleStrings.length; i++) {
                             String ruleString = ruleStrings[i];
                             Rule foundRule = existingRules.get(ruleString);
-                            if(foundRule == null){
+                            if (foundRule == null) {
                                 // Get the cidr for the related entry in the Source Cidrs list
                                 String relatedCidr = fwRule.sourceCidrs.get(i);
-                                Pair<String,Integer> cidrParts = NetUtils.getCidr(relatedCidr);
+                                Pair<String, Integer> cidrParts = NetUtils.getCidr(relatedCidr);
 
                                 // Create rule with correct proto, cidr, ACCEPT, dst IP
-                                Rule toApply = preFilter.addRule()
+                                Rule toApply =
+                                    preFilter.addRule()
                                         .type(DtoRule.Jump)
                                         .jumpChainId(preNat.getId())
                                         .position(1)
@@ -727,12 +700,11 @@ public class MidoNetElement extends AdapterBase implements
                                         .nwDstLength(32)
                                         .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()));
 
-                                if(rule.getProtocol().equals("icmp")){
+                                if (rule.getProtocol().equals("icmp")) {
                                     // ICMP rules - reuse port fields
                                     // (-1, -1) means "allow all ICMP", so we don't set tpSrc / tpDst
-                                    if(fwRule.icmpType != -1 | fwRule.icmpCode != -1){
-                                        toApply.tpSrc(new DtoRange(fwRule.icmpType, fwRule.icmpType))
-                                            .tpDst(new DtoRange(fwRule.icmpCode, fwRule.icmpCode));
+                                    if (fwRule.icmpType != -1 | fwRule.icmpCode != -1) {
+                                        toApply.tpSrc(new DtoRange(fwRule.icmpType, fwRule.icmpType)).tpDst(new DtoRange(fwRule.icmpCode, fwRule.icmpCode));
                                     }
                                 } else {
                                     toApply.tpDst(new DtoRange(fwRule.dstPortStart, fwRule.dstPortEnd));
@@ -756,15 +728,14 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest,
-                             ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         s_logger.debug("implement called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
 
-        if(network.getTrafficType() == Networks.TrafficType.Guest){
+        if (network.getTrafficType() == Networks.TrafficType.Guest) {
             // Create the Midonet bridge for this network
             Bridge netBridge = getOrCreateNetworkBridge(network);
             Router tenantRouter = getOrCreateGuestNetworkRouter(network);
@@ -777,31 +748,27 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm,
-                           DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         s_logger.debug("prepare called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
 
-        if (nic.getTrafficType() == Networks.TrafficType.Guest &&
-            !canHandle(network, Service.StaticNat)) {
+        if (nic.getTrafficType() == Networks.TrafficType.Guest && !canHandle(network, Service.StaticNat)) {
             return false;
         }
 
-        if (nic.getTrafficType() == Networks.TrafficType.Guest ||
-                nic.getTrafficType() == Networks.TrafficType.Public &&
-                nic.getBroadcastType() == Networks.BroadcastDomainType.Mido){
+        if (nic.getTrafficType() == Networks.TrafficType.Guest || nic.getTrafficType() == Networks.TrafficType.Public &&
+            nic.getBroadcastType() == Networks.BroadcastDomainType.Mido) {
             Bridge netBridge = getOrCreateNetworkBridge(network);
-            if(nic.getTrafficType() == Networks.TrafficType.Public &&
-                vm.getVirtualMachine().getType() != VirtualMachine.Type.DomainRouter){
+            if (nic.getTrafficType() == Networks.TrafficType.Public && vm.getVirtualMachine().getType() != VirtualMachine.Type.DomainRouter) {
                 // Get provider router
                 Router providerRouter = api.getRouter(_providerRouterId);
 
                 Port[] ports = getOrCreatePublicBridgePorts(nic, netBridge, providerRouter);
 
-                RouterPort providerDownlink = (RouterPort) ports[1];
+                RouterPort providerDownlink = (RouterPort)ports[1];
 
                 // Set route from router to bridge for this particular IP. Prepare
                 // is called in both starting a new VM and restarting a VM, so the
@@ -817,15 +784,15 @@ public class MidoNetElement extends AdapterBase implements
 
                 if (!routeExists) {
                     providerRouter.addRoute()
-                                  .type("Normal")
-                                  .weight(100)
-                                  .srcNetworkAddr("0.0.0.0")
-                                  .srcNetworkLength(0)
-                                  .dstNetworkAddr(nic.getIp4Address())
-                                  .dstNetworkLength(32)
-                                  .nextHopPort(providerDownlink.getId())
-                                  .nextHopGateway(null)
-                                  .create();
+                        .type("Normal")
+                        .weight(100)
+                        .srcNetworkAddr("0.0.0.0")
+                        .srcNetworkLength(0)
+                        .dstNetworkAddr(nic.getIp4Address())
+                        .dstNetworkLength(32)
+                        .nextHopPort(providerDownlink.getId())
+                        .nextHopGateway(null)
+                        .create();
                 }
             }
 
@@ -841,18 +808,16 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm,
-                           ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         s_logger.debug("release called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
 
         UUID nicUUID = getNicUUID(nic);
-        if(nic.getTrafficType() == Networks.TrafficType.Guest ||
-                (nic.getTrafficType() == Networks.TrafficType.Public &&
-                nic.getBroadcastType() == Networks.BroadcastDomainType.Mido)) {
+        if (nic.getTrafficType() == Networks.TrafficType.Guest ||
+            (nic.getTrafficType() == Networks.TrafficType.Public && nic.getBroadcastType() == Networks.BroadcastDomainType.Mido)) {
             // Seems like a good place to remove the port in midonet
             Bridge netBridge = getOrCreateNetworkBridge(network);
 
@@ -868,7 +833,7 @@ public class MidoNetElement extends AdapterBase implements
 
             for (BridgePort p : netBridge.getPorts()) {
                 UUID vifID = p.getVifId();
-                if(vifID != null && vifID.equals(nicUUID)){
+                if (vifID != null && vifID.equals(nicUUID)) {
                     // This is the MidoNet port which corresponds to the NIC we are releasing
 
                     // Set VIF ID to null
@@ -884,8 +849,7 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("shutdown called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -901,8 +865,7 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean destroy(Network network, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("destroy called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -925,8 +888,8 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // Nothing to do here because the cleanup of the networks themselves clean up the resources.
         return true;
     }
@@ -940,23 +903,18 @@ public class MidoNetElement extends AdapterBase implements
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        if (services.contains(Service.Vpn) ||
-            services.contains(Service.Dns) ||
-            services.contains(Service.Lb) ||
-            services.contains(Service.UserData) ||
-            services.contains(Service.SecurityGroup) ||
-            services.contains(Service.NetworkACL)) {
-                // We don't implement any of these services, and we don't
-                // want anyone else to do it for us. So if these services
-                // exist, we can't handle it.
-                return false;
+        if (services.contains(Service.Vpn) || services.contains(Service.Dns) || services.contains(Service.Lb) || services.contains(Service.UserData) ||
+            services.contains(Service.SecurityGroup) || services.contains(Service.NetworkACL)) {
+            // We don't implement any of these services, and we don't
+            // want anyone else to do it for us. So if these services
+            // exist, we can't handle it.
+            return false;
         }
         return true;
     }
 
     @Override
-    public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
-                    throws ResourceUnavailableException {
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
         s_logger.debug("applyPFRules called with network " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -979,7 +937,7 @@ public class MidoNetElement extends AdapterBase implements
         Map<String, Rule> existingPreNatRules = new HashMap<String, Rule>();
         for (Rule existingRule : preNat.getRules()) {
             // The "port forwarding" rules we're interested in are dnat rules where src / dst ports are specified
-            if(existingRule.getType().equals(DtoRule.DNAT) && existingRule.getTpDst() != null){
+            if (existingRule.getType().equals(DtoRule.DNAT) && existingRule.getTpDst() != null) {
                 String ruleString = new SimpleFirewallRule(existingRule).toStringArray()[0];
                 existingPreNatRules.put(ruleString, existingRule);
             }
@@ -1026,9 +984,9 @@ public class MidoNetElement extends AdapterBase implements
                  * We need to delete from both the preNat table and the
                  * postNat table.
                  */
-                for(String revokeRuleString : ruleStrings){
+                for (String revokeRuleString : ruleStrings) {
                     Rule foundPreNatRule = existingPreNatRules.get(revokeRuleString);
-                    if(foundPreNatRule != null){
+                    if (foundPreNatRule != null) {
                         String ip = foundPreNatRule.getNwDstAddress();
                         // is this the last rule associated with this IP?
                         Integer cnt = ipRuleCounts.get(ip);
@@ -1046,10 +1004,10 @@ public class MidoNetElement extends AdapterBase implements
                     }
                 }
             } else if (rule.getState() == FirewallRule.State.Add) {
-                for(int i = 0; i < ruleStrings.length; i++){
+                for (int i = 0; i < ruleStrings.length; i++) {
                     String ruleString = ruleStrings[i];
                     Rule foundRule = existingPreNatRules.get(ruleString);
-                    if(foundRule == null){
+                    if (foundRule == null) {
 
                         String vmIp = ruleTO.getDstIp();
                         String publicIp = dstIp.getAddress().addr();
@@ -1058,18 +1016,18 @@ public class MidoNetElement extends AdapterBase implements
                         int pubPortStart = ruleTO.getSrcPortRange()[0];
                         int pubPortEnd = ruleTO.getSrcPortRange()[1];
 
-                        DtoRule.DtoNatTarget[] preTargets = new DtoRule.DtoNatTarget[]{
-                            new DtoRule.DtoNatTarget(vmIp, vmIp, privPortStart, privPortEnd)};
+                        DtoRule.DtoNatTarget[] preTargets = new DtoRule.DtoNatTarget[] {new DtoRule.DtoNatTarget(vmIp, vmIp, privPortStart, privPortEnd)};
 
-                        Rule preNatRule = preNat.addRule()
-                            .type(DtoRule.DNAT)
-                            .flowAction(DtoRule.Accept)
-                            .nwDstAddress(publicIp)
-                            .nwDstLength(32)
-                            .tpDst(new DtoRange(pubPortStart, pubPortEnd))
-                            .natTargets(preTargets)
-                            .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()))
-                            .position(1);
+                        Rule preNatRule =
+                            preNat.addRule()
+                                .type(DtoRule.DNAT)
+                                .flowAction(DtoRule.Accept)
+                                .nwDstAddress(publicIp)
+                                .nwDstLength(32)
+                                .tpDst(new DtoRange(pubPortStart, pubPortEnd))
+                                .natTargets(preTargets)
+                                .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()))
+                                .position(1);
 
                         Integer cnt = ipRuleCounts.get(publicIp);
                         if (cnt != null) {
@@ -1082,14 +1040,15 @@ public class MidoNetElement extends AdapterBase implements
                         preNatRule.create();
 
                         if (routes.get(publicIp) == null) {
-                            Route route = providerRouter.addRoute()
-                                            .type("Normal")
-                                            .weight(100)
-                                            .srcNetworkAddr("0.0.0.0")
-                                            .srcNetworkLength(0)
-                                            .dstNetworkAddr(publicIp)
-                                            .dstNetworkLength(32)
-                                            .nextHopPort(providerDownlink.getId());
+                            Route route =
+                                providerRouter.addRoute()
+                                    .type("Normal")
+                                    .weight(100)
+                                    .srcNetworkAddr("0.0.0.0")
+                                    .srcNetworkLength(0)
+                                    .dstNetworkAddr(publicIp)
+                                    .dstNetworkLength(32)
+                                    .nextHopPort(providerDownlink.getId());
                             route.create();
                             routes.put(publicIp, route);
                         }
@@ -1106,10 +1065,7 @@ public class MidoNetElement extends AdapterBase implements
                                 }
                             }
                             if (!defaultBlock) {
-                                preFilter.addRule().type(DtoRule.Drop)
-                                    .nwDstAddress(publicIp)
-                                    .nwDstLength(32)
-                                    .create();
+                                preFilter.addRule().type(DtoRule.Drop).nwDstAddress(publicIp).nwDstLength(32).create();
                             }
                         }
                     }
@@ -1118,7 +1074,6 @@ public class MidoNetElement extends AdapterBase implements
         }
         return true;
     }
-
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
@@ -1136,8 +1091,7 @@ public class MidoNetElement extends AdapterBase implements
         // L3 Support : SourceNat
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         //sourceNatCapabilities.putAll(capabilities.get(Service.SourceNat));
-        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes,
-                "peraccount");
+        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");
         //sourceNatCapabilities.putAll(capabilities.get(Service.SourceNat));
         sourceNatCapabilities.put(Capability.RedundantRouter, "false");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
@@ -1159,7 +1113,7 @@ public class MidoNetElement extends AdapterBase implements
         return capabilities;
     }
 
-    private String getChainName(String routerName, RuleChainCode chainCode){
+    private String getChainName(String routerName, RuleChainCode chainCode) {
         return getChainName("", routerName, chainCode);
     }
 
@@ -1167,7 +1121,7 @@ public class MidoNetElement extends AdapterBase implements
 
         String chain = "";
 
-        switch (chainCode){
+        switch (chainCode) {
             case TR_PRE:
                 chain = "pre-routing";
                 break;
@@ -1191,12 +1145,11 @@ public class MidoNetElement extends AdapterBase implements
         return routerName + "-tenantrouter-" + chain;
     }
 
-    protected RuleChain getChain(String accountUuid, String routerName, RuleChainCode chainCode){
+    protected RuleChain getChain(String accountUuid, String routerName, RuleChainCode chainCode) {
         return getChain("", accountUuid, routerName, chainCode);
     }
 
-    protected RuleChain getChain(String networkId, String accountUuid,
-                               String routerName, RuleChainCode chainCode){
+    protected RuleChain getChain(String networkId, String accountUuid, String routerName, RuleChainCode chainCode) {
         String chainName = getChainName(networkId, routerName, chainCode);
 
         MultivaluedMap findChain = new MultivaluedMapImpl();
@@ -1204,8 +1157,8 @@ public class MidoNetElement extends AdapterBase implements
 
         ResourceCollection<RuleChain> ruleChains = api.getChains(findChain);
 
-        for(RuleChain chain : ruleChains){
-            if(chain.getName().equals(chainName)){
+        for (RuleChain chain : ruleChains) {
+            if (chain.getName().equals(chainName)) {
                 return chain;
             }
         }
@@ -1213,31 +1166,29 @@ public class MidoNetElement extends AdapterBase implements
         return null;
     }
 
-    protected RouterPort[] getOrCreateProviderRouterPorts(Router tenantRouter, Router providerRouter){
+    protected RouterPort[] getOrCreateProviderRouterPorts(Router tenantRouter, Router providerRouter) {
         RouterPort[] ports = new RouterPort[2];
 
         RouterPort tenantUplink = null;
         RouterPort providerDownlink = null;
 
         // Check if the ports and connection already exist
-        for(Port peerPort : tenantRouter.getPeerPorts((new MultivaluedMapImpl()))){
-            if(peerPort != null && peerPort instanceof RouterPort){
-                RouterPort checkPort = (RouterPort) peerPort;
-                if(checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0){
+        for (Port peerPort : tenantRouter.getPeerPorts((new MultivaluedMapImpl()))) {
+            if (peerPort != null && peerPort instanceof RouterPort) {
+                RouterPort checkPort = (RouterPort)peerPort;
+                if (checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0) {
                     providerDownlink = checkPort;
-                    tenantUplink = (RouterPort) api.getPort(checkPort.getPeerId());
+                    tenantUplink = (RouterPort)api.getPort(checkPort.getPeerId());
                     break;
                 }
             }
         }
 
         // Create the ports and connection if they don't exist
-        if(providerDownlink == null){
+        if (providerDownlink == null) {
             // Add interior port on router side, with network details
-            providerDownlink = providerRouter.addInteriorRouterPort().networkAddress("169.254.255.0").networkLength(32)
-                    .portAddress("169.254.255.1").create();
-            tenantUplink = tenantRouter.addInteriorRouterPort().networkAddress("169.254.255.0").networkLength(32)
-                    .portAddress("169.254.255.2").create();
+            providerDownlink = providerRouter.addInteriorRouterPort().networkAddress("169.254.255.0").networkLength(32).portAddress("169.254.255.1").create();
+            tenantUplink = tenantRouter.addInteriorRouterPort().networkAddress("169.254.255.0").networkLength(32).portAddress("169.254.255.2").create();
 
             // Link them up
             providerDownlink.link(tenantUplink.getId()).update();
@@ -1249,42 +1200,38 @@ public class MidoNetElement extends AdapterBase implements
         return ports;
     }
 
-    private Port[] getOrCreatePublicBridgePorts(NicProfile nic, Bridge publicBridge, Router providerRouter){
+    private Port[] getOrCreatePublicBridgePorts(NicProfile nic, Bridge publicBridge, Router providerRouter) {
         Port[] ports = new Port[2];
 
         BridgePort bridgeUplink = null;
         RouterPort providerDownlink = null;
 
         // Check if the ports and connection already exist
-        for(Port peerPort : publicBridge.getPeerPorts()){
-            if(peerPort != null && peerPort instanceof RouterPort){
-                RouterPort checkPort = (RouterPort) peerPort;
+        for (Port peerPort : publicBridge.getPeerPorts()) {
+            if (peerPort != null && peerPort instanceof RouterPort) {
+                RouterPort checkPort = (RouterPort)peerPort;
                 // Check it's a port on the providerRouter with the right gateway address
-                if(checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0
-                        && checkPort.getPortAddress().equals(nic.getGateway())){
+                if (checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0 && checkPort.getPortAddress().equals(nic.getGateway())) {
                     providerDownlink = checkPort;
-                    bridgeUplink = (BridgePort) api.getPort(checkPort.getPeerId());
+                    bridgeUplink = (BridgePort)api.getPort(checkPort.getPeerId());
                     break;
                 }
             }
         }
 
         // Create the ports and connection if they don't exist
-        if(providerDownlink == null){
+        if (providerDownlink == null) {
             String cidr = NetUtils.ipAndNetMaskToCidr(nic.getGateway(), nic.getNetmask());
             String cidrSubnet = NetUtils.getCidrSubNet(cidr);
-            int cidrSize = (int) NetUtils.getCidrSize(NetUtils.cidr2Netmask(cidr));
+            int cidrSize = (int)NetUtils.getCidrSize(NetUtils.cidr2Netmask(cidr));
             String gateway = nic.getGateway();
 
-
             // Add interior port on router side, with network details
-            providerDownlink = providerRouter.addInteriorRouterPort().networkAddress(cidrSubnet).networkLength(cidrSize)
-                    .portAddress(gateway).create();
+            providerDownlink = providerRouter.addInteriorRouterPort().networkAddress(cidrSubnet).networkLength(cidrSize).portAddress(gateway).create();
             bridgeUplink = publicBridge.addInteriorPort().create();
 
             // Link them up
             providerDownlink.link(bridgeUplink.getId()).update();
-
 
         }
 
@@ -1294,17 +1241,17 @@ public class MidoNetElement extends AdapterBase implements
         return ports;
     }
 
-    private void ensureBridgeConnectedToRouter(Network network, Bridge netBridge, Router netRouter){
-        if(getBridgeToRouterPort(network, netBridge, netRouter) == null){
+    private void ensureBridgeConnectedToRouter(Network network, Bridge netBridge, Router netRouter) {
+        if (getBridgeToRouterPort(network, netBridge, netRouter) == null) {
             connectBridgeToRouter(network, netBridge, netRouter);
         }
     }
 
-    private BridgePort getBridgeToRouterPort(Network network, Bridge netBridge, Router netRouter){
+    private BridgePort getBridgeToRouterPort(Network network, Bridge netBridge, Router netRouter) {
         for (Port p : netBridge.getPeerPorts()) {
-            if(p.getClass().equals(BridgePort.class)){
-                BridgePort bp = (BridgePort) p;
-                if(bp.getPeerId().compareTo(netRouter.getId()) == 0){
+            if (p.getClass().equals(BridgePort.class)) {
+                BridgePort bp = (BridgePort)p;
+                if (bp.getPeerId().compareTo(netRouter.getId()) == 0) {
                     return bp;
                 }
             }
@@ -1323,10 +1270,7 @@ public class MidoNetElement extends AdapterBase implements
         long id = getRouterId(network, isVpc);
         String routerName = getRouterName(isVpc, id);
 
-        RuleChain egressChain = getChain(String.valueOf(network.getId()),
-                                         getAccountUuid(network),
-                                         routerName,
-                                         RuleChainCode.ACL_EGRESS);
+        RuleChain egressChain = getChain(String.valueOf(network.getId()), getAccountUuid(network), routerName, RuleChainCode.ACL_EGRESS);
 
         // Clear all the rules out
         for (Rule rule : egressChain.getRules()) {
@@ -1334,10 +1278,7 @@ public class MidoNetElement extends AdapterBase implements
         }
 
         // Add a matchForwardFlow rule so that we can accept all return traffic
-        egressChain.addRule().type(DtoRule.Accept)
-            .matchForwardFlow(true)
-            .position(1)
-            .create();
+        egressChain.addRule().type(DtoRule.Accept).matchForwardFlow(true).position(1).create();
     }
 
     protected RuleChain getOrInitEgressACLFilter(Network network) {
@@ -1345,10 +1286,7 @@ public class MidoNetElement extends AdapterBase implements
         long id = getRouterId(network, isVpc);
         String routerName = getRouterName(isVpc, id);
 
-        RuleChain egressChain = getChain(String.valueOf(network.getId()),
-                                         getAccountUuid(network),
-                                         routerName,
-                                         RuleChainCode.ACL_EGRESS);
+        RuleChain egressChain = getChain(String.valueOf(network.getId()), getAccountUuid(network), routerName, RuleChainCode.ACL_EGRESS);
 
         // Rules set by the user will have a protocol, so we count the ACL
         // rules by counting how much have the nwProto field set.
@@ -1371,13 +1309,11 @@ public class MidoNetElement extends AdapterBase implements
 
         int pos = 1;
         // If it is ARP, accept it
-        egressChain.addRule().type(DtoRule.Accept)
-            .dlType(0x0806)
-            .position(pos++)
-            .create();
+        egressChain.addRule().type(DtoRule.Accept).dlType(0x0806).position(pos++).create();
 
         // If it is ICMP to the router, accept that
-        egressChain.addRule().type(DtoRule.Accept)
+        egressChain.addRule()
+            .type(DtoRule.Accept)
             .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
             .nwDstAddress(network.getGateway())
             .nwDstLength(32)
@@ -1385,15 +1321,12 @@ public class MidoNetElement extends AdapterBase implements
             .create();
 
         // Everything else gets dropped
-        egressChain.addRule()
-            .type(DtoRule.Drop)
-            .position(pos)
-            .create();
+        egressChain.addRule().type(DtoRule.Drop).position(pos).create();
 
         return egressChain;
     }
 
-    private void connectBridgeToRouter(Network network, Bridge netBridge, Router netRouter){
+    private void connectBridgeToRouter(Network network, Bridge netBridge, Router netRouter) {
 
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
@@ -1407,12 +1340,11 @@ public class MidoNetElement extends AdapterBase implements
         RouterPort routerPort = netRouter.addInteriorRouterPort();
         String cidr = network.getCidr();
         String cidrSubnet = NetUtils.getCidrSubNet(cidr);
-        int cidrSize = (int) NetUtils.getCidrSize(NetUtils.cidr2Netmask(cidr));
+        int cidrSize = (int)NetUtils.getCidrSize(NetUtils.cidr2Netmask(cidr));
 
         routerPort.networkAddress(cidrSubnet);
         routerPort.networkLength(cidrSize);
         routerPort.portAddress(network.getGateway());
-
 
         // If this is a VPC, then we will be using NetworkACLs, which is
         // implemented via chains on the router port to that network.
@@ -1421,52 +1353,31 @@ public class MidoNetElement extends AdapterBase implements
             // (outbound from the port
             int pos = 1;
 
-            RuleChain inc = api.addChain()
-                .name(getChainName(String.valueOf(network.getId()),
-                                   routerName,
-                                   RuleChainCode.ACL_INGRESS))
-                .tenantId(accountIdStr)
-                .create();
-
+            RuleChain inc = api.addChain().name(getChainName(String.valueOf(network.getId()), routerName, RuleChainCode.ACL_INGRESS)).tenantId(accountIdStr).create();
 
             // If it is ARP, accept it
-            inc.addRule().type(DtoRule.Accept)
-                         .dlType(0x0806)
-                         .position(pos++)
-                         .create();
+            inc.addRule().type(DtoRule.Accept).dlType(0x0806).position(pos++).create();
 
             // If it is ICMP to the router, accept that
-            inc.addRule().type(DtoRule.Accept)
-                   .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
-                         .nwDstAddress(network.getGateway())
-                         .nwDstLength(32)
-                         .position(pos++)
-                         .create();
+            inc.addRule()
+                .type(DtoRule.Accept)
+                .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
+                .nwDstAddress(network.getGateway())
+                .nwDstLength(32)
+                .position(pos++)
+                .create();
 
             // If it is connection tracked, accept that as well
-            inc.addRule().type(DtoRule.Accept)
-                         .matchReturnFlow(true)
-                         .position(pos++)
-                         .create();
+            inc.addRule().type(DtoRule.Accept).matchReturnFlow(true).position(pos++).create();
 
-            inc.addRule().type(DtoRule.Drop)
-                         .position(pos)
-                         .create();
+            inc.addRule().type(DtoRule.Drop).position(pos).create();
 
             //
-            RuleChain out = api.addChain()
-                .name(getChainName(String.valueOf(network.getId()),
-                                   routerName,
-                                   RuleChainCode.ACL_EGRESS))
-                .tenantId(accountIdStr)
-                .create();
+            RuleChain out = api.addChain().name(getChainName(String.valueOf(network.getId()), routerName, RuleChainCode.ACL_EGRESS)).tenantId(accountIdStr).create();
 
             // Creating the first default rule here that does nothing
             // but start connection tracking.
-            out.addRule().type(DtoRule.Accept)
-                         .matchForwardFlow(true)
-                         .position(1)
-                         .create();
+            out.addRule().type(DtoRule.Accept).matchForwardFlow(true).position(1).create();
 
             routerPort.outboundFilterId(inc.getId());
             routerPort.inboundFilterId(out.getId());
@@ -1478,20 +1389,26 @@ public class MidoNetElement extends AdapterBase implements
         bridgePort.link(routerPort.getId()).update();
 
         // Set up default route from router to subnet
-        netRouter.addRoute().type("Normal").weight(100)
-                .srcNetworkAddr("0.0.0.0").srcNetworkLength(0)
-                .dstNetworkAddr(cidrSubnet).dstNetworkLength(cidrSize)
-                .nextHopPort(routerPort.getId()).nextHopGateway(null).create();
+        netRouter.addRoute()
+            .type("Normal")
+            .weight(100)
+            .srcNetworkAddr("0.0.0.0")
+            .srcNetworkLength(0)
+            .dstNetworkAddr(cidrSubnet)
+            .dstNetworkLength(cidrSize)
+            .nextHopPort(routerPort.getId())
+            .nextHopGateway(null)
+            .create();
     }
 
-    private Bridge getOrCreateNetworkBridge(Network network){
+    private Bridge getOrCreateNetworkBridge(Network network) {
         // Find the single bridge for this network, create if doesn't exist
         return getOrCreateNetworkBridge(network.getId(), getAccountUuid(network));
     }
 
-    private Bridge getOrCreateNetworkBridge(long networkID, String accountUuid){
+    private Bridge getOrCreateNetworkBridge(long networkID, String accountUuid) {
         Bridge netBridge = getNetworkBridge(networkID, accountUuid);
-        if(netBridge == null){
+        if (netBridge == null) {
 
             String networkUUIDStr = String.valueOf(networkID);
 
@@ -1506,14 +1423,14 @@ public class MidoNetElement extends AdapterBase implements
         return netBridge;
     }
 
-    private Bridge getNetworkBridge(long networkID, String accountUuid){
+    private Bridge getNetworkBridge(long networkID, String accountUuid) {
 
         MultivaluedMap qNetBridge = new MultivaluedMapImpl();
         String networkUUIDStr = String.valueOf(networkID);
         qNetBridge.add("tenant_id", accountUuid);
 
-        for (Bridge b : this. api.getBridges(qNetBridge)) {
-            if(b.getName().equals(networkUUIDStr)){
+        for (Bridge b : this.api.getBridges(qNetBridge)) {
+            if (b.getName().equals(networkUUIDStr)) {
                 return b;
             }
         }
@@ -1533,7 +1450,7 @@ public class MidoNetElement extends AdapterBase implements
         }
     }
 
-    private Router getOrCreateGuestNetworkRouter(Network network){
+    private Router getOrCreateGuestNetworkRouter(Network network) {
         // Find the single bridge for this (isolated) guest network, create if doesn't exist
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
@@ -1555,52 +1472,29 @@ public class MidoNetElement extends AdapterBase implements
         String routerName = getRouterName(isVpc, id);
 
         //Set up rule chains
-        RuleChain pre = api.addChain()
-                            .name(getChainName(routerName, RuleChainCode.TR_PRE))
-                            .tenantId(accountUuid)
-                            .create();
-        RuleChain post = api.addChain()
-                            .name(getChainName(routerName, RuleChainCode.TR_POST))
-                            .tenantId(accountUuid)
-                            .create();
+        RuleChain pre = api.addChain().name(getChainName(routerName, RuleChainCode.TR_PRE)).tenantId(accountUuid).create();
+        RuleChain post = api.addChain().name(getChainName(routerName, RuleChainCode.TR_POST)).tenantId(accountUuid).create();
 
         // Set up NAT and filter chains for pre-routing
-        RuleChain preFilter = api.addChain()
-                                  .name(getChainName(routerName, RuleChainCode.TR_PREFILTER))
-                                  .tenantId(accountUuid)
-                                  .create();
-        RuleChain preNat = api.addChain()
-                                  .name(getChainName(routerName, RuleChainCode.TR_PRENAT))
-                                  .tenantId(accountUuid)
-                                  .create();
+        RuleChain preFilter = api.addChain().name(getChainName(routerName, RuleChainCode.TR_PREFILTER)).tenantId(accountUuid).create();
+        RuleChain preNat = api.addChain().name(getChainName(routerName, RuleChainCode.TR_PRENAT)).tenantId(accountUuid).create();
 
         // Hook the chains in - first jump to Filter chain, then jump to Nat chain
-        pre.addRule().type(DtoRule.Jump)
-                     .jumpChainId(preFilter.getId())
-                     .position(1)
-                     .create();
-        pre.addRule().type(DtoRule.Jump)
-                     .jumpChainId(preNat.getId())
-                     .position(2)
-                     .create();
+        pre.addRule().type(DtoRule.Jump).jumpChainId(preFilter.getId()).position(1).create();
+        pre.addRule().type(DtoRule.Jump).jumpChainId(preNat.getId()).position(2).create();
 
-        return api.addRouter()
-                   .tenantId(accountUuid)
-                   .name(routerName)
-                   .inboundFilterId(pre.getId())
-                   .outboundFilterId(post.getId())
-                   .create();
+        return api.addRouter().tenantId(accountUuid).name(routerName).inboundFilterId(pre.getId()).outboundFilterId(post.getId()).create();
     }
 
     private Router getOrCreateGuestNetworkRouter(long id, String accountUuid, boolean isVpc) {
         Router tenantRouter = getGuestNetworkRouter(id, accountUuid, isVpc);
-        if(tenantRouter == null){
+        if (tenantRouter == null) {
             tenantRouter = createRouter(id, accountUuid, isVpc);
         }
         return tenantRouter;
     }
 
-    private Router getGuestNetworkRouter(long id, String accountUuid, boolean isVpc){
+    private Router getGuestNetworkRouter(long id, String accountUuid, boolean isVpc) {
 
         MultivaluedMap qNetRouter = new MultivaluedMapImpl();
         String routerName = getRouterName(isVpc, id);
@@ -1608,7 +1502,7 @@ public class MidoNetElement extends AdapterBase implements
         qNetRouter.add("tenant_id", accountUuid);
 
         for (Router router : api.getRouters(qNetRouter)) {
-            if(router.getName().equals(routerName)){
+            if (router.getName().equals(routerName)) {
                 return router;
             }
         }
@@ -1616,17 +1510,17 @@ public class MidoNetElement extends AdapterBase implements
         return null;
     }
 
-    private UUID getNicUUID(NicProfile nic){
+    private UUID getNicUUID(NicProfile nic) {
         NicVO nicvo = _nicDao.findById(nic.getId());
         return UUID.fromString(nicvo.getUuid());
     }
 
     private void cleanBridge(Bridge br) {
 
-        for(Port peerPort : br.getPeerPorts()) {
-            if(peerPort != null && peerPort instanceof RouterPort){
-                RouterPort checkPort = (RouterPort) peerPort;
-                if(checkPort.getType().equals("ExteriorRouter")) {
+        for (Port peerPort : br.getPeerPorts()) {
+            if (peerPort != null && peerPort instanceof RouterPort) {
+                RouterPort checkPort = (RouterPort)peerPort;
+                if (checkPort.getType().equals("ExteriorRouter")) {
                     checkPort.vifId(null).update();
                 } else if (checkPort.getType().equals("InteriorRouter")) {
                     checkPort.unlink();
@@ -1635,14 +1529,14 @@ public class MidoNetElement extends AdapterBase implements
             }
         }
 
-        for(BridgePort p : br.getPorts()) {
+        for (BridgePort p : br.getPorts()) {
 
-            if(p.getType().equals("ExteriorBridge")) {
+            if (p.getType().equals("ExteriorBridge")) {
                 // Set VIF ID to null
                 p.vifId(null).update();
             }
 
-            if(p.getType().equals("InteriorBridge")) {
+            if (p.getType().equals("InteriorBridge")) {
                 p.unlink();
             }
 
@@ -1651,18 +1545,18 @@ public class MidoNetElement extends AdapterBase implements
         }
     }
 
-    private void deleteNetworkBridges(Network network){
+    private void deleteNetworkBridges(Network network) {
         String accountUuid = getAccountUuid(network);
         long networkID = network.getId();
 
         Bridge netBridge = getNetworkBridge(networkID, accountUuid);
-        if(netBridge != null){
+        if (netBridge != null) {
 
             cleanBridge(netBridge);
 
             // Delete DHCP subnets
-            for(Object dhcpSubnet : netBridge.getDhcpSubnets()){
-                DhcpSubnet sub = (DhcpSubnet) dhcpSubnet;
+            for (Object dhcpSubnet : netBridge.getDhcpSubnets()) {
+                DhcpSubnet sub = (DhcpSubnet)dhcpSubnet;
                 sub.delete();
             }
 
@@ -1670,7 +1564,7 @@ public class MidoNetElement extends AdapterBase implements
         }
     }
 
-    private void deleteGuestNetworkRouters(Network network){
+    private void deleteGuestNetworkRouters(Network network) {
         String accountUuid = getAccountUuid(network);
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
@@ -1678,18 +1572,18 @@ public class MidoNetElement extends AdapterBase implements
         Router tenantRouter = getGuestNetworkRouter(id, accountUuid, isVpc);
 
         // Delete any peer ports corresponding to this router
-        for(Port peerPort : tenantRouter.getPeerPorts((new MultivaluedMapImpl()))){
-            if(peerPort != null && peerPort instanceof RouterPort){
-                RouterPort checkPort = (RouterPort) peerPort;
-                if(checkPort.getType().equals("ExteriorRouter")) {
+        for (Port peerPort : tenantRouter.getPeerPorts((new MultivaluedMapImpl()))) {
+            if (peerPort != null && peerPort instanceof RouterPort) {
+                RouterPort checkPort = (RouterPort)peerPort;
+                if (checkPort.getType().equals("ExteriorRouter")) {
                     checkPort.vifId(null).update();
                 } else if (checkPort.getType().equals("InteriorRouter")) {
                     checkPort.unlink();
                 }
                 checkPort.delete();
             } else if (peerPort != null && peerPort instanceof BridgePort) {
-                BridgePort checkPort = (BridgePort) peerPort;
-                if(checkPort.getType().equals("ExteriorBridge")) {
+                BridgePort checkPort = (BridgePort)peerPort;
+                if (checkPort.getType().equals("ExteriorBridge")) {
                     checkPort.vifId(null).update();
                 } else if (checkPort.getType().equals("InteriorBridge")) {
                     checkPort.unlink();
@@ -1698,16 +1592,16 @@ public class MidoNetElement extends AdapterBase implements
             }
         }
 
-        if(tenantRouter != null){
+        if (tenantRouter != null) {
             // Remove all peer ports if any exist
-            for(RouterPort p : tenantRouter.getPorts(new MultivaluedMapImpl())) {
-                if(p.getType().equals("ExteriorRouter")) {
+            for (RouterPort p : tenantRouter.getPorts(new MultivaluedMapImpl())) {
+                if (p.getType().equals("ExteriorRouter")) {
                     // Set VIF ID to null
                     p.vifId(null).update();
                     // the port might have some chains associated with it
                 }
 
-                if(p.getType().equals("InteriorRouter")) {
+                if (p.getType().equals("InteriorRouter")) {
                     p.unlink();
                 }
 
@@ -1729,9 +1623,8 @@ public class MidoNetElement extends AdapterBase implements
             preNat.delete();
             post.delete();
 
-
             // Remove routes
-            for(Route r : tenantRouter.getRoutes(new MultivaluedMapImpl())) {
+            for (Route r : tenantRouter.getRoutes(new MultivaluedMapImpl())) {
                 r.delete();
             }
 

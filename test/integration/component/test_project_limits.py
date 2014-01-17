@@ -24,6 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from marvin.codes import PASS
 import datetime
 
 
@@ -763,9 +764,9 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
+                            virtualmachineid=virtual_machine_1.id,
                             projectid=self.project.id,
-                            type='ROOT',
-                            listall=True
+                            type='ROOT'
                             )
         self.assertEqual(
                         isinstance(volumes, list),
@@ -781,15 +782,14 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             projectid=self.project.id
                             )
         self.cleanup.append(snapshot_1)
-        # Verify Snapshot state
-        self.assertEqual(
-                            snapshot_1.state in [
-                                                 'BackedUp',
-                                                 'CreatedOnPrimary'
-                                                 ],
-                            True,
-                            "Check Snapshot state is Running or not"
-                        )
+
+        #list snapshots
+        snapshots = list_snapshots(self.apiclient, projectid=self.project.id)
+
+        self.debug("snapshots list: %s" % snapshots)
+
+        self.assertEqual(validateList(snapshots)[0], PASS, "Snapshots list validation failed")
+        self.assertEqual(len(snapshots), 1, "Snapshots list should have exactly one entity")
 
         # Exception should be raised for second snapshot
         with self.assertRaises(Exception):
@@ -902,9 +902,9 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
+                            virtualmachineid=virtual_machine_1.id,
                             projectid=self.project.id,
-                            type='ROOT',
-                            listall=True
+                            type='ROOT'
                             )
         self.assertEqual(
                         isinstance(volumes, list),
@@ -1014,7 +1014,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "simulator",
-                "api", "basic", "eip", "sg"])
+                "api", "eip"])
     def test_maxAccountNetworks(self):
         """Test Limit number of guest account specific networks
         """

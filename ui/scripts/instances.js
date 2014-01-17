@@ -43,7 +43,7 @@
                         isChecked: false
                     },
                     quiescevm: {
-                        label: 'Quiesce VM',
+                        label: 'label.quiesce.vm',
                         isBoolean: true,
                         isChecked: false
                     }
@@ -139,16 +139,19 @@
             },
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.name',
+                    truncate: true
                 },
                 instancename: {
                     label: 'label.internal.name'
                 },
                 displayname: {
-                    label: 'label.display.name'
+                    label: 'label.display.name',
+                    truncate: true
                 },
                 zonename: {
-                    label: 'label.zone.name'
+                    label: 'label.zone.name',
+                    truncate: true
                 },
                 state: {
                     label: 'label.state',
@@ -352,9 +355,9 @@
                     label: 'label.affinity.groups'
                 }, {
                     path: '_zone.hosts',
-                    label: 'label.hosts',
+                    label: 'label.host',
                     preFilter: function(args) {
-                        return isAdmin();
+                        return isAdmin() && args.context.instances[0].hostid;
                     },
                     updateContext: function(args) {
                         var instance = args.context.instances[0];
@@ -1430,37 +1433,115 @@
                                 return description;                  	                
                             },
                             fields: {
-                                serviceOffering: {
+                            	serviceofferingid: {
                                     label: 'label.compute.offering',
                                     select: function(args) {
+                                    	var serviceofferingObjs;
                                         $.ajax({
                                             url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
                                             dataType: "json",
                                             async: true,
                                             success: function(json) {
-                                                var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-                                                var items = [];
-                                                $(serviceofferings).each(function() {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.name
-                                                    });
-                                                });
+                                            	serviceofferingObjs = json.listserviceofferingsresponse.serviceoffering;
+                                                var items = [];                                              
+                                                if (serviceofferingObjs != null) {
+                                                	for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                                		items.push({
+                                                            id: serviceofferingObjs[i].id,
+                                                            description: serviceofferingObjs[i].name
+                                                        });
+                                                	}
+                                                }                                               
                                                 args.response.success({
                                                     data: items
                                                 });
                                             }
                                         });
+                                        
+                                        args.$select.change(function(){
+                                        	var $form = $(this).closest('form');
+                                            
+                                            var serviceofferingid = $(this).val();
+                                            if (serviceofferingid == null || serviceofferingid.length == 0)
+                                                return;
+                                           
+                                            var items = [];
+                                            var selectedServiceofferingObj;
+                                            if (serviceofferingObjs != null) {
+                                            	for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                            		if (serviceofferingObjs[i].id == serviceofferingid) {
+                                            			selectedServiceofferingObj = serviceofferingObjs[i];
+                                            			break; 
+                                            		}
+                                            	}
+                                            }                                            
+                                            if (selectedServiceofferingObj == undefined) 
+                                            	return;                                                  
+                                            
+                                            if (selectedServiceofferingObj.iscustomized == true) {
+                                            	$form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
+                                            	$form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
+                                            	$form.find('.form-item[rel=memory]').css('display', 'inline-block');
+                                            } else {
+                                            	$form.find('.form-item[rel=cpuSpeed]').hide();
+                                            	$form.find('.form-item[rel=cpuNumber]').hide();
+                                            	$form.find('.form-item[rel=memory]').hide();
+                                            }
+                                        });
                                     }
-                                }
+                                },                               
+                                cpuSpeed: {
+                                	label: 'label.cpu.mhz',                                    
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+                                cpuNumber: {
+                                	label: 'label.num.cpu.cores',                                   
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+                                memory: {
+                                	label: 'label.memory.mb',                                   
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                }      
                             }
                         },
 
                         action: function(args) {
+                        	var data = {
+                        		id: args.context.instances[0].id,
+                        		serviceofferingid: args.data.serviceofferingid
+                        	};       
+                        	                        	
+                        	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].cpuSpeed': args.data.cpuSpeed 
+                                });
+                            }                        	
+                        	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].cpuNumber': args.data.cpuNumber
+                                });
+                            }                        	
+                        	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].memory': args.data.memory
+                                });
+                            }                        	
+                        	
                             $.ajax({
-                                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id + "&serviceofferingid=" + args.data.serviceOffering),
-                                dataType: "json",
-                                async: true,
+                                url: createURL('scaleVirtualMachine'),
+                                data: data,
                                 success: function(json) {
                                     var jid = json.scalevirtualmachineresponse.jobid;
                                     args.response.success({
@@ -1765,7 +1846,7 @@
                                     else if (isAdmin()) 
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Expunged"
-                                        }); //after root admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
+                                        }); //after root/domain admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
                                     else
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Destroyed"
@@ -2101,12 +2182,13 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("restore");
             }
-            if (isAdmin())
+            if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
-            allowedActions.push("snapshot");
+            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+                allowedActions.push("snapshot");
             allowedActions.push("destroy");            
             allowedActions.push("reset");
              
@@ -2135,7 +2217,8 @@
             allowedActions.push("start");
             allowedActions.push("destroy");
             allowedActions.push("reset");
-            allowedActions.push("snapshot");
+            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+                allowedActions.push("snapshot");
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("changeAffinity");
 
@@ -2161,7 +2244,7 @@
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
-            if (isAdmin())
+            if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
         }
         return allowedActions;

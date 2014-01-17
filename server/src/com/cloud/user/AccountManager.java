@@ -43,47 +43,47 @@ public interface AccountManager extends AccountService {
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
 
-	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
-	
-	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
-		
+    Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
+
+    Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
+
     /**
      * Logs out a user
      * @param userId
      */
     void logoutUser(long userId);
-    
+
     /**
-     * Authenticates a user when s/he logs in.
-     * 
-     * @param username
-     *            required username for authentication
-     * @param password
-     *            password to use for authentication, can be null for single sign-on case
-     * @param domainId
-     *            id of domain where user with username resides
-     * @param requestParameters
-     *            the request parameters of the login request, which should contain timestamp of when the request signature is
-     *            made, and the signature itself in the single sign-on case
-     * @return a user object, null if the user failed to authenticate
-     */
+      * Authenticates a user when s/he logs in.
+      *
+      * @param username
+      *            required username for authentication
+      * @param password
+      *            password to use for authentication, can be null for single sign-on case
+      * @param domainId
+      *            id of domain where user with username resides
+      * @param requestParameters
+      *            the request parameters of the login request, which should contain timestamp of when the request signature is
+      *            made, and the signature itself in the single sign-on case
+      * @return a user object, null if the user failed to authenticate
+      */
     UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters);
-    
+
     /**
      * Locate a user by their apiKey
-     * 
+     *
      * @param apiKey
      *            that was created for a particular user
      * @return the user/account pair if one exact match was found, null otherwise
      */
     Pair<User, Account> findUserByApiKey(String apiKey);
-    
-	boolean enableAccount(long accountId);
 
-	
+    boolean enableAccount(long accountId);
+
+
     // new ACL model routine for query api based on db views
     void buildACLSearchParameters(Account caller, Long id,
             String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources,
@@ -101,6 +101,7 @@ public interface AccountManager extends AccountService {
             List<Long> permittedDomains, List<Long> permittedAccounts,
             List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
+
     /**
      * Deletes a user by userId
      *
@@ -110,7 +111,7 @@ public interface AccountManager extends AccountService {
      * @return true if delete was successful, false otherwise
      */
     boolean deleteUserAccount(long accountId);
-    
+
     /**
      * Updates an account
      *
@@ -119,7 +120,7 @@ public interface AccountManager extends AccountService {
      * @return updated account object
      */
     Account updateAccount(UpdateAccountCmd cmd);
-    
+
     /**
      * Disables an account by accountName and domainId
      *
@@ -131,7 +132,7 @@ public interface AccountManager extends AccountService {
      * @return true if disable was successful, false otherwise
      */
     Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * Enables an account by accountId
      *
@@ -143,14 +144,14 @@ public interface AccountManager extends AccountService {
      * @return account object
      */
     Account enableAccount(String accountName, Long domainId, Long accountId);
-    
+
     /**
      * Deletes user by Id
      * @param deleteUserCmd
      * @return
      */
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
-    
+
     /**
      * Update a user by userId
      *
@@ -158,7 +159,7 @@ public interface AccountManager extends AccountService {
      * @return UserAccount object
      */
     UserAccount updateUser(UpdateUserCmd cmd);
-    
+
     /**
      * Disables a user by userId
      *
@@ -167,7 +168,7 @@ public interface AccountManager extends AccountService {
      * @return UserAccount object
      */
     UserAccount disableUser(long userId);
-    
+
     /**
      * Enables a user
      *
@@ -176,7 +177,7 @@ public interface AccountManager extends AccountService {
      * @return UserAccount object
      */
     UserAccount enableUser(long userId);
-    
+
     /**
      * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP
      * addresses

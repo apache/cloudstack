@@ -21,31 +21,31 @@ import java.util.List;
 
 public class EC2DescribeVolumes {
 
-	private List<String> volumeSet = new ArrayList<String>();    // a list of strings identifying volume ids
-	private EC2VolumeFilterSet vfs = null;
+    private List<String> volumeSet = new ArrayList<String>();    // a list of strings identifying volume ids
+    private EC2VolumeFilterSet vfs = null;
     private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
-	public EC2DescribeVolumes() {
-	}
+    public EC2DescribeVolumes() {
+    }
 
-	public void addVolumeId( String param ) {
-		volumeSet.add( param );
-	}
-	
-	public String[] getVolumeSet() {
-		return volumeSet.toArray(new String[0]);
-	}
-	
-	public EC2VolumeFilterSet getFilterSet() {
-		return vfs;
-	}
-	
-	public void setFilterSet( EC2VolumeFilterSet param ) {
-		vfs = param;
-	}
+    public void addVolumeId(String param) {
+        volumeSet.add(param);
+    }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        resourceTagSet.add( param );
+    public String[] getVolumeSet() {
+        return volumeSet.toArray(new String[0]);
+    }
+
+    public EC2VolumeFilterSet getFilterSet() {
+        return vfs;
+    }
+
+    public void setFilterSet(EC2VolumeFilterSet param) {
+        vfs = param;
+    }
+
+    public void addResourceTag(EC2TagKeyValue param) {
+        resourceTagSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTagSet() {

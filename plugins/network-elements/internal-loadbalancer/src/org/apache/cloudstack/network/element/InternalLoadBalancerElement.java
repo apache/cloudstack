@@ -85,35 +85,42 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = {NetworkElement.class})
-public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService, IpDeployer{
+public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     private static InternalLoadBalancerElement internalLbElement = null;
 
-    @Inject NetworkModel _ntwkModel;
-    @Inject NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject DomainRouterDao _routerDao;
-    @Inject VirtualRouterProviderDao _vrProviderDao;
-    @Inject PhysicalNetworkServiceProviderDao _pNtwkSvcProviderDao;
-    @Inject InternalLoadBalancerVMManager _internalLbMgr;
-    @Inject ConfigurationManager _configMgr;
-    @Inject AccountManager _accountMgr;
-    @Inject ApplicationLoadBalancerRuleDao _appLbDao;
+    @Inject
+    NetworkModel _ntwkModel;
+    @Inject
+    NetworkServiceMapDao _ntwkSrvcDao;
+    @Inject
+    DomainRouterDao _routerDao;
+    @Inject
+    VirtualRouterProviderDao _vrProviderDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _pNtwkSvcProviderDao;
+    @Inject
+    InternalLoadBalancerVMManager _internalLbMgr;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    AccountManager _accountMgr;
+    @Inject
+    ApplicationLoadBalancerRuleDao _appLbDao;
     @Inject
     EntityManager _entityMgr;
 
     protected InternalLoadBalancerElement() {
     }
-    
-    
+
     public static InternalLoadBalancerElement getInstance() {
-        if ( internalLbElement == null) {
+        if (internalLbElement == null) {
             internalLbElement = new InternalLoadBalancerElement();
         }
         return internalLbElement;
-     }
-    
-    
+    }
+
     private boolean canHandle(Network config, Scheme lbScheme) {
         //works in Advance zone only
         DataCenter dc = _entityMgr.findById(DataCenter.class, config.getDataCenterId());
@@ -125,7 +132,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
-        
+
         Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
@@ -136,69 +143,62 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 }
             }
         }
-        
+
         if (!_ntwkModel.isProviderSupportServiceInNetwork(config.getId(), Service.Lb, getProvider())) {
-            s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + Service.Lb
-                    + " in the network " + config);
+            s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + Service.Lb + " in the network " + config);
             return false;
         }
         return true;
     }
 
-    
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }
 
-    
     @Override
     public Provider getProvider() {
         return Provider.InternalLbVm;
     }
 
-    
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
+
         if (!canHandle(network, null)) {
             s_logger.trace("No need to implement " + getName());
             return true;
         }
-        
+
         return implementInternalLbVms(network, dest);
     }
 
-    
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException, InsufficientCapacityException {
-        
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+
         if (!canHandle(network, null)) {
             s_logger.trace("No need to prepare " + getName());
             return true;
         }
-        
+
         if (vm.getType() == VirtualMachine.Type.User) {
             return implementInternalLbVms(network, dest);
         }
         return true;
     }
 
-
     protected boolean implementInternalLbVms(Network network, DeployDestination dest) throws ResourceUnavailableException {
         //1) Get all the Ips from the network having LB rules assigned
         List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
-        
+
         //2) Start internal lb vms for the ips having active rules
         for (String ip : ips) {
             Ip sourceIp = new Ip(ip);
             long active = _appLbDao.countActiveBySourceIp(sourceIp, network.getId());
             if (active > 0) {
-                s_logger.debug("Have to implement internal lb vm for source ip " + sourceIp + " as a part of network " + network
-                        + " implement as there are " + active + " internal lb rules exist for this ip");
+                s_logger.debug("Have to implement internal lb vm for source ip " + sourceIp + " as a part of network " + network + " implement as there are " + active +
+                    " internal lb rules exist for this ip");
                 List<? extends VirtualRouter> internalLbVms;
                 try {
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
@@ -206,26 +206,25 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp + " due to:", e);
                     return false;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp +  " due to:", e);
+                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp + " due to:", e);
                     return false;
                 }
-                
+
                 if (internalLbVms == null || internalLbVms.isEmpty()) {
-                    throw new ResourceUnavailableException("Can't deploy " + getName() + " to handle LB rules",
-                            DataCenter.class, network.getDataCenterId());
+                    throw new ResourceUnavailableException("Can't deploy " + getName() + " to handle LB rules", DataCenter.class, network.getDataCenterId());
                 }
             }
         }
-        
+
         return true;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
-    
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
@@ -234,14 +233,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         }
         boolean result = true;
         for (VirtualRouter internalLbVm : internalLbVms) {
-            result = result && _internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
-                    context.getAccount(), context.getCaller().getId());
+            result = result && _internalLbMgr.destroyInternalLbVm(internalLbVm.getId(), context.getAccount(), context.getCaller().getId());
             if (cleanup) {
                 if (!result) {
                     s_logger.warn("Failed to stop internal lb element " + internalLbVm + ", but would try to process clean up anyway.");
                 }
-                result = (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
-                        context.getAccount(), context.getCaller().getId()));
+                result = (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(), context.getAccount(), context.getCaller().getId()));
                 if (!result) {
                     s_logger.warn("Failed to clean up internal lb element " + internalLbVm);
                 }
@@ -250,7 +247,6 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return result;
     }
 
-    
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<? extends VirtualRouter> internalLbVms = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
@@ -259,29 +255,24 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         }
         boolean result = true;
         for (VirtualRouter internalLbVm : internalLbVms) {
-            result = result && (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
-                    context.getAccount(), context.getCaller().getId()));
+            result = result && (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(), context.getAccount(), context.getCaller().getId()));
         }
         return result;
     }
 
-    
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
-                Type.InternalLbVm);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.InternalLbVm);
         if (element == null) {
             return false;
         }
         return element.isEnabled();
     }
 
-    
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
-                Type.InternalLbVm);
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.InternalLbVm);
         if (element == null) {
             return true;
         }
@@ -289,43 +280,37 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         List<DomainRouterVO> internalLbVms = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO internalLbVm : internalLbVms) {
-            result = result && (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(),
-                    context.getAccount(), context.getCaller().getId()));
+            result = result && (_internalLbMgr.destroyInternalLbVm(internalLbVm.getId(), context.getAccount(), context.getCaller().getId()));
         }
         _vrProviderDao.remove(elementId);
-        
+
         return result;
     }
 
-    
     @Override
     public boolean canEnableIndividualServices() {
         return true;
     }
 
-    
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 
-    
     @Override
     public IpDeployer getIpDeployer(Network network) {
         return this;
     }
 
-    
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         //1) Get Internal LB VMs to destroy
         Set<Ip> vmsToDestroy = getVmsToDestroy(rules);
-        
+
         //2) Get rules to apply
         Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
         s_logger.debug("Applying " + rulesToApply.size() + " on element " + getName());
 
- 
         for (Ip sourceIp : rulesToApply.keySet()) {
             if (vmsToDestroy.contains(sourceIp)) {
                 //2.1 Destroy internal lb vm
@@ -335,7 +320,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     try {
                         s_logger.debug("Destroying internal lb vm for ip " + sourceIp.addr() + " as all the rules for this vm are in Revoke state");
                         return _internalLbMgr.destroyInternalLbVm(vms.get(0).getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM),
-                                _accountMgr.getUserIncludingRemoved(User.UID_SYSTEM).getId());
+                            _accountMgr.getUserIncludingRemoved(User.UID_SYSTEM).getId());
                     } catch (ConcurrentOperationException e) {
                         s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + " on the element " + getName() + " due to:", e);
                         return false;
@@ -354,16 +339,15 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + "on the element " + getName() + " due to:", e);
                     return false;
                 }
-                
+
                 if (internalLbVms == null || internalLbVms.isEmpty()) {
-                    throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules",
-                            DataCenter.class, network.getDataCenterId());
+                    throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules", DataCenter.class, network.getDataCenterId());
                 }
-                 
+
                 //2.3 Apply Internal LB rules on the VM
                 if (!_internalLbMgr.applyLoadBalancingRules(network, rulesToApply.get(sourceIp), internalLbVms)) {
-                    throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() +
-                            " in network " + network.getId() + " on element " + getName());
+                    throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() + " in network " + network.getId() + " on element " +
+                        getName());
                 }
             }
         }
@@ -371,21 +355,19 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return true;
     }
 
-    
     protected Map<Ip, List<LoadBalancingRule>> getLbRulesToApply(List<LoadBalancingRule> rules) {
         //Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
         Map<Ip, List<LoadBalancingRule>> rulesToApply = groupBySourceIp(rules);
-      
+
         return rulesToApply;
     }
-    
-    
+
     protected Set<Ip> getVmsToDestroy(List<LoadBalancingRule> rules) {
         //1) Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
         Map<Ip, List<LoadBalancingRule>> groupedRules = groupBySourceIp(rules);
 
         Set<Ip> vmsToDestroy = new HashSet<Ip>();
-        
+
         for (Ip sourceIp : groupedRules.keySet()) {
             //2) Check if there are non revoked rules for the source ip address
             List<LoadBalancingRule> rulesToCheck = groupedRules.get(sourceIp);
@@ -397,7 +379,6 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return vmsToDestroy;
     }
 
-    
     protected Map<Ip, List<LoadBalancingRule>> groupBySourceIp(List<LoadBalancingRule> rules) {
         Map<Ip, List<LoadBalancingRule>> groupedRules = new HashMap<Ip, List<LoadBalancingRule>>();
         for (LoadBalancingRule rule : rules) {
@@ -406,7 +387,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 if (!groupedRules.containsKey(sourceIp)) {
                     groupedRules.put(sourceIp, null);
                 }
-                
+
                 List<LoadBalancingRule> rulesToApply = groupedRules.get(sourceIp);
                 if (rulesToApply == null) {
                     rulesToApply = new ArrayList<LoadBalancingRule>();
@@ -438,7 +419,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
         return null;
     }
-    
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
@@ -467,8 +448,8 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(id);
         if (element == null || element.getType() != Type.InternalLbVm) {
-            throw new InvalidParameterValueException("Can't find " + getName() + " element with network service provider id " + id +
-                    " to be used as a provider for " + getName());
+            throw new InvalidParameterValueException("Can't find " + getName() + " element with network service provider id " + id + " to be used as a provider for " +
+                getName());
         }
 
         element.setEnabled(enable);
@@ -484,18 +465,17 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             s_logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
             return null;
         }
-        
+
         PhysicalNetworkServiceProvider provider = _pNtwkSvcProviderDao.findById(ntwkSvcProviderId);
         if (provider == null || !provider.getProviderName().equalsIgnoreCase(getName())) {
             throw new InvalidParameterValueException("Invalid network service provider is specified");
         }
-        
+
         element = new VirtualRouterProviderVO(ntwkSvcProviderId, Type.InternalLbVm);
         element = _vrProviderDao.persist(element);
         return element;
     }
 
-    
     @Override
     public VirtualRouterProvider getInternalLoadBalancerElement(long id) {
         VirtualRouterProvider provider = _vrProviderDao.findById(id);
@@ -518,10 +498,10 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         if (enabled != null) {
             sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
         }
-        
+
         //return only Internal LB elements
         sc.and(sc.entity().getType(), Op.EQ, VirtualRouterProvider.Type.InternalLbVm);
-        
+
         return sc.list();
     }
 

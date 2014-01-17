@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -41,7 +43,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 
 @APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
-public class CreateVolumeCmd extends BaseAsyncCreateCmd {
+public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
@@ -49,49 +51,64 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = BaseCmd.CommandType.STRING,
+               description = "the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            description="the project associated with the volume. Mutually exclusive with account parameter")
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "the project associated with the volume. Mutually exclusive with account parameter")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the domain ID associated with the disk offering. If used with the account parameter" +
-            " returns the disk volume associated with the account for the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the domain ID associated with the disk offering. If used with the account parameter"
+                   + " returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
-            description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
+               required = false,
+               type = CommandType.UUID,
+               entityType = DiskOfferingResponse.class,
+               description = "the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
     private Long diskOfferingId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the disk volume")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the disk volume")
     private String volumeName;
 
-    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "Arbitrary volume size")
     private Long size;
 
-    @Parameter(name=ApiConstants.MIN_IOPS, type=CommandType.LONG, description="min iops")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, description = "min iops")
     private Long minIops;
 
-    @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, description="max iops")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, description = "max iops")
     private Long maxIops;
 
-    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.UUID, entityType=SnapshotResponse.class,
-            description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name = ApiConstants.SNAPSHOT_ID,
+               type = CommandType.UUID,
+               entityType = SnapshotResponse.class,
+               description = "the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the ID of the availability zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to display the volume to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.")
     private Boolean displayVolume;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine; to be used with snapshot Id, VM to which the volume gets attached after creation")
+    private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public String getAccountName() {
         return accountName;
@@ -137,6 +154,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         return displayVolume;
     }
 
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -175,7 +196,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void create() throws ResourceAllocationException{
+    public void create() throws ResourceAllocationException {
 
         Volume volume = _volumeService.allocVolume(this);
         if (volume != null) {
@@ -187,8 +208,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
+    public void execute() {
+        CallContext.current().setEventDetails("Volume Id: " + getEntityId() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);

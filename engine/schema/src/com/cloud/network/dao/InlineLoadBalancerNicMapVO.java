@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,36 +23,40 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name=("inline_load_balancer_nic_map"))
+@Table(name = ("inline_load_balancer_nic_map"))
 public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="public_ip_address")
+    @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="nic_id")
+    @Column(name = "nic_id")
     private long nicId;
 
-    public InlineLoadBalancerNicMapVO() { }
+    public InlineLoadBalancerNicMapVO() {
+    }
 
     public InlineLoadBalancerNicMapVO(String publicIpAddress, long nicId) {
         this.publicIpAddress = publicIpAddress;
         this.nicId = nicId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
     public String getPublicIpAddress() {
-    	return publicIpAddress;
+        return publicIpAddress;
     }
 
     public long getNicId() {
-    	return nicId;
+        return nicId;
     }
 }

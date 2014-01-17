@@ -40,8 +40,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";
@@ -55,8 +55,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType=NicResponse.class,
-            required=true, description="NIC ID")
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
     private Long nicId;
 
     /////////////////////////////////////////////////////
@@ -94,7 +93,6 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
         return  "Updating NIC " + getNicId() + " on user vm: " + getVmId();
     }
 
-
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());
@@ -105,8 +103,8 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

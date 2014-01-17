@@ -31,53 +31,52 @@ import javax.persistence.TemporalType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="alert")
+@Table(name = "alert")
 public class AlertVO implements Alert {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="type")
+    @Column(name = "type")
     private short type;
-    
-    @Column(name="cluster_id")
+
+    @Column(name = "cluster_id")
     private Long clusterId = null;
-    
-    @Column(name="pod_id")
+
+    @Column(name = "pod_id")
     private Long podId = null;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long dataCenterId = 0;
 
-    @Column(name="subject", length=999)
+    @Column(name = "subject", length = 999)
     private String subject;
 
-    @Column(name="sent_count")
+    @Column(name = "sent_count")
     private int sentCount = 0;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date createdDate;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_sent", updatable=true, nullable=true)
+    @Column(name = "last_sent", updatable = true, nullable = true)
     private Date lastSent;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="resolved", updatable=true, nullable=true)
+    @Column(name = "resolved", updatable = true, nullable = true)
     private Date resolved;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="archived")
+    @Column(name = "archived")
     private boolean archived;
 
+    @Column(name = "name")
+    private String name;
+
     public AlertVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
-    public AlertVO(Long id) {
-        this.id = id;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -85,6 +84,7 @@ public class AlertVO implements Alert {
     public long getId() {
         return id;
     }
+
     @Override
     public short getType() {
         return type;
@@ -106,9 +106,11 @@ public class AlertVO implements Alert {
     public Long getClusterId() {
         return clusterId;
     }
+
     public void setClusterId(Long clusterId) {
         this.clusterId = clusterId;
     }
+
     @Override
     public Long getPodId() {
         return podId;
@@ -162,7 +164,7 @@ public class AlertVO implements Alert {
     public void setResolved(Date resolved) {
         this.resolved = resolved;
     }
-    
+
     @Override
     public String getUuid() {
         return this.uuid;
@@ -179,5 +181,14 @@ public class AlertVO implements Alert {
 
     public void setArchived(Boolean archived) {
         this.archived = archived;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

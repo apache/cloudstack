@@ -21,36 +21,36 @@ import java.util.List;
 
 public class EC2StopInstances {
 
-	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
+    private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
     private boolean destroyInstances;                               // we are destroying the instances rather than stopping them
     private Boolean force = false;
-	
-	public EC2StopInstances() {
-		destroyInstances = false;
-	}
 
-	public void addInstanceId( String param ) {
-		instancesSet.add( param );
-	}
-	
-	public String[] getInstancesSet() {
-		return instancesSet.toArray(new String[0]);
-	}
-	
-	public void setDestroyInstances( boolean destroyInstances ) {
-		this.destroyInstances = destroyInstances;
-	}
-	
-	public boolean getDestroyInstances() {
-		return this.destroyInstances;
-	}
+    public EC2StopInstances() {
+        destroyInstances = false;
+    }
 
-    public void setForce( Boolean force ) {
+    public void addInstanceId(String param) {
+        instancesSet.add(param);
+    }
+
+    public String[] getInstancesSet() {
+        return instancesSet.toArray(new String[0]);
+    }
+
+    public void setDestroyInstances(boolean destroyInstances) {
+        this.destroyInstances = destroyInstances;
+    }
+
+    public boolean getDestroyInstances() {
+        return this.destroyInstances;
+    }
+
+    public void setForce(Boolean force) {
         this.force = force;
     }
 
     public Boolean getForce() {
         return this.force;
     }
-	
+
 }

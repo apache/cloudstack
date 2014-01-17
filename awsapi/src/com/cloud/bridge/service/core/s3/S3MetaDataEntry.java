@@ -17,25 +17,25 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3MetaDataEntry {
-	private String name;
-	private String value;
-	
-	public S3MetaDataEntry() {
-	}
+    private String name;
+    private String value;
 
-	public String getName() {
-		return name;
-	}
+    public S3MetaDataEntry() {
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getValue() {
-		return value;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setValue(String value) {
-		this.value = value;
-	}
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

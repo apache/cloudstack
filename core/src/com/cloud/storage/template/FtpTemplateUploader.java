@@ -28,7 +28,6 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
-
 public class FtpTemplateUploader implements TemplateUploader {
 
     public static final Logger s_logger = Logger.getLogger(FtpTemplateUploader.class.getName());
@@ -41,9 +40,9 @@ public class FtpTemplateUploader implements TemplateUploader {
     private UploadCompleteCallback completionCallback;
     private BufferedInputStream inputStream = null;
     private BufferedOutputStream outputStream = null;
-    private static final int CHUNK_SIZE = 1024*1024; //1M
+    private static final int CHUNK_SIZE = 1024 * 1024; //1M
 
-    public FtpTemplateUploader(String sourcePath, String url, UploadCompleteCallback callback, long entitySizeinBytes){
+    public FtpTemplateUploader(String sourcePath, String url, UploadCompleteCallback callback, long entitySizeinBytes) {
 
         this.sourcePath = sourcePath;
         ftpUrl = url;
@@ -53,15 +52,14 @@ public class FtpTemplateUploader implements TemplateUploader {
     }
 
     @Override
-    public long upload(UploadCompleteCallback callback )
-    {
+    public long upload(UploadCompleteCallback callback) {
 
         switch (status) {
-        case ABORTED:
-        case UNRECOVERABLE_ERROR:
-        case UPLOAD_FINISHED:
-            return 0;
-        default:
+            case ABORTED:
+            case UNRECOVERABLE_ERROR:
+            case UPLOAD_FINISHED:
+                return 0;
+            default:
 
         }
 
@@ -70,36 +68,35 @@ public class FtpTemplateUploader implements TemplateUploader {
         StringBuffer sb = new StringBuffer(ftpUrl);
         // check for authentication else assume its anonymous access.
         /* if (user != null && password != null)
-		         {
-		            sb.append( user );
-		            sb.append( ':' );
-		            sb.append( password );
-		            sb.append( '@' );
-		         }*/
+                 {
+                    sb.append( user );
+                    sb.append( ':' );
+                    sb.append( password );
+                    sb.append( '@' );
+                 }*/
         /*
          * type ==> a=ASCII mode, i=image (binary) mode, d= file directory
          * listing
          */
-        sb.append( ";type=i" );
+        sb.append(";type=i");
 
-        try
-        {
-            URL url = new URL( sb.toString() );
+        try {
+            URL url = new URL(sb.toString());
             URLConnection urlc = url.openConnection();
             File sourceFile = new File(sourcePath);
             entitySizeinBytes = sourceFile.length();
 
-            outputStream = new BufferedOutputStream( urlc.getOutputStream() );
-            inputStream = new BufferedInputStream( new FileInputStream(sourceFile) );
+            outputStream = new BufferedOutputStream(urlc.getOutputStream());
+            inputStream = new BufferedInputStream(new FileInputStream(sourceFile));
 
             status = TemplateUploader.Status.IN_PROGRESS;
 
             int bytes = 0;
             byte[] block = new byte[CHUNK_SIZE];
-            boolean done=false;
-            while (!done && status != Status.ABORTED ) {
-                if ( (bytes = inputStream.read(block, 0, CHUNK_SIZE)) > -1) {
-                    outputStream.write(block,0, bytes);
+            boolean done = false;
+            while (!done && status != Status.ABORTED) {
+                if ((bytes = inputStream.read(block, 0, CHUNK_SIZE)) > -1) {
+                    outputStream.write(block, 0, bytes);
                     totalBytes += bytes;
                 } else {
                     done = true;
@@ -115,19 +112,16 @@ public class FtpTemplateUploader implements TemplateUploader {
             status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
             errorString = e.getMessage();
             s_logger.error(errorString);
-        }
-        finally
-        {
-            try
-            {
-                if (inputStream != null){
+        } finally {
+            try {
+                if (inputStream != null) {
                     inputStream.close();
                 }
-                if (outputStream != null){
+                if (outputStream != null) {
                     outputStream.close();
                 }
-            }catch (IOException ioe){
-                s_logger.error(" Caught exception while closing the resources" );
+            } catch (IOException ioe) {
+                s_logger.error(" Caught exception while closing the resources");
             }
             if (callback != null) {
                 callback.uploadComplete(status);
@@ -142,7 +136,7 @@ public class FtpTemplateUploader implements TemplateUploader {
         try {
             upload(completionCallback);
         } catch (Throwable t) {
-            s_logger.warn("Caught exception during upload "+ t.getMessage(), t);
+            s_logger.warn("Caught exception during upload " + t.getMessage(), t);
             errorString = "Failed to install: " + t.getMessage();
             status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
         }
@@ -169,7 +163,7 @@ public class FtpTemplateUploader implements TemplateUploader {
         if (entitySizeinBytes == 0) {
             return 0;
         }
-        return (int)(100.0*totalBytes/entitySizeinBytes);
+        return (int)(100.0 * totalBytes / entitySizeinBytes);
     }
 
     @Override
@@ -201,30 +195,30 @@ public class FtpTemplateUploader implements TemplateUploader {
     @Override
     public boolean stopUpload() {
         switch (getStatus()) {
-        case IN_PROGRESS:
-            try {
-                if(outputStream != null) {
-                    outputStream.close();
+            case IN_PROGRESS:
+                try {
+                    if (outputStream != null) {
+                        outputStream.close();
+                    }
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                } catch (IOException e) {
+                    s_logger.error(" Caught exception while closing the resources");
                 }
-                if (inputStream != null){
-                    inputStream.close();
-                }
-            } catch (IOException e) {
-                s_logger.error(" Caught exception while closing the resources" );
-            }
-            status = TemplateUploader.Status.ABORTED;
-            return true;
-        case UNKNOWN:
-        case NOT_STARTED:
-        case RECOVERABLE_ERROR:
-        case UNRECOVERABLE_ERROR:
-        case ABORTED:
-            status = TemplateUploader.Status.ABORTED;
-        case UPLOAD_FINISHED:
-            return true;
+                status = TemplateUploader.Status.ABORTED;
+                return true;
+            case UNKNOWN:
+            case NOT_STARTED:
+            case RECOVERABLE_ERROR:
+            case UNRECOVERABLE_ERROR:
+            case ABORTED:
+                status = TemplateUploader.Status.ABORTED;
+            case UPLOAD_FINISHED:
+                return true;
 
-        default:
-            return true;
+            default:
+                return true;
         }
     }
 

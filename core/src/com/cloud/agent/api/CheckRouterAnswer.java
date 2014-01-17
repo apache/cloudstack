@@ -34,7 +34,7 @@ public class CheckRouterAnswer extends Answer {
                 this.result = false;
             }
         }
-	}
+    }
 
     public CheckRouterAnswer(CheckRouterCommand cmd, String details) {
         super(cmd, false, details);
@@ -64,11 +64,11 @@ public class CheckRouterAnswer extends Answer {
 
     public void setState(RedundantState state) {
         this.state = state;
-	}
+    }
 
     public RedundantState getState() {
         return state;
-	}
+    }
 
     public boolean isBumped() {
         return isBumped;

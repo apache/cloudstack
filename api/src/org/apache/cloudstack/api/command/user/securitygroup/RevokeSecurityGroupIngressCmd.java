@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.securitygroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -28,7 +30,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
@@ -98,7 +99,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
         boolean result = _securityGroupService.revokeSecurityGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revoke security group ingress rule");
         }

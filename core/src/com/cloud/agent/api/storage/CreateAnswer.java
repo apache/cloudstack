@@ -22,6 +22,7 @@ import com.cloud.agent.api.to.VolumeTO;
 public class CreateAnswer extends Answer {
     VolumeTO volume;
     boolean requestTemplateReload = false;
+
     protected CreateAnswer() {
         super();
     }
@@ -49,6 +50,6 @@ public class CreateAnswer extends Answer {
     }
 
     public boolean templateReloadRequested() {
-    	return requestTemplateReload;
+        return requestTemplateReload;
     }
 }

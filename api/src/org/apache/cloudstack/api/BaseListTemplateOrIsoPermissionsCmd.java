@@ -27,15 +27,15 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
 public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
-    public Logger s_logger = getLogger();
-    protected String s_name = "listtemplatepermissionsresponse";
+    public Logger logger = getLogger();
+    protected static final String s_name = "listtemplatepermissionsresponse";
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplatePermissionsResponse.class,
-            required=true, description="the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplatePermissionsResponse.class, required = true, description = "the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -59,6 +59,10 @@ public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
+    protected Logger getLogger() {
+        return Logger.getLogger(BaseListTemplateOrIsoPermissionsCmd.class);
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -72,9 +76,6 @@ public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
         return "templateOrIso";
     }
 
-    protected Logger getLogger() {
-        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
-    }
 
     protected void executeWithView(ResponseView view) {
         List<String> accountNames = _templateService.listTemplatePermissions(this);

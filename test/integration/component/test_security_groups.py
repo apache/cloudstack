@@ -25,7 +25,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 
 #Import System modules
 import time
@@ -361,7 +361,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.ssh_ip)
-            ssh = remoteSSHClient.remoteSSHClient(
+            ssh = SshClient(
                                     self.virtual_machine.ssh_ip,
                                     self.virtual_machine.ssh_port,
                                     self.virtual_machine.username,
@@ -656,12 +656,11 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            remoteSSHClient.remoteSSHClient(
-                                        self.virtual_machine.ssh_ip,
-                                        self.virtual_machine.ssh_port,
-                                        self.virtual_machine.username,
-                                        self.virtual_machine.password
-                                        )
+            SshClient(self.virtual_machine.ssh_ip,
+                      self.virtual_machine.ssh_port,
+                      self.virtual_machine.username,
+                      self.virtual_machine.password
+                    )
         return
 
 

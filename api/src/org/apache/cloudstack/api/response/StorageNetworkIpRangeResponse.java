@@ -16,41 +16,51 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=StorageNetworkIpRange.class)
+@EntityReference(value = StorageNetworkIpRange.class)
 public class StorageNetworkIpRangeResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the uuid of storage network IP range.")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the uuid of storage network IP range.")
     private String uuid;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the ID or VID of the VLAN.")
     private Integer vlan;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod uuid for the storage network IP range")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "the Pod uuid for the storage network IP range")
     private String podUuid;
 
-    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the storage network IP range")
+    @SerializedName(ApiConstants.START_IP)
+    @Param(description = "the start ip of the storage network IP range")
     private String startIp;
 
-    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the storage network IP range")
+    @SerializedName(ApiConstants.END_IP)
+    @Param(description = "the end ip of the storage network IP range")
     private String endIp;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the storage network IP range")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway of the storage network IP range")
     private String gateway;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network uuid of storage network IP range")
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the network uuid of storage network IP range")
     private String networkUuid;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone uuid of the storage network IP range")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone uuid of the storage network IP range")
     private String zoneUuid;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the storage network IP range")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the netmask of the storage network IP range")
     private String netmask;
 
     public void setUuid(String uuid) {

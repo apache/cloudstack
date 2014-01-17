@@ -17,20 +17,20 @@
 package com.cloud.agent.api;
 
 public class DeleteLogicalSwitchPortCommand extends Command {
-    private String _logicalSwitchUuid;
-    private String _logicalSwithPortUuid;
+    private final String logicalSwitchUuid;
+    private final String logicalSwithPortUuid;
 
-    public DeleteLogicalSwitchPortCommand(String logicalSwitchUuid, String logicalSwitchPortUuid) {
-        _logicalSwitchUuid = logicalSwitchUuid;
-        _logicalSwithPortUuid = logicalSwitchPortUuid;
+    public DeleteLogicalSwitchPortCommand(final String logicalSwitchUuid, final String logicalSwitchPortUuid) {
+        this.logicalSwitchUuid = logicalSwitchUuid;
+        logicalSwithPortUuid = logicalSwitchPortUuid;
     }
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
 
     public String getLogicalSwitchPortUuid() {
-        return _logicalSwithPortUuid;
+        return logicalSwithPortUuid;
     }
 
     @Override

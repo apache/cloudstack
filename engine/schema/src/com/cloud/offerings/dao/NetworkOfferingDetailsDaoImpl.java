@@ -30,36 +30,35 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class NetworkOfferingDetailsDaoImpl extends GenericDaoBase<NetworkOfferingDetailsVO, Long> implements NetworkOfferingDetailsDao{
+public class NetworkOfferingDetailsDaoImpl extends GenericDaoBase<NetworkOfferingDetailsVO, Long> implements NetworkOfferingDetailsDao {
     protected final SearchBuilder<NetworkOfferingDetailsVO> DetailSearch;
     private final GenericSearchBuilder<NetworkOfferingDetailsVO, String> ValueSearch;
 
-    
     public NetworkOfferingDetailsDaoImpl() {
-        
+
         DetailSearch = createSearchBuilder();
         DetailSearch.and("offeringId", DetailSearch.entity().getOfferingId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
-        
+
         ValueSearch = createSearchBuilder(String.class);
         ValueSearch.select(null, Func.DISTINCT, ValueSearch.entity().getValue());
         ValueSearch.and("offeringId", ValueSearch.entity().getOfferingId(), SearchCriteria.Op.EQ);
         ValueSearch.and("name", ValueSearch.entity().getName(), Op.EQ);
         ValueSearch.done();
     }
-    
+
     @Override
-    public Map<NetworkOffering.Detail,String> getNtwkOffDetails(long offeringId) {
+    public Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId) {
         SearchCriteria<NetworkOfferingDetailsVO> sc = DetailSearch.create();
         sc.setParameters("offeringId", offeringId);
-        
+
         List<NetworkOfferingDetailsVO> results = search(sc, null);
         Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>(results.size());
         for (NetworkOfferingDetailsVO result : results) {
             details.put(result.getName(), result.getValue());
         }
-        
+
         return details;
     }
 

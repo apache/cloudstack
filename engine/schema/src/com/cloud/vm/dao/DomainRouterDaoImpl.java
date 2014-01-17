@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -27,19 +27,15 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network;
 import com.cloud.network.dao.RouterNetworkDao;
-import com.cloud.network.dao.RouterNetworkDaoImpl;
 import com.cloud.network.dao.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -50,25 +46,30 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Component
-@Local(value = { DomainRouterDao.class })
+@Local(value = {DomainRouterDao.class})
 @DB
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
 
     protected SearchBuilder<DomainRouterVO> AllFieldsSearch;
+    protected SearchBuilder<DomainRouterVO> RunningSearch;
     protected SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
     protected SearchBuilder<DomainRouterVO> HostUpSearch;
     protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
-    @Inject HostDao _hostsDao;
-    @Inject RouterNetworkDao _routerNetworkDao;
-    @Inject UserStatisticsDao _userStatsDao;
-    @Inject NetworkOfferingDao _offDao;
+    protected SearchBuilder<DomainRouterVO> clusterSearch;
+    @Inject
+    HostDao _hostsDao;
+    @Inject
+    RouterNetworkDao _routerNetworkDao;
+    @Inject
+    UserStatisticsDao _userStatsDao;
+    @Inject
+    NetworkOfferingDao _offDao;
     protected SearchBuilder<DomainRouterVO> VpcSearch;
-    
+
     public DomainRouterDaoImpl() {
     }
 
@@ -90,7 +91,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("elementId", AllFieldsSearch.entity().getElementId(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.done();
-        
+
         VpcSearch = createSearchBuilder();
         VpcSearch.and("role", VpcSearch.entity().getRole(), Op.EQ);
         VpcSearch.and("vpcId", VpcSearch.entity().getVpcId(), Op.EQ);
@@ -100,7 +101,8 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         IdNetworkIdStatesSearch.and("id", IdNetworkIdStatesSearch.entity().getId(), Op.EQ);
         SearchBuilder<RouterNetworkVO> joinRouterNetwork1 = _routerNetworkDao.createSearchBuilder();
         joinRouterNetwork1.and("networkId", joinRouterNetwork1.entity().getNetworkId(), Op.EQ);
-        IdNetworkIdStatesSearch.join("networkRouter", joinRouterNetwork1, joinRouterNetwork1.entity().getRouterId(), IdNetworkIdStatesSearch.entity().getId(), JoinType.INNER);
+        IdNetworkIdStatesSearch.join("networkRouter", joinRouterNetwork1, joinRouterNetwork1.entity().getRouterId(), IdNetworkIdStatesSearch.entity().getId(),
+            JoinType.INNER);
         IdNetworkIdStatesSearch.and("states", IdNetworkIdStatesSearch.entity().getState(), Op.IN);
         IdNetworkIdStatesSearch.done();
 
@@ -113,32 +115,44 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinRouterNetwork3.and("type", joinRouterNetwork3.entity().getGuestType(), Op.EQ);
         HostUpSearch.join("networkRouter", joinRouterNetwork3, joinRouterNetwork3.entity().getRouterId(), HostUpSearch.entity().getId(), JoinType.INNER);
         HostUpSearch.done();
-          
+
         StateNetworkTypeSearch = createSearchBuilder();
         StateNetworkTypeSearch.select(null, Func.DISTINCT, StateNetworkTypeSearch.entity().getId());
         StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
         SearchBuilder<RouterNetworkVO> joinRouterNetwork4 = _routerNetworkDao.createSearchBuilder();
         joinRouterNetwork4.and("networkId", joinRouterNetwork4.entity().getNetworkId(), Op.EQ);
         joinRouterNetwork4.and("type", joinRouterNetwork4.entity().getGuestType(), Op.EQ);
-        StateNetworkTypeSearch.join("networkRouter", joinRouterNetwork4, joinRouterNetwork4.entity().getRouterId(), StateNetworkTypeSearch.entity().getId(), JoinType.INNER);
-        
+        StateNetworkTypeSearch.join("networkRouter", joinRouterNetwork4, joinRouterNetwork4.entity().getRouterId(), StateNetworkTypeSearch.entity().getId(),
+            JoinType.INNER);
+
         SearchBuilder<HostVO> joinHost = _hostsDao.createSearchBuilder();
         joinHost.and("mgmtServerId", joinHost.entity().getManagementServerId(), Op.EQ);
-        StateNetworkTypeSearch.join("host", joinHost, joinHost.entity().getId(), 
-                StateNetworkTypeSearch.entity().getHostId(), JoinType.INNER);
+        StateNetworkTypeSearch.join("host", joinHost, joinHost.entity().getId(), StateNetworkTypeSearch.entity().getHostId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
-        
-        
+
         OutsidePodSearch = createSearchBuilder();
         SearchBuilder<RouterNetworkVO> joinRouterNetwork2 = _routerNetworkDao.createSearchBuilder();
         joinRouterNetwork2.and("networkId", joinRouterNetwork2.entity().getNetworkId(), Op.EQ);
-        OutsidePodSearch.join("networkRouter", joinRouterNetwork2, joinRouterNetwork2.entity().getRouterId(), 
-                OutsidePodSearch.entity().getId(), JoinType.INNER);
+        OutsidePodSearch.join("networkRouter", joinRouterNetwork2, joinRouterNetwork2.entity().getRouterId(), OutsidePodSearch.entity().getId(), JoinType.INNER);
         OutsidePodSearch.and("podId", OutsidePodSearch.entity().getPodIdToDeployIn(), Op.NEQ);
         OutsidePodSearch.and("state", OutsidePodSearch.entity().getState(), Op.EQ);
         OutsidePodSearch.and("role", OutsidePodSearch.entity().getRole(), Op.EQ);
         OutsidePodSearch.done();
 
+        clusterSearch = createSearchBuilder();
+        clusterSearch.and("state", clusterSearch.entity().getState(), Op.EQ);
+        SearchBuilder<HostVO> clusterHost = _hostsDao.createSearchBuilder();
+        clusterHost.and("clusterId", clusterHost.entity().getClusterId(), Op.EQ);
+        clusterSearch.join("host", clusterHost, clusterSearch.entity().getHostId(), clusterHost.entity().getId(), JoinType.INNER);
+        clusterSearch.done();
+
+        RunningSearch = createSearchBuilder();
+        RunningSearch.and("dc", RunningSearch.entity().getDataCenterId(), Op.EQ);
+        RunningSearch.and("account", RunningSearch.entity().getAccountId(), Op.EQ);
+        RunningSearch.and("domainId", RunningSearch.entity().getDomainId(), Op.EQ);
+        RunningSearch.and("state", RunningSearch.entity().getState(), Op.EQ);
+        RunningSearch.and("podId", RunningSearch.entity().getPodIdToDeployIn(), Op.EQ);
+        RunningSearch.done();
     }
 
     @Override
@@ -181,7 +195,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return listBy(sc);
     }
 
-
     @Override
     public List<DomainRouterVO> listBy(long accountId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
@@ -197,9 +210,18 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByPodId(Long podId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+    public List<DomainRouterVO> listRunningByPodId(Long podId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
         sc.setParameters("podId", podId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listRunningByClusterId(Long clusterId) {
+        SearchCriteria<DomainRouterVO> sc = clusterSearch.create();
+        sc.setParameters("state", State.Running);
+        sc.setJoinParameters("host", "clusterId", clusterId);
         return listBy(sc);
     }
 
@@ -207,7 +229,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByPodIdAndStates(Long podId, State... states) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("podId", podId);
-        sc.setParameters("states", (Object[]) states);
+        sc.setParameters("states", (Object[])states);
         return listBy(sc);
     }
 
@@ -227,8 +249,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByDomain(Long domainId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+    public List<DomainRouterVO> listRunningByDomain(Long domainId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
         sc.setParameters("domainId", domainId);
         return listBy(sc);
     }
@@ -303,7 +326,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("elementId", elementId);
         return listBy(sc);
     }
-    
+
     @Override
     @DB
     public DomainRouterVO persist(DomainRouterVO router, List<Network> guestNetworks) {
@@ -312,18 +335,18 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 
         // 1) create network
         DomainRouterVO newRouter = super.persist(router);
-        
+
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                addRouterToGuestNetwork(router, guestNetwork);  
+                addRouterToGuestNetwork(router, guestNetwork);
             }
         }
-       
+
         txn.commit();
         return newRouter;
     }
-    
+
     @Override
     @DB
     public void addRouterToGuestNetwork(VirtualRouter router, Network guestNetwork) {
@@ -336,18 +359,18 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
                 RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
                 _routerNetworkDao.persist(routerNtwkMap);
                 //2) create user stats entry for the network
-                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
-                        guestNetwork.getId(), null, router.getId(), router.getType().toString());
+                UserStatisticsVO stats =
+                    _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), guestNetwork.getId(), null, router.getId(), router.getType().toString());
                 if (stats == null) {
-                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), null, router.getId(),
-                            router.getType().toString(), guestNetwork.getId());
+                    stats =
+                        new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
                     _userStatsDao.persist(stats);
                 }
                 txn.commit();
             }
-        }  
+        }
     }
-    
+
     @Override
     public void removeRouterFromGuestNetwork(long routerId, long guestNetworkId) {
         RouterNetworkVO routerNtwkMap = _routerNetworkDao.findByRouterAndNetwork(routerId, guestNetworkId);
@@ -355,12 +378,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
             _routerNetworkDao.remove(routerNtwkMap.getId());
         }
     }
-    
+
     @Override
     public List<Long> getRouterNetworks(long routerId) {
         return _routerNetworkDao.getRouterNetworks(routerId);
     }
-    
+
     @Override
     public List<DomainRouterVO> listByVpcId(long vpcId) {
         SearchCriteria<DomainRouterVO> sc = VpcSearch.create();
@@ -369,4 +392,19 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return listBy(sc);
     }
 
+    @Override
+    public List<DomainRouterVO> listRunningByAccountId(long accountId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
+        sc.setParameters("account", accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listRunningByDataCenter(long dcId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
+        sc.setParameters("dc", dcId);
+        return listBy(sc);
+    }
 }

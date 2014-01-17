@@ -26,43 +26,45 @@ import com.cloud.utils.StringUtils;
 
 public class TestVmwareContextFactory {
 
- private static final Logger s_logger = Logger.getLogger(TestVmwareContextFactory.class);
+    private static final Logger s_logger = Logger.getLogger(TestVmwareContextFactory.class);
 
-	private static volatile int s_seq = 1;
-	private static VmwareContextPool s_pool;
+    private static volatile int s_seq = 1;
+    private static VmwareContextPool s_pool;
 
-	static {
-		// skip certificate check
-		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
-		s_pool = new VmwareContextPool();
-	}
+    static {
+        // skip certificate check
+        System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
+        s_pool = new VmwareContextPool();
+    }
 
-	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-		assert(vCenterAddress != null);
-		assert(vCenterUserName != null);
-		assert(vCenterPassword != null);
+    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+        assert (vCenterAddress != null);
+        assert (vCenterUserName != null);
+        assert (vCenterPassword != null);
 
-		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
+        String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
 
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " + StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
+                StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
-		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
+        VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+        vimClient.setVcenterSessionTimeout(1200000);
+        vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 
-		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
-		return context;
-	}
-	
-	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
-		if(context == null)
-			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
-		
-		if(context != null) {
-			context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-		}
-		
-		return context;
-	}
+        VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
+        return context;
+    }
+
+    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+        if (context == null)
+            context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+
+        if (context != null) {
+            context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+        }
+
+        return context;
+    }
 }

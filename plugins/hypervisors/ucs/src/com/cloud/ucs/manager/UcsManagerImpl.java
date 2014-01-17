@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
 import org.apache.cloudstack.api.DeleteUcsManagerCmd;
@@ -63,12 +64,11 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
 
-@Local(value = { UcsManager.class })
+@Local(value = {UcsManager.class})
 public class UcsManagerImpl implements UcsManager {
     public static final Logger s_logger = Logger.getLogger(UcsManagerImpl.class);
     public static final Long COOKIE_TTL = TimeUnit.MILLISECONDS.convert(100L, TimeUnit.MINUTES);
@@ -100,72 +100,70 @@ public class UcsManagerImpl implements UcsManager {
 
     private class SyncBladesThread extends ManagedContextRunnable {
 
-		private void discoverNewBlades(Map<String, UcsBladeVO> previous,
-				Map<String, ComputeBlade> now, UcsManagerVO mgr) {
-			for (Map.Entry<String, ComputeBlade> e : now.entrySet()) {
-				String dn = e.getKey();
-				if (previous.keySet().contains(dn)) {
-					continue;
-				}
+        private void discoverNewBlades(Map<String, UcsBladeVO> previous, Map<String, ComputeBlade> now, UcsManagerVO mgr) {
+            for (Map.Entry<String, ComputeBlade> e : now.entrySet()) {
+                String dn = e.getKey();
+                if (previous.keySet().contains(dn)) {
+                    continue;
+                }
 
-				ComputeBlade nc = e.getValue();
-				UcsBladeVO vo = new UcsBladeVO();
-				vo.setDn(nc.getDn());
-				vo.setUcsManagerId(mgr.getId());
-				vo.setUuid(UUID.randomUUID().toString());
-				bladeDao.persist(vo);
-				s_logger.debug(String.format("discovered a new UCS blade[dn:%s] during sync", nc.getDn()));
-			}
-		}
-		
-		private void decommissionFadedBlade(Map<String, UcsBladeVO> previous, Map<String, ComputeBlade> now) {
-			for (Map.Entry<String, UcsBladeVO> e : previous.entrySet()) {
-				String dn = e.getKey();
-				if (now.keySet().contains(dn)) {
-					continue;
-				}
-				
-				UcsBladeVO vo = e.getValue();
-				bladeDao.remove(vo.getId());
-				s_logger.debug(String.format("decommission faded blade[dn:%s] during sync", vo.getDn()));
-			}
-		}
+                ComputeBlade nc = e.getValue();
+                UcsBladeVO vo = new UcsBladeVO();
+                vo.setDn(nc.getDn());
+                vo.setUcsManagerId(mgr.getId());
+                vo.setUuid(UUID.randomUUID().toString());
+                bladeDao.persist(vo);
+                s_logger.debug(String.format("discovered a new UCS blade[dn:%s] during sync", nc.getDn()));
+            }
+        }
 
-    	private void syncBlades(UcsManagerVO mgr) {
+        private void decommissionFadedBlade(Map<String, UcsBladeVO> previous, Map<String, ComputeBlade> now) {
+            for (Map.Entry<String, UcsBladeVO> e : previous.entrySet()) {
+                String dn = e.getKey();
+                if (now.keySet().contains(dn)) {
+                    continue;
+                }
+
+                UcsBladeVO vo = e.getValue();
+                bladeDao.remove(vo.getId());
+                s_logger.debug(String.format("decommission faded blade[dn:%s] during sync", vo.getDn()));
+            }
+        }
+
+        private void syncBlades(UcsManagerVO mgr) {
             QueryBuilder<UcsBladeVO> q = QueryBuilder.create(UcsBladeVO.class);
-    		q.and(q.entity().getUcsManagerId(), Op.EQ, mgr.getId());
-    		List<UcsBladeVO> pblades = q.list();
-    		if (pblades.isEmpty()) {
-    			return;
-    		}
+            q.and(q.entity().getUcsManagerId(), Op.EQ, mgr.getId());
+            List<UcsBladeVO> pblades = q.list();
+            if (pblades.isEmpty()) {
+                return;
+            }
 
-    		
-    		Map<String, UcsBladeVO> previousBlades = new HashMap<String, UcsBladeVO>(pblades.size());
-    		for (UcsBladeVO b : pblades) {
-    			previousBlades.put(b.getDn(), b);
-    		}
+            Map<String, UcsBladeVO> previousBlades = new HashMap<String, UcsBladeVO>(pblades.size());
+            for (UcsBladeVO b : pblades) {
+                previousBlades.put(b.getDn(), b);
+            }
 
-    		List<ComputeBlade> cblades = listBlades(mgr.getId());
-    		Map<String, ComputeBlade> currentBlades = new HashMap<String, ComputeBlade>(cblades.size());
-    		for (ComputeBlade c : cblades) {
-    			currentBlades.put(c.getDn(), c);
-    		}
-    		
-    		discoverNewBlades(previousBlades, currentBlades, mgr);
-    		decommissionFadedBlade(previousBlades, currentBlades);
-    	}
+            List<ComputeBlade> cblades = listBlades(mgr.getId());
+            Map<String, ComputeBlade> currentBlades = new HashMap<String, ComputeBlade>(cblades.size());
+            for (ComputeBlade c : cblades) {
+                currentBlades.put(c.getDn(), c);
+            }
 
-		@Override
-		protected void runInContext() {
-			try {
-				List<UcsManagerVO> mgrs = ucsDao.listAll();
-				for (UcsManagerVO mgr : mgrs) {
-					syncBlades(mgr);
-				}
-			} catch (Throwable t) {
-				s_logger.warn(t.getMessage(), t);
-			}
-		}
+            discoverNewBlades(previousBlades, currentBlades, mgr);
+            decommissionFadedBlade(previousBlades, currentBlades);
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                List<UcsManagerVO> mgrs = ucsDao.listAll();
+                for (UcsManagerVO mgr : mgrs) {
+                    syncBlades(mgr);
+                }
+            } catch (Throwable t) {
+                s_logger.warn(t.getMessage(), t);
+            }
+        }
 
     }
 
@@ -181,8 +179,8 @@ public class UcsManagerImpl implements UcsManager {
         } catch (NumberFormatException e) {
             syncBladeInterval = 600;
         }
-    	syncBladesExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UCS-SyncBlades"));
-    	syncBladesExecutor.scheduleAtFixedRate(new SyncBladesThread(), syncBladeInterval, syncBladeInterval, TimeUnit.SECONDS);
+        syncBladesExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UCS-SyncBlades"));
+        syncBladesExecutor.scheduleAtFixedRate(new SyncBladesThread(), syncBladeInterval, syncBladeInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -252,18 +250,16 @@ public class UcsManagerImpl implements UcsManager {
             String cmd = null;
             if (ucsCookie == null) {
                 cmd = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
-            }
-            else {
+            } else {
                 String cookie = ucsCookie.getCookie();
                 long cookieStartTime = ucsCookie.getStartTime();
-                if(currentTime - cookieStartTime > COOKIE_TTL) {
+                if (currentTime - cookieStartTime > COOKIE_TTL) {
                     cmd = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
-                }
-                else if(currentTime - cookieStartTime > COOKIE_REFRESH_TTL) {
+                } else if (currentTime - cookieStartTime > COOKIE_REFRESH_TTL) {
                     cmd = UcsCommands.refreshCmd(mgrvo.getUsername(), mgrvo.getPassword(), cookie);
                 }
             }
-            if(!(cmd == null)) {
+            if (!(cmd == null)) {
                 String ret = client.call(cmd);
                 XmlObject xo = XmlObjectParser.parseFromString(ret);
                 String cookie = xo.get("outCookie");
@@ -276,7 +272,7 @@ public class UcsManagerImpl implements UcsManager {
             throw new CloudRuntimeException("Cannot get cookie", e);
         }
     }
-    
+
     private List<ComputeBlade> listBlades(Long ucsMgrId) {
         String cookie = getCookie(ucsMgrId);
         UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
@@ -329,11 +325,12 @@ public class UcsManagerImpl implements UcsManager {
         String res = client.call(cmd);
         XmlObject xo = XmlObjectParser.parseFromString(res);
         s_logger.debug(String.format("association response is %s", res));
-        
+
         if (xo.get("outConfig.computeBlade.association").equals("none")) {
-            throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information", dn));
+            throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information",
+                dn));
         }
-        
+
         return xo.get("outConfig.computeBlade.association").equals("associated");
     }
 
@@ -393,12 +390,12 @@ public class UcsManagerImpl implements UcsManager {
         HostVO vo = hostDao.findById(hostId);
         return vo.getUuid();
     }
-    
+
     private String zoneIdToUuid(Long zoneId) {
         DataCenterVO vo = dcDao.findById(zoneId);
         return vo.getUuid();
     }
-    
+
     private String ucsManagerIdToUuid(Long ucsMgrId) {
         UcsManagerVO vo = ucsDao.findById(ucsMgrId);
         return vo.getUuid();
@@ -408,8 +405,8 @@ public class UcsManagerImpl implements UcsManager {
     public ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd) {
         List<UcsManagerResponse> rsps = new ArrayList<UcsManagerResponse>();
         ListResponse<UcsManagerResponse> response = new ListResponse<UcsManagerResponse>();
-    	if (cmd.getId() != null) {
-    		UcsManagerVO vo = ucsDao.findById(cmd.getId());
+        if (cmd.getId() != null) {
+            UcsManagerVO vo = ucsDao.findById(cmd.getId());
             UcsManagerResponse rsp = new UcsManagerResponse();
             rsp.setObjectName("ucsmanager");
             rsp.setId(vo.getUuid());
@@ -419,8 +416,8 @@ public class UcsManagerImpl implements UcsManager {
             rsps.add(rsp);
             response.setResponses(rsps);
             return response;
-    	}
-    	
+        }
+
         QueryBuilder<UcsManagerVO> serv = QueryBuilder.create(UcsManagerVO.class);
         serv.and(serv.entity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
@@ -448,19 +445,19 @@ public class UcsManagerImpl implements UcsManager {
         rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
         return rsp;
     }
-    
+
     @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
         QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
         serv.and(serv.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         List<UcsBladeVO> vos = serv.list();
-        
+
         List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
         for (UcsBladeVO vo : vos) {
             UcsBladeResponse rsp = bladeVOToResponse(vo);
             rsps.add(rsp);
         }
-        
+
         ListResponse<UcsBladeResponse> response = new ListResponse<UcsBladeResponse>();
         response.setResponses(rsps);
 
@@ -504,14 +501,14 @@ public class UcsManagerImpl implements UcsManager {
         return cmds;
     }
 
-	@Override
-	public void deleteUcsManager(Long id) {
+    @Override
+    public void deleteUcsManager(Long id) {
         QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
         serv.and(serv.entity().getUcsManagerId(), Op.EQ, id);
         List<UcsBladeVO> vos = serv.list();
         for (UcsBladeVO vo : vos) {
-        	bladeDao.remove(vo.getId());
+            bladeDao.remove(vo.getId());
         }
-		ucsDao.remove(id);
-	}
+        ucsDao.remove(id);
+    }
 }

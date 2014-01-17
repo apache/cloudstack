@@ -28,48 +28,48 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.projects.ProjectAccount.Role;
 
 @Entity
-@Table(name="project_account_view")
+@Table(name = "project_account_view")
 public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="account_role")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "account_role")
+    @Enumerated(value = EnumType.STRING)
     private Role accountRole;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
     public ProjectAccountJoinVO() {

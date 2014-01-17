@@ -24,17 +24,17 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_stratosphere_ssp_tenants")
+@Table(name = "external_stratosphere_ssp_tenants")
 public class SspTenantVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="zone_id")
+    @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     public long getZoneId() {

@@ -23,15 +23,15 @@ import org.apache.log4j.spi.ThrowableRenderer;
 
 /**
  * This renderer removes all the Cglib generated methods from the call
- * 
+ *
  * Unfortunately, I had to copy out the EnhancedThrowableRenderer from
  * the apach libraries because EnhancedThrowableRenderer is a final class.
  * simply override doRender. Not sure what the developers are thinking there
  * making it final.
- * 
+ *
  * <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
  * into log4j.xml.
- * 
+ *
  */
 public class CglibThrowableRenderer implements ThrowableRenderer {
     /**

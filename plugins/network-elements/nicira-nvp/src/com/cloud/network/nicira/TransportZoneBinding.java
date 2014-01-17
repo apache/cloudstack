@@ -17,30 +17,31 @@
 package com.cloud.network.nicira;
 
 public class TransportZoneBinding {
-    private String zone_uuid;
-    private String transport_type;
+    private String zoneUuid;
+    private String transportType;
 
-    public TransportZoneBinding() {}
-
-    public TransportZoneBinding(String zone_uuid, String transport_type) {
-        this.zone_uuid = zone_uuid;
-        this.transport_type = transport_type;
+    public TransportZoneBinding() {
     }
 
-    public String getZone_uuid() {
-        return zone_uuid;
+    public TransportZoneBinding(String zoneUuid, String transportType) {
+        this.zoneUuid = zoneUuid;
+        this.transportType = transportType;
     }
 
-    public void setZone_uuid(String zone_uuid) {
-        this.zone_uuid = zone_uuid;
+    public String getZoneUuid() {
+        return zoneUuid;
     }
 
-    public String getTransport_type() {
-        return transport_type;
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
-    public void setTransport_type(String transport_type) {
-        this.transport_type = transport_type;
+    public String getTransportType() {
+        return transportType;
+    }
+
+    public void setTransportType(String transportType) {
+        this.transportType = transportType;
     }
 
 }

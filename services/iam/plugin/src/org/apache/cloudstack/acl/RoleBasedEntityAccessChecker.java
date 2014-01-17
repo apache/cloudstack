@@ -40,7 +40,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
     @Inject
     AccountService _accountService;
-    
+
     @Inject DomainDao _domainDao;
 
     @Inject
@@ -115,7 +115,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     }
 
     private boolean checkPermissionScope(Account caller, String scope, ControlledEntity entity) {
-        
+
         if (scope.equals(PermissionScope.ACCOUNT.name())) {
             if(caller.getAccountId() == entity.getAccountId()){
                 return true;
@@ -125,7 +125,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 return true;
             }
         }
-        
+
         return false;
     }
 

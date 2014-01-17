@@ -71,7 +71,7 @@ assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
-expungeVirtualMachine=1
+expungeVirtualMachine=7
 
 #### snapshot commands
 createSnapshot=15
@@ -165,6 +165,14 @@ deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
 
+##### SSL offload commands
+
+uploadSslCert=15
+deleteSslCert=15
+listSslCerts=15
+assignCertToLoadBalancer=15
+removeCertFromLoadBalancer=15
+
 #### autoscale commands
 createCounter=1
 createCondition=15
@@ -197,6 +205,7 @@ listRouters=7
 listVirtualRouterElements=7
 configureVirtualRouterElement=7
 createVirtualRouterElement=7
+upgradeRouterTemplate=1
 
 #### system vm commands
 startSystemVm=1
@@ -237,6 +246,7 @@ deleteEvents=15
 listAlerts=3
 archiveAlerts=1
 deleteAlerts=1
+generateAlert=1
 
 #### system capacity commands
 listCapacity=3
@@ -256,7 +266,7 @@ deleteImageStore=1
 createSecondaryStagingStore=1
 listSecondaryStagingStores=1
 deleteSecondaryStagingStore=1
-prepareSecondaryStorageForMigration=1
+updateCloudToUseObjectStore=1
 
 #### host commands
 addHost=3
@@ -493,6 +503,11 @@ createVirtualRouterElement=7
 configureVirtualRouterElement=7
 listVirtualRouterElements=7
 
+#### ovs commands
+createOvsElement=7
+configureOvsElement=7
+listOvsElements=7
+
 #### usage commands
 generateUsageRecords=1
 listUsageRecords=7
@@ -532,6 +547,13 @@ deleteSrxFirewall=1
 configureSrxFirewall=1
 listSrxFirewalls=1
 listSrxFirewallNetworks=1
+
+#### Palo Alto firewall commands
+addPaloAltoFirewall=1
+deletePaloAltoFirewall=1
+configurePaloAltoFirewall=1
+listPaloAltoFirewalls=1
+listPaloAltoFirewallNetworks=1
 
 ####Netapp integration commands
 createVolumeOnFiler=15
@@ -683,21 +705,23 @@ ldapCreateAccount=3
 importLdapUsers=3
 
 ### Acl commands
-createAclRole=7
-deleteAclRole=7
-listAclRoles=7
-grantPermissionToAclRole=7
-revokePermissionFromAclRole=7
-createAclGroup=7
-deleteAclGroup=7
-listAclGroups=7
-addAclRoleToAclGroup=7
-removeAclRoleFromAclGroup=7
-addAccountToAclGroup=7
-removeAccountFromAclGroup=7
-grantPermissionToAclGroup=7
-revokePermissionFromAclGroup=7
+createAclPolicy=1
+deleteAclPolicy=1
+listAclPolicies=1
+addAclPermissionToAclPolicy=1
+removeAclPermissionFromAclPolicy=1
+createAclGroup=1
+deleteAclGroup=1
+listAclGroups=1
+addAccountToAclGroup=1
+removeAccountFromAclGroup=1
+attachAclPolicyToAclGroup=1
+removeAclPolicyFromAclGroup=1
 
 #### juniper-contrail commands
 createServiceInstance=1
 
+### OpenDaylight plugin commands
+addOpenDaylightController=1
+deleteOpenDaylightController=1
+listOpenDaylightControllers=1

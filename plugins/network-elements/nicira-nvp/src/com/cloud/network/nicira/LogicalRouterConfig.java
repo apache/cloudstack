@@ -22,26 +22,26 @@ import java.util.List;
  *
  */
 public class LogicalRouterConfig {
-    private String display_name;
-    private RoutingConfig routing_config;
-    private String type = "LogicalRouterConfig";
+    private String displayName;
+    private RoutingConfig routingConfig;
+    private final String type = "LogicalRouterConfig";
     private String uuid;
     private List<NiciraNvpTag> tags;
 
     public RoutingConfig getRoutingConfig() {
-        return routing_config;
+        return routingConfig;
     }
 
-    public void setRoutingConfig(RoutingConfig routing_config) {
-        this.routing_config = routing_config;
+    public void setRoutingConfig(RoutingConfig routingConfig) {
+        this.routingConfig = routingConfig;
     }
 
     public String getDisplayName() {
-        return display_name;
+        return displayName;
     }
 
-    public void setDisplayName(String display_name) {
-        this.display_name = display_name;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getUuid() {
@@ -59,5 +59,4 @@ public class LogicalRouterConfig {
     public void setTags(List<NiciraNvpTag> tags) {
         this.tags = tags;
     }
-
 }

@@ -22,25 +22,37 @@ import com.cloud.host.Host;
 import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingCommand extends PingCommand {
+
+    // TODO vmsync {
     Map<String, State> newStates;
+    // TODO vmsync }
+
+    Map<String, HostVmStateReportEntry> _hostVmStateReport;
+
     boolean _gatewayAccessible = true;
     boolean _vnetAccessible = true;
 
     protected PingRoutingCommand() {
     }
 
-    public PingRoutingCommand(Host.Type type, long id, Map<String, State> states) {
+    public PingRoutingCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport) {
         super(type, id);
         this.newStates = states;
+        this._hostVmStateReport = hostVmStateReport;
     }
 
     public Map<String, State> getNewStates() {
         return newStates;
     }
 
+    public Map<String, HostVmStateReportEntry> getHostVmStateReport() {
+        return this._hostVmStateReport;
+    }
+
     public boolean isGatewayAccessible() {
         return _gatewayAccessible;
     }
+
     public void setGatewayAccessible(boolean gatewayAccessible) {
         _gatewayAccessible = gatewayAccessible;
     }
@@ -48,6 +60,7 @@ public class PingRoutingCommand extends PingCommand {
     public boolean isVnetAccessible() {
         return _vnetAccessible;
     }
+
     public void setVnetAccessible(boolean vnetAccessible) {
         _vnetAccessible = vnetAccessible;
     }

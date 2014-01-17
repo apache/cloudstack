@@ -18,8 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -40,33 +38,42 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addNiciraNvpDevice", responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
+@APICommand(name = "addNiciraNvpDevice", responseObject = NiciraNvpDeviceResponse.class, description = "Adds a Nicira NVP device")
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
-    private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";
-    @Inject NiciraNvpElementService _niciraNvpElementService;
+    @Inject
+    protected NiciraNvpElementService niciraNvpElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname of ip address of the Nicira NVP Controller.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname of ip address of the Nicira NVP Controller.")
     private String host;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to access the Nicira Controller API")
     private String username;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to access the Nicira Controller API")
     private String password;
 
-    @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
+    @Parameter(name = ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID,
+               type = CommandType.STRING,
+               required = true,
+               description = "The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
 
-    @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
+    @Parameter(name = ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID,
+               type = CommandType.STRING,
+               required = false,
+               description = "The L3 Gateway Service UUID configured on the Nicira Controller")
     private String l3gatewayserviceuuid;
 
     /////////////////////////////////////////////////////
@@ -102,18 +109,19 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
-            NiciraNvpDeviceVO niciraNvpDeviceVO = _niciraNvpElementService.addNiciraNvpDevice(this);
+            NiciraNvpDeviceVO niciraNvpDeviceVO = niciraNvpElementService.addNiciraNvpDevice(this);
             if (niciraNvpDeviceVO != null) {
-                NiciraNvpDeviceResponse response = _niciraNvpElementService.createNiciraNvpDeviceResponse(niciraNvpDeviceVO);
+                NiciraNvpDeviceResponse response = niciraNvpElementService.createNiciraNvpDeviceResponse(niciraNvpDeviceVO);
                 response.setObjectName("niciranvpdevice");
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Nicira NVP device due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

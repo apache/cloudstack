@@ -16,12 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.hyperv.discoverer;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
@@ -33,9 +29,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,7 +43,6 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -76,13 +68,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
-import com.cloud.utils.FileUtil;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -90,8 +76,7 @@ import com.cloud.utils.script.Script;
  * hypervisor and manages its lifecycle.
  */
 @Local(value = Discoverer.class)
-public class HypervServerDiscoverer extends DiscovererBase implements
-        Discoverer, Listener, ResourceStateAdapter {
+public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
 
     private String _instance;
@@ -114,8 +99,6 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     private HostPodDao _podDao;
     @Inject
     private DataCenterDao _dcDao;
-    @Inject
-    DataStoreManager _dataStoreMgr;
 
     // TODO: AgentManager and AlertManager not being used to transmit info,
     // may want to reconsider.
@@ -127,33 +110,28 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     // Listener interface methods
 
     @Override
-    public final boolean processAnswers(final long agentId, final long seq,
-            final Answer[] answers) {
+    public final boolean processAnswers(final long agentId, final long seq, final Answer[] answers) {
         return false;
     }
 
     @Override
-    public final boolean processCommands(final long agentId, final long seq,
-            final Command[] commands) {
+    public final boolean processCommands(final long agentId, final long seq, final Command[] commands) {
         return false;
     }
 
     @Override
-    public final AgentControlAnswer processControlCommand(final long agentId,
-            final AgentControlCommand cmd) {
+    public final AgentControlAnswer processControlCommand(final long agentId, final AgentControlCommand cmd) {
         return null;
     }
 
     @Override
-    public final void processConnect(final Host agent,
-            final StartupCommand cmd, final boolean forRebalance)
-            throws ConnectionException {
+    public final void processConnect(final Host agent, final StartupCommand cmd, final boolean forRebalance) throws ConnectionException {
         // Limit the commands we can process
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
 
-        StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+        StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
 
         // assert
         if (startup.getHypervisorType() != HypervisorType.Hyperv) {
@@ -177,31 +155,21 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             s_logger.debug("Setting up host " + agentId);
         }
 
-        String secondaryStorageUri = getSecondaryStorageStoreUrl(cluster.getDataCenterId());
-        if (secondaryStorageUri == null) {
-            s_logger.debug("Secondary storage uri for dc " + cluster.getDataCenterId() + " couldn't be obtained");
-        } else {
-            prepareSecondaryStorageStore(secondaryStorageUri);
-        }
-
         HostEnvironment env = new HostEnvironment();
         SetupCommand setup = new SetupCommand(env);
-        setup.setSecondaryStorage(secondaryStorageUri);
-        setup.setSystemVmIso("systemvm/" + getSystemVMIsoFileNameOnDatastore());
         if (!host.isSetup()) {
             setup.setNeedSetup(true);
         }
 
         try {
-            SetupAnswer answer = (SetupAnswer) _agentMgr.send(agentId, setup);
+            SetupAnswer answer = (SetupAnswer)_agentMgr.send(agentId, setup);
             if (answer != null && answer.getResult()) {
                 host.setSetup(true);
                 // TODO: clean up magic numbers below
                 host.setLastPinged((System.currentTimeMillis() >> 10) - 5 * 60);
                 _hostDao.update(host.getId(), host);
                 if (answer.needReconnect()) {
-                    throw new ConnectionException(false,
-                            "Reinitialize agent after setup.");
+                    throw new ConnectionException(false, "Reinitialize agent after setup.");
                 }
                 return;
             } else {
@@ -209,24 +177,20 @@ public class HypervServerDiscoverer extends DiscovererBase implements
                 if (reason == null) {
                     reason = " details were null";
                 }
-                s_logger.warn("Unable to setup agent " + agentId + " due to "
-                        + reason);
+                s_logger.warn("Unable to setup agent " + agentId + " due to " + reason);
             }
             // Error handling borrowed from XcpServerDiscoverer, may need to be
             // updated.
         } catch (AgentUnavailableException e) {
-            s_logger.warn("Unable to setup agent " + agentId
-                    + " because it became unavailable.", e);
+            s_logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
         } catch (OperationTimedoutException e) {
-            s_logger.warn("Unable to setup agent " + agentId
-                    + " because it timed out", e);
+            s_logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }
 
     @Override
-    public final boolean processDisconnect(final long agentId,
-            final Status state) {
+    public final boolean processDisconnect(final long agentId, final Status state) {
         return false;
     }
 
@@ -252,22 +216,17 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     // ServerResource is
     // ignored in favour of another created in response to
     @Override
-    public final Map<? extends ServerResource, Map<String, String>> find(
-            final long dcId, final Long podId, final Long clusterId,
-            final URI uri, final String username, final String password,
-            final List<String> hostTags) throws DiscoveryException {
+    public final Map<? extends ServerResource, Map<String, String>> find(final long dcId, final Long podId, final Long clusterId, final URI uri, final String username,
+        final String password, final List<String> hostTags) throws DiscoveryException {
 
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Discover host. dc(zone): " + dcId + ", pod: "
-                    + podId + ", cluster: " + clusterId + ", uri host: "
-                    + uri.getHost());
+            s_logger.info("Discover host. dc(zone): " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + uri.getHost());
         }
 
         // Assertions
         if (podId == null) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("No pod is assigned, skipping the discovery in"
-                        + " Hyperv discoverer");
+                s_logger.info("No pod is assigned, skipping the discovery in" + " Hyperv discoverer");
             }
             return null;
         }
@@ -276,21 +235,18 @@ public class HypervServerDiscoverer extends DiscovererBase implements
         // database
         if (cluster == null) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("No cluster in database for cluster id "
-                        + clusterId);
+                s_logger.info("No cluster in database for cluster id " + clusterId);
             }
             return null;
         }
         if (cluster.getHypervisorType() != HypervisorType.Hyperv) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Cluster " + clusterId
-                        + "is not for Hyperv hypervisors");
+                s_logger.info("Cluster " + clusterId + "is not for Hyperv hypervisors");
             }
             return null;
         }
         if (!uri.getScheme().equals("http")) {
-            String msg = "urlString is not http so we're not taking care of"
-                    + " the discovery for this: " + uri;
+            String msg = "urlString is not http so we're not taking care of" + " the discovery for this: " + uri;
             s_logger.debug(msg);
             return null;
         }
@@ -300,19 +256,15 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             InetAddress ia = InetAddress.getByName(hostname);
             String agentIp = ia.getHostAddress();
             String uuidSeed = agentIp;
-            String guidWithTail = calcServerResourceGuid(uuidSeed)
-                    + "-HypervResource";
+            String guidWithTail = calcServerResourceGuid(uuidSeed) + "-HypervResource";
 
             if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
-                s_logger.debug("Skipping " + agentIp + " because "
-                        + guidWithTail + " is already in the database.");
+                s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
                 return null;
             }
 
-            s_logger.info("Creating"
-                    + HypervDirectConnectResource.class.getName()
-                    + " HypervDummyResourceBase for zone/pod/cluster " + dcId
-                    + "/" + podId + "/" + clusterId);
+            s_logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDummyResourceBase for zone/pod/cluster " + dcId + "/" + podId + "/" +
+                clusterId);
 
             // Some Hypervisors organise themselves in pools.
             // The startup command tells us what pool they are using.
@@ -320,8 +272,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(
-                        String.valueOf(clusterId).getBytes()).toString());
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -332,7 +283,6 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             params.put("cluster", Long.toString(clusterId));
             params.put("guid", guidWithTail);
             params.put("ipaddress", agentIp);
-            params.put("sec.storage.url", getSecondaryStorageStoreUrl(dcId));
 
             // Hyper-V specific settings
             Map<String, String> details = new HashMap<String, String>();
@@ -343,8 +293,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements
 
             params.putAll(details);
 
-            HypervDirectConnectResource resource =
-                    new HypervDirectConnectResource();
+            HypervDirectConnectResource resource = new HypervDirectConnectResource();
             resource.configure(agentIp, params);
 
             // Assert
@@ -352,207 +301,28 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             ReadyCommand ping = new ReadyCommand();
             Answer pingAns = resource.executeRequest(ping);
             if (pingAns == null || !pingAns.getResult()) {
-                String errMsg =
-                        "Agent not running, or no route to agent on at "
-                                + uri;
+                String errMsg = "Agent not running, or no route to agent on at " + uri;
                 s_logger.debug(errMsg);
                 throw new DiscoveryException(errMsg);
             }
 
-            Map<HypervDirectConnectResource, Map<String, String>> resources =
-                    new HashMap<HypervDirectConnectResource,
-                    Map<String, String>>();
+            Map<HypervDirectConnectResource, Map<String, String>> resources = new HashMap<HypervDirectConnectResource, Map<String, String>>();
             resources.put(resource, details);
 
             // TODO: does the resource have to create a connection?
             return resources;
         } catch (ConfigurationException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId,
-                    "Unable to add " + uri.getHost(),
-                    "Error is " + e.getMessage());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (UnknownHostException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId,
-                    "Unable to add " + uri.getHost(),
-                    "Error is " + e.getMessage());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
+
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (Exception e) {
-            String msg = " can't setup agent, due to " + e.toString() + " - "
-                    + e.getMessage();
+            String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
             s_logger.warn(msg);
         }
         return null;
-    }
-    
-
-    private void prepareSecondaryStorageStore(String storageUrl) {
-        String mountPoint = getMountPoint(storageUrl);
-
-        GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
-        try {
-            if(lock.lock(3600)) {
-                try {
-                    File patchFolder = new File(mountPoint + "/systemvm");
-                    if(!patchFolder.exists()) {
-                        if(!patchFolder.mkdirs()) {
-                            String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder.toString();
-                            s_logger.error(msg);
-                            throw new CloudRuntimeException(msg);
-                        }
-                    }
-
-                    File srcIso = getSystemVMPatchIsoFile();
-                    File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
-                    if(!destIso.exists()) {
-                        s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " +
-                                srcIso.getAbsolutePath() + ", destination: " + destIso.getAbsolutePath());
-                        try {
-                            FileUtil.copyfile(srcIso, destIso);
-                        } catch(IOException e) {
-                            s_logger.error("Unexpected exception ", e);
-
-                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso.toString() + ", dest location: " + destIso;
-                            s_logger.error(msg);
-                            throw new CloudRuntimeException(msg);
-                        }
-                    } else {
-                        if(s_logger.isTraceEnabled()) {
-                            s_logger.trace("SystemVM ISO file " + destIso.getPath() + " already exists");
-                        }
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            }
-        } finally {
-            lock.releaseRef();
-        }
-    }
-
-    private String getMountPoint(String storageUrl) {
-        String mountPoint = null;
-        synchronized(_storageMounts) {
-            mountPoint = _storageMounts.get(storageUrl);
-            if(mountPoint != null) {
-                return mountPoint;
-            }
-
-            URI uri;
-            try {
-                uri = new URI(storageUrl);
-            } catch (URISyntaxException e) {
-                s_logger.error("Invalid storage URL format ", e);
-                throw new CloudRuntimeException("Unable to create mount point due to invalid storage URL format " + storageUrl);
-            }
-
-            mountPoint = mount(File.separator + File.separator + uri.getHost() + uri.getPath(), _mountParent,
-                    uri.getScheme(), uri.getQuery());
-            if(mountPoint == null) {
-                s_logger.error("Unable to create mount point for " + storageUrl);
-                return "/mnt/sec";
-            }
-
-            _storageMounts.put(storageUrl, mountPoint);
-            return mountPoint;
-        }
-    }
-
-    protected String mount(String path, String parent, String scheme, String query) {
-        String mountPoint = setupMountPoint(parent);
-        if (mountPoint == null) {
-            s_logger.warn("Unable to create a mount point");
-            return null;
-        }
-
-        Script script = null;
-        String result = null;
-        if (scheme.equals("cifs")) {
-            Script command = new Script(true, "mount", _timeout, s_logger);
-            command.add("-t", "cifs");
-            command.add(path);
-            command.add(mountPoint);
-
-            if (query != null) {
-                query = query.replace('&', ',');
-                command.add("-o", query);
-            }
-            result = command.execute();
-        }
-
-        if (result != null) {
-            s_logger.warn("Unable to mount " + path + " due to " + result);
-            File file = new File(mountPoint);
-            if (file.exists()) {
-                file.delete();
-            }
-            return null;
-        }
-
-        // Change permissions for the mountpoint
-        script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("-R", "777", mountPoint);
-        result = script.execute();
-        if (result != null) {
-            s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
-        }
-        return mountPoint;
-    }
-
-    private String setupMountPoint(String parent) {
-        String mountPoint = null;
-        long mshostId = ManagementServerNode.getManagementServerId();
-        for (int i = 0; i < 10; i++) {
-            String mntPt = parent + File.separator + String.valueOf(mshostId) + "." + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
-            File file = new File(mntPt);
-            if (!file.exists()) {
-                if (_storage.mkdir(mntPt)) {
-                    mountPoint = mntPt;
-                    break;
-                }
-            }
-            s_logger.error("Unable to create mount: " + mntPt);
-        }
-
-        return mountPoint;
-    }
-
-    private String getSystemVMIsoFileNameOnDatastore() {
-        String version = this.getClass().getPackage().getImplementationVersion();
-        String fileName = "systemvm-" + version + ".iso";
-        return fileName.replace(':', '-');
-    }
-
-    private File getSystemVMPatchIsoFile() {
-        // locate systemvm.iso
-        URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
-        File isoFile = null;
-        if (url != null) {
-            isoFile = new File(url.getPath());
-        }
-
-        if(isoFile == null || !isoFile.exists()) {
-            isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
-        }
-
-        assert(isoFile != null);
-        if(!isoFile.exists()) {
-            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
-        }
-        return isoFile;
-    }
-
-    private String getSecondaryStorageStoreUrl(long zoneId) {
-        String secUrl = null;
-        DataStore secStore = _dataStoreMgr.getImageStore(zoneId);
-        if (secStore != null) {
-            secUrl = secStore.getUri();
-        }
-
-        if (secUrl == null) {
-            s_logger.warn("Secondary storage uri couldn't be retrieved");
-        }
-
-        return secUrl;
     }
 
     /**
@@ -579,37 +349,16 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     @Override
     public final boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-
-        _mountParent = (String) params.get(Config.MountParent.key());
-        if (_mountParent == null) {
-            _mountParent = File.separator + "mnt";
-        }
-
-        if (_instance != null) {
-            _mountParent = _mountParent + File.separator + _instance;
-        }
-
-        String value = (String)params.get("scripts.timeout");
-        _timeout = NumbersUtil.parseInt(value, 30) * 1000;
-
-        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
-        if (_storage == null) {
-            _storage = new JavaStorageLayer();
-            _storage.configure("StorageLayer", params);
-        }
-
         // TODO: allow timeout on we HTTPRequests to be configured
         _agentMgr.registerForHostEvents(this, true, false, true);
-        _resourceMgr.registerResourceStateAdapter(this.getClass()
-                .getSimpleName(), this);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
     // end of Adapter
 
     @Override
-    public void postDiscovery(final List<HostVO> hosts, final long msId)
-            throws DiscoveryException {
+    public void postDiscovery(final List<HostVO> hosts, final long msId) throws DiscoveryException {
     }
 
     @Override
@@ -623,56 +372,46 @@ public class HypervServerDiscoverer extends DiscovererBase implements
         if (hypervisor == null) {
             return true;
         }
-        return Hypervisor.HypervisorType.Hyperv.toString().equalsIgnoreCase(
-                hypervisor);
+        return Hypervisor.HypervisorType.Hyperv.toString().equalsIgnoreCase(hypervisor);
     }
 
     // end of Discoverer
 
     // ResourceStateAdapter
     @Override
-    public final HostVO createHostVOForConnectedAgent(final HostVO host,
-            final StartupCommand[] cmd) {
+    public final HostVO createHostVOForConnectedAgent(final HostVO host, final StartupCommand[] cmd) {
         return null;
     }
 
     // TODO: add test for method
     @Override
-    public final HostVO createHostVOForDirectConnectAgent(final HostVO host,
-            final StartupCommand[] startup, final ServerResource resource,
-            final Map<String, String> details, final List<String> hostTags) {
+    public final HostVO createHostVOForDirectConnectAgent(final HostVO host, final StartupCommand[] startup, final ServerResource resource,
+        final Map<String, String> details, final List<String> hostTags) {
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupRoutingCommand)) {
             return null;
         }
 
-        StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+        StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
         if (ssCmd.getHypervisorType() != HypervisorType.Hyperv) {
             return null;
         }
 
-        s_logger.info("Host: " + host.getName()
-                + " connected with hypervisor type: " + HypervisorType.Hyperv
-                + ". Checking CIDR...");
+        s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.Hyperv + ". Checking CIDR...");
 
         HostPodVO pod = _podDao.findById(host.getPodId());
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
 
-        _resourceMgr.checkCIDR(pod, dc, ssCmd.getPrivateIpAddress(),
-                ssCmd.getPrivateNetmask());
+        _resourceMgr.checkCIDR(pod, dc, ssCmd.getPrivateIpAddress(), ssCmd.getPrivateNetmask());
 
-        return _resourceMgr.fillRoutingHostVO(host, ssCmd,
-                HypervisorType.Hyperv, details, hostTags);
+        return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Hyperv, details, hostTags);
     }
 
     // TODO: add test for method
     @Override
-    public final DeleteHostAnswer deleteHost(final HostVO host,
-            final boolean isForced, final boolean isForceDeleteStorage)
-            throws UnableDeleteHostException {
+    public final DeleteHostAnswer deleteHost(final HostVO host, final boolean isForced, final boolean isForceDeleteStorage) throws UnableDeleteHostException {
         // assert
-        if (host.getType() != Host.Type.Routing
-                || host.getHypervisorType() != HypervisorType.Hyperv) {
+        if (host.getType() != Host.Type.Routing || host.getHypervisorType() != HypervisorType.Hyperv) {
             return null;
         }
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
@@ -681,8 +420,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements
 
     @Override
     public final boolean stop() {
-        _resourceMgr.unregisterResourceStateAdapter(this.getClass()
-                .getSimpleName());
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return super.stop();
     }
     // end of ResourceStateAdapter

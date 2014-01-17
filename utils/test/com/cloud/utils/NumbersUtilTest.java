@@ -24,24 +24,18 @@ public class NumbersUtilTest {
 
     @Test
     public void toReadableSize() {
-        assertEquals("1.0000 TB",
-                NumbersUtil.toReadableSize((1024l * 1024l * 1024l * 1024l)));
-        assertEquals("1.00 GB",
-                NumbersUtil.toReadableSize((long) (1024 * 1024 * 1024)));
-        assertEquals("1.00 MB",
-                NumbersUtil.toReadableSize((long) (1024 * 1024)));
-        assertEquals("1.00 KB", NumbersUtil.toReadableSize((long) (1024)));
-        assertEquals("1023 bytes", NumbersUtil.toReadableSize((long) (1023)));
+        assertEquals("1.0000 TB", NumbersUtil.toReadableSize((1024l * 1024l * 1024l * 1024l)));
+        assertEquals("1.00 GB", NumbersUtil.toReadableSize(1024 * 1024 * 1024));
+        assertEquals("1.00 MB", NumbersUtil.toReadableSize(1024 * 1024));
+        assertEquals("1.00 KB", NumbersUtil.toReadableSize((1024)));
+        assertEquals("1023 bytes", NumbersUtil.toReadableSize((1023)));
     }
 
     @Test
     public void bytesToLong() {
-        assertEquals(0,
-                NumbersUtil.bytesToLong(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }));
-        assertEquals(1,
-                NumbersUtil.bytesToLong(new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 }));
-        assertEquals(257,
-                NumbersUtil.bytesToLong(new byte[] { 0, 0, 0, 0, 0, 0, 1, 1 }));
+        assertEquals(0, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 0}));
+        assertEquals(1, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 1}));
+        assertEquals(257, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 1, 1}));
     }
 
 }

@@ -32,42 +32,42 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value={StorageNetworkIpRangeDao.class})
+@Local(value = {StorageNetworkIpRangeDao.class})
 @DB
 public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkIpRangeVO, Long> implements StorageNetworkIpRangeDao {
-	protected final GenericSearchBuilder<StorageNetworkIpRangeVO, Long> countRanges;
-	
-	protected StorageNetworkIpRangeDaoImpl() {
-		countRanges = createSearchBuilder(Long.class);
-		countRanges.select(null, Func.COUNT, null);
-		countRanges.done();
-	}
-	
-	@Override
+    protected final GenericSearchBuilder<StorageNetworkIpRangeVO, Long> countRanges;
+
+    protected StorageNetworkIpRangeDaoImpl() {
+        countRanges = createSearchBuilder(Long.class);
+        countRanges.select(null, Func.COUNT, null);
+        countRanges.done();
+    }
+
+    @Override
     public List<StorageNetworkIpRangeVO> listByPodId(long podId) {
         QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.and(sc.entity().getPodId(), Op.EQ, podId);
-		return sc.list();
+        sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        return sc.list();
     }
 
-	@Override
+    @Override
     public List<StorageNetworkIpRangeVO> listByRangeId(long rangeId) {
         QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.and(sc.entity().getId(), Op.EQ, rangeId);
-		return sc.list();
+        sc.and(sc.entity().getId(), Op.EQ, rangeId);
+        return sc.list();
     }
 
-	@Override
+    @Override
     public List<StorageNetworkIpRangeVO> listByDataCenterId(long dcId) {
         QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
-		return sc.list();
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        return sc.list();
     }
-	
-	@Override
-	public long countRanges() {
-		SearchCriteria<Long> sc = countRanges.create();
-		return customSearch(sc, null).get(0);
-	}
+
+    @Override
+    public long countRanges() {
+        SearchCriteria<Long> sc = countRanges.create();
+        return customSearch(sc, null).get(0);
+    }
 
 }

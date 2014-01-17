@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={SecurityGroupWorkDao.class})
+@Local(value = {SecurityGroupWorkDao.class})
 public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
     private static final Logger s_logger = Logger.getLogger(SecurityGroupWorkDaoImpl.class);
 
@@ -47,7 +47,6 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     private final SearchBuilder<SecurityGroupWorkVO> UntakenWorkSearch;
     private final SearchBuilder<SecurityGroupWorkVO> VmIdStepSearch;
     private final SearchBuilder<SecurityGroupWorkVO> CleanupSearch;
-
 
     protected SecurityGroupWorkDaoImpl() {
         VmIdTakenSearch = createSearchBuilder();
@@ -87,20 +86,19 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
         CleanupSearch.done();
 
-
     }
 
     @Override
     public SecurityGroupWork findByVmId(long vmId, boolean taken) {
-        SearchCriteria<SecurityGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
+        SearchCriteria<SecurityGroupWorkVO> sc = taken ? VmIdTakenSearch.create() : VmIdUnTakenSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneIncludingRemovedBy(sc);
     }
 
-	@Override
-	@DB
-	public SecurityGroupWorkVO take(long serverId) {
-		final TransactionLegacy txn = TransactionLegacy.currentTxn();
+    @Override
+    @DB
+    public SecurityGroupWorkVO take(long serverId) {
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
             sc.setParameters("step", Step.Scheduled);
@@ -118,7 +116,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             }
             SecurityGroupWorkVO work = vos.get(0);
             boolean processing = false;
-            if ( findByVmIdStep(work.getInstanceId(), Step.Processing) != null) {
+            if (findByVmIdStep(work.getInstanceId(), Step.Processing) != null) {
                 //ensure that there is no job in Processing state for the same VM
                 processing = true;
                 if (s_logger.isTraceEnabled()) {
@@ -144,13 +142,13 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
         } catch (final Throwable e) {
             throw new CloudRuntimeException("Unable to execute take", e);
         }
-	}
+    }
 
-	@Override
-	@DB
-	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
-		final TransactionLegacy txn = TransactionLegacy.currentTxn();
-		txn.start();
+    @Override
+    @DB
+    public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
         SearchCriteria<SecurityGroupWorkVO> sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
@@ -159,7 +157,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
         final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
-        	txn.commit();
+            txn.commit();
             return;
         }
         SecurityGroupWorkVO work = vos.get(0);
@@ -167,75 +165,74 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
         update(work.getId(), work);
 
         txn.commit();
-	}
+    }
 
-	@Override
-	public SecurityGroupWorkVO findByVmIdStep(long vmId, Step step) {
+    @Override
+    public SecurityGroupWorkVO findByVmIdStep(long vmId, Step step) {
         SearchCriteria<SecurityGroupWorkVO> sc = VmIdStepSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("step", step);
         return findOneIncludingRemovedBy(sc);
-	}
+    }
 
-	@Override
-	@DB
-	public void updateStep(Long workId, Step step) {
-		final TransactionLegacy txn = TransactionLegacy.currentTxn();
-		txn.start();
+    @Override
+    @DB
+    public void updateStep(Long workId, Step step) {
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
 
         SecurityGroupWorkVO work = lockRow(workId, true);
         if (work == null) {
-        	txn.commit();
-        	return;
+            txn.commit();
+            return;
         }
         work.setStep(step);
         update(work.getId(), work);
 
         txn.commit();
 
-	}
+    }
 
-	@Override
-	public int deleteFinishedWork(Date timeBefore) {
-		final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
-		sc.setParameters("taken", timeBefore);
-		sc.setParameters("step", Step.Done);
+    @Override
+    public int deleteFinishedWork(Date timeBefore) {
+        final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
+        sc.setParameters("taken", timeBefore);
+        sc.setParameters("step", Step.Done);
 
-		return expunge(sc);
-	}
+        return expunge(sc);
+    }
 
-	@Override
-	public List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore) {
-		final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
-		sc.setParameters("taken", timeBefore);
-		sc.setParameters("step", Step.Processing);
+    @Override
+    public List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore) {
+        final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
+        sc.setParameters("taken", timeBefore);
+        sc.setParameters("step", Step.Processing);
 
-		List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
+        List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
 
-		return result;
-	}
+        return result;
+    }
 
-	@Override
-	public List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore) {
-	    final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
-	    sc.setParameters("taken", timeBefore);
-	    sc.setParameters("step", Step.Processing);
+    @Override
+    public List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore) {
+        final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
+        sc.setParameters("taken", timeBefore);
+        sc.setParameters("step", Step.Processing);
 
-	    List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
+        List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
 
-	    SecurityGroupWorkVO work = createForUpdate();
-	    work.setStep(Step.Error);
-	    update(work, sc);
+        SecurityGroupWorkVO work = createForUpdate();
+        work.setStep(Step.Error);
+        update(work, sc);
 
-	    return result;
-	}
+        return result;
+    }
 
-	@Override
+    @Override
     public List<SecurityGroupWorkVO> findScheduledWork() {
         final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
         sc.setParameters("step", Step.Scheduled);
         return listIncludingRemovedBy(sc);
     }
-
 
 }

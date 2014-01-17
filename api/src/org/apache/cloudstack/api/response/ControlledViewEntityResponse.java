@@ -28,4 +28,3 @@ public interface ControlledViewEntityResponse {
 
     public void setDomainName(String domainName);
 }
-

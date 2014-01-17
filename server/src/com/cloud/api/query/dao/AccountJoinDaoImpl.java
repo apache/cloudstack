@@ -41,7 +41,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AccountJoinDao.class})
+@Local(value = {AccountJoinDao.class})
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
@@ -77,7 +77,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
 
         boolean fullView = (view == ResponseView.Full);
         setResourceLimits(account, fullView, accountResponse);
-        
+
         //get resource limits for projects
         long projectLimit = ApiDBUtils.findCorrectResourceLimit(account.getProjectLimit(), account.getId(), ResourceType.project);
         String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
@@ -92,7 +92,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
             accountResponse.setJobId(account.getJobUuid());
             accountResponse.setJobStatus(account.getJobStatus());
         }
-        
+
         // adding all the users for an account as part of the response obj
         List<UserAccountJoinVO> usersForAccount = ApiDBUtils.findUserViewByAccountId(account.getId());
         List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(usersForAccount.toArray(new UserAccountJoinVO[usersForAccount.size()]));
@@ -101,13 +101,12 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         // set details
         accountResponse.setDetails(ApiDBUtils.getAccountDetails(account.getId()));
         accountResponse.setObjectName("account");
-        
+
         // add all the acl groups for an account
         accountResponse.setGroups(_acctMgr.listAclGroupsByAccount(account.getId()));
 
         return accountResponse;
     }
-
 
     @Override
     public void setResourceLimits(AccountJoinVO account, boolean fullView, ResourceLimitAndCountResponse response) {
@@ -209,6 +208,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
         long primaryStorageTotal = (account.getPrimaryStorageTotal() == null) ? 0 : (account.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
         String primaryStorageAvail = (fullView || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) - primaryStorageTotal);
+
         response.setPrimaryStorageLimit(primaryStorageLimitDisplay);
         response.setPrimaryStorageTotal(primaryStorageTotal);
         response.setPrimaryStorageAvailable(primaryStorageAvail);
@@ -219,11 +219,11 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         long secondaryStorageTotal = (account.getSecondaryStorageTotal() == null) ? 0 : (account.getSecondaryStorageTotal() / ResourceType.bytesToGiB);
         String secondaryStorageAvail = (fullView || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB)
                 - secondaryStorageTotal);
+
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
     }
-
 
     @Override
     public AccountJoinVO newAccountView(Account acct) {
@@ -234,6 +234,5 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         return accounts.get(0);
 
     }
-
 
 }

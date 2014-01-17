@@ -27,59 +27,57 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="hypervisor_capabilities")
+@Table(name = "hypervisor_capabilities")
 public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="hypervisor_version")
+    @Column(name = "hypervisor_version")
     private String hypervisorVersion;
 
-    @Column(name="max_guests_limit")
+    @Column(name = "max_guests_limit")
     private Long maxGuestsLimit;
 
-    @Column(name="security_group_enabled")
+    @Column(name = "security_group_enabled")
     private boolean securityGroupEnabled;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="max_data_volumes_limit")
+    @Column(name = "max_data_volumes_limit")
     private Integer maxDataVolumesLimit;
 
-    @Column(name="max_hosts_per_cluster")
+    @Column(name = "max_hosts_per_cluster")
     private Integer maxHostsPerCluster;
 
-    @Column(name="vm_snapshot_enabled")
+    @Column(name = "vm_snapshot_enabled")
     private Boolean vmSnapshotEnabled;
 
-    @Column(name="storage_motion_supported")
+    @Column(name = "storage_motion_supported")
     private boolean storageMotionSupported;
 
     protected HypervisorCapabilitiesVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
-    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit,
-            boolean securityGroupEnabled, boolean storageMotionSupported) {
+    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit, boolean securityGroupEnabled,
+            boolean storageMotionSupported) {
         this.hypervisorType = hypervisorType;
         this.hypervisorVersion = hypervisorVersion;
         this.maxGuestsLimit = maxGuestsLimit;
         this.securityGroupEnabled = securityGroupEnabled;
         this.storageMotionSupported = storageMotionSupported;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -88,7 +86,6 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     public void setHypervisorType(HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
     }
-
 
     /**
      * @return the hypervisorType
@@ -155,7 +152,7 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         return storageMotionSupported;
     }
 
-
+    @Override
     public long getId() {
         return id;
     }
@@ -164,14 +161,14 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     public int hashCode() {
         return NumbersUtil.hash(id);
     }
-    
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     @Override
@@ -192,15 +189,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.maxHostsPerCluster = maxHostsPerCluster;
     }
 
-	public Boolean getVmSnapshotEnabled() {
-		return vmSnapshotEnabled;
-	}
+    public Boolean getVmSnapshotEnabled() {
+        return vmSnapshotEnabled;
+    }
 
-	public void setVmSnapshotEnabled(Boolean vmSnapshotEnabled) {
-		this.vmSnapshotEnabled = vmSnapshotEnabled;
-	}
+    public void setVmSnapshotEnabled(Boolean vmSnapshotEnabled) {
+        this.vmSnapshotEnabled = vmSnapshotEnabled;
+    }
 
-	@Override
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof HypervisorCapabilitiesVO) {
             return ((HypervisorCapabilitiesVO)obj).getId() == this.getId();

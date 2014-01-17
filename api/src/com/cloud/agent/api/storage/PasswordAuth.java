@@ -23,16 +23,20 @@ public class PasswordAuth {
 
     String userName;
     String password;
+
     public PasswordAuth() {
 
     }
+
     public PasswordAuth(String user, String password) {
         this.userName = user;
         this.password = password;
     }
+
     public String getUserName() {
         return userName;
     }
+
     public String getPassword() {
         return password;
     }

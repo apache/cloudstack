@@ -18,139 +18,140 @@
 package com.cloud.stack.models;
 
 import com.google.gson.annotations.SerializedName;
+
 public class CloudStackUser {
 
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.ACCOUNT)
-	private String account;
-	@SerializedName(ApiConstants.ACCOUNT_TYPE)
-	private String accountType;
-	@SerializedName(ApiConstants.API_KEY)
-	private String apikey;
-	@SerializedName(ApiConstants.CREATED)
-	private String created;
-	@SerializedName(ApiConstants.DOMAIN)
-	private String domain;
-	@SerializedName(ApiConstants.DOMAIN_ID)
-	private String domainId;
-	@SerializedName(ApiConstants.EMAIL)
-	private String email;
-	@SerializedName(ApiConstants.FIRSTNAME)
-	private String firstname;
-	@SerializedName(ApiConstants.LASTNAME)
-	private String lastname;
-	@SerializedName(ApiConstants.SECRET_KEY)
-	private String secretkey;
-	@SerializedName(ApiConstants.STATE)
-	private String state;
-	@SerializedName(ApiConstants.TIMEZONE)
-	private String timeZone;
-	@SerializedName(ApiConstants.USERNAME)
-	private String username;
-	
-	/**
-	 * 
-	 */
-	public CloudStackUser() {
-	}
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.ACCOUNT)
+    private String account;
+    @SerializedName(ApiConstants.ACCOUNT_TYPE)
+    private String accountType;
+    @SerializedName(ApiConstants.API_KEY)
+    private String apikey;
+    @SerializedName(ApiConstants.CREATED)
+    private String created;
+    @SerializedName(ApiConstants.DOMAIN)
+    private String domain;
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    private String domainId;
+    @SerializedName(ApiConstants.EMAIL)
+    private String email;
+    @SerializedName(ApiConstants.FIRSTNAME)
+    private String firstname;
+    @SerializedName(ApiConstants.LASTNAME)
+    private String lastname;
+    @SerializedName(ApiConstants.SECRET_KEY)
+    private String secretkey;
+    @SerializedName(ApiConstants.STATE)
+    private String state;
+    @SerializedName(ApiConstants.TIMEZONE)
+    private String timeZone;
+    @SerializedName(ApiConstants.USERNAME)
+    private String username;
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackUser() {
+    }
 
-	/**
-	 * @return the account
-	 */
-	public String getAccount() {
-		return account;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the accountType
-	 */
-	public String getAccountType() {
-		return accountType;
-	}
+    /**
+     * @return the account
+     */
+    public String getAccount() {
+        return account;
+    }
 
-	/**
-	 * @return the apikey
-	 */
-	public String getApikey() {
-		return apikey;
-	}
+    /**
+     * @return the accountType
+     */
+    public String getAccountType() {
+        return accountType;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the apikey
+     */
+    public String getApikey() {
+        return apikey;
+    }
 
-	/**
-	 * @return the domain
-	 */
-	public String getDomain() {
-		return domain;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public String getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domain
+     */
+    public String getDomain() {
+        return domain;
+    }
 
-	/**
-	 * @return the email
-	 */
-	public String getEmail() {
-		return email;
-	}
+    /**
+     * @return the domainId
+     */
+    public String getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the firstname
-	 */
-	public String getFirstname() {
-		return firstname;
-	}
+    /**
+     * @return the email
+     */
+    public String getEmail() {
+        return email;
+    }
 
-	/**
-	 * @return the lastname
-	 */
-	public String getLastname() {
-		return lastname;
-	}
+    /**
+     * @return the firstname
+     */
+    public String getFirstname() {
+        return firstname;
+    }
 
-	/**
-	 * @return the secretkey
-	 */
-	public String getSecretkey() {
-		return secretkey;
-	}
+    /**
+     * @return the lastname
+     */
+    public String getLastname() {
+        return lastname;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the secretkey
+     */
+    public String getSecretkey() {
+        return secretkey;
+    }
 
-	/**
-	 * @return the timeZone
-	 */
-	public String getTimeZone() {
-		return timeZone;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
-	/**
-	 * @return the username
-	 */
-	public String getUsername() {
-		return username;
-	}
+    /**
+     * @return the timeZone
+     */
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    /**
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
 
 }

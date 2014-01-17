@@ -18,26 +18,37 @@ package org.apache.cloudstack.api;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
-    public Logger s_logger = getLogger();
-    protected String s_name = getResponseName();
+    public Logger _logger = getLogger();
+    protected String _name = getResponseName();
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
+    protected Logger getLogger() {
+        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class);
+    }
+
+    protected String getResponseName() {
+        return "updatetemplateorisopermissionsresponse";
+    }
+
+    @Parameter(name = ApiConstants.ACCOUNTS,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
-            required = true, description = "the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the template ID")
     private Long id;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured template/iso, false otherwise")
@@ -46,14 +57,19 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public template/iso, false for private templates/isos")
     private Boolean isPublic;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the template/iso is extractable, false other wise. Can be set only by root admin")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if the template/iso is extractable, false other wise. Can be set only by root admin")
     private Boolean isExtractable;
 
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
 
-    @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ProjectResponse.class,
-            description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
+    @Parameter(name = ApiConstants.PROJECT_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
 
     // ///////////////////////////////////////////////////
@@ -101,23 +117,15 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
-    }
-
-    protected String getResponseName() {
-        return "updatetemplateorisopermissionsresponse";
-    }
-
-    protected Logger getLogger() {
-        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
+        return _name;
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _templateService.updateTemplateOrIsoPermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update template/iso permissions");
         }

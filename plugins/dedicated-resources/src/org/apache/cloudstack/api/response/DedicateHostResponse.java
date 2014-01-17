@@ -16,25 +16,31 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class DedicateHostResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the dedicated resource")
+    @SerializedName("id")
+    @Param(description = "the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("hostid") @Param(description="the ID of the host")
+    @SerializedName("hostid")
+    @Param(description = "the ID of the host")
     private String hostId;
 
-    @SerializedName("hostname") @Param(description="the name of the host")
+    @SerializedName("hostname")
+    @Param(description = "the name of the host")
     private String hostName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the host")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID of the host")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account ID of the host")
+    @SerializedName("accountid")
+    @Param(description = "the Account ID of the host")
     private String accountId;
 
     @SerializedName("affinitygroupid")

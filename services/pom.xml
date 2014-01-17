@@ -24,11 +24,12 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.3.0-SNAPSHOT</version>
+    <version>4.4.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modules>
     <module>console-proxy</module>
+    <module>console-proxy-rdp/rdpconsole</module>
     <module>secondary-storage</module>
     <module>iam</module>
   </modules>

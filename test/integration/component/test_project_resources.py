@@ -17,15 +17,35 @@
 """ P1 tests for Resource creation
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.integration.lib.base import (VirtualMachine,
+                                         Account,
+                                         Project,
+                                         NATRule,
+                                         PublicIPAddress,
+                                         Network,
+                                         Snapshot,
+                                         Template,
+                                         FireWallRule,
+                                         SecurityGroup,
+                                         ServiceOffering,
+                                         Domain,
+                                         Volume,
+                                         DiskOffering,
+                                         LoadBalancerRule)
+
+from marvin.integration.lib.common import (get_zone,
+                                           get_template,
+                                           get_domain,
+                                           list_volumes,
+                                           list_network_offerings,
+                                           list_lb_rules,
+                                           get_free_vlan,
+                                           wait_for_cleanup)
+
+from marvin.integration.lib.utils import cleanup_resources
+import random
 
 
 class Services:
@@ -98,11 +118,11 @@ class Services:
                         "domain_network": {
                                     "name": "Domainwide Network",
                                     "displaytext": "Domainwide Network",
-                                    "gateway": '192.168.100.1',
+                                    "gateway": '',
                                     "netmask": '255.255.255.0',
-                                    "startip": '192.168.100.200',
-                                    "endip": '192.168.100.201',
-                                    "vlan": 4001,
+                                    "startip": '',
+                                    "endip": '',
+                                    "vlan": '',
                                     "acltype": 'domain'
                         },
                         "natrule": {
@@ -356,7 +376,7 @@ class TestNetwork(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.account,
-                        cls.service_offering,
+                        cls.domain
                         ]
         return
 
@@ -478,6 +498,20 @@ class TestNetwork(cloudstackTestCase):
 
         self.debug("creating a shared network in domain: %s" %
                                                         self.domain.id)
+
+        # Getting physical network and free vlan in it
+        physical_network, vlan = get_free_vlan(self.apiclient, self.zone.id)
+
+        self.services["domain_network"]["vlan"] = vlan
+        self.services["domain_network"]["physicalnetworkid"] = physical_network.id
+
+        # Generating random subnet number for shared network creation
+        shared_network_subnet_number = random.randrange(1,254)
+
+        self.services["domain_network"]["gateway"] = "172.16."+str(shared_network_subnet_number)+".1"
+        self.services["domain_network"]["startip"] = "172.16."+str(shared_network_subnet_number)+".2"
+        self.services["domain_network"]["endip"] = "172.16."+str(shared_network_subnet_number)+".20"
+
         domain_network = Network.create(
                                  self.apiclient,
                                  self.services["domain_network"],
@@ -503,6 +537,12 @@ class TestNetwork(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
+
+        # Delete VM before network gets deleted in cleanup
+        virtual_machine.delete(self.apiclient)
+
+        # Wait for expunge interval to cleanup VM
+        wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         return
 
 
@@ -863,10 +903,12 @@ class TestSnapshots(cloudstackTestCase):
         self.assertEqual(
                             snapshot.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Check Snapshot state is in one of the mentioned possible states, \
+                                    It is currently: %s" % snapshot.state
                         )
 
         snapshots = Snapshot.list(
@@ -1148,18 +1190,6 @@ class TestPublicIpAddress(cloudstackTestCase):
                                           public_ip.ipaddress.id,
                                           accountid=self.account.name
                                           )
-        self.debug(
-                "Creating firewall rule for public IP: %s outside project" %
-                                                public_ip.ipaddress)
-        with self.assertRaises(Exception):
-            FireWallRule.create(
-                            self.apiclient,
-                            ipaddressid=public_ip.ipaddress.id,
-                            protocol='TCP',
-                            cidrlist=[self.services["fw_rule"]["cidr"]],
-                            startport=self.services["fw_rule"]["startport"],
-                            endport=self.services["fw_rule"]["endport"],
-                            )
         return
 
 

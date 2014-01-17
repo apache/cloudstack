@@ -32,149 +32,151 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import org.apache.commons.io.IOUtils;
 
 //
-// Finding classes in a given package code is taken and modified from 
+// Finding classes in a given package code is taken and modified from
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
 public class OnwireClassRegistry {
-	
-	private List<String> packages = new ArrayList<String>();
-	private Map<String, Class<?>> registry =  new HashMap<String, Class<?>>();
 
-	public OnwireClassRegistry() {
-		registry.put("Object", Object.class);
-	}
-	
-	public OnwireClassRegistry(String packageName) {
-		addPackage(packageName);
-	}
-	
-	public OnwireClassRegistry(List<String> packages) {
-		packages.addAll(packages);
-	}
-	
-	public List<String> getPackages() {
-		return packages;
-	}
-	
-	public void setPackages(List<String> packages) {
-		this.packages = packages;
-	}
-	
-	public void addPackage(String packageName) {
-		packages.add(packageName);
-	}
-	
-	public void scan() {
-		Set<Class<?>> classes = new HashSet<Class<?>>();
-		for(String pkg : packages) {
-			classes.addAll(getClasses(pkg));
-		}
-		
-		for(Class<?> clz : classes) {
-			OnwireName onwire = clz.getAnnotation(OnwireName.class);
-			if(onwire != null) {
-				assert(onwire.name() != null);
-				
-				registry.put(onwire.name(), clz);
-			}
-		}
-	}
-	
-	public Class<?> getOnwireClass(String onwireName) {
-		return registry.get(onwireName);
-	}
-	
-	static Set<Class<?>> getClasses(String packageName) {
-	   ClassLoader loader = Thread.currentThread().getContextClassLoader();
-	   return getClasses(loader, packageName);
-	}
+    private List<String> packages = new ArrayList<String>();
+    private final Map<String, Class<?>> registry = new HashMap<String, Class<?>>();
 
-	//
-	// Following helper methods can be put in a separated helper class,
-	// will do that later
-	//
-	static Set<Class<?>> getClasses(ClassLoader loader, String packageName) {
-	   Set<Class<?>> classes = new HashSet<Class<?>>();
-	   String path = packageName.replace('.', '/');
-	   try {
-		   Enumeration<URL> resources = loader.getResources(path);
-		   if (resources != null) {
-		      while (resources.hasMoreElements()) {
-		         String filePath = resources.nextElement().getFile();
-		         // WINDOWS HACK
-		         if(filePath.indexOf("%20") > 0)
-		            filePath = filePath.replaceAll("%20", " ");
-		         if (filePath != null) {
-		            if ((filePath.indexOf("!") > 0) && (filePath.indexOf(".jar") > 0)) {
-		               String jarPath = filePath.substring(0, filePath.indexOf("!"))
-		                  .substring(filePath.indexOf(":") + 1);
-		               // WINDOWS HACK
-		               if (jarPath.indexOf(":") >= 0) jarPath = jarPath.substring(1); 
-		               classes.addAll(getFromJARFile(jarPath, path));
-		            } else {
-		               classes.addAll(getFromDirectory(new File(filePath), packageName));
-		            }
-		         }
-		      }
-		   }
-	   } catch(IOException e) {
-	   } catch(ClassNotFoundException e) {
-	   }
-	   return classes;
-	}	
-	
-	static Set<Class<?>> getFromDirectory(File directory, String packageName) throws ClassNotFoundException {
-		   Set<Class<?>> classes = new HashSet<Class<?>>();
-		   if (directory.exists()) {
-		      for (String file : directory.list()) {
-		         if (file.endsWith(".class")) {
-		            String name = packageName + '.' + stripFilenameExtension(file);
-		            try {
-			            Class<?> clazz = Class.forName(name);
-			            classes.add(clazz);
-		            } catch(ClassNotFoundException e) {
-		            } catch(Exception e) {
-	            	}
-		         } else {
-		        	 File f = new File(directory.getPath() + "/" + file);
-		        	 if(f.isDirectory()) {
-		        		 classes.addAll(getFromDirectory(f, packageName + "." + file));
-		        	 }
-		         }
-		      }
-		   }
-		   return classes;
-		}
-	
-	static Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
-	   Set<Class<?>> classes = new HashSet<Class<?>>();
-	   JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));
-	   JarEntry jarEntry;
-	   do {
-	      jarEntry = jarFile.getNextJarEntry();
-	      if (jarEntry != null) {
-	         String className = jarEntry.getName();
-	         if (className.endsWith(".class")) {
-	            className = stripFilenameExtension(className);
-	            if (className.startsWith(packageName)) {
-	            	try {
-	            		Class<?> clz = Class.forName(className.replace('/', '.'));
-	            		classes.add(clz);
-	            	} catch(ClassNotFoundException e) {
-	            	} catch(NoClassDefFoundError e) {
-	            	}
-	            }
-	         }
-	      }
-	   } while (jarEntry != null);
-	   
-	   return classes;
-	}
-	
-	static String stripFilenameExtension(String file) {
-		return file.substring(0, file.lastIndexOf('.'));
-	}
+    public OnwireClassRegistry() {
+        registry.put("Object", Object.class);
+    }
+
+    public OnwireClassRegistry(String packageName) {
+        addPackage(packageName);
+    }
+
+    public OnwireClassRegistry(List<String> packages) {
+        packages.addAll(packages);
+    }
+
+    public List<String> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(List<String> packages) {
+        this.packages = packages;
+    }
+
+    public void addPackage(String packageName) {
+        packages.add(packageName);
+    }
+
+    public void scan() {
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        for (String pkg : packages) {
+            classes.addAll(getClasses(pkg));
+        }
+
+        for (Class<?> clz : classes) {
+            OnwireName onwire = clz.getAnnotation(OnwireName.class);
+            if (onwire != null) {
+                assert (onwire.name() != null);
+
+                registry.put(onwire.name(), clz);
+            }
+        }
+    }
+
+    public Class<?> getOnwireClass(String onwireName) {
+        return registry.get(onwireName);
+    }
+
+    static Set<Class<?>> getClasses(String packageName) {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return getClasses(loader, packageName);
+    }
+
+    //
+    // Following helper methods can be put in a separated helper class,
+    // will do that later
+    //
+    static Set<Class<?>> getClasses(ClassLoader loader, String packageName) {
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        String path = packageName.replace('.', '/');
+        try {
+            Enumeration<URL> resources = loader.getResources(path);
+            if (resources != null) {
+                while (resources.hasMoreElements()) {
+                    String filePath = resources.nextElement().getFile();
+                    // WINDOWS HACK
+                    if (filePath.indexOf("%20") > 0)
+                        filePath = filePath.replaceAll("%20", " ");
+                    if (filePath != null) {
+                        if ((filePath.indexOf("!") > 0) && (filePath.indexOf(".jar") > 0)) {
+                            String jarPath = filePath.substring(0, filePath.indexOf("!")).substring(filePath.indexOf(":") + 1);
+                            // WINDOWS HACK
+                            if (jarPath.indexOf(":") >= 0)
+                                jarPath = jarPath.substring(1);
+                            classes.addAll(getFromJARFile(jarPath, path));
+                        } else {
+                            classes.addAll(getFromDirectory(new File(filePath), packageName));
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+        } catch (ClassNotFoundException e) {
+        }
+        return classes;
+    }
+
+    static Set<Class<?>> getFromDirectory(File directory, String packageName) throws ClassNotFoundException {
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        if (directory.exists()) {
+            for (String file : directory.list()) {
+                if (file.endsWith(".class")) {
+                    String name = packageName + '.' + stripFilenameExtension(file);
+                    try {
+                        Class<?> clazz = Class.forName(name);
+                        classes.add(clazz);
+                    } catch (ClassNotFoundException e) {
+                    } catch (Exception e) {
+                    }
+                } else {
+                    File f = new File(directory.getPath() + "/" + file);
+                    if (f.isDirectory()) {
+                        classes.addAll(getFromDirectory(f, packageName + "." + file));
+                    }
+                }
+            }
+        }
+        return classes;
+    }
+
+    static Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));
+        JarEntry jarEntry;
+        do {
+            jarEntry = jarFile.getNextJarEntry();
+            if (jarEntry != null) {
+                String className = jarEntry.getName();
+                if (className.endsWith(".class")) {
+                    className = stripFilenameExtension(className);
+                    if (className.startsWith(packageName)) {
+                        try {
+                            Class<?> clz = Class.forName(className.replace('/', '.'));
+                            classes.add(clz);
+                        } catch (ClassNotFoundException e) {
+                        } catch (NoClassDefFoundError e) {
+                        }
+                    }
+                }
+                IOUtils.closeQuietly(jarFile);
+            }
+        } while (jarEntry != null);
+
+        IOUtils.closeQuietly(jarFile);
+        return classes;
+    }
+
+    static String stripFilenameExtension(String file) {
+        return file.substring(0, file.lastIndexOf('.'));
+    }
 }
-

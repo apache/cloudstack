@@ -26,18 +26,16 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-
-@Local(value=StorageLayer.class)
+@Local(value = StorageLayer.class)
 public class JavaStorageLayer implements StorageLayer {
-    
+
     String _name;
     boolean _makeWorldWriteable = true;
-    
-    
+
     public JavaStorageLayer() {
         super();
     }
-    
+
     public JavaStorageLayer(boolean makeWorldWriteable) {
         this();
         _makeWorldWriteable = makeWorldWriteable;
@@ -46,8 +44,8 @@ public class JavaStorageLayer implements StorageLayer {
     @Override
     public boolean cleanup(String path, String rootPath) throws IOException {
         assert path.startsWith(rootPath) : path + " does not start with " + rootPath;
-        
-        synchronized(path) {
+
+        synchronized (path) {
             File file = new File(path);
             if (!file.delete()) {
                 return false;
@@ -76,40 +74,40 @@ public class JavaStorageLayer implements StorageLayer {
             if (file.exists()) {
                 return true;
             }
-            
+
             return file.createNewFile();
         }
     }
 
     @Override
     public boolean delete(String path) {
-        synchronized(path.intern()) {
+        synchronized (path.intern()) {
             File file = new File(path);
             return file.delete();
         }
     }
-    
+
     @Override
     public boolean deleteDir(String dir) {
         File Dir = new File(dir);
-        if ( !Dir.isDirectory() ) {
+        if (!Dir.isDirectory()) {
             return false;
         }
-        
-        synchronized(dir.intern()) {
+
+        synchronized (dir.intern()) {
             File[] files = Dir.listFiles();
-            for( File file : files) {
-                if(!file.delete() ) {
+            for (File file : files) {
+                if (!file.delete()) {
                     return false;
                 }
             }
         }
         return true;
     }
-    
+
     @Override
     public boolean exists(String path) {
-        synchronized(path.intern()) {
+        synchronized (path.intern()) {
             File file = new File(path);
             return file.exists();
         }
@@ -132,7 +130,7 @@ public class JavaStorageLayer implements StorageLayer {
         File file = new File(path);
         File[] files = file.listFiles();
         if (files == null) {
-        	return new String[0];
+            return new String[0];
         }
         String[] paths = new String[files.length];
         for (int i = 0; i < files.length; i++) {
@@ -143,9 +141,9 @@ public class JavaStorageLayer implements StorageLayer {
 
     @Override
     public boolean mkdir(String path) {
-        synchronized(path.intern()) {
+        synchronized (path.intern()) {
             File file = new File(path);
-            
+
             if (file.exists()) {
                 return file.isDirectory();
             }
@@ -156,7 +154,7 @@ public class JavaStorageLayer implements StorageLayer {
             }
         }
     }
-    
+
     @Override
     public long getSize(String path) {
         File file = new File(path);
@@ -180,61 +178,61 @@ public class JavaStorageLayer implements StorageLayer {
 
     @Override
     public boolean mkdirs(String path) {
-        synchronized(path.intern()) {
+        synchronized (path.intern()) {
             File dir = new File(path);
-            
+
             if (dir.exists()) {
                 return dir.isDirectory();
             }
-            
+
             boolean success = true;
             List<String> dirPaths = listDirPaths(path);
             for (String dirPath : dirPaths) {
-            	dir = new File(dirPath);
-            	if (!dir.exists()) {
-            		success = dir.mkdir();
-            		if (_makeWorldWriteable)
-            		    success = success && setWorldReadableAndWriteable(dir);
-            	}
+                dir = new File(dirPath);
+                if (!dir.exists()) {
+                    success = dir.mkdir();
+                    if (_makeWorldWriteable)
+                        success = success && setWorldReadableAndWriteable(dir);
+                }
             }
-            
+
             return success;
         }
     }
-    
+
     private List<String> listDirPaths(String path) {
-    	String[] dirNames = path.split("/");
-    	List<String> dirPaths = new ArrayList<String>();
-    	
-    	String currentPath = "";
-    	for (int i = 0; i < dirNames.length; i++) {
-    		String currentName = dirNames[i].trim();
-    		if (!currentName.isEmpty()) {
-    			currentPath += "/" + currentName;
-    			dirPaths.add(currentPath);
-    		}
-    	}
-    	
-    	return dirPaths;
+        String[] dirNames = path.split("/");
+        List<String> dirPaths = new ArrayList<String>();
+
+        String currentPath = "";
+        for (int i = 0; i < dirNames.length; i++) {
+            String currentName = dirNames[i].trim();
+            if (!currentName.isEmpty()) {
+                currentPath += "/" + currentName;
+                dirPaths.add(currentPath);
+            }
+        }
+
+        return dirPaths;
     }
-    
+
     @Override
     public boolean setWorldReadableAndWriteable(File file) {
-    	return (file.setReadable(true, false) && file.setWritable(true, false));
+        return (file.setReadable(true, false) && file.setWritable(true, false));
     }
-    
+
     @Override
     public boolean isDirectory(String path) {
         File file = new File(path);
         return file.isDirectory();
     }
-    
+
     @Override
     public boolean isFile(String path) {
         File file = new File(path);
         return file.isFile();
     }
-    
+
     @Override
     public File getFile(String path) {
         return new File(path);
@@ -261,42 +259,40 @@ public class JavaStorageLayer implements StorageLayer {
         return true;
     }
 
-	@Override
-	public long getUsedSpace(String path) {
-	     File file = new File(path);
-	     return file.getTotalSpace() - file.getFreeSpace();
-	}
+    @Override
+    public long getUsedSpace(String path) {
+        File file = new File(path);
+        return file.getTotalSpace() - file.getFreeSpace();
+    }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
-    
-    
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

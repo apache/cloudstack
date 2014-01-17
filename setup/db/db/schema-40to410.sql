@@ -345,6 +345,7 @@ CREATE TABLE `cloud`.`autoscale_policies` (
   `account_id` bigint unsigned NOT NULL,
   `duration` int unsigned NOT NULL,
   `quiet_time` int unsigned NOT NULL,
+  `last_quiet_time` datetime DEFAULT NULL,
   `action` varchar(15),
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
@@ -366,6 +367,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   `max_members` int unsigned NOT NULL,
   `member_port` int unsigned NOT NULL,
   `interval` int unsigned NOT NULL,
+  `last_interval` datetime DEFAULT NULL,
   `profile_id` bigint unsigned NOT NULL,
   `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
   `created` datetime NOT NULL COMMENT 'date created',
@@ -401,10 +403,22 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`autoscale_vmgroup_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `instance_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_vm_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_vm_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_vm_map__instance_id` FOREIGN KEY `fk_autoscale_vmgroup_vm_map__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`),
+  INDEX `i_autoscale_vmgroup_vm_map__vmgroup_id`(`vmgroup_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (4, UUID(), 'cpu','Linux User CPU - percentage - native', '1.3.6.1.4.1.2021.11.9.1', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (5, UUID(), 'memory','Linux User RAM - percentage - native', '1.3.6.1.4.1.2021.11.10.1', now());
 
 CREATE TABLE  `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,

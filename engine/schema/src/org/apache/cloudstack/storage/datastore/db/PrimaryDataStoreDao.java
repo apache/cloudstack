@@ -73,8 +73,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      *            details to match. All must match for the pool to be returned.
      * @return List of StoragePoolVO
      */
-    List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details,
-                                           ScopeType scope);
+    List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope);
 
     List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
 

@@ -28,8 +28,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
@@ -45,8 +43,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-@Local(value = { PrimaryDataStoreDao.class })
+@Local(value = {PrimaryDataStoreDao.class})
 @DB()
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long> implements PrimaryDataStoreDao {
     protected final SearchBuilder<StoragePoolVO> AllFieldSearch;
@@ -55,11 +52,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
 
-    @Inject protected StoragePoolDetailsDao _detailsDao;
+    @Inject
+    protected StoragePoolDetailsDao _detailsDao;
 
-    private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
+    private final String DetailsSqlPrefix =
+        "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
-    private final String ZoneWideDetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
+    private final String ZoneWideDetailsSqlPrefix =
+        "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
     private final String ZoneWideDetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
 
     private final String FindPoolTagDetails = "SELECT storage_pool_details.name FROM storage_pool_details WHERE pool_id = ? and value = ?";
@@ -89,8 +89,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DcPodSearch.done();
 
         DcPodAnyClusterSearch = createSearchBuilder();
-        DcPodAnyClusterSearch.and("datacenterId", DcPodAnyClusterSearch.entity().getDataCenterId(),
-                SearchCriteria.Op.EQ);
+        DcPodAnyClusterSearch.and("datacenterId", DcPodAnyClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DcPodAnyClusterSearch.and("status", DcPodAnyClusterSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         DcPodAnyClusterSearch.and("scope", DcPodAnyClusterSearch.entity().getScope(), SearchCriteria.Op.EQ);
         DcPodAnyClusterSearch.and().op("nullpod", DcPodAnyClusterSearch.entity().getPodId(), SearchCriteria.Op.NULL);
@@ -243,16 +242,18 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @DB
     @Override
-    public List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details,
-                                                  ScopeType scope) {
+    public List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope) {
         StringBuilder sql = new StringBuilder(DetailsSqlPrefix);
         if (clusterId != null) {
             sql.append("storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL) AND (");
         }
 
         for (Map.Entry<String, String> detail : details.entrySet()) {
-            sql.append("((storage_pool_details.name='").append(detail.getKey())
-                    .append("') AND (storage_pool_details.value='").append(detail.getValue()).append("')) OR ");
+            sql.append("((storage_pool_details.name='")
+                .append(detail.getKey())
+                .append("') AND (storage_pool_details.value='")
+                .append(detail.getValue())
+                .append("')) OR ");
         }
         sql.delete(sql.length() - 4, sql.length());
         sql.append(DetailsSqlSuffix);
@@ -318,9 +319,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
             QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
-            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
-            sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
-            sc.and(sc.entity().getScope(), Op.EQ,ScopeType.ZONE);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+            sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
             return sc.list();
         } else {
             Map<String, String> details = tagsToDetails(tags);
@@ -328,8 +329,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             StringBuilder sql = new StringBuilder(ZoneWideDetailsSqlPrefix);
 
             for (Map.Entry<String, String> detail : details.entrySet()) {
-                sql.append("((storage_pool_details.name='").append(detail.getKey())
-                        .append("') AND (storage_pool_details.value='").append(detail.getValue()).append("')) OR ");
+                sql.append("((storage_pool_details.name='")
+                    .append(detail.getKey())
+                    .append("') AND (storage_pool_details.value='")
+                    .append(detail.getValue())
+                    .append("')) OR ");
             }
             sql.delete(sql.length() - 4, sql.length());
             sql.append(ZoneWideDetailsSqlSuffix);
@@ -406,7 +410,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public long countPoolsByStatus(StoragePoolStatus... statuses) {
         SearchCriteria<Long> sc = StatusCountSearch.create();
 
-        sc.setParameters("status", (Object[]) statuses);
+        sc.setParameters("status", (Object[])statuses);
 
         List<Long> rs = customSearchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
@@ -427,10 +431,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
         QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dataCenterId);
-        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
-        sc.and(sc.entity().getScope(), Op.EQ,ScopeType.ZONE);
-        sc.and(sc.entity().getHypervisor(), Op.EQ,hypervisorType);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dataCenterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
+        sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
         return sc.list();
     }
 }

@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.api.commands.netapp;
 
-
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -33,41 +33,40 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
 
-
-@APICommand(name = "modifyPool", description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
+@APICommand(name = "modifyPool", description = "Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
 public class ModifyVolumePoolCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
     private static final String s_name = "modifypoolresponse";
 
-    @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
-	private String poolName;
+    @Parameter(name = ApiConstants.POOL_NAME, type = CommandType.STRING, required = true, description = "pool name.")
+    private String poolName;
 
-    @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required = true, description="algorithm.")
-	private String algorithm;
-    
-    @Inject NetappManager netappMgr;
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "algorithm.")
+    private String algorithm;
+
+    @Inject
+    NetappManager netappMgr;
 
     @Override
-    public void execute() throws ResourceUnavailableException,
-    InsufficientCapacityException, ServerApiException,
-    ConcurrentOperationException, ResourceAllocationException {
-    	netappMgr.modifyPool(poolName, algorithm);
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
+        netappMgr.modifyPool(poolName, algorithm);
 
-    	ModifyVolumePoolCmdResponse response = new ModifyVolumePoolCmdResponse();
-    	response.setResponseName(getCommandName());
-    	this.setResponseObject(response);
+        ModifyVolumePoolCmdResponse response = new ModifyVolumePoolCmdResponse();
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

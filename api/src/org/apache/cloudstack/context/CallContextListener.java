@@ -26,22 +26,22 @@ import org.apache.cloudstack.managed.context.ManagedContextListener;
 import com.cloud.utils.db.EntityManager;
 
 public class CallContextListener implements ManagedContextListener<Object> {
-    
+
     @Inject
     EntityManager entityMgr;
-    
+
     @Override
     public Object onEnterContext(boolean reentry) {
-        if ( ! reentry ) {
+        if (!reentry) {
             CallContext.registerSystemCallContextOnceOnly();
         }
-        
+
         return null;
     }
 
     @Override
     public void onLeaveContext(Object unused, boolean reentry) {
-        if ( ! reentry ) {
+        if (!reentry) {
             CallContext.unregisterAll();
         }
     }

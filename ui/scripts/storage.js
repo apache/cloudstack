@@ -70,6 +70,10 @@
                         add: {
                             label: 'label.add.volume',
 
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+
                             messages: {
                                 confirm: function(args) {
                                     return 'message.add.volume';
@@ -252,6 +256,9 @@
                         uploadVolume: {
                             isHeader: true,
                             label: 'label.upload.volume',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
                             messages: {
                                 notification: function() {
                                     return 'label.upload.volume';
@@ -560,16 +567,29 @@
                             takeSnapshot: {
                                 label: 'label.action.take.snapshot',
                                 messages: {
-                                    confirm: function(args) {
-                                        return 'message.action.take.snapshot';
-                                    },
                                     notification: function(args) {
                                         return 'label.action.take.snapshot';
                                     }
                                 },
+                                createForm: {
+                                    title: 'label.action.take.snapshot',
+                                    desc: 'message.action.take.snapshot',
+                                    fields: {
+                                        quiescevm: {
+                                            label: 'label.quiesce.vm',
+                                            isBoolean: true,
+                                            isHidden: function(args) {
+                                                if (args.context.volumes[0].quiescevm == true)
+                                                    return false;   
+                                                        else
+                                                	return true;
+                                            }
+                                        }
+                                    }
+                                },
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id),
+                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + (args.data.quiescevm=='on')),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
@@ -1721,13 +1741,49 @@
                                 createForm: {
                                     title: 'label.action.create.volume',
                                     desc: '',
+                                    preFilter: function(args) {
+                                	    if (g_regionsecondaryenabled == true) {
+                                	    	args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                                	    } else {
+                                	    	args.$form.find('.form-item[rel=zoneid]').hide();
+                                	    }
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
                                             validation: {
                                                 required: true
                                             }
-                                        }
+                                        },                                        
+                                        zoneid: {
+                                            label: 'label.availability.zone',  
+                                            isHidden: true,
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = json.listzonesresponse.zone;                                                        
+                                                        var items = [{
+                                                            id: '',
+                                                            description: ''
+                                                        }];                                                        
+                                                        if (zoneObjs != null) {
+                                                        	for (i = 0; i < zoneObjs.length; i++) {
+                                                        		items.push({
+                                                        			id: zoneObjs[i].id,
+                                                        			description: zoneObjs[i].name
+                                                        		});
+                                                        	}
+                                                        }     
+                                                        args.response.success({                                                            
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }                                        
                                     }
                                 },
                                 action: function(args) {
@@ -1735,7 +1791,13 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-
+                                    
+                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
+	                                    $.extend(data, {
+	                                    	zoneId: args.data.zoneid
+	                                    });   
+                                    }                                    
+                                    
                                     $.ajax({
                                         url: createURL('createVolume'),
                                         data: data,
@@ -1896,14 +1958,15 @@
 
         if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
         	if (jsonObj.hypervisor == 'KVM') { 
-        		if (g_KVMsnapshotenabled == true) {
+        		if (jsonObj.vmstate == 'Running') {        			
+        			if (g_kvmsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
+            			allowedActions.push("takeSnapshot");
+        	            allowedActions.push("recurringSnapshot");
+            		}         			
+        		} else {
         			allowedActions.push("takeSnapshot");
     	            allowedActions.push("recurringSnapshot");
-        		} else {        			
-        			if(jsonObj.vmstate == 'Stopped') {
-        				allowedActions.push("takeSnapshot");
-        			}
-        		}
+        		}        		
         	} else {
         		allowedActions.push("takeSnapshot");
 	            allowedActions.push("recurringSnapshot");
@@ -1960,7 +2023,7 @@
             allowedActions.push("createTemplate");
             allowedActions.push("createVolume");
 
-            if (jsonObj.revertable && args.context.volumes[0].vmstate == "Stopped") {
+            if (jsonObj.revertable) {
                 allowedActions.push("revertSnapshot");
             }
         }

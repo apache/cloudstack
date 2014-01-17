@@ -18,17 +18,11 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -38,14 +32,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name="listUcsBlades", description="List ucs blades", responseObject=UcsBladeResponse.class)
+@APICommand(name = "listUcsBlades", description = "List ucs blades", responseObject = UcsBladeResponse.class)
 public class ListUcsBladeCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsBladeCmd.class);
 
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "ucs manager id", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
 
     public UcsManager getMgr() {
@@ -66,7 +60,7 @@ public class ListUcsBladeCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             ListResponse<UcsBladeResponse> response = mgr.listUcsBlades(this);
             response.setResponseName(getCommandName());

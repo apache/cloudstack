@@ -29,112 +29,111 @@ import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
-import com.cloud.utils.concurrency.NamedThreadFactory; 
+import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class ClientTransportProvider implements TransportProvider {
-	public static final int DEFAULT_WORKER_POOL_SIZE = 5;
+    public static final int DEFAULT_WORKER_POOL_SIZE = 5;
 
-	private Map<Integer, ClientTransportEndpointSite> _endpointSites = new HashMap<Integer, ClientTransportEndpointSite>();
-	private Map<String, ClientTransportEndpointSite> _attachedMap = new HashMap<String, ClientTransportEndpointSite>();
-	
-	private MessageSerializer _messageSerializer;
-	
-	private ClientTransportConnection _connection;
-	private String _serverAddress;
-	private int _serverPort;
-	
-	private int _poolSize = DEFAULT_WORKER_POOL_SIZE;
-	private ExecutorService _executor;
-	
-	private int _nextProviderKey = 1;
-	
-	public ClientTransportProvider() {
-	}
-	
-	public ClientTransportProvider setPoolSize(int poolSize) {
-		_poolSize = poolSize;
-		return this;
-	}
-	
-	public void initialize(String serverAddress, int serverPort) {
-		_serverAddress = serverAddress;
-		_serverPort = serverPort;
-		
-		_executor = Executors.newFixedThreadPool(_poolSize, new NamedThreadFactory("Transport-Worker"));
-		_connection = new ClientTransportConnection(this);
-		
-		_executor.execute(new ManagedContextRunnable() {
+    private Map<Integer, ClientTransportEndpointSite> _endpointSites = new HashMap<Integer, ClientTransportEndpointSite>();
+    private Map<String, ClientTransportEndpointSite> _attachedMap = new HashMap<String, ClientTransportEndpointSite>();
+
+    private MessageSerializer _messageSerializer;
+
+    private ClientTransportConnection _connection;
+    private String _serverAddress;
+    private int _serverPort;
+
+    private int _poolSize = DEFAULT_WORKER_POOL_SIZE;
+    private ExecutorService _executor;
+
+    private int _nextProviderKey = 1;
+
+    public ClientTransportProvider() {
+    }
+
+    public ClientTransportProvider setPoolSize(int poolSize) {
+        _poolSize = poolSize;
+        return this;
+    }
+
+    public void initialize(String serverAddress, int serverPort) {
+        _serverAddress = serverAddress;
+        _serverPort = serverPort;
+
+        _executor = Executors.newFixedThreadPool(_poolSize, new NamedThreadFactory("Transport-Worker"));
+        _connection = new ClientTransportConnection(this);
+
+        _executor.execute(new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-				try {
-					_connection.connect(_serverAddress, _serverPort);
-				} catch(Throwable e) {
-				}
-			}
-		});
-	}
-	
-	@Override
-	public TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress) {
+                try {
+                    _connection.connect(_serverAddress, _serverPort);
+                } catch (Throwable e) {
+                }
+            }
+        });
+    }
 
-		ClientTransportEndpointSite endpointSite;
-		synchronized(this) {
-			endpointSite = getEndpointSite(endpoint);
-			if(endpointSite != null) {
-				// already attached
-				return endpointSite;
-			}
-			
-			endpointSite = new ClientTransportEndpointSite(this, endpoint, predefinedAddress, getNextProviderKey());
-			_endpointSites.put(endpointSite.getProviderKey(), endpointSite);
-		}
-		
-		return endpointSite;
-	}
+    @Override
+    public TransportEndpointSite attach(TransportEndpoint endpoint, String predefinedAddress) {
 
-	@Override
-	public boolean detach(TransportEndpoint endpoint) {
-		// TODO Auto-generated method stub
-		
-		return false;
-	}
+        ClientTransportEndpointSite endpointSite;
+        synchronized (this) {
+            endpointSite = getEndpointSite(endpoint);
+            if (endpointSite != null) {
+                // already attached
+                return endpointSite;
+            }
 
-	@Override
-	public void setMessageSerializer(MessageSerializer messageSerializer) {
-		assert(messageSerializer != null);
-		_messageSerializer = messageSerializer;
-	}
+            endpointSite = new ClientTransportEndpointSite(this, endpoint, predefinedAddress, getNextProviderKey());
+            _endpointSites.put(endpointSite.getProviderKey(), endpointSite);
+        }
 
-	@Override
-	public MessageSerializer getMessageSerializer() {
-		return _messageSerializer;
-	}
-	
-	@Override
-	public void requestSiteOutput(TransportEndpointSite site) {
-		// ???
-	}
-	
-	@Override
-	public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, 
-		String multiplexier, String message) {
-		// TODO
-	}
-	
-	private ClientTransportEndpointSite getEndpointSite(TransportEndpoint endpoint) {
-		synchronized(this) {
-			for(ClientTransportEndpointSite endpointSite : _endpointSites.values()) {
-				if(endpointSite.getEndpoint() == endpoint)
-					return endpointSite;
-			}
-		}
-		
-		return null;
-	}
-	
-	public int getNextProviderKey() {
-		synchronized(this) {
-			return _nextProviderKey++;
-		}
-	}
+        return endpointSite;
+    }
+
+    @Override
+    public boolean detach(TransportEndpoint endpoint) {
+        // TODO Auto-generated method stub
+
+        return false;
+    }
+
+    @Override
+    public void setMessageSerializer(MessageSerializer messageSerializer) {
+        assert (messageSerializer != null);
+        _messageSerializer = messageSerializer;
+    }
+
+    @Override
+    public MessageSerializer getMessageSerializer() {
+        return _messageSerializer;
+    }
+
+    @Override
+    public void requestSiteOutput(TransportEndpointSite site) {
+        // ???
+    }
+
+    @Override
+    public void sendMessage(String soureEndpointAddress, String targetEndpointAddress, String multiplexier, String message) {
+        // TODO
+    }
+
+    private ClientTransportEndpointSite getEndpointSite(TransportEndpoint endpoint) {
+        synchronized (this) {
+            for (ClientTransportEndpointSite endpointSite : _endpointSites.values()) {
+                if (endpointSite.getEndpoint() == endpoint)
+                    return endpointSite;
+            }
+        }
+
+        return null;
+    }
+
+    public int getNextProviderKey() {
+        synchronized (this) {
+            return _nextProviderKey++;
+        }
+    }
 }

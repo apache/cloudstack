@@ -33,31 +33,31 @@ public class EC2TagsFilterSet {
 
     protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();
 
-    private Map<String,String> filterTypes = new HashMap<String,String>();
+    private Map<String, String> filterTypes = new HashMap<String, String>();
 
     public EC2TagsFilterSet() {
-        filterTypes.put( "resource-id", "String" );
-        filterTypes.put( "resource-type", "String" );
-        filterTypes.put( "key", "String" );
-        filterTypes.put( "value", "String" );
+        filterTypes.put("resource-id", "String");
+        filterTypes.put("resource-type", "String");
+        filterTypes.put("key", "String");
+        filterTypes.put("value", "String");
     }
 
-    public void addFilter( EC2Filter param ) {
+    public void addFilter(EC2Filter param) {
         String filterName = param.getName();
-        String value = (String) filterTypes.get( filterName );
+        String value = (String)filterTypes.get(filterName);
 
-        if ( value == null || value.equalsIgnoreCase("null") ) {
-            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        if (value == null || value.equalsIgnoreCase("null")) {
+            throw new EC2ServiceException(ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
         }
 
-        filterSet.add( param );
+        filterSet.add(param);
     }
 
     public EC2Filter[] getFilterSet() {
         return filterSet.toArray(new EC2Filter[0]);
     }
 
-    public EC2DescribeTagsResponse evaluate( EC2DescribeTagsResponse sampleList) throws ParseException	{
+    public EC2DescribeTagsResponse evaluate(EC2DescribeTagsResponse sampleList) throws ParseException {
         EC2DescribeTagsResponse resultList = new EC2DescribeTagsResponse();
 
         boolean matched;
@@ -78,28 +78,29 @@ public class EC2TagsFilterSet {
         return resultList;
     }
 
-    private boolean filterMatched( EC2ResourceTag tag, EC2Filter filter ) throws ParseException {
+    private boolean filterMatched(EC2ResourceTag tag, EC2Filter filter) throws ParseException {
         String filterName = filter.getName();
         String[] valueSet = filter.getValueSet();
 
-        if ( filterName.equalsIgnoreCase("resource-id")) {
+        if (filterName.equalsIgnoreCase("resource-id")) {
             return containsString(tag.getResourceId(), valueSet);
-        } else if ( filterName.equalsIgnoreCase("resource-type")) {
+        } else if (filterName.equalsIgnoreCase("resource-type")) {
             return containsString(tag.getResourceType(), valueSet);
-        } else if ( filterName.equalsIgnoreCase("key")) {
+        } else if (filterName.equalsIgnoreCase("key")) {
             return containsString(tag.getKey(), valueSet);
-        } else if ( filterName.equalsIgnoreCase("value")) {
+        } else if (filterName.equalsIgnoreCase("value")) {
             return containsString(tag.getValue(), valueSet);
         } else
             return false;
-     }
+    }
 
-    private boolean containsString( String lookingFor, String[] set ){
+    private boolean containsString(String lookingFor, String[] set) {
         if (lookingFor == null)
             return false;
 
-        for (String filter: set) {
-            if (lookingFor.matches( filter )) return true;
+        for (String filter : set) {
+            if (lookingFor.matches(filter))
+                return true;
         }
         return false;
     }

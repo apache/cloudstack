@@ -83,3 +83,7 @@ build-indep-stamp
 configure-stamp
 *_flymake.js
 engine/storage/integration-test/test-output
+tools/apidoc/log/
+log/
+plugins/network-elements/juniper-contrail/logs/
+scripts/vm/hypervisor/xenserver/vhd-util

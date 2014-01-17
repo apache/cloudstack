@@ -22,15 +22,12 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 public interface Account extends ControlledEntity, InternalIdentity, Identity {
 
-    public enum State {
-        disabled,
-        enabled,
-        locked
-    }
 
+    public enum State {
+        disabled, enabled, locked
+    }
 
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
@@ -56,9 +53,10 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public String getNetworkDomain();
 
     public Long getDefaultZoneId();
-    
+
+    @Override
     public String getUuid();
-    
+
     boolean isDefault();
-    
+
 }

@@ -24,5 +24,5 @@ import org.apache.cloudstack.api.response.StorageProviderResponse;
 
 public interface DataStoreProviderApiService {
     public List<StorageProviderResponse> getDataStoreProviders(String type);
-   
+
 }

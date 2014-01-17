@@ -27,43 +27,43 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="usage_vmsnapshot")
+@Table(name = "usage_vmsnapshot")
 public class UsageVMSnapshotVO implements InternalIdentity {
-    
-    @Column(name="id") // volumeId
+
+    @Column(name = "id")
+    // volumeId
     private long id;
-    
-    @Column(name="zone_id")
+
+    @Column(name = "zone_id")
     private long zoneId;
-    
-    @Column(name="account_id")
+
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="vm_id")
+    @Column(name = "vm_id")
     private long vmId;
-    
-    @Column(name="disk_offering_id")
+
+    @Column(name = "disk_offering_id")
     private Long diskOfferingId;
-    
-    @Column(name="size")
+
+    @Column(name = "size")
     private long size;
 
-    @Column(name="created")
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
-    
-    @Column(name="processed")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "processed")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date processed;
 
     protected UsageVMSnapshotVO() {
     }
 
-    public UsageVMSnapshotVO(long id, long zoneId, long accountId, long domainId, 
-            long vmId, Long diskOfferingId, long size, Date created, Date processed) {
+    public UsageVMSnapshotVO(long id, long zoneId, long accountId, long domainId, long vmId, Long diskOfferingId, long size, Date created, Date processed) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -78,7 +78,7 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     public long getZoneId() {
         return zoneId;
     }
-    
+
     public long getAccountId() {
         return accountId;
     }
@@ -90,7 +90,7 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     public Long getDiskOfferingId() {
         return diskOfferingId;
     }
-    
+
     public long getSize() {
         return size;
     }
@@ -114,8 +114,9 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     public long getVmId() {
         return vmId;
     }
-    
-    public long getId(){
+
+    @Override
+    public long getId() {
         return this.id;
     }
 

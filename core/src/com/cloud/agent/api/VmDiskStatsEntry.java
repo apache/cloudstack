@@ -19,17 +19,17 @@ package com.cloud.agent.api;
 import com.cloud.vm.VmDiskStats;
 
 public class VmDiskStatsEntry implements VmDiskStats {
-	
-	String vmName;
-	String path;
-	long ioRead = 0;
-	long ioWrite = 0;
-	long bytesWrite = 0;
-	long bytesRead = 0;
-	    
+
+    String vmName;
+    String path;
+    long ioRead = 0;
+    long ioWrite = 0;
+    long bytesWrite = 0;
+    long bytesRead = 0;
+
     public VmDiskStatsEntry() {
     }
-    
+
     public VmDiskStatsEntry(String vmName, String path, long ioWrite, long ioRead, long bytesWrite, long bytesRead) {
         this.ioRead = ioRead;
         this.ioWrite = ioWrite;
@@ -46,7 +46,7 @@ public class VmDiskStatsEntry implements VmDiskStats {
     public String getVmName() {
         return vmName;
     }
-    
+
     public void setPath(String path) {
         this.path = path;
     }
@@ -54,35 +54,39 @@ public class VmDiskStatsEntry implements VmDiskStats {
     public String getPath() {
         return path;
     }
-    
+
     public void setBytesRead(long bytesRead) {
-    	this.bytesRead = bytesRead;
+        this.bytesRead = bytesRead;
     }
 
+    @Override
     public long getBytesRead() {
-    	return bytesRead;
+        return bytesRead;
     }
-    
+
     public void setBytesWrite(long bytesWrite) {
-    	this.bytesWrite = bytesWrite;
+        this.bytesWrite = bytesWrite;
     }
-    
+
+    @Override
     public long getBytesWrite() {
-    	return bytesWrite;
+        return bytesWrite;
     }
-    
+
     public void setIORead(long ioRead) {
         this.ioRead = ioRead;
     }
 
+    @Override
     public long getIORead() {
         return ioRead;
     }
-    
+
     public void setIOWrite(long ioWrite) {
         this.ioWrite = ioWrite;
     }
-    
+
+    @Override
     public long getIOWrite() {
         return ioWrite;
     }

@@ -17,52 +17,48 @@
 
 package com.cloud.bridge.service.core.ec2;
 
-
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
-
 public class EC2AvailabilityZonesFilterSet {
-    protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();    
+    protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();
 
-    private Map<String,String> filterTypes = new HashMap<String,String>();
+    private Map<String, String> filterTypes = new HashMap<String, String>();
 
     public EC2AvailabilityZonesFilterSet() {
         // -> use these values to check that the proper filter is passed to this type of filter set
-        filterTypes.put( "zone-name", "String" );
-        filterTypes.put( "message", "String");
+        filterTypes.put("zone-name", "String");
+        filterTypes.put("message", "String");
     }
 
-    public void addFilter( EC2Filter param ) {	
+    public void addFilter(EC2Filter param) {
         String filterName = param.getName();
-        String value = (String) filterTypes.get( filterName );
+        String value = (String)filterTypes.get(filterName);
 
-        if ( value == null || value.equalsIgnoreCase("null") ) {
-            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        if (value == null || value.equalsIgnoreCase("null")) {
+            throw new EC2ServiceException(ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
         }
 
-        filterSet.add( param );
+        filterSet.add(param);
     }
 
     public EC2Filter[] getFilterSet() {
         return filterSet.toArray(new EC2Filter[0]);
     }
 
-    public EC2DescribeAvailabilityZonesResponse evaluate( EC2DescribeAvailabilityZonesResponse availabilityZones)
-            throws ParseException    {
+    public EC2DescribeAvailabilityZonesResponse evaluate(EC2DescribeAvailabilityZonesResponse availabilityZones) throws ParseException {
         EC2DescribeAvailabilityZonesResponse resultList = new EC2DescribeAvailabilityZonesResponse();
 
         boolean matched;
 
         EC2Filter[] filterSet = getFilterSet();
-        for ( EC2AvailabilityZone availableZone : availabilityZones.getAvailabilityZoneSet() ) {
+        for (EC2AvailabilityZone availableZone : availabilityZones.getAvailabilityZoneSet()) {
             matched = true;
             if (filterSet != null) {
                 for (EC2Filter filter : filterSet) {
@@ -78,25 +74,25 @@ public class EC2AvailabilityZonesFilterSet {
         return resultList;
     }
 
-    private boolean filterMatched( EC2AvailabilityZone availableZone, EC2Filter filter ) throws ParseException {
+    private boolean filterMatched(EC2AvailabilityZone availableZone, EC2Filter filter) throws ParseException {
         String filterName = filter.getName();
         String[] valueSet = filter.getValueSet();
 
-        if ( filterName.equalsIgnoreCase("zone-name")) {
+        if (filterName.equalsIgnoreCase("zone-name")) {
             return containsString(availableZone.getName(), valueSet);
-        }
-        else if (filterName.equalsIgnoreCase("message")) {
+        } else if (filterName.equalsIgnoreCase("message")) {
             return containsString(availableZone.getMessage(), valueSet);
         }
         return false;
     }
 
-    private boolean containsString( String lookingFor, String[] set ){
-        if (lookingFor == null) 
+    private boolean containsString(String lookingFor, String[] set) {
+        if (lookingFor == null)
             return false;
 
-        for (String filter: set) {
-            if (lookingFor.matches( filter )) return true;
+        for (String filter : set) {
+            if (lookingFor.matches(filter))
+                return true;
         }
         return false;
     }

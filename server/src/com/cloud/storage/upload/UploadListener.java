@@ -166,9 +166,8 @@ public class UploadListener implements Listener {
     private final Map<String, UploadState> stateMap = new HashMap<String, UploadState>();
     private Long uploadId;
 
-    public UploadListener(DataStore host, Timer _timer, UploadDao uploadDao,
-            UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
-            Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
+    public UploadListener(DataStore host, Timer timerInput, UploadDao uploadDao, UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd, Long accountId,
+            String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
         sserver = host;
         this.uploadDao = uploadDao;
         this.uploadMonitor = uploadMonitor;
@@ -179,7 +178,7 @@ public class UploadListener implements Listener {
         this.type = type;
         initStateMachine();
         currState = getState(Status.NOT_UPLOADED.toString());
-        timer = _timer;
+        timer = timerInput;
         timeoutTask = new TimeoutTask(this);
         timer.schedule(timeoutTask, 3 * STATUS_POLL_INTERVAL);
         this.eventId = eventId;
@@ -188,12 +187,12 @@ public class UploadListener implements Listener {
         String extractId = null;
         if (type == Type.VOLUME) {
             extractId = ApiDBUtils.findVolumeById(uploadObj.getTypeId()).getUuid();
-        }
-        else {
+        } else {
             extractId = ApiDBUtils.findTemplateById(uploadObj.getTypeId()).getUuid();
         }
-        resultObj = new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(),
-                ApiDBUtils.findUploadById(uploadId).getUuid());
+        resultObj =
+            new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(), ApiDBUtils.findUploadById(uploadId)
+                .getUuid());
         resultObj.setResponseName(responseNameMap.get(type.toString()));
         updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(), "");
     }
@@ -216,12 +215,12 @@ public class UploadListener implements Listener {
         return false;
     }
 
-    public void setCommand(UploadCommand _cmd) {
-        cmd = _cmd;
+    public void setCommand(UploadCommand cmd) {
+        this.cmd = cmd;
     }
 
-    public void setJobId(String _jobId) {
-        jobId = _jobId;
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
     }
 
     public String getJobId() {
@@ -260,16 +259,13 @@ public class UploadListener implements Listener {
         long agentId = agent.getId();
 
         StartupStorageCommand storage = (StartupStorageCommand)cmd;
-        if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
-                storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE)
-        {
+        if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST || storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
             uploadMonitor.handleUploadSync(agentId);
         }
     }
 
     @Override
-    public AgentControlAnswer processControlCommand(long agentId,
-            AgentControlCommand cmd) {
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
         return null;
     }
 

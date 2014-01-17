@@ -22,21 +22,21 @@ public class RegisterVolumePayload {
     private final String url;
     private final String checksum;
     private final String format;
-    
+
     public RegisterVolumePayload(String url, String checksum, String format) {
         this.url = url;
         this.checksum = checksum;
         this.format = format;
     }
-    
+
     public String getUrl() {
         return this.url;
     }
-    
+
     public String getChecksum() {
         return this.checksum;
     }
-    
+
     public String getFormat() {
         return this.format;
     }

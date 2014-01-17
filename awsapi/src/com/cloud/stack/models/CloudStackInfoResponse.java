@@ -19,41 +19,41 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackInfoResponse {
-	@SerializedName(ApiConstants.SUCCESS)
-	private Boolean success;
-	 
-	@SerializedName(ApiConstants.DISPLAY_TEXT)
-	private String displayText;
-	
-	@SerializedName(ApiConstants.STATUS)
-	private Boolean status;
-	
+    @SerializedName(ApiConstants.SUCCESS)
+    private Boolean success;
+
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    private String displayText;
+
+    @SerializedName(ApiConstants.STATUS)
+    private Boolean status;
+
     @SerializedName(ApiConstants.JOB_ID)
     private Long jobId;
-    
+
     @SerializedName(ApiConstants.ID)
     private Long id;
 
-	public CloudStackInfoResponse() {
+    public CloudStackInfoResponse() {
     }
 
     public Boolean getSuccess() {
-		return success;
+        return success;
     }
 
-	public String getDisplayText() {
-		return displayText;
-	}
+    public String getDisplayText() {
+        return displayText;
+    }
 
-	public Boolean getStatus() {
-		return status;
-	}
-	
+    public Boolean getStatus() {
+        return status;
+    }
+
     public Long getJobId() {
-		return jobId;
-	}
-    
+        return jobId;
+    }
+
     public Long getId() {
-    	return id;
+        return id;
     }
 }

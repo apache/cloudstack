@@ -21,12 +21,12 @@ import com.cloud.agent.api.Command;
 
 public class ManageVolumeAvailabilityAnswer extends Answer {
 
-	protected ManageVolumeAvailabilityAnswer() {
-	    super();
+    protected ManageVolumeAvailabilityAnswer() {
+        super();
     }
 
-	public ManageVolumeAvailabilityAnswer(Command command, boolean success, String details) {
-		super(command, success, details);
-	}
+    public ManageVolumeAvailabilityAnswer(Command command, boolean success, String details) {
+        super(command, success, details);
+    }
 
 }

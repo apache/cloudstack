@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,14 +32,12 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPhysicalNetwork", description="Creates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+@APICommand(name = "createPhysicalNetwork", description = "Creates a physical network", responseObject = PhysicalNetworkResponse.class, since = "3.0.0")
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePhysicalNetworkCmd.class.getName());
 
@@ -47,31 +47,42 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType= ZoneResponse.class,
-            required=true, description="the Zone ID for the physical network")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "the Zone ID for the physical network")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the VLAN for the physical network")
     private String vlan;
 
-    @Parameter(name=ApiConstants.NETWORK_SPEED, type=CommandType.STRING, description="the speed for the physical network[1G/10G]")
+    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "the speed for the physical network[1G/10G]")
     private String speed;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="domain ID of the account owning a physical network")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "domain ID of the account owning a physical network")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.BROADCAST_DOMAIN_RANGE, type=CommandType.STRING, description="the broadcast domain range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
+    @Parameter(name = ApiConstants.BROADCAST_DOMAIN_RANGE,
+               type = CommandType.STRING,
+               description = "the broadcast domain range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
     private String broadcastDomainRange;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical network")
     private List<String> tags;
 
-    @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, description="the isolation method for the physical network[VLAN/L3/GRE]")
+    @Parameter(name = ApiConstants.ISOLATION_METHODS,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               description = "the isolation method for the physical network[VLAN/L3/GRE]")
     private List<String> isolationMethods;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the physical network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the physical network")
     private String networkName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,7 +90,6 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public List<String> getTags() {
         return tags;
     }
-
 
     public Long getZoneId() {
         return zoneId;
@@ -136,7 +146,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "creating Physical Network. Id: "+getEntityId();
+        return "creating Physical Network. Id: " + getEntityId();
     }
 
     /////////////////////////////////////////////////////
@@ -144,21 +154,23 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Physical Network Id: "+getEntityId());
+    public void execute() {
+        CallContext.current().setEventDetails("Physical Network Id: " + getEntityId());
         PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create physical network");
         }
     }
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags(), getNetworkName());
+        PhysicalNetwork result =
+            _networkService.createPhysicalNetwork(getZoneId(), getVlan(), getNetworkSpeed(), getIsolationMethods(), getBroadcastDomainRange(), getDomainId(), getTags(),
+                getNetworkName());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -28,10 +28,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={Site2SiteCustomerGatewayDao.class})
+@Local(value = {Site2SiteCustomerGatewayDao.class})
 public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCustomerGatewayVO, Long> implements Site2SiteCustomerGatewayDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteCustomerGatewayDaoImpl.class);
-    
+
     private final SearchBuilder<Site2SiteCustomerGatewayVO> AllFieldsSearch;
 
     protected Site2SiteCustomerGatewayDaoImpl() {
@@ -41,7 +41,7 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
-    
+
     @Override
     public Site2SiteCustomerGatewayVO findByGatewayIpAndAccountId(String ip, long accountId) {
         SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();

@@ -19,17 +19,19 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
 
 public class RegionCmdTest extends TestCase {
 
@@ -39,10 +41,11 @@ public class RegionCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
 
-    	addRegionCmd = new AddRegionCmd() {
+        addRegionCmd = new AddRegionCmd() {
 
             @Override
             public Integer getId() {
@@ -63,19 +66,16 @@ public class RegionCmdTest extends TestCase {
         RegionService regionService = Mockito.mock(RegionService.class);
 
         Region region = Mockito.mock(Region.class);
-        Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
-        		.thenReturn(region);
+        Mockito.when(regionService.addRegion(Matchers.anyInt(), Matchers.anyString(), Matchers.anyString())).thenReturn(region);
 
         addRegionCmd._regionService = regionService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
-        
+
         RegionResponse regionResponse = Mockito.mock(RegionResponse.class);
 
-        Mockito.when(responseGenerator.createRegionResponse(region)).thenReturn(
-        		regionResponse);
-        
-        addRegionCmd._responseGenerator = responseGenerator;                
+        Mockito.when(responseGenerator.createRegionResponse(region)).thenReturn(regionResponse);
+
+        addRegionCmd._responseGenerator = responseGenerator;
         addRegionCmd.execute();
 
     }
@@ -86,19 +86,16 @@ public class RegionCmdTest extends TestCase {
         RegionService regionService = Mockito.mock(RegionService.class);
 
         Region region = Mockito.mock(Region.class);
-        Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
-        		.thenReturn(null);
+        Mockito.when(regionService.addRegion(Matchers.anyInt(), Matchers.anyString(), Matchers.anyString())).thenReturn(null);
 
         addRegionCmd._regionService = regionService;
 
         try {
-        	addRegionCmd.execute();
+            addRegionCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add Region",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add Region", exception.getDescription());
         }
 
-    }    
+    }
 
 }

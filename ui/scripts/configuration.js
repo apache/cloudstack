@@ -197,14 +197,14 @@
                                     },
 
                                     isVolatile: {
-                                        label: 'isVolatile',
+                                        label: 'label.volatile',
                                         isBoolean: true,
                                         isChecked: false
 
                                     },
 
                                     deploymentPlanner: {
-                                        label: 'Deployment Planner',
+                                        label: 'label.deployment.planner',
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDeploymentPlanners'),
@@ -233,7 +233,7 @@
 
                                     // plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
                                     plannerMode: {
-                                        label: 'Planner Mode',
+                                        label: 'label.planner.mode',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
@@ -1241,6 +1241,7 @@
                                                 var $isCustomizedIops = $form.find('.form-item[rel=isCustomizedIops]');
                                                 var $minIops = $form.find('.form-item[rel=minIops]');
                                                 var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                var $hypervisorSnapshotReserve = $form.find('.form-item[rel=hypervisorSnapshotReserve]');
                                                 var $diskBytesReadRate = $form.find('.form-item[rel=diskBytesReadRate]');
                                                 var $diskBytesWriteRate = $form.find('.form-item[rel=diskBytesWriteRate]');
                                                 var $diskIopsReadRate = $form.find('.form-item[rel=diskIopsReadRate]');
@@ -1256,17 +1257,20 @@
 
                                                     $isCustomizedIops.css('display', 'inline-block');
 
-                                                    if ($isCustomizedIops == true) {
+                                                    if ($isCustomizedIops.find('input[type=checkbox]').is(':checked')) {
                                                         $minIops.hide();
                                                         $maxIops.hide();
                                                     } else {
                                                         $minIops.css('display', 'inline-block');
                                                         $maxIops.css('display', 'inline-block');
                                                     }
+
+                                                    $hypervisorSnapshotReserve.css('display', 'inline-block');
                                                 } else if (qosId == 'hypervisor') { // Hypervisor Qos
                                                     $isCustomizedIops.hide();
                                                     $minIops.hide();
                                                     $maxIops.hide();
+                                                    $hypervisorSnapshotReserve.hide();
 
                                                     $diskBytesReadRate.css('display', 'inline-block');
                                                     $diskBytesWriteRate.css('display', 'inline-block');
@@ -1280,6 +1284,7 @@
                                                     $isCustomizedIops.hide();
                                                     $minIops.hide();
                                                     $maxIops.hide();
+                                                    $hypervisorSnapshotReserve.hide();
                                                 }
                                             });
                                         }
@@ -1304,6 +1309,14 @@
                                         label: 'label.disk.iops.max',
                                         docID: 'helpDiskOfferingDiskIopsMax',
                                         dependsOn: 'isCustomizedIops',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    hypervisorSnapshotReserve: {
+                                        label: 'label.hypervisor.snapshot.reserve',
+                                        docID: 'helpDiskOfferingHypervisorSnapshotReserve',
                                         validation: {
                                             required: false,
                                             number: true
@@ -1339,6 +1352,28 @@
                                         validation: {
                                             required: false, //optional
                                             number: true
+                                        }
+                                    },
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
+                                        docID: 'helpDiskOfferingCacheMode',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'none',
+                                                description: 'No disk cache'
+                                            });
+                                            items.push({
+                                                id: 'writeback',
+                                                description: 'Write-back disk caching'
+                                            });
+                                            items.push({
+                                                id: 'writethrough',
+                                                description: 'Write-through disk caching'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
                                         }
                                     },
                                     tags: {
@@ -1387,6 +1422,7 @@
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
+                                    cacheMode: args.data.cacheMode,
                                     customized: (args.data.isCustomized == "on")
                                 };
 
@@ -1415,6 +1451,12 @@
                                                 maxiops: args.data.maxIops
                                             });
                                         }
+                                    }
+
+                                    if (args.data.hypervisorSnapshotReserve != null && args.data.hypervisorSnapshotReserve.length > 0) {
+                                        $.extend(data, {
+                                            hypervisorsnapshotreserve: args.data.hypervisorSnapshotReserve
+                                        });
                                     }
                                 } else if (args.data.qosType == 'hypervisor') {
                                     if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
@@ -1606,6 +1648,9 @@
                                     },
                                     diskIopsWriteRate: {
                                         label: 'label.disk.iops.write.rate'
+                                    },
+                                    cacheMode: {
+                                        label: 'label.cache.mode',
                                     },
                                     tags: {
                                         label: 'label.storage.tags'

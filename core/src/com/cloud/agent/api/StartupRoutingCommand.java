@@ -29,26 +29,42 @@ public class StartupRoutingCommand extends StartupCommand {
     public static class VmState {
         State state;
         String host;
+
         public VmState() {
         }
+
         public VmState(State state, String host) {
             this.state = state;
             this.host = host;
         }
+
         public State getState() {
             return state;
         }
+
         public String getHost() {
             return host;
         }
     }
+
+    Integer cpuSockets;
     int cpus;
     long speed;
     long memory;
     long dom0MinMemory;
     boolean poolSync;
+
+    // VM power state report is added in a side-by-side way as old VM state report
+    // this is to allow a graceful migration from the old VM state sync model to the new model
+    //
+    // side-by-side addition of power state sync
+    Map<String, HostVmStateReportEntry> _hostVmStateReport;
+
+    // TODO vmsync
+    // deprecated, will delete after full replacement
     Map<String, VmState> vms;
     HashMap<String, Ternary<String, State, String>> _clusterVMStates;
+
     String caps;
     String pool;
     HypervisorType hypervisorType;
@@ -62,57 +78,49 @@ public class StartupRoutingCommand extends StartupCommand {
 
     }
 
-    public StartupRoutingCommand(int cpus,
-                                   long speed,
-                                   long memory,
-                                   long dom0MinMemory,
-                                   String caps,
-                                   HypervisorType hypervisorType,
-                                   RouterPrivateIpStrategy privIpStrategy,
-                                   Map<String, VmState> vms) {
-        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms);
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType,
+            RouterPrivateIpStrategy privIpStrategy, Map<String, VmState> vms, Map<String, HostVmStateReportEntry> hostVmStateReport) {
+        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms, hostVmStateReport);
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }
 
-    public StartupRoutingCommand(int cpus,
-            long speed,
-            long memory,
-            long dom0MinMemory,
-            String caps,
-            HypervisorType hypervisorType,
-            RouterPrivateIpStrategy privIpStrategy) {
-this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, new HashMap<String,String>(), new HashMap<String, VmState>());
-getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
-}
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType, RouterPrivateIpStrategy privIpStrategy) {
+        this(cpus,
+            speed,
+            memory,
+            dom0MinMemory,
+            caps,
+            hypervisorType,
+            new HashMap<String, String>(),
+            new HashMap<String, VmState>(),
+            new HashMap<String, HostVmStateReportEntry>());
 
-    public StartupRoutingCommand(int cpus,
-            long speed,
-            long memory,
-            long dom0MinMemory,
-            final String caps,
-            final HypervisorType hypervisorType,
-            final Map<String, String> hostDetails,
-            Map<String, VmState> vms) {
+        getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
+    }
+
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType,
+            final Map<String, String> hostDetails, Map<String, VmState> vms, Map<String, HostVmStateReportEntry> hostVmStateReport) {
         super(Host.Type.Routing);
         this.cpus = cpus;
         this.speed = speed;
         this.memory = memory;
         this.dom0MinMemory = dom0MinMemory;
         this.vms = vms;
+        this._hostVmStateReport = hostVmStateReport;
         this.hypervisorType = hypervisorType;
         this.hostDetails = hostDetails;
         this.caps = caps;
         this.poolSync = false;
     }
 
-    public StartupRoutingCommand(int cpus2, long speed2, long memory2,
-            long dom0MinMemory2, String caps2, HypervisorType hypervisorType2,
-            Map<String, VmState> vms2) {
-        this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String,String>(), vms2);
+    public StartupRoutingCommand(int cpus2, long speed2, long memory2, long dom0MinMemory2, String caps2, HypervisorType hypervisorType2, Map<String, VmState> vms2,
+            Map<String, HostVmStateReportEntry> hostVmStateReport) {
+        this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String, String>(), vms2, hostVmStateReport);
     }
 
-    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType, final Map<String, String> hostDetails, Map<String, VmState> vms, String hypervisorVersion) {
-        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, hostDetails, vms);
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType,
+            final Map<String, String> hostDetails, Map<String, VmState> vms, Map<String, HostVmStateReportEntry> vmPowerStates, String hypervisorVersion) {
+        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, hostDetails, vms, vmPowerStates);
         this.hypervisorVersion = hypervisorVersion;
     }
 
@@ -121,16 +129,20 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     }
 
     public void setStateChanges(Map<String, State> vms) {
-        for( String vm_name : vms.keySet() ) {
-            if( this.vms == null ) {
+        for (String vm_name : vms.keySet()) {
+            if (this.vms == null) {
                 this.vms = new HashMap<String, VmState>();
             }
             this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
         }
     }
 
-    public void setClusterVMStateChanges(HashMap<String, Ternary<String, State, String>> allStates){
-    	_clusterVMStates = allStates;
+    public void setClusterVMStateChanges(HashMap<String, Ternary<String, State, String>> allStates) {
+        _clusterVMStates = allStates;
+    }
+
+    public Integer getCpuSockets() {
+        return cpuSockets;
     }
 
     public int getCpus() {
@@ -163,6 +175,10 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
 
     public void setSpeed(long speed) {
         this.speed = speed;
+    }
+
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
     }
 
     public void setCpus(int cpus) {
@@ -220,5 +236,12 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;
     }
-}
 
+    public Map<String, HostVmStateReportEntry> getHostVmStateReport() {
+        return this._hostVmStateReport;
+    }
+
+    public void setHostVmStateReport(Map<String, HostVmStateReportEntry> hostVmStateReport) {
+        this._hostVmStateReport = hostVmStateReport;
+    }
+}

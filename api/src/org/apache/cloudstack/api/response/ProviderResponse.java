@@ -26,29 +26,36 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=PhysicalNetworkServiceProvider.class)
+@EntityReference(value = PhysicalNetworkServiceProvider.class)
 @SuppressWarnings("unused")
 public class ProviderResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the provider name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the provider name")
     private String name;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.DEST_PHYSICAL_NETWORK_ID) @Param(description="the destination physical network")
+    @SerializedName(ApiConstants.DEST_PHYSICAL_NETWORK_ID)
+    @Param(description = "the destination physical network")
     private String destinationPhysicalNetworkId;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the network provider")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the network provider")
     private String state;
 
-    @SerializedName(ApiConstants.ID) @Param(description="uuid of the network provider")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "uuid of the network provider")
     private String id;
 
-    @SerializedName(ApiConstants.SERVICE_LIST) @Param(description="services for this provider")
+    @SerializedName(ApiConstants.SERVICE_LIST)
+    @Param(description = "services for this provider")
     private List<String> services;
 
-    @SerializedName(ApiConstants.CAN_ENABLE_INDIVIDUAL_SERVICE) @Param(description="true if individual services can be enabled/disabled")
+    @SerializedName(ApiConstants.CAN_ENABLE_INDIVIDUAL_SERVICE)
+    @Param(description = "true if individual services can be enabled/disabled")
     private Boolean canEnableIndividualServices;
 
     public void setName(String name) {

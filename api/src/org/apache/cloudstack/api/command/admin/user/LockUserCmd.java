@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,13 +25,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "lockUser", description="Locks a user account", responseObject=UserResponse.class)
+@APICommand(name = "lockUser", description = "Locks a user account", responseObject = UserResponse.class)
 public class LockUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockUserCmd.class.getName());
 
@@ -39,8 +40,7 @@ public class LockUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class,
-            required=true, description="Locks user by user ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "Locks user by user ID.")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -71,9 +71,9 @@ public class LockUserCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         UserAccount user = _accountService.lockUser(getId());
-        if (user != null){
+        if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

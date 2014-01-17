@@ -16,67 +16,38 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.LogLevel.Log4jLevel;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+
 import com.cloud.agent.api.to.DataStoreTO;
 
 public class SecStorageSetupCommand extends Command {
     private DataStoreTO store;
-	private String secUrl;
-	private Certificates certs;
+    private String secUrl;
+    private KeystoreManager.Certificates certs;
 
-	public static class Certificates {
-	    @LogLevel(Log4jLevel.Off)
-		private String privKey;
-	    @LogLevel(Log4jLevel.Off)
-		private String privCert;
-	    @LogLevel(Log4jLevel.Off)
-		private String certChain;
 
-	    public Certificates() {
+    public SecStorageSetupCommand() {
+        super();
+    }
 
-	    }
+    public SecStorageSetupCommand(DataStoreTO store, String secUrl, KeystoreManager.Certificates certs) {
+        super();
+        this.secUrl = secUrl;
+        this.certs = certs;
+        this.store = store;
+    }
 
-	    public Certificates(String prvKey, String privCert, String certChain) {
-	    	this.privKey = prvKey;
-	    	this.privCert = privCert;
-	    	this.certChain = certChain;
-	    }
-
-	    public String getPrivKey() {
-	    	return this.privKey;
-	    }
-
-	    public String getPrivCert() {
-	    	return this.privCert;
-	    }
-
-	    public String getCertChain() {
-	    	return this.certChain;
-	    }
-	}
-
-	public SecStorageSetupCommand() {
-		super();
-	}
-
-	public SecStorageSetupCommand(DataStoreTO store, String secUrl, Certificates certs) {
-		super();
-		this.secUrl = secUrl;
-		this.certs = certs;
-		this.store = store;
-	}
-
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
     public String getSecUrl() {
         return secUrl;
     }
 
-    public Certificates getCerts() {
-    	return this.certs;
+    public KeystoreManager.Certificates getCerts() {
+        return certs;
     }
 
     public void setSecUrl(String secUrl) {
@@ -91,6 +62,5 @@ public class SecStorageSetupCommand extends Command {
     public void setDataStore(DataStoreTO store) {
         this.store = store;
     }
-
 
 }

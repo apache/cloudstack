@@ -25,7 +25,6 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
 
-
 /**
  * Adds introspectors for the annotations added specifically for CloudStack
  * Web Services.
@@ -50,7 +49,7 @@ public class CSJacksonAnnotationIntrospector extends NopAnnotationIntrospector {
 
         if (an.type() == String.class) {
             return new UriSerializer(an);
-        } else if (an.type() == List.class){
+        } else if (an.type() == List.class) {
             return new UrisSerializer(an);
         }
 

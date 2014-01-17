@@ -19,40 +19,40 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackNic {
-	
+
     @SerializedName(ApiConstants.ID)
     private String id;
 
     @SerializedName(ApiConstants.BROADCAST_URI)
     private String broadcastUri;
-    
+
     @SerializedName(ApiConstants.GATEWAY)
     private String gateway;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     private String ipaddress;
-    
+
     @SerializedName(ApiConstants.IS_DEFAULT)
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.ISOLATION_URI)
     private String isolationUri;
-    
+
     @SerializedName(ApiConstants.MAC_ADDRESS)
     private String macAddress;
-    
+
     @SerializedName(ApiConstants.NETMASK)
     private String netmask;
-    
+
     @SerializedName(ApiConstants.NETWORK_ID)
     private String networkid;
-    
+
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
     private String trafficType;
-    
-    @SerializedName(ApiConstants.TYPE) 
+
+    @SerializedName(ApiConstants.TYPE)
     private String type;
-    
+
     public CloudStackNic() {
     }
 
@@ -60,46 +60,46 @@ public class CloudStackNic {
         return id;
     }
 
-	public String getNetworkid() {
-		return networkid;
-	}
+    public String getNetworkid() {
+        return networkid;
+    }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public String getGateway() {
-		return gateway;
-	}
+    public String getGateway() {
+        return gateway;
+    }
 
-	public String getIpaddress() {
-		return ipaddress;
-	}
+    public String getIpaddress() {
+        return ipaddress;
+    }
 
-	public String getIsolationUri() {
-		return isolationUri;
-	}
+    public String getIsolationUri() {
+        return isolationUri;
+    }
 
-	public String getBroadcastUri() {
-		return broadcastUri;
-	}
+    public String getBroadcastUri() {
+        return broadcastUri;
+    }
 
-	public String getTrafficType() {
-		return trafficType;
-	}
+    public String getTrafficType() {
+        return trafficType;
+    }
 
-	public String getType() {
-		return type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public Boolean getIsDefault() {
-		return isDefault;
-	}
+    public Boolean getIsDefault() {
+        return isDefault;
+    }
 
-	/**
-	 * @return the macAddress
-	 */
-	public String getMacAddress() {
-		return macAddress;
-	}
+    /**
+     * @return the macAddress
+     */
+    public String getMacAddress() {
+        return macAddress;
+    }
 }

@@ -47,18 +47,21 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DESTINATION_ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="ID of the zone the template is being copied to.")
+    @Parameter(name = ApiConstants.DESTINATION_ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "ID of the zone the template is being copied to.")
     private Long destZoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            required=true, description="Template ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "Template ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.SOURCE_ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="ID of the zone the template is currently hosted on.")
+    @Parameter(name = ApiConstants.SOURCE_ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+            description = "ID of the zone the template is currently hosted on. If not specified and template is cross-zone, then we will sync this template to region wide image store.")
     private Long sourceZoneId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -121,7 +124,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
+    public void execute() throws ResourceAllocationException {
         try {
             CallContext.current().setEventDetails(getEventDescription());
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
@@ -144,4 +147,3 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         }
     }
 }
-

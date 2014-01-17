@@ -23,7 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Encrypt is a replacement for the column modification.   
+ * Encrypt is a replacement for the column modification.
  */
 @Target(FIELD)
 @Retention(RUNTIME)

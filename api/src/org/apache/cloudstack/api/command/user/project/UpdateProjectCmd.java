@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,14 +27,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "updateProject", description="Updates a project", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0")
 public class UpdateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
@@ -42,14 +42,13 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            required=true, description="id of the project to be modified")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "new Admin account for the project")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="display text of the project")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "display text of the project")
     private String displayText;
 
     /////////////////////////////////////////////////////
@@ -75,7 +74,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(id);
+        Project project = _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + id);
@@ -84,14 +83,13 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
         return _projectService.getProjectOwner(id).getId();
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        CallContext.current().setEventDetails("Project id: "+ getId());
+    public void execute() throws ResourceAllocationException {
+        CallContext.current().setEventDetails("Project id: " + getId());
         Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
@@ -109,6 +107,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating project: " + id;
+        return "Updating project: " + id;
     }
 }

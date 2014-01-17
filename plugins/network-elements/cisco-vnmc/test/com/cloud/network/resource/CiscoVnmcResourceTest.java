@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.network.resource;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,22 +47,15 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.dc.Vlan;
 import com.cloud.host.Host;
-import com.cloud.network.IpAddress;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRule.TrafficType;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.exception.ExecutionException;
 
 public class CiscoVnmcResourceTest {
     CiscoVnmcConnectionImpl _connection = mock(CiscoVnmcConnectionImpl.class);
     CiscoVnmcResource _resource;
-    Map<String,Object> _parameters;
+    Map<String, Object> _parameters;
 
     @Before
     public void setUp() throws ConfigurationException {
@@ -79,7 +75,7 @@ public class CiscoVnmcResourceTest {
 
     //@Test(expected=ConfigurationException.class)
     public void resourceConfigureFailure() throws ConfigurationException {
-        _resource.configure("CiscoVnmcResource", Collections.<String,Object>emptyMap());
+        _resource.configure("CiscoVnmcResource", Collections.<String, Object> emptyMap());
     }
 
     //@Test
@@ -93,7 +89,7 @@ public class CiscoVnmcResourceTest {
     public void testInitialization() throws ConfigurationException {
         _resource.configure("CiscoVnmcResource", _parameters);
         StartupCommand[] sc = _resource.initialize();
-        assertTrue(sc.length ==1);
+        assertTrue(sc.length == 1);
         assertTrue("e8e13097-0a08-4e82-b0af-1101589ec3b8".equals(sc[0].getGuid()));
         assertTrue("CiscoVnmc".equals(sc[0].getName()));
         assertTrue("1".equals(sc[0].getDataCenter()));
@@ -120,8 +116,7 @@ public class CiscoVnmcResourceTest {
     @Test
     public void testSourceNat() throws ConfigurationException, Exception {
         long vlanId = 123;
-        IpAddressTO ip = new IpAddressTO(1, "1.2.3.4", true, false,
-                false, null, "1.2.3.1", "255.255.255.0", null, null, false);
+        IpAddressTO ip = new IpAddressTO(1, "1.2.3.4", true, false, false, null, "1.2.3.1", "255.255.255.0", null, null, false);
         SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
         cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
         cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, "1.2.3.4/32");
@@ -146,13 +141,9 @@ public class CiscoVnmcResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("2.3.2.3/32");
-        FirewallRuleTO active = new FirewallRuleTO(1,
-                null, "1.2.3.4", "tcp", 22, 22, false, false,
-                FirewallRule.Purpose.Firewall, cidrList, null, null);
+        FirewallRuleTO active = new FirewallRuleTO(1, null, "1.2.3.4", "tcp", 22, 22, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
-        FirewallRuleTO revoked = new FirewallRuleTO(1,
-                null, "1.2.3.4", "tcp", 22, 22, true, false,
-                FirewallRule.Purpose.Firewall, null, null, null);
+        FirewallRuleTO revoked = new FirewallRuleTO(1, null, "1.2.3.4", "tcp", 22, 22, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         rules.add(revoked);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -164,14 +155,10 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCIngressAclRule(
-                anyString(), anyLong(), anyString(),
-                anyString(), anyString(), anyString(),
-                anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCEgressAclRule(
-                anyString(), anyLong(), anyString(),
-                anyString(), anyString(), anyString(),
-                anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCIngressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
+            true);
+        when(_connection.createTenantVDCEgressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
+            true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);
@@ -183,11 +170,9 @@ public class CiscoVnmcResourceTest {
     public void testStaticNat() throws ConfigurationException, Exception {
         long vlanId = 123;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO active = new StaticNatRuleTO(0, "1.2.3.4", null,
-                null, "5.6.7.8", null, null, null, false, false);
+        StaticNatRuleTO active = new StaticNatRuleTO(0, "1.2.3.4", null, null, "5.6.7.8", null, null, null, false, false);
         rules.add(active);
-        StaticNatRuleTO revoked = new StaticNatRuleTO(0, "1.2.3.4", null, 
-                null, "5.6.7.8", null, null, null, true, false);
+        StaticNatRuleTO revoked = new StaticNatRuleTO(0, "1.2.3.4", null, null, "5.6.7.8", null, null, null, true, false);
         rules.add(revoked);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -204,10 +189,8 @@ public class CiscoVnmcResourceTest {
         when(_connection.deleteTenantVDCDNatRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatIpPool(anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCDNatRule(anyString(),
-                anyLong(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCAclRuleForDNat(anyString(),
-                anyLong(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCDNatRule(anyString(), anyLong(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCAclRuleForDNat(anyString(), anyLong(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);
@@ -219,11 +202,9 @@ public class CiscoVnmcResourceTest {
     public void testPortForwarding() throws ConfigurationException, Exception {
         long vlanId = 123;
         List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
-        PortForwardingRuleTO active = new PortForwardingRuleTO(1, "1.2.3.4", 22, 22,
-                "5.6.7.8", 22, 22, "tcp", false, false);
+        PortForwardingRuleTO active = new PortForwardingRuleTO(1, "1.2.3.4", 22, 22, "5.6.7.8", 22, 22, "tcp", false, false);
         rules.add(active);
-        PortForwardingRuleTO revoked = new PortForwardingRuleTO(1, "1.2.3.4", 22, 22,
-                "5.6.7.8", 22, 22, "tcp", false, false);
+        PortForwardingRuleTO revoked = new PortForwardingRuleTO(1, "1.2.3.4", 22, 22, "5.6.7.8", 22, 22, "tcp", false, false);
         rules.add(revoked);
 
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
@@ -241,12 +222,8 @@ public class CiscoVnmcResourceTest {
         when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFIpPool(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFPortPool(anyString(), anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCPFRule(anyString(),
-                anyLong(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCAclRuleForPF(anyString(),
-                anyLong(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCPFRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCAclRuleForPF(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);

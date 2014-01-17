@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { VMTemplateZoneDao.class })
+@Local(value = {VMTemplateZoneDao.class})
 public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long> implements VMTemplateZoneDao {
     public static final Logger s_logger = Logger.getLogger(VMTemplateZoneDaoImpl.class.getName());
 

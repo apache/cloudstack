@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,13 +26,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "createDiskOffering", description="Creates a disk offering.", responseObject=DiskOfferingResponse.class)
+@APICommand(name = "createDiskOffering", description = "Creates a disk offering.", responseObject = DiskOfferingResponse.class)
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
@@ -40,51 +41,61 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=false, description="size of the disk offering in GB")
+    @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB")
     private Long diskSize;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering", length=4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "alternate display text of the disk offering", length = 4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the disk offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the disk offering")
     private String offeringName;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the disk offering", length=4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "tags for the disk offering", length = 4096)
     private String tags;
 
-    @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering size is custom or not")
+    @Parameter(name = ApiConstants.CUSTOMIZED, type = CommandType.BOOLEAN, description = "whether disk offering size is custom or not")
     private Boolean customized;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the containing domain, null for public offerings")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the ID of the containing domain, null for public offerings")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
+    @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
-    @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_OFFERING,
+               type = CommandType.BOOLEAN,
+               description = "an optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
-    @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
-    @Parameter(name=ApiConstants.BYTES_WRITE_RATE, type=CommandType.LONG, required=false, description="bytes write rate of the disk offering")
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "bytes write rate of the disk offering")
     private Long bytesWriteRate;
 
-    @Parameter(name=ApiConstants.IOPS_READ_RATE, type=CommandType.LONG, required=false, description="io requests read rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "io requests read rate of the disk offering")
     private Long iopsReadRate;
 
-    @Parameter(name=ApiConstants.IOPS_WRITE_RATE, type=CommandType.LONG, required=false, description="io requests write rate of the disk offering")
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @Parameter(name=ApiConstants.CUSTOMIZED_IOPS, type=CommandType.BOOLEAN, required=false, description="whether disk offering iops is custom or not")
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether disk offering iops is custom or not")
     private Boolean customizedIops;
 
-    @Parameter(name=ApiConstants.MIN_IOPS, type=CommandType.LONG, required=false, description="min iops of the disk offering")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the disk offering")
     private Long minIops;
 
-    @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, required=false, description="max iops of the disk offering")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the disk offering")
     private Long maxIops;
+
+    @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
+               type = CommandType.INTEGER,
+               required = false,
+               description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    private Integer hypervisorSnapshotReserve;
 
 /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,7 +117,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return tags;
     }
 
-    public Boolean isCustomized(){
+    public Boolean isCustomized() {
         return customized;
     }
 
@@ -122,7 +133,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return maxIops;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
@@ -150,6 +161,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return displayOffering;
     }
 
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -165,7 +180,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         DiskOffering offering = _configService.createDiskOffering(this);
         if (offering != null) {
             DiskOfferingResponse response = _responseGenerator.createDiskOfferingResponse(offering);

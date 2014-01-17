@@ -61,7 +61,8 @@ public class VirtualMachineTO {
     DiskTO[] disks;
     NicTO[] nics;
 
-    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
+            String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
         this.name = instanceName;
         this.type = type;
@@ -76,7 +77,8 @@ public class VirtualMachineTO {
         this.vncPassword = vncPassword;
     }
 
-    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam,
+            BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
         this.name = instanceName;
         this.type = type;
@@ -150,8 +152,9 @@ public class VirtualMachineTO {
     public Integer getMaxSpeed() {
         return maxSpeed;
     }
+
     public boolean getLimitCpuUse() {
-    	return limitCpuUse;
+        return limitCpuUse;
     }
 
     public long getMinRam() {
@@ -232,11 +235,11 @@ public class VirtualMachineTO {
     }
 
     public String getVncPassword() {
-    	return this.vncPassword;
+        return this.vncPassword;
     }
 
     public void setVncPassword(String vncPassword) {
-    	this.vncPassword = vncPassword;
+        this.vncPassword = vncPassword;
     }
 
     public String getVncAddr() {
@@ -248,11 +251,11 @@ public class VirtualMachineTO {
     }
 
     public Map<String, String> getDetails() {
-    	return params;
+        return params;
     }
 
     public void setDetails(Map<String, String> params) {
-    	this.params = params;
+        this.params = params;
     }
 
     public String getUuid() {
@@ -262,6 +265,5 @@ public class VirtualMachineTO {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-
 
 }

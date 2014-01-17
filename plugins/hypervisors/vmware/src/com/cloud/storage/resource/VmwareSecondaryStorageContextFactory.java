@@ -24,54 +24,63 @@ import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 
 public class VmwareSecondaryStorageContextFactory {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageContextFactory.class);
-    
-	private static volatile int s_seq = 1;
 
-	private static VmwareContextPool s_pool;
+    private static volatile int s_seq = 1;
 
-	public static void initFactoryEnvironment() {
-		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
-		s_pool = new VmwareContextPool();
-	}
+    private static VmwareContextPool s_pool;
 
-	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-		assert(vCenterAddress != null);
-		assert(vCenterUserName != null);
-		assert(vCenterPassword != null);
+    public static int s_vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
-		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
-		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
-		assert(context != null);
-		
-		context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-		s_pool.registerOutstandingContext(context);
-		
-		return context;
-	}
-	
-	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
-		if(context == null) {
-			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
-		} else {
-			if(!context.validate()) {
-				s_logger.info("Validation of the context faild. dispose and create a new one");
-				context.close();
-				context = create(vCenterAddress, vCenterUserName, vCenterPassword);
-			}
-		}
-		
-		if(context != null) {
-			context.registerStockObject("username", vCenterUserName);
-			context.registerStockObject("password", vCenterPassword);
-		}
-		
-		return context;
-	}
-	
-	public static void invalidate(VmwareContext context) {
-		context.close();
-	}
+    public static void initFactoryEnvironment() {
+        System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
+        s_pool = new VmwareContextPool();
+    }
+
+    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+        assert (vCenterAddress != null);
+        assert (vCenterUserName != null);
+        assert (vCenterPassword != null);
+
+        String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
+        VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+        vimClient.setVcenterSessionTimeout(s_vCenterSessionTimeout);
+        vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
+        VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
+        assert (context != null);
+
+        context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+        s_pool.registerOutstandingContext(context);
+
+        return context;
+    }
+
+    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+        if (context == null) {
+            context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+        } else {
+            // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
+            if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vCenterSessionTimeout)) {
+                s_logger.info("Validation of the context faild. dispose and create a new one");
+                context.close();
+                context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+            }
+        }
+
+        if (context != null) {
+            context.registerStockObject("username", vCenterUserName);
+            context.registerStockObject("password", vCenterPassword);
+        }
+
+        return context;
+    }
+
+    public static void invalidate(VmwareContext context) {
+        context.close();
+    }
+
+    public static void setVcenterSessionTimeout(int timeout) {
+        s_vCenterSessionTimeout = timeout;
+    }
+
 }

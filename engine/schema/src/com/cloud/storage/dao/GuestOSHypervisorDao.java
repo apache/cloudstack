@@ -22,6 +22,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Long> {
 
-     HypervisorType findHypervisorTypeByGuestOsId(long guestOsId);
+    HypervisorType findHypervisorTypeByGuestOsId(long guestOsId);
 
 }

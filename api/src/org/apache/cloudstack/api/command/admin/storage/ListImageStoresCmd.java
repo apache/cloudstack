@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -23,9 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
-@APICommand(name = "listImageStores", description="Lists image stores.", responseObject=ImageStoreResponse.class, since = "4.2.0")
+@APICommand(name = "listImageStores", description = "Lists image stores.", responseObject = ImageStoreResponse.class, since = "4.2.0")
 public class ListImageStoresCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListImageStoresCmd.class.getName());
 
@@ -35,28 +36,24 @@ public class ListImageStoresCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the image store")
     private String storeName;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="the image store protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the image store protocol")
     private String protocol;
 
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="the image store provider")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the image store provider")
     private String provider;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="the Zone ID for the image store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the image store")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = ImageStoreResponse.class,
-            description="the ID of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "the ID of the storage pool")
     private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-
 
     public Long getZoneId() {
         return zoneId;
@@ -86,17 +83,13 @@ public class ListImageStoresCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
-
-
     @Override
     public String getCommandName() {
         return s_name;
     }
 
-
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<ImageStoreResponse> response = _queryService.searchForImageStores(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

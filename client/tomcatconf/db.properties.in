@@ -32,7 +32,6 @@ db.cloud.name=cloud
 db.cloud.maxActive=250
 db.cloud.maxIdle=30
 db.cloud.maxWait=10000
-db.cloud.autoReconnect=true
 db.cloud.validationQuery=SELECT 1
 db.cloud.testOnBorrow=true
 db.cloud.testWhileIdle=true
@@ -63,7 +62,6 @@ db.usage.name=cloud_usage
 db.usage.maxActive=100
 db.usage.maxIdle=30
 db.usage.maxWait=10000
-db.usage.autoReconnect=true
 db.usage.url.params=
 
 # awsapi database settings
@@ -84,3 +82,26 @@ db.simulator.maxIdle=30
 db.simulator.maxWait=10000
 db.simulator.autoReconnect=true
 
+
+# High Availability And Cluster Properties
+db.ha.enabled=false
+db.ha.loadBalanceStrategy=com.cloud.utils.db.StaticStrategy
+# cloud stack Database
+db.cloud.slaves=localhost,localhost
+db.cloud.autoReconnect=true
+db.cloud.failOverReadOnly=false
+db.cloud.reconnectAtTxEnd=true
+db.cloud.autoReconnectForPools=true
+db.cloud.secondsBeforeRetryMaster=3600
+db.cloud.queriesBeforeRetryMaster=5000
+db.cloud.initialTimeout=3600
+
+#usage Database
+db.usage.slaves=localhost,localhost
+db.usage.autoReconnect=true
+db.usage.failOverReadOnly=false
+db.usage.reconnectAtTxEnd=true
+db.usage.autoReconnectForPools=true
+db.usage.secondsBeforeRetryMaster=3600
+db.usage.queriesBeforeRetryMaster=5000
+db.usage.initialTimeout=3600

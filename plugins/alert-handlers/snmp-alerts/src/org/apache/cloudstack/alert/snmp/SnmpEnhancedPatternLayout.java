@@ -17,11 +17,11 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import org.apache.log4j.EnhancedPatternLayout;
-import org.apache.log4j.spi.LoggingEvent;
-
 import java.util.Date;
 import java.util.StringTokenizer;
+
+import org.apache.log4j.EnhancedPatternLayout;
+import org.apache.log4j.spi.LoggingEvent;
 
 public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
     private String _pairDelimiter = "//";
@@ -93,15 +93,12 @@ public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
         int lastIndexOfKeyValueDelimiter = message.lastIndexOf(_keyValueDelimiter);
         int lastIndexOfMessageInString = message.lastIndexOf("message");
 
-        if (lastIndexOfKeyValueDelimiter - lastIndexOfMessageInString <=
-            LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER) {
+        if (lastIndexOfKeyValueDelimiter - lastIndexOfMessageInString <= LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER) {
             return message.substring(lastIndexOfKeyValueDelimiter + _keyValueDelimiter.length()).trim();
         } else if (lastIndexOfMessageInString < lastIndexOfKeyValueDelimiter) {
-            return message.substring(
-                lastIndexOfMessageInString + _keyValueDelimiter.length() + LENGTH_OF_STRING_MESSAGE).trim();
+            return message.substring(lastIndexOfMessageInString + _keyValueDelimiter.length() + LENGTH_OF_STRING_MESSAGE).trim();
         }
 
-        return message.substring(message.lastIndexOf("message" + _keyValueDelimiter) +
-            LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER).trim();
+        return message.substring(message.lastIndexOf("message" + _keyValueDelimiter) + LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER).trim();
     }
 }

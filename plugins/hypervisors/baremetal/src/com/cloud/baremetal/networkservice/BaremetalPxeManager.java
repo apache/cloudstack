@@ -41,27 +41,26 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeManager extends Manager, PluggableService {
     public enum BaremetalPxeType {
-        PING,
-        KICK_START,
+        PING, KICK_START,
     }
-    
-	boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
 
-	boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
-	
-	BaremetalPxeType getPxeServerType(HostVO host);
-	
-	BaremetalPxeVO addPxeServer(AddBaremetalPxeCmd cmd);
-	
-	BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo);
-	
-	List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
-	
+    boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
+
+    boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
+
+    BaremetalPxeType getPxeServerType(HostVO host);
+
+    BaremetalPxeVO addPxeServer(AddBaremetalPxeCmd cmd);
+
+    BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo);
+
+    List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
+
     boolean addUserData(NicProfile nic, VirtualMachineProfile vm);
-		
-	public static final Network.Service BAREMETAL_PXE_SERVICE = new Network.Service("BaremetalPxeService");
-	public static final String BAREMETAL_PXE_CAPABILITY = "BaremetalPxe";
-	public static final String BAREMETAL_PXE_SERVICE_PROPERTIES = "baremetalpxe_commands.properties";
-	public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", true);;
-	public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetalUserdataProvider", true);
+
+    public static final Network.Service BAREMETAL_PXE_SERVICE = new Network.Service("BaremetalPxeService");
+    public static final String BAREMETAL_PXE_CAPABILITY = "BaremetalPxe";
+    public static final String BAREMETAL_PXE_SERVICE_PROPERTIES = "baremetalpxe_commands.properties";
+    public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", true);;
+    public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetalUserdataProvider", true);
 }

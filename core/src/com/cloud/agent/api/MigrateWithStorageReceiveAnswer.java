@@ -17,8 +17,9 @@
 package com.cloud.agent.api;
 
 import java.util.Map;
-import com.cloud.agent.api.to.VolumeTO;
+
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VolumeTO;
 
 public class MigrateWithStorageReceiveAnswer extends Answer {
 
@@ -33,8 +34,8 @@ public class MigrateWithStorageReceiveAnswer extends Answer {
         token = null;
     }
 
-    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Map<VolumeTO, Object> volumeToSr,
-            Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
+    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Map<VolumeTO, Object> volumeToSr, Map<NicTO, Object> nicToNetwork,
+            Map<String, String> token) {
         super(cmd, true, null);
         this.volumeToSr = volumeToSr;
         this.nicToNetwork = nicToNetwork;

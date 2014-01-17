@@ -19,24 +19,26 @@ package com.cloud.agent.api;
 public class PoolEjectCommand extends Command {
     private String hostuuid;
 
-	public String getHostuuid() {
+    public String getHostuuid() {
         return hostuuid;
     }
 
     public void setHostuuid(String hostuuid) {
         this.hostuuid = hostuuid;
     }
+
     public PoolEjectCommand() {
-		super();
-	}
+        super();
+    }
+
     public PoolEjectCommand(String hostuuid) {
         super();
         setHostuuid(hostuuid);
     }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
 }

@@ -41,6 +41,7 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateAnswer;
@@ -77,242 +78,242 @@ import com.cloud.utils.script.Script2;
 import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
-	private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
-	protected HashMap<String, State> _vms = new HashMap<String, State>(2);
-	protected String _name;
-	protected String _uuid;
-	protected String _zone;
-	protected String _pod;
-	protected Long hostId;
-	protected String _cluster;
-	protected long _memCapacity;
-	protected long _cpuCapacity;
-	protected long _cpuNum;
-	protected String _mac;
-	protected String _username;
-	protected String _password;
-	protected String _ip;
-	protected boolean _isEchoScAgent;
-	protected IAgentControl _agentControl;
-	protected Script2 _pingCommand;
-	protected Script2 _setPxeBootCommand;
-	protected Script2 _setDiskBootCommand;
-	protected Script2 _rebootCommand;
-	protected Script2 _getStatusCommand;
-	protected Script2 _powerOnCommand;
-	protected Script2 _powerOffCommand;
-	protected Script2 _forcePowerOffCommand;
-	protected Script2 _bootOrRebootCommand;
-	protected String _vmName;
-	protected VMInstanceDao vmDao;
+    private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
+    protected HashMap<String, State> _vms = new HashMap<String, State>(2);
+    protected String _name;
+    protected String _uuid;
+    protected String _zone;
+    protected String _pod;
+    protected Long hostId;
+    protected String _cluster;
+    protected long _memCapacity;
+    protected long _cpuCapacity;
+    protected long _cpuNum;
+    protected String _mac;
+    protected String _username;
+    protected String _password;
+    protected String _ip;
+    protected boolean _isEchoScAgent;
+    protected IAgentControl _agentControl;
+    protected Script2 _pingCommand;
+    protected Script2 _setPxeBootCommand;
+    protected Script2 _setDiskBootCommand;
+    protected Script2 _rebootCommand;
+    protected Script2 _getStatusCommand;
+    protected Script2 _powerOnCommand;
+    protected Script2 _powerOffCommand;
+    protected Script2 _forcePowerOffCommand;
+    protected Script2 _bootOrRebootCommand;
+    protected String _vmName;
+    protected VMInstanceDao vmDao;
 
-	private void changeVmState(String vmName, VirtualMachine.State state) {
-		synchronized (_vms) {
-			_vms.put(vmName, state);
-		}
-	}
+    private void changeVmState(String vmName, VirtualMachine.State state) {
+        synchronized (_vms) {
+            _vms.put(vmName, state);
+        }
+    }
 
-	private State removeVmState(String vmName) {
-		synchronized (_vms) {
-			return _vms.remove(vmName);
-		}
-	}
+    private State removeVmState(String vmName) {
+        synchronized (_vms) {
+            return _vms.remove(vmName);
+        }
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		_uuid = (String) params.get("guid");
-		try {
-			_memCapacity = Long.parseLong((String) params.get(ApiConstants.MEMORY)) * 1024L * 1024L;
-			_cpuCapacity = Long.parseLong((String) params.get(ApiConstants.CPU_SPEED));
-			_cpuNum = Long.parseLong((String) params.get(ApiConstants.CPU_NUMBER));
-		} catch (NumberFormatException e) {
-			throw new ConfigurationException(String.format("Unable to parse number of CPU or memory capacity "
-			        + "or cpu capacity(cpu number = %1$s memCapacity=%2$s, cpuCapacity=%3$s", params.get(ApiConstants.CPU_NUMBER),
-			        params.get(ApiConstants.MEMORY), params.get(ApiConstants.CPU_SPEED)));
-		}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        _uuid = (String)params.get("guid");
+        try {
+            _memCapacity = Long.parseLong((String)params.get(ApiConstants.MEMORY)) * 1024L * 1024L;
+            _cpuCapacity = Long.parseLong((String)params.get(ApiConstants.CPU_SPEED));
+            _cpuNum = Long.parseLong((String)params.get(ApiConstants.CPU_NUMBER));
+        } catch (NumberFormatException e) {
+            throw new ConfigurationException(String.format("Unable to parse number of CPU or memory capacity "
+                + "or cpu capacity(cpu number = %1$s memCapacity=%2$s, cpuCapacity=%3$s", params.get(ApiConstants.CPU_NUMBER), params.get(ApiConstants.MEMORY),
+                params.get(ApiConstants.CPU_SPEED)));
+        }
 
-		_zone = (String) params.get("zone");
-		_pod = (String) params.get("pod");
-		_cluster = (String) params.get("cluster");
-		hostId = (Long) params.get("hostId");
-		_ip = (String) params.get(ApiConstants.PRIVATE_IP);
-		_mac = (String) params.get(ApiConstants.HOST_MAC);
-		_username = (String) params.get(ApiConstants.USERNAME);
-		_password = (String) params.get(ApiConstants.PASSWORD);
-		_vmName = (String) params.get("vmName");
-		String echoScAgent = (String) params.get(BaremetalManager.EchoSecurityGroupAgent);
+        _zone = (String)params.get("zone");
+        _pod = (String)params.get("pod");
+        _cluster = (String)params.get("cluster");
+        hostId = (Long)params.get("hostId");
+        _ip = (String)params.get(ApiConstants.PRIVATE_IP);
+        _mac = (String)params.get(ApiConstants.HOST_MAC);
+        _username = (String)params.get(ApiConstants.USERNAME);
+        _password = (String)params.get(ApiConstants.PASSWORD);
+        _vmName = (String)params.get("vmName");
+        String echoScAgent = (String)params.get(BaremetalManager.EchoSecurityGroupAgent);
 
-		if (_pod == null) {
-			throw new ConfigurationException("Unable to get the pod");
-		}
+        if (_pod == null) {
+            throw new ConfigurationException("Unable to get the pod");
+        }
 
-		if (_cluster == null) {
-			throw new ConfigurationException("Unable to get the pod");
-		}
-		
-		if (_ip == null) {
-			throw new ConfigurationException("Unable to get the host address");
-		}
+        if (_cluster == null) {
+            throw new ConfigurationException("Unable to get the pod");
+        }
 
-		if (_mac.equalsIgnoreCase("unknown")) {
-			throw new ConfigurationException("Unable to get the host mac address");
-		}
+        if (_ip == null) {
+            throw new ConfigurationException("Unable to get the host address");
+        }
 
-		if (_mac.split(":").length != 6) {
-			throw new ConfigurationException("Wrong MAC format(" + _mac
-			        + "). It must be in format of for example 00:11:ba:33:aa:dd which is not case sensitive");
-		}
+        if (_mac.equalsIgnoreCase("unknown")) {
+            throw new ConfigurationException("Unable to get the host mac address");
+        }
 
-		if (_uuid == null) {
-			throw new ConfigurationException("Unable to get the uuid");
-		}
+        if (_mac.split(":").length != 6) {
+            throw new ConfigurationException("Wrong MAC format(" + _mac + "). It must be in format of for example 00:11:ba:33:aa:dd which is not case sensitive");
+        }
 
-		if (echoScAgent != null) {
-		    _isEchoScAgent = Boolean.valueOf(echoScAgent);
-		}
+        if (_uuid == null) {
+            throw new ConfigurationException("Unable to get the uuid");
+        }
 
-		String injectScript = "scripts/util/ipmi.py";
-		String scriptPath = Script.findScript("", injectScript);
-		if (scriptPath == null) {
-			throw new ConfigurationException("Cannot find ping script " + scriptPath);
-		}
-		String pythonPath = "/usr/bin/python";
-		_pingCommand = new Script2(pythonPath, s_logger);
-		_pingCommand.add(scriptPath);
-		_pingCommand.add("ping");
-		_pingCommand.add("hostname=" + _ip);
-		_pingCommand.add("usrname=" + _username);
-		_pingCommand.add("password=" + _password, ParamType.PASSWORD);
+        if (echoScAgent != null) {
+            _isEchoScAgent = Boolean.valueOf(echoScAgent);
+        }
 
-		_setPxeBootCommand = new Script2(pythonPath, s_logger);
-		_setPxeBootCommand.add(scriptPath);
-		_setPxeBootCommand.add("boot_dev");
-		_setPxeBootCommand.add("hostname=" + _ip);
-		_setPxeBootCommand.add("usrname=" + _username);
-		_setPxeBootCommand.add("password=" + _password, ParamType.PASSWORD);
-		_setPxeBootCommand.add("dev=pxe");
+        String injectScript = "scripts/util/ipmi.py";
+        String scriptPath = Script.findScript("", injectScript);
+        if (scriptPath == null) {
+            throw new ConfigurationException("Cannot find ping script " + scriptPath);
+        }
+        String pythonPath = "/usr/bin/python";
+        _pingCommand = new Script2(pythonPath, s_logger);
+        _pingCommand.add(scriptPath);
+        _pingCommand.add("ping");
+        _pingCommand.add("hostname=" + _ip);
+        _pingCommand.add("usrname=" + _username);
+        _pingCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_setDiskBootCommand = new Script2(pythonPath, s_logger);
-		_setDiskBootCommand.add(scriptPath);
-		_setDiskBootCommand.add("boot_dev");
-		_setDiskBootCommand.add("hostname=" + _ip);
-		_setDiskBootCommand.add("usrname=" + _username);
-		_setDiskBootCommand.add("password=" + _password, ParamType.PASSWORD);
-		_setDiskBootCommand.add("dev=disk");
+        _setPxeBootCommand = new Script2(pythonPath, s_logger);
+        _setPxeBootCommand.add(scriptPath);
+        _setPxeBootCommand.add("boot_dev");
+        _setPxeBootCommand.add("hostname=" + _ip);
+        _setPxeBootCommand.add("usrname=" + _username);
+        _setPxeBootCommand.add("password=" + _password, ParamType.PASSWORD);
+        _setPxeBootCommand.add("dev=pxe");
 
-		_rebootCommand = new Script2(pythonPath, s_logger);
-		_rebootCommand.add(scriptPath);
-		_rebootCommand.add("reboot");
-		_rebootCommand.add("hostname=" + _ip);
-		_rebootCommand.add("usrname=" + _username);
-		_rebootCommand.add("password=" + _password, ParamType.PASSWORD);
+        _setDiskBootCommand = new Script2(pythonPath, s_logger);
+        _setDiskBootCommand.add(scriptPath);
+        _setDiskBootCommand.add("boot_dev");
+        _setDiskBootCommand.add("hostname=" + _ip);
+        _setDiskBootCommand.add("usrname=" + _username);
+        _setDiskBootCommand.add("password=" + _password, ParamType.PASSWORD);
+        _setDiskBootCommand.add("dev=disk");
 
-		_getStatusCommand = new Script2(pythonPath, s_logger);
-		_getStatusCommand.add(scriptPath);
-		_getStatusCommand.add("ping");
-		_getStatusCommand.add("hostname=" + _ip);
-		_getStatusCommand.add("usrname=" + _username);
-		_getStatusCommand.add("password=" + _password, ParamType.PASSWORD);
+        _rebootCommand = new Script2(pythonPath, s_logger);
+        _rebootCommand.add(scriptPath);
+        _rebootCommand.add("reboot");
+        _rebootCommand.add("hostname=" + _ip);
+        _rebootCommand.add("usrname=" + _username);
+        _rebootCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_powerOnCommand = new Script2(pythonPath, s_logger);
-		_powerOnCommand.add(scriptPath);
-		_powerOnCommand.add("power");
-		_powerOnCommand.add("hostname=" + _ip);
-		_powerOnCommand.add("usrname=" + _username);
-		_powerOnCommand.add("password=" + _password, ParamType.PASSWORD);
-		_powerOnCommand.add("action=on");
+        _getStatusCommand = new Script2(pythonPath, s_logger);
+        _getStatusCommand.add(scriptPath);
+        _getStatusCommand.add("ping");
+        _getStatusCommand.add("hostname=" + _ip);
+        _getStatusCommand.add("usrname=" + _username);
+        _getStatusCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_powerOffCommand = new Script2(pythonPath, s_logger);
-		_powerOffCommand.add(scriptPath);
-		_powerOffCommand.add("power");
-		_powerOffCommand.add("hostname=" + _ip);
-		_powerOffCommand.add("usrname=" + _username);
-		_powerOffCommand.add("password=" + _password, ParamType.PASSWORD);
-		_powerOffCommand.add("action=soft");
+        _powerOnCommand = new Script2(pythonPath, s_logger);
+        _powerOnCommand.add(scriptPath);
+        _powerOnCommand.add("power");
+        _powerOnCommand.add("hostname=" + _ip);
+        _powerOnCommand.add("usrname=" + _username);
+        _powerOnCommand.add("password=" + _password, ParamType.PASSWORD);
+        _powerOnCommand.add("action=on");
 
-		_forcePowerOffCommand = new Script2(pythonPath, s_logger);
-		_forcePowerOffCommand.add(scriptPath);
-		_forcePowerOffCommand.add("power");
-		_forcePowerOffCommand.add("hostname=" + _ip);
-		_forcePowerOffCommand.add("usrname=" + _username);
-		_forcePowerOffCommand.add("password=" + _password, ParamType.PASSWORD);
-		_forcePowerOffCommand.add("action=off");
+        _powerOffCommand = new Script2(pythonPath, s_logger);
+        _powerOffCommand.add(scriptPath);
+        _powerOffCommand.add("power");
+        _powerOffCommand.add("hostname=" + _ip);
+        _powerOffCommand.add("usrname=" + _username);
+        _powerOffCommand.add("password=" + _password, ParamType.PASSWORD);
+        _powerOffCommand.add("action=soft");
 
-		_bootOrRebootCommand = new Script2(pythonPath, s_logger);
-		_bootOrRebootCommand.add(scriptPath);
-		_bootOrRebootCommand.add("boot_or_reboot");
-		_bootOrRebootCommand.add("hostname=" + _ip);
-		_bootOrRebootCommand.add("usrname=" + _username);
-		_bootOrRebootCommand.add("password=" + _password, ParamType.PASSWORD);
+        _forcePowerOffCommand = new Script2(pythonPath, s_logger);
+        _forcePowerOffCommand.add(scriptPath);
+        _forcePowerOffCommand.add("power");
+        _forcePowerOffCommand.add("hostname=" + _ip);
+        _forcePowerOffCommand.add("usrname=" + _username);
+        _forcePowerOffCommand.add("password=" + _password, ParamType.PASSWORD);
+        _forcePowerOffCommand.add("action=off");
 
-		return true;
-	}
+        _bootOrRebootCommand = new Script2(pythonPath, s_logger);
+        _bootOrRebootCommand.add(scriptPath);
+        _bootOrRebootCommand.add("boot_or_reboot");
+        _bootOrRebootCommand.add("hostname=" + _ip);
+        _bootOrRebootCommand.add("usrname=" + _username);
+        _bootOrRebootCommand.add("password=" + _password, ParamType.PASSWORD);
 
-	protected boolean doScript(Script cmd) {
-		return doScript(cmd, null);
-	}
+        return true;
+    }
 
-	protected boolean doScript(Script cmd, OutputInterpreter interpreter) {
-		int retry = 5;
-		String res = null;
-		while (retry-- > 0) {
-			if (interpreter == null) {
-				res = cmd.execute();
-			} else {
-				res = cmd.execute(interpreter);
-			}
-			if (res != null && res.startsWith("Error: Unable to establish LAN")) {
-				s_logger.warn("IPMI script timeout(" + cmd.toString() + "), will retry " + retry + " times");
-				continue;
-			} else if (res == null) {
-				return true;
-			} else {
-				break;
-			}
-		}
+    protected boolean doScript(Script cmd) {
+        return doScript(cmd, null);
+    }
 
-		s_logger.warn("IPMI Scirpt failed due to " + res + "(" + cmd.toString() + ")");
-		return false;
-	}
+    protected boolean doScript(Script cmd, OutputInterpreter interpreter) {
+        int retry = 5;
+        String res = null;
+        while (retry-- > 0) {
+            if (interpreter == null) {
+                res = cmd.execute();
+            } else {
+                res = cmd.execute(interpreter);
+            }
+            if (res != null && res.startsWith("Error: Unable to establish LAN")) {
+                s_logger.warn("IPMI script timeout(" + cmd.toString() + "), will retry " + retry + " times");
+                continue;
+            } else if (res == null) {
+                return true;
+            } else {
+                break;
+            }
+        }
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+        s_logger.warn("IPMI Scirpt failed due to " + res + "(" + cmd.toString() + ")");
+        return false;
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
-	@Override
-	public Type getType() {
-		return com.cloud.host.Host.Type.Routing;
-	}
+    @Override
+    public String getName() {
+        return _name;
+    }
 
-	protected State getVmState() {
-		OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
-		if (!doScript(_getStatusCommand, interpreter)) {
-			s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
-			return null;
-		}
-		if (isPowerOn(interpreter.getLines())) {
-			return State.Running;
-		} else {
-			return State.Stopped;
-		}
-	}
+    @Override
+    public Type getType() {
+        return com.cloud.host.Host.Type.Routing;
+    }
+
+    protected State getVmState() {
+        OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+        if (!doScript(_getStatusCommand, interpreter)) {
+            s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
+            return null;
+        }
+        if (isPowerOn(interpreter.getLines())) {
+            return State.Running;
+        } else {
+            return State.Stopped;
+        }
+    }
 
     protected Map<String, State> fullSync() {
         Map<String, State> states = new HashMap<String, State>();
@@ -325,7 +326,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
         /*
          * Map<String, State> changes = new HashMap<String, State>();
-         * 
+         *
          * if (_vmName != null) { State state = getVmState(); if (state != null)
          * { changes.put(_vmName, state); } }
          */
@@ -333,131 +334,152 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         return states;
     }
 
-	@Override
-	public StartupCommand[] initialize() {
-		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal, new HashMap<String, String>(), null);
-		cmd.setDataCenter(_zone);
-		cmd.setPod(_pod);
-		cmd.setCluster(_cluster);
-		cmd.setGuid(_uuid);
-		cmd.setName(_ip);
-		cmd.setPrivateIpAddress(_ip);
-		cmd.setStorageIpAddress(_ip);
-		cmd.setVersion(BareMetalResourceBase.class.getPackage().getImplementationVersion());
-		cmd.setCpus((int) _cpuNum);
-		cmd.setSpeed(_cpuCapacity);
-		cmd.setMemory(_memCapacity);
-		cmd.setPrivateMacAddress(_mac);
-		cmd.setPublicMacAddress(_mac);
-		cmd.setStateChanges(fullSync());
-		return new StartupCommand[] { cmd };
-	}
+    protected Map<String, HostVmStateReportEntry> getHostVmStateReport() {
+        Map<String, HostVmStateReportEntry> states = new HashMap<String, HostVmStateReportEntry>();
+        if (hostId != null) {
+            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
+            final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
+            for (VMInstanceVO vm : vms) {
+                states.put(vm.getInstanceName(), new HostVmStateReportEntry(vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, "host-" + hostId,
+                    null));
+            }
+        }
+        /*
+         * Map<String, State> changes = new HashMap<String, State>();
+         *
+         * if (_vmName != null) { State state = getVmState(); if (state != null)
+         * { changes.put(_vmName, state); } }
+         */
 
-	private boolean ipmiPing() {
-		return doScript(_pingCommand);
-	}
+        return states;
+    }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		try {
-			if (!ipmiPing()) {
-				Thread.sleep(1000);
-				if (!ipmiPing()) {
-					s_logger.warn("Cannot ping ipmi nic " + _ip);
-					return null;
-				}
-			}
-		} catch (Exception e) {
-			s_logger.debug("Cannot ping ipmi nic " + _ip, e);
-			return null;
-		}
+    @Override
+    public StartupCommand[] initialize() {
+        StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal, new HashMap<String, String>(), null, null);
 
-		return new PingRoutingCommand(getType(), id, deltaSync());
-	}
+        cmd.setDataCenter(_zone);
+        cmd.setPod(_pod);
+        cmd.setCluster(_cluster);
+        cmd.setGuid(_uuid);
+        cmd.setName(_ip);
+        cmd.setPrivateIpAddress(_ip);
+        cmd.setStorageIpAddress(_ip);
+        cmd.setVersion(BareMetalResourceBase.class.getPackage().getImplementationVersion());
+        cmd.setCpus((int)_cpuNum);
+        cmd.setSpeed(_cpuCapacity);
+        cmd.setMemory(_memCapacity);
+        cmd.setPrivateMacAddress(_mac);
+        cmd.setPublicMacAddress(_mac);
+        cmd.setStateChanges(fullSync());
+        return new StartupCommand[] {cmd};
+    }
 
-	protected Answer execute(IpmISetBootDevCommand cmd) {
-		Script bootCmd = null;
-		if (cmd.getBootDev() == BootDev.disk) {
-			bootCmd = _setDiskBootCommand;
-		} else if (cmd.getBootDev() == BootDev.pxe) {
-			bootCmd = _setPxeBootCommand;
-		} else {
-			throw new CloudRuntimeException("Unkonwn boot dev " + cmd.getBootDev());
-		}
+    private boolean ipmiPing() {
+        return doScript(_pingCommand);
+    }
 
-		String bootDev = cmd.getBootDev().name();
-		if (!doScript(bootCmd)) {
-			s_logger.warn("Set " + _ip + " boot dev to " + bootDev + "failed");
-			return new Answer(cmd, false, "Set " + _ip + " boot dev to " + bootDev + "failed");
-		}
+    @Override
+    public PingCommand getCurrentStatus(long id) {
+        try {
+            if (!ipmiPing()) {
+                Thread.sleep(1000);
+                if (!ipmiPing()) {
+                    s_logger.warn("Cannot ping ipmi nic " + _ip);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("Cannot ping ipmi nic " + _ip, e);
+            return null;
+        }
 
-		s_logger.warn("Set " + _ip + " boot dev to " + bootDev + "Success");
-		return new Answer(cmd, true, "Set " + _ip + " boot dev to " + bootDev + "Success");
-	}
+        return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+    }
 
-	protected MaintainAnswer execute(MaintainCommand cmd) {
-		return new MaintainAnswer(cmd, false);
-	}
+    protected Answer execute(IpmISetBootDevCommand cmd) {
+        Script bootCmd = null;
+        if (cmd.getBootDev() == BootDev.disk) {
+            bootCmd = _setDiskBootCommand;
+        } else if (cmd.getBootDev() == BootDev.pxe) {
+            bootCmd = _setPxeBootCommand;
+        } else {
+            throw new CloudRuntimeException("Unkonwn boot dev " + cmd.getBootDev());
+        }
 
-	protected PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
-		return new PrepareForMigrationAnswer(cmd);
-	}
+        String bootDev = cmd.getBootDev().name();
+        if (!doScript(bootCmd)) {
+            s_logger.warn("Set " + _ip + " boot dev to " + bootDev + "failed");
+            return new Answer(cmd, false, "Set " + _ip + " boot dev to " + bootDev + "failed");
+        }
 
-	protected MigrateAnswer execute(MigrateCommand cmd) {
-		if (!doScript(_powerOffCommand)) {
-			return new MigrateAnswer(cmd, false, "IPMI power off failed", null);
-		}
-		return new MigrateAnswer(cmd, true, "success", null);
-	}
+        s_logger.warn("Set " + _ip + " boot dev to " + bootDev + "Success");
+        return new Answer(cmd, true, "Set " + _ip + " boot dev to " + bootDev + "Success");
+    }
 
-	protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
-		return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
-	}
+    protected MaintainAnswer execute(MaintainCommand cmd) {
+        return new MaintainAnswer(cmd, false);
+    }
 
-	protected Answer execute(IpmiBootorResetCommand cmd) {
-		if (!doScript(_bootOrRebootCommand)) {
-			return new Answer(cmd, false, "IPMI boot or reboot failed");
-		}
-		return new Answer(cmd, true, "Success");
+    protected PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
+        return new PrepareForMigrationAnswer(cmd);
+    }
 
-	}
+    protected MigrateAnswer execute(MigrateCommand cmd) {
+        if (!doScript(_powerOffCommand)) {
+            return new MigrateAnswer(cmd, false, "IPMI power off failed", null);
+        }
+        return new MigrateAnswer(cmd, true, "success", null);
+    }
 
-	protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
-		return new CheckNetworkAnswer(cmd, true, "Success");
-	}
+    protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
+        return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
+    }
 
-	protected Answer execute(SecurityGroupRulesCmd cmd) {
-	    SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
-	    return hc.call(cmd.getGuestIp(), cmd);
-	}
+    protected Answer execute(IpmiBootorResetCommand cmd) {
+        if (!doScript(_bootOrRebootCommand)) {
+            return new Answer(cmd, false, "IPMI boot or reboot failed");
+        }
+        return new Answer(cmd, true, "Success");
+
+    }
+
+    protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+        return new CheckNetworkAnswer(cmd, true, "Success");
+    }
+
+    protected Answer execute(SecurityGroupRulesCmd cmd) {
+        SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
+        return hc.call(cmd.getGuestIp(), cmd);
+    }
 
     @Override
     public Answer executeRequest(Command cmd) {
         try {
             if (cmd instanceof ReadyCommand) {
-                return execute((ReadyCommand) cmd);
+                return execute((ReadyCommand)cmd);
             } else if (cmd instanceof StartCommand) {
-                return execute((StartCommand) cmd);
+                return execute((StartCommand)cmd);
             } else if (cmd instanceof StopCommand) {
-                return execute((StopCommand) cmd);
+                return execute((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
-                return execute((RebootCommand) cmd);
+                return execute((RebootCommand)cmd);
             } else if (cmd instanceof IpmISetBootDevCommand) {
-                return execute((IpmISetBootDevCommand) cmd);
+                return execute((IpmISetBootDevCommand)cmd);
             } else if (cmd instanceof MaintainCommand) {
-                return execute((MaintainCommand) cmd);
+                return execute((MaintainCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
-                return execute((PrepareForMigrationCommand) cmd);
+                return execute((PrepareForMigrationCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
-                return execute((MigrateCommand) cmd);
+                return execute((MigrateCommand)cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-                return execute((CheckVirtualMachineCommand) cmd);
+                return execute((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof IpmiBootorResetCommand) {
-                return execute((IpmiBootorResetCommand) cmd);
+                return execute((IpmiBootorResetCommand)cmd);
             } else if (cmd instanceof SecurityGroupRulesCmd) {
-                return execute((SecurityGroupRulesCmd) cmd);
+                return execute((SecurityGroupRulesCmd)cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
-                return execute((CheckNetworkCommand) cmd);
+                return execute((CheckNetworkCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -467,161 +489,161 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
     }
 
-	protected boolean isPowerOn(String str) {
-		if (str.startsWith("Chassis Power is on")) {
-			return true;
-		} else if (str.startsWith("Chassis Power is off")) {
-			return false;
-		} else {
-			throw new CloudRuntimeException("Cannot parse IPMI power status " + str);
-		}
-	}
+    protected boolean isPowerOn(String str) {
+        if (str.startsWith("Chassis Power is on")) {
+            return true;
+        } else if (str.startsWith("Chassis Power is off")) {
+            return false;
+        } else {
+            throw new CloudRuntimeException("Cannot parse IPMI power status " + str);
+        }
+    }
 
-	protected RebootAnswer execute(final RebootCommand cmd) {
-		if (!doScript(_rebootCommand)) {
-			return new RebootAnswer(cmd, "IPMI reboot failed", false);
-		}
+    protected RebootAnswer execute(final RebootCommand cmd) {
+        if (!doScript(_rebootCommand)) {
+            return new RebootAnswer(cmd, "IPMI reboot failed", false);
+        }
 
-		return new RebootAnswer(cmd, "reboot succeeded", true);
-	}
+        return new RebootAnswer(cmd, "reboot succeeded", true);
+    }
 
-	protected StopAnswer execute(final StopCommand cmd) {
-		boolean success = false;
-		int count = 0;
-		Script powerOff = _powerOffCommand;
+    protected StopAnswer execute(final StopCommand cmd) {
+        boolean success = false;
+        int count = 0;
+        Script powerOff = _powerOffCommand;
 
-		while (count < 10) {
-			if (!doScript(powerOff)) {
-				break;
-			}
+        while (count < 10) {
+            if (!doScript(powerOff)) {
+                break;
+            }
 
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				break;
-			}
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                break;
+            }
 
-			OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
-			if (!doScript(_getStatusCommand, interpreter)) {
-				s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
-				break;
-			}
+            OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+            if (!doScript(_getStatusCommand, interpreter)) {
+                s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
+                break;
+            }
 
-			if (!isPowerOn(interpreter.getLines())) {
-				success = true;
-				break;
-			} else {
-				powerOff = _forcePowerOffCommand;
-			}
+            if (!isPowerOn(interpreter.getLines())) {
+                success = true;
+                break;
+            } else {
+                powerOff = _forcePowerOffCommand;
+            }
 
-			count++;
-		}
+            count++;
+        }
 
-		return success ? new StopAnswer(cmd, "Success", true) : new StopAnswer(cmd, "IPMI power off failed", false);
-	}
+        return success ? new StopAnswer(cmd, "Success", true) : new StopAnswer(cmd, "IPMI power off failed", false);
+    }
 
-	protected StartAnswer execute(StartCommand cmd) {
-		VirtualMachineTO vm = cmd.getVirtualMachine();
-		State state = State.Stopped;
+    protected StartAnswer execute(StartCommand cmd) {
+        VirtualMachineTO vm = cmd.getVirtualMachine();
+        State state = State.Stopped;
 
-		try {
-			changeVmState(vm.getName(), State.Starting);
+        try {
+            changeVmState(vm.getName(), State.Starting);
 
-			OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
-			if (!doScript(_getStatusCommand, interpreter)) {
-				return new StartAnswer(cmd, "Cannot get current power status of " + _name);
-			}
+            OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+            if (!doScript(_getStatusCommand, interpreter)) {
+                return new StartAnswer(cmd, "Cannot get current power status of " + _name);
+            }
 
-			if (isPowerOn(interpreter.getLines())) {
-				if (!doScript(_rebootCommand)) {
-					return new StartAnswer(cmd, "IPMI reboot failed");
-				}
-			} else {
-				if (!doScript(_powerOnCommand)) {
-					return new StartAnswer(cmd, "IPMI power on failed");
-				}
-			}
+            if (isPowerOn(interpreter.getLines())) {
+                if (!doScript(_rebootCommand)) {
+                    return new StartAnswer(cmd, "IPMI reboot failed");
+                }
+            } else {
+                if (!doScript(_powerOnCommand)) {
+                    return new StartAnswer(cmd, "IPMI power on failed");
+                }
+            }
 
-			if (_isEchoScAgent) {
-			    SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
-			    boolean echoRet = hc.echo(vm.getNics()[0].getIp(), TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(1));
-			    if (!echoRet) {
-			        return new StartAnswer(cmd, String.format("Call security group agent on vm[%s] timeout", vm.getNics()[0].getIp()));
-			    }
-			}
+            if (_isEchoScAgent) {
+                SecurityGroupHttpClient hc = new SecurityGroupHttpClient();
+                boolean echoRet = hc.echo(vm.getNics()[0].getIp(), TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(1));
+                if (!echoRet) {
+                    return new StartAnswer(cmd, String.format("Call security group agent on vm[%s] timeout", vm.getNics()[0].getIp()));
+                }
+            }
 
-			s_logger.debug("Start bare metal vm " + vm.getName() + "successfully");
-			state = State.Running;
-			_vmName = vm.getName();
-			return new StartAnswer(cmd);
-		} finally {
-			if (state != State.Stopped) {
-				changeVmState(vm.getName(), state);
-			} else {
-				removeVmState(vm.getName());
-			}
-		}
-	}
+            s_logger.debug("Start bare metal vm " + vm.getName() + "successfully");
+            state = State.Running;
+            _vmName = vm.getName();
+            return new StartAnswer(cmd);
+        } finally {
+            if (state != State.Stopped) {
+                changeVmState(vm.getName(), state);
+            } else {
+                removeVmState(vm.getName());
+            }
+        }
+    }
 
-	protected HashMap<String, State> deltaSync() {
-		final HashMap<String, State> changes = new HashMap<String, State>();
-		/*
-		 * Disable sync until we find a way that only tracks status but not does
-		 * action
-		 * 
-		 * The scenario is: Baremetal will reboot host when creating template.
-		 * Given most servers take a long time to boot up, there would be a
-		 * period that mgmt server finds the host is stopped through fullsync.
-		 * Then mgmt server updates database with marking the host as stopped,
-		 * after that, the host comes up and full sync then indicates it's
-		 * running. Because in database the host is already stopped, mgmt server
-		 * sends out a stop command. As a result, creating image gets never
-		 * happened.
-		 * 
-		 * if (_vmName == null) { return null; }
-		 * 
-		 * State newState = getVmState(); if (newState == null) {
-		 * s_logger.warn("Cannot get power state of VM " + _vmName); return
-		 * null; }
-		 * 
-		 * final State oldState = removeVmState(_vmName); if (oldState == null)
-		 * { changeVmState(_vmName, newState); changes.put(_vmName, newState); }
-		 * else if (oldState == State.Starting) { if (newState == State.Running)
-		 * { changeVmState(_vmName, newState); } else if (newState ==
-		 * State.Stopped) { s_logger.debug("Ignoring vm " + _vmName +
-		 * " because of a lag in starting the vm."); } } else if (oldState ==
-		 * State.Migrating) {
-		 * s_logger.warn("How can baremetal VM get into migrating state???"); }
-		 * else if (oldState == State.Stopping) { if (newState == State.Stopped)
-		 * { changeVmState(_vmName, newState); } else if (newState ==
-		 * State.Running) { s_logger.debug("Ignoring vm " + _vmName +
-		 * " because of a lag in stopping the vm. "); } } else if (oldState !=
-		 * newState) { changeVmState(_vmName, newState); changes.put(_vmName,
-		 * newState); }
-		 */
-		return changes;
+    protected HashMap<String, State> deltaSync() {
+        final HashMap<String, State> changes = new HashMap<String, State>();
+        /*
+         * Disable sync until we find a way that only tracks status but not does
+         * action
+         *
+         * The scenario is: Baremetal will reboot host when creating template.
+         * Given most servers take a long time to boot up, there would be a
+         * period that mgmt server finds the host is stopped through fullsync.
+         * Then mgmt server updates database with marking the host as stopped,
+         * after that, the host comes up and full sync then indicates it's
+         * running. Because in database the host is already stopped, mgmt server
+         * sends out a stop command. As a result, creating image gets never
+         * happened.
+         *
+         * if (_vmName == null) { return null; }
+         *
+         * State newState = getVmState(); if (newState == null) {
+         * s_logger.warn("Cannot get power state of VM " + _vmName); return
+         * null; }
+         *
+         * final State oldState = removeVmState(_vmName); if (oldState == null)
+         * { changeVmState(_vmName, newState); changes.put(_vmName, newState); }
+         * else if (oldState == State.Starting) { if (newState == State.Running)
+         * { changeVmState(_vmName, newState); } else if (newState ==
+         * State.Stopped) { s_logger.debug("Ignoring vm " + _vmName +
+         * " because of a lag in starting the vm."); } } else if (oldState ==
+         * State.Migrating) {
+         * s_logger.warn("How can baremetal VM get into migrating state???"); }
+         * else if (oldState == State.Stopping) { if (newState == State.Stopped)
+         * { changeVmState(_vmName, newState); } else if (newState ==
+         * State.Running) { s_logger.debug("Ignoring vm " + _vmName +
+         * " because of a lag in stopping the vm. "); } } else if (oldState !=
+         * newState) { changeVmState(_vmName, newState); changes.put(_vmName,
+         * newState); }
+         */
+        return changes;
 
-	}
+    }
 
-	protected ReadyAnswer execute(ReadyCommand cmd) {
-		// derived resource should check if the PXE server is ready
-		s_logger.debug("Bare metal resource " + _name + " is ready");
-		return new ReadyAnswer(cmd);
-	}
+    protected ReadyAnswer execute(ReadyCommand cmd) {
+        // derived resource should check if the PXE server is ready
+        s_logger.debug("Bare metal resource " + _name + " is ready");
+        return new ReadyAnswer(cmd);
+    }
 
-	@Override
-	public void disconnected() {
+    @Override
+    public void disconnected() {
 
-	}
+    }
 
-	@Override
-	public IAgentControl getAgentControl() {
-		return _agentControl;
-	}
+    @Override
+    public IAgentControl getAgentControl() {
+        return _agentControl;
+    }
 
-	@Override
-	public void setAgentControl(IAgentControl agentControl) {
-		_agentControl = agentControl;
-	}
+    @Override
+    public void setAgentControl(IAgentControl agentControl) {
+        _agentControl = agentControl;
+    }
 
 }

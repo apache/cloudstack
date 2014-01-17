@@ -208,15 +208,15 @@
                                 <div class="section custom-size">
                                     <div class="field">
                                         <label><fmt:message key="label.num.cpu.cores"/></label>
-                                        <input type="text" name="compute-cpu-cores" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-cpu-cores" />
                                     </div>
                                     <div class="field">
                                         <label><fmt:message key="label.cpu.mhz"/></label>
-                                        <input type="text" name="compute-cpu" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-cpu" />
                                     </div>
                                     <div class="field">
                                         <label><fmt:message key="label.memory.mb"/></label>
-                                        <input type="text" name="compute-memory" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
                                     </div>
                                 </div>
                             </div>
@@ -1722,6 +1722,8 @@
         <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
         <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
+
+        <!-- localized messages -->
+        <jsp:include page="dictionary.jsp" />
     </body>
 </html>
-<jsp:include page="dictionary.jsp" />

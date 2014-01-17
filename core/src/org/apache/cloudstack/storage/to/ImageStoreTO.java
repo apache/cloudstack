@@ -74,8 +74,15 @@ public class ImageStoreTO implements DataStoreTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("ImageStoreTO[type=").append(type).append("|provider=").append(providerName)
-                .append("|role=").append(role).append("|uri=").append(uri).append("]").toString();
+        return new StringBuilder("ImageStoreTO[type=").append(type)
+            .append("|provider=")
+            .append(providerName)
+            .append("|role=")
+            .append(role)
+            .append("|uri=")
+            .append(uri)
+            .append("]")
+            .toString();
     }
 
     @Override

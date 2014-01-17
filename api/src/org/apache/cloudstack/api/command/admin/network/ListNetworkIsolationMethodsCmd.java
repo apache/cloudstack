@@ -26,16 +26,18 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.network.Networks;
 
-@APICommand(name = "listNetworkIsolationMethods", description="Lists supported methods of network isolation",
-responseObject=IsolationMethodResponse.class, since="4.2.0")
-public class ListNetworkIsolationMethodsCmd extends BaseListCmd{
-    
+@APICommand(name = "listNetworkIsolationMethods",
+            description = "Lists supported methods of network isolation",
+            responseObject = IsolationMethodResponse.class,
+            since = "4.2.0")
+public class ListNetworkIsolationMethodsCmd extends BaseListCmd {
+
     private static final String s_name = "listnetworkisolationmethodsresponse";
 
     @Override
     public void execute() {
         Networks.IsolationType[] methods = _ntwkModel.listNetworkIsolationMethods();
-        
+
         ListResponse<IsolationMethodResponse> response = new ListResponse<IsolationMethodResponse>();
         List<IsolationMethodResponse> isolationResponses = new ArrayList<IsolationMethodResponse>();
         if (methods != null) {
@@ -47,7 +49,7 @@ public class ListNetworkIsolationMethodsCmd extends BaseListCmd{
         response.setResponses(isolationResponses, isolationResponses.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-        
+
     }
 
     @Override

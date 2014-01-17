@@ -59,17 +59,18 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, required = true, description = "name of the ssh key pair used to login to the virtual machine")
     private String name;
 
-
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the ssh key. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
     private Long projectId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -78,7 +79,6 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     public String getName() {
         return name;
     }
-
 
     public Long getId() {
         return id;
@@ -100,7 +100,6 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_RESETSSHKEY;
@@ -115,7 +114,6 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
-
 
     @Override
     public String getCommandName() {
@@ -137,10 +135,8 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return getId();
     }
 
-
     @Override
-    public void execute() throws ResourceUnavailableException,
-            InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
 
         CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMSSHKey(this);

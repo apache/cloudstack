@@ -18,7 +18,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 
-public class CreateEntityDownloadURLAnswer extends Answer{
+public class CreateEntityDownloadURLAnswer extends Answer {
 
     String resultString;
     short resultCode;
@@ -31,7 +31,7 @@ public class CreateEntityDownloadURLAnswer extends Answer{
         this.resultCode = resultCode;
     }
 
-    public CreateEntityDownloadURLAnswer(){
+    public CreateEntityDownloadURLAnswer() {
     }
 
 }

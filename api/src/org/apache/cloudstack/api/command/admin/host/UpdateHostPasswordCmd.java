@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -37,18 +38,16 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="the host ID")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the host ID")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
-            description="the cluster ID")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host/cluster")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the username for the host/cluster")
     private String username;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the new password for the host/cluster")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the new password for the host/cluster")
     private String password;
 
     // ///////////////////////////////////////////////////

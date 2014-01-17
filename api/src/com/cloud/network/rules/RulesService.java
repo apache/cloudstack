@@ -28,7 +28,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 
 public interface RulesService {
-    Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll);
+    Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId,
+        Long projectId, boolean isRecursive, boolean listAll);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between

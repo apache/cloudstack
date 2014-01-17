@@ -37,5 +37,7 @@ public enum AclEntityType {
     Event,
     AsyncJob,
     AclPolicy,
-    AclGroup;
+    AclGroup,
+    MonitorService,
+    SSLCert
 }

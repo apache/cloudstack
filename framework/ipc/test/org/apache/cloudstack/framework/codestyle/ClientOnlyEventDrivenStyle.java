@@ -26,29 +26,33 @@ import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.framework.rpc.RpcTimeoutException;
 
 public class ClientOnlyEventDrivenStyle {
-	RpcProvider _rpcProvider;
-	
-	public void AsyncCallRpcService() {
-		String cmd = new String();
-		RpcCallbackDispatcher<ClientOnlyEventDrivenStyle> callbackDispatcher = RpcCallbackDispatcher.create(this);
-		callbackDispatcher.setCallback(callbackDispatcher.getTarget().OnAsyncCallRpcServiceCallback(null, null));
-		_rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000)
-			.setCallbackDispatcher(callbackDispatcher)
-			.setContext("Context Object")		// save context object for callback handler
-			.apply();
-	}
-	
-	public Void OnAsyncCallRpcServiceCallback(RpcClientCall call, String context) {
-		try {
-			String answer = call.get();
-			
-		} catch(RpcTimeoutException e) {
-			
-		} catch(RpcIOException e) {
-			
-		} catch(RpcException e) {
-		}
-		
-		return null;
-	}
+    RpcProvider _rpcProvider;
+
+    public void AsyncCallRpcService() {
+        String cmd = new String();
+        RpcCallbackDispatcher<ClientOnlyEventDrivenStyle> callbackDispatcher = RpcCallbackDispatcher.create(this);
+        callbackDispatcher.setCallback(callbackDispatcher.getTarget().OnAsyncCallRpcServiceCallback(null, null));
+        _rpcProvider.newCall("host-2")
+            .setCommand("TestCommand")
+            .setCommandArg(cmd)
+            .setTimeout(10000)
+            .setCallbackDispatcher(callbackDispatcher)
+            .setContext("Context Object")
+            // save context object for callback handler
+            .apply();
+    }
+
+    public Void OnAsyncCallRpcServiceCallback(RpcClientCall call, String context) {
+        try {
+            String answer = call.get();
+
+        } catch (RpcTimeoutException e) {
+
+        } catch (RpcIOException e) {
+
+        } catch (RpcException e) {
+        }
+
+        return null;
+    }
 }

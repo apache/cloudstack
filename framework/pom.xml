@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.3.0-SNAPSHOT</version>
+    <version>4.4.0-SNAPSHOT</version>
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -40,5 +40,6 @@
     <module>managed-context</module>
     <module>spring/lifecycle</module>
     <module>spring/module</module>
+	<module>security</module>
   </modules>
 </project>

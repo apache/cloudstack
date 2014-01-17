@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.storage.ImageStore;
 import com.cloud.utils.db.GenericDao;

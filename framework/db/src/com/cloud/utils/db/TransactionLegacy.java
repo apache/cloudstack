@@ -17,7 +17,6 @@
 package com.cloud.utils.db;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,19 +40,16 @@ import org.apache.commons.pool.KeyedObjectPoolFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
 import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 
 /**
  * Transaction abstracts away the Connection object in JDBC.  It allows the
  * following things that the Connection object does not.
- * 
+ *
  *   1. Transaction can be started at an entry point and whether the DB
  *      actions should be auto-commit or not determined at that point.
  *   2. DB Connection is allocated only when it is needed.
@@ -108,18 +104,17 @@ public class TransactionLegacy {
     private Statement _stmt;
     private String _creator;
 
-    private TransactionLegacy _prev = null;
-
     public static TransactionLegacy currentTxn() {
         return currentTxn(true);
     }
-    
+
     protected static TransactionLegacy currentTxn(boolean check) {
         TransactionLegacy txn = tls.get();
         if (check) {
             assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
-    
-            assert checkAnnotation(4, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
+
+            assert checkAnnotation(4, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " +
+                txn;
         }
         return txn;
     }
@@ -138,7 +133,7 @@ public class TransactionLegacy {
     // the existing DAO features
     //
     public void transitToUserManagedConnection(Connection conn) {
-        if ( _conn != null )
+        if (_conn != null)
             throw new IllegalStateException("Can't change to a user managed connection unless the db connection is null");
 
         _conn = conn;
@@ -248,11 +243,11 @@ public class TransactionLegacy {
             return null;
         }
     }
-    
+
     public static Connection getStandaloneSimulatorConnection() {
-    	try {
-    		Connection conn = s_simulatorDS.getConnection();
-    		if (s_connLogger.isTraceEnabled()) {
+        try {
+            Connection conn = s_simulatorDS.getConnection();
+            if (s_connLogger.isTraceEnabled()) {
                 s_connLogger.trace("Retrieving a standalone connection for simulator: dbconn" + System.identityHashCode(conn));
             }
             return conn;
@@ -284,7 +279,7 @@ public class TransactionLegacy {
 
     public static void attachToTxn(TransactionAttachment value) {
         TransactionLegacy txn = tls.get();
-        assert txn != null && txn.peekInStack(CURRENT_TXN) != null: "Come on....how can we attach something to the transaction if you haven't started it?";
+        assert txn != null && txn.peekInStack(CURRENT_TXN) != null : "Come on....how can we attach something to the transaction if you haven't started it?";
 
         txn.attach(value);
     }
@@ -301,16 +296,16 @@ public class TransactionLegacy {
         if (se == null) {
             return false;
         }
-        
+
         StringBuffer sb = new StringBuffer();
         for (; stack < stacks.length; stack++) {
             String methodName = stacks[stack].getMethodName();
             sb.append(" ").append(methodName);
-            if (methodName.equals(se.ref)){
+            if (methodName.equals(se.ref)) {
                 return true;
             }
         }
-        
+
         // relax stack structure for several places that @DB required injection is not in place
         s_logger.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: " + sb);
         return true;
@@ -330,7 +325,12 @@ public class TransactionLegacy {
                     continue;
                 }
 
-                str.append("-").append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1)).append(".").append(stacks[i].getMethodName()).append(":").append(stacks[i].getLineNumber());
+                str.append("-")
+                    .append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1))
+                    .append(".")
+                    .append(stacks[i].getMethodName())
+                    .append(":")
+                    .append(stacks[i].getLineNumber());
                 j++;
                 i++;
             }
@@ -440,7 +440,7 @@ public class TransactionLegacy {
                     if (rs != null && _stmt.getResultSetHoldability() != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
                         rs.close();
                     }
-                } catch(SQLException e) {
+                } catch (SQLException e) {
                     s_stmtLogger.trace("Unable to close resultset");
                 }
                 _stmt.close();
@@ -455,11 +455,11 @@ public class TransactionLegacy {
     /**
      * Prepares an auto close statement.  The statement is closed automatically if it is
      * retrieved with this method.
-     * 
+     *
      * @param sql sql String
      * @return PreparedStatement
      * @throws SQLException if problem with JDBC layer.
-     * 
+     *
      * @see java.sql.Connection
      */
     public PreparedStatement prepareAutoCloseStatement(final String sql) throws SQLException {
@@ -481,12 +481,12 @@ public class TransactionLegacy {
     /**
      * Prepares an auto close statement.  The statement is closed automatically if it is
      * retrieved with this method.
-     * 
+     *
      * @param sql sql String
      * @param autoGeneratedKeys keys that are generated
      * @return PreparedStatement
      * @throws SQLException if problem with JDBC layer.
-     * 
+     *
      * @see java.sql.Connection
      */
     public PreparedStatement prepareAutoCloseStatement(final String sql, final int autoGeneratedKeys) throws SQLException {
@@ -503,12 +503,12 @@ public class TransactionLegacy {
     /**
      * Prepares an auto close statement.  The statement is closed automatically if it is
      * retrieved with this method.
-     * 
+     *
      * @param sql sql String
      * @param columnNames names of the columns
      * @return PreparedStatement
      * @throws SQLException if problem with JDBC layer.
-     * 
+     *
      * @see java.sql.Connection
      */
     public PreparedStatement prepareAutoCloseStatement(final String sql, final String[] columnNames) throws SQLException {
@@ -525,11 +525,11 @@ public class TransactionLegacy {
     /**
      * Prepares an auto close statement.  The statement is closed automatically if it is
      * retrieved with this method.
-     * 
+     *
      * @param sql sql String
      * @return PreparedStatement
      * @throws SQLException if problem with JDBC layer.
-     * 
+     *
      * @see java.sql.Connection
      */
     public PreparedStatement prepareAutoCloseStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -545,11 +545,11 @@ public class TransactionLegacy {
 
     /**
      * Returns the db connection.
-     * 
+     *
      * Note: that you can call getConnection() but beaware that
      * all prepare statements from the Connection are not garbage
      * collected!
-     * 
+     *
      * @return DB Connection but make sure you understand that
      *         you are responsible for closing the PreparedStatement.
      * @throws SQLException
@@ -557,42 +557,42 @@ public class TransactionLegacy {
     public Connection getConnection() throws SQLException {
         if (_conn == null) {
             switch (_dbId) {
-            case CLOUD_DB:
-                if(s_ds != null) {
-                    _conn = s_ds.getConnection();
-                } else {
-                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                }
-                break;
-            case USAGE_DB:
-                if(s_usageDS != null) {
-                    _conn = s_usageDS.getConnection();
-                } else {
-                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                }
-                break;
-            case AWSAPI_DB:
-        	if(s_awsapiDS != null) {
-        	    _conn = s_awsapiDS.getConnection();
-        	} else {
-        	    s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                throw new CloudRuntimeException("Database is not initialized, process is dying?");
-        	}
-                break;
+                case CLOUD_DB:
+                    if (s_ds != null) {
+                        _conn = s_ds.getConnection();
+                    } else {
+                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                    }
+                    break;
+                case USAGE_DB:
+                    if (s_usageDS != null) {
+                        _conn = s_usageDS.getConnection();
+                    } else {
+                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                    }
+                    break;
+                case AWSAPI_DB:
+                    if (s_awsapiDS != null) {
+                        _conn = s_awsapiDS.getConnection();
+                    } else {
+                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                    }
+                    break;
 
-            case SIMULATOR_DB:
-                if(s_simulatorDS != null) {
-                    _conn = s_simulatorDS.getConnection();
-                } else {
-                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                }
-                break;
-            default:
+                case SIMULATOR_DB:
+                    if (s_simulatorDS != null) {
+                        _conn = s_simulatorDS.getConnection();
+                    } else {
+                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                    }
+                    break;
+                default:
 
-        	throw new CloudRuntimeException("No database selected for the transaction");
+                    throw new CloudRuntimeException("No database selected for the transaction");
             }
             _conn.setAutoCommit(!_txn);
 
@@ -603,7 +603,8 @@ public class TransactionLegacy {
             //
             _stack.push(new StackElement(CREATE_CONN, null));
             if (s_connLogger.isTraceEnabled()) {
-                s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) + ". Stack: " + buildName());
+                s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) +
+                    ". Stack: " + buildName());
             }
         } else {
             s_logger.trace("conn: Using existing DB connection");
@@ -677,7 +678,7 @@ public class TransactionLegacy {
     /**
      * close() is used by endTxn to close the connection.  This method only
      * closes the connection if the name is the same as what's stored.
-     * 
+     *
      * @param name
      * @return true if this close actually closes the connection.  false if not.
      */
@@ -768,12 +769,12 @@ public class TransactionLegacy {
 
         try {
             // we should only close db connection when it is not user managed
-            if (this._dbId != CONNECTED_DB) {
+            if (_dbId != CONNECTED_DB) {
                 if (s_connLogger.isTraceEnabled()) {
                     s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
-                }                                
+                }
                 _conn.close();
-                _conn = null;  
+                _conn = null;
             }
 
         } catch (final SQLException e) {
@@ -822,7 +823,7 @@ public class TransactionLegacy {
                             if (rs != null) {
                                 rs.close();
                             }
-                        } catch(SQLException e) {
+                        } catch (SQLException e) {
                             s_stmtLogger.trace("Unable to close resultset");
                         }
                         stmt.close();
@@ -836,7 +837,7 @@ public class TransactionLegacy {
                     }
                     att.cleanup();
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 s_logger.error("Unable to clean up " + item, e);
             }
         }
@@ -865,7 +866,7 @@ public class TransactionLegacy {
             }
             clearLockTimes();
             closeConnection();
-        } catch(final SQLException e) {
+        } catch (final SQLException e) {
             s_logger.warn("Unable to rollback", e);
         }
     }
@@ -892,7 +893,7 @@ public class TransactionLegacy {
             if (st.type == START_TXN) {
                 if (st.ref == null) {
                     it.remove();
-                } else  {
+                } else {
                     rollback((Savepoint)st.ref);
                     return;
                 }
@@ -1001,7 +1002,7 @@ public class TransactionLegacy {
         public String type;
         public Object ref;
 
-        public StackElement (String type, Object ref) {
+        public StackElement(String type, Object ref) {
             this.type = type;
             this.ref = ref;
         }
@@ -1016,6 +1017,7 @@ public class TransactionLegacy {
     private static DataSource s_usageDS;
     private static DataSource s_awsapiDS;
     private static DataSource s_simulatorDS;
+    private static boolean s_dbHAEnabled;
 
     static {
         // Initialize with assumed db.properties file
@@ -1031,11 +1033,15 @@ public class TransactionLegacy {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static void initDataSource(Properties dbProps) {
         try {
             if (dbProps.size() == 0)
                 return;
-            
+
+            s_dbHAEnabled = Boolean.valueOf(dbProps.getProperty("db.ha.enabled"));
+            s_logger.info("Is Data Base High Availiability enabled? Ans : " + s_dbHAEnabled);
+            String loadBalanceStrategy = dbProps.getProperty("db.ha.loadBalanceStrategy");
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
             final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));
@@ -1071,6 +1077,14 @@ public class TransactionLegacy {
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
 
+            String cloudDbHAParams = null;
+            String cloudSlaves = null;
+            if (s_dbHAEnabled) {
+                cloudDbHAParams = getDBHAParams("cloud", dbProps);
+                cloudSlaves = dbProps.getProperty("db.cloud.slaves");
+                s_logger.info("The slaves configured for Cloud Data base is/are : " + cloudSlaves);
+            }
+
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
             if (useSSL) {
                 System.setProperty("javax.net.ssl.keyStore", dbProps.getProperty("db.cloud.keyStore"));
@@ -1079,16 +1093,19 @@ public class TransactionLegacy {
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
-            final GenericObjectPool cloudConnectionPool = new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-                    cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
+            final GenericObjectPool cloudConnectionPool =
+                new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false,
+                    cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 
-            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : ""), cloudUsername, cloudPassword);
+            final ConnectionFactory cloudConnectionFactory =
+                new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
+                    (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
 
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
 
-            final PoolableConnectionFactory cloudPoolableConnectionFactory = new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory,
-                    cloudValidationQuery, false, false, isolationLevel);
+            final PoolableConnectionFactory cloudPoolableConnectionFactory =
+                new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory, cloudValidationQuery, false, false, isolationLevel);
 
             // Default Data Source for CloudStack
             s_ds = new PoolingDataSource(cloudPoolableConnectionFactory.getPool());
@@ -1105,26 +1122,31 @@ public class TransactionLegacy {
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
             final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
-            final GenericObjectPool usageConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-                    usageMaxWait, usageMaxIdle);
+            final GenericObjectPool usageConnectionPool =
+                new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
 
-            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + ":" + usagePort + "/" + usageDbName +
-                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : ""), usageUsername, usagePassword);
+            final ConnectionFactory usageConnectionFactory =
+                new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
+                    "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
+                    (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), usageUsername,
+                    usagePassword);
 
-            final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
-                    new StackKeyedObjectPoolFactory(), null, false, false);
+            final PoolableConnectionFactory usagePoolableConnectionFactory =
+                new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
 
             // Data Source for usage server
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
 
             // Configure awsapi db
             final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
-            final GenericObjectPool awsapiConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-                    usageMaxWait, usageMaxIdle);
-            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + awsapiDbName +
-                    "?autoReconnect=" + usageAutoReconnect, cloudUsername, cloudPassword);
-            final PoolableConnectionFactory awsapiPoolableConnectionFactory = new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool,
-                    new StackKeyedObjectPoolFactory(), null, false, false);
+            final GenericObjectPool awsapiConnectionPool =
+                new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
+            final ConnectionFactory awsapiConnectionFactory =
+                new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") +
+                    (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
+            final PoolableConnectionFactory awsapiPoolableConnectionFactory =
+                new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
 
             // Data Source for awsapi
             s_awsapiDS = new PoolingDataSource(awsapiPoolableConnectionFactory.getPool());
@@ -1141,14 +1163,15 @@ public class TransactionLegacy {
                 final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                 final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
 
-                final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-                        simulatorMaxWait, simulatorMaxIdle);
+                final GenericObjectPool simulatorConnectionPool =
+                    new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, simulatorMaxWait, simulatorMaxIdle);
 
-                final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
-                        "?autoReconnect=" + simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+                final ConnectionFactory simulatorConnectionFactory =
+                    new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
+                        simulatorAutoReconnect, simulatorUsername, simulatorPassword);
 
-                final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
-                        new StackKeyedObjectPoolFactory(), null, false, false);
+                final PoolableConnectionFactory simulatorPoolableConnectionFactory =
+                    new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
                 s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
             } catch (Exception e) {
                 s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
@@ -1157,26 +1180,58 @@ public class TransactionLegacy {
             s_ds = getDefaultDataSource("cloud");
             s_usageDS = getDefaultDataSource("cloud_usage");
             s_simulatorDS = getDefaultDataSource("cloud_simulator");
-            s_logger.warn("Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration", e);
+            s_logger.warn(
+                "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
+                e);
         }
     }
 
+    private static String getDBHAParams(String dbName, Properties dbProps) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
+        sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
+        sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
+        sb.append("&").append("secondsBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetryMaster"));
+        sb.append("&").append("queriesBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetryMaster"));
+        sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
+        return sb.toString();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static DataSource getDefaultDataSource(final String database) {
         final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
-        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-           "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
-        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
-           connectionFactory, connectionPool, null, null, false, true);
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
         return new PoolingDataSource(
-           /* connectionPool */poolableConnectionFactory.getPool());
+            /* connectionPool */poolableConnectionFactory.getPool());
     }
 
     /**
      * Used for unit testing primarily
-     * 
+     *
      * @param conn
      */
     protected void setConnection(Connection conn) {
-        this._conn = conn;
+        _conn = conn;
     }
+
+    /**
+     * Receives a list of {@link PreparedStatement} and quietly closes all of them, which
+     * triggers also closing their dependent objects, like a {@link ResultSet}
+     *
+     * @param pstmt2Close
+     */
+    public static void closePstmts(List<PreparedStatement> pstmt2Close) {
+        for (PreparedStatement pstmt : pstmt2Close) {
+            try {
+                if (pstmt != null && !pstmt.isClosed()) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                // It's not possible to recover from this and we need to continue closing
+                e.printStackTrace();
+            }
+        }
+    }
+
 }

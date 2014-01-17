@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -29,8 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
@@ -87,21 +87,23 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
         return  "deleting snapshot: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Snapshot;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Snapshot Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Snapshot Id: " + getId());
         boolean result = _snapshotService.deleteSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete snapshot");
         }

@@ -18,10 +18,10 @@ package com.cloud.agent.api;
 
 public class ExternalNetworkResourceUsageCommand extends Command {
 
-	public ExternalNetworkResourceUsageCommand() {        
+    public ExternalNetworkResourceUsageCommand() {
     }
-	
-	@Override
+
+    @Override
     public boolean executeInSequence() {
         return false;
     }

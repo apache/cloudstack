@@ -18,27 +18,25 @@
  */
 package com.cloud.vm.snapshot;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.TableGenerator;
+
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "vm_snapshot_details")
-public class VMSnapshotDetailsVO implements InternalIdentity {
+public class VMSnapshotDetailsVO implements ResourceDetail {
     @Id
-    @TableGenerator(name = "vm_snapshot_details_seq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshot_details_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.TABLE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
     @Column(name = "vm_snapshot_id")
-    Long vmSnapshotId;
+    private long resourceId;
 
     @Column(name = "name")
     String name;
@@ -50,38 +48,34 @@ public class VMSnapshotDetailsVO implements InternalIdentity {
 
     }
 
-    public VMSnapshotDetailsVO(Long vmSnapshotId, String name, String value) {
-        this.vmSnapshotId = vmSnapshotId;
+    public VMSnapshotDetailsVO(long vmSnapshotId, String name, String value) {
+        this.resourceId = vmSnapshotId;
         this.name = name;
-        this.value = value;
-    }
-
-    public Long getVmSnapshotId() {
-        return this.vmSnapshotId;
-    }
-
-    public void setVmSnapshotId(Long vmSnapshotId) {
-        this.vmSnapshotId = vmSnapshotId;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getValue() {
-        return this.value;
-    }
-
-    public void setValue(String value) {
         this.value = value;
     }
 
     @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
+    public String getValue() {
+        return this.value;
+    }
+
+    @Override
     public long getId() {
-       return id;
+        return id;
+    }
+
+    @Override
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return false;
     }
 }

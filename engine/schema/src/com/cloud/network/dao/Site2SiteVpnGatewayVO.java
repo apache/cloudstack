@@ -26,44 +26,45 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.db.GenericDao;
 
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("s2s_vpn_gateway"))
+@Table(name = ("s2s_vpn_gateway"))
 public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-	@Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-    @Column(name="addr_id")
+    @Column(name = "addr_id")
     private long addrId;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     private long vpcId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long domainId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    public Site2SiteVpnGatewayVO() { }
+    public Site2SiteVpnGatewayVO() {
+    }
 
     public Site2SiteVpnGatewayVO(long accountId, long domainId, long addrId, long vpcId) {
-        this.uuid = UUID.randomUUID().toString();
-        this.setAddrId(addrId);
-        this.setVpcId(vpcId);
+        uuid = UUID.randomUUID().toString();
+        setAddrId(addrId);
+        setVpcId(vpcId);
         this.accountId = accountId;
         this.domainId = domainId;
     }
@@ -100,6 +101,7 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
         this.removed = removed;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

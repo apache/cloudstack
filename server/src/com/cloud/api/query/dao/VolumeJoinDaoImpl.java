@@ -45,9 +45,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value={VolumeJoinDao.class})
+@Local(value = {VolumeJoinDao.class})
 public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implements VolumeJoinDao {
     public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
 
@@ -72,9 +71,6 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
         _count = "select count(distinct id) from volume_view WHERE ";
     }
-
-
-
 
     @Override
     public VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO volume) {
@@ -118,11 +114,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
-            // if (_accountMgr.isRootAdmin(caller.getId())
-            //         || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-            if (view == ResponseView.Full) {
-                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
-            }
+            if (view == ResponseView.Full)
+                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
                 if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
@@ -149,7 +142,6 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
         }
 
-        // if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
         if (view == ResponseView.Full) {
             volResponse.setPath(volume.getPath());
         }
@@ -173,20 +165,22 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());
                 volResponse.setDiskOfferingDisplayText(volume.getDiskOfferingDisplayText());
             }
-            volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared
-                    .toString());
+            volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
             volResponse.setBytesReadRate(volume.getBytesReadRate());
             volResponse.setBytesWriteRate(volume.getBytesReadRate());
             volResponse.setIopsReadRate(volume.getIopsWriteRate());
             volResponse.setIopsWriteRate(volume.getIopsWriteRate());
-            
+
         }
-        
+
         // return hypervisor and storage pool info for ROOT and Resource domain only
-        // if (_accountMgr.isRootAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
         if (view == ResponseView.Full) {
-            if (volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
-                volResponse.setHypervisor(volume.getHypervisorType().toString());
+            if (volume.getState() != Volume.State.UploadOp) {
+                if (volume.getHypervisorType() != null) {
+                    volResponse.setHypervisor(volume.getHypervisorType().toString());
+                } else {
+                    volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
+                }
             }
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : volume.getPoolName();
@@ -230,22 +224,17 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         return volResponse;
     }
 
-
-
     @Override
     public VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol) {
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if ( vtag != null ){
+            if (vtag != null) {
                 volData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
         return volData;
     }
-
-
-
 
     @Override
     public List<VolumeJoinVO> newVolumeView(Volume vol) {
@@ -254,23 +243,20 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         return searchIncludingRemoved(sc, null, null, false);
     }
 
-
-
-
     @Override
     public List<VolumeJoinVO> searchByIds(Long... volIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<VolumeJoinVO> uvList = new ArrayList<VolumeJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( volIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= volIds.length ) {
+        if (volIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= volIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = volIds[j];
@@ -300,7 +286,5 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         }
         return uvList;
     }
-
-
 
 }

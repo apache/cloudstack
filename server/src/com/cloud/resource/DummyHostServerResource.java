@@ -23,6 +23,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -34,40 +35,40 @@ import com.cloud.vm.VirtualMachine;
 
 public class DummyHostServerResource extends ServerResourceBase {
 
-	private String _name;
-	private String _zone;
-	private String _pod;
-	private String _guid;
-	private String _url;
-	private int _instanceId;
-	private final int _prefix = 0x55;
-	
-	private static volatile int s_nextSequence = 1;
-	
-	@Override
-	protected String getDefaultScriptsDir() {
-		return "/dummy";
-	}
+    private String _name;
+    private String _zone;
+    private String _pod;
+    private String _guid;
+    private String _url;
+    private int _instanceId;
+    private final int _prefix = 0x55;
 
-	@Override
-	public Answer executeRequest(Command cmd) {
-		return new Answer(cmd, false, "Unsupported in dummy host server resource");
-	}
+    private static volatile int s_nextSequence = 1;
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
+    @Override
+    protected String getDefaultScriptsDir() {
+        return "/dummy";
+    }
+
+    @Override
+    public Answer executeRequest(Command cmd) {
+        return new Answer(cmd, false, "Unsupported in dummy host server resource");
+    }
+
+    @Override
+    public PingCommand getCurrentStatus(long id) {
         HashMap<String, VirtualMachine.State> newStates = new HashMap<String, VirtualMachine.State>();
-        return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
-	}
+        return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates, new HashMap<String, HostVmStateReportEntry>());
+    }
 
-	@Override
-	public Type getType() {
+    @Override
+    public Type getType() {
         return com.cloud.host.Host.Type.Routing;
-	}
+    }
 
-	@Override
-	public StartupCommand[] initialize() {
-		
+    @Override
+    public StartupCommand[] initialize() {
+
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         cmd.setCpus(1);
         cmd.setSpeed(1000L);
@@ -83,7 +84,7 @@ public class DummyHostServerResource extends ServerResourceBase {
         cmd.setPrivateIpAddress(this.getHostPrivateIp());
         cmd.setPrivateMacAddress(this.getHostMacAddress().toString());
         cmd.setPrivateNetmask("255.255.0.0");
-        cmd.setIqn("iqn:"+_url);
+        cmd.setIqn("iqn:" + _url);
         cmd.setStorageIpAddress(getHostStoragePrivateIp());
         cmd.setStorageMacAddress(getHostStorageMacAddress().toString());
         cmd.setStorageIpAddressDeux(getHostStoragePrivateIp2());
@@ -94,8 +95,8 @@ public class DummyHostServerResource extends ServerResourceBase {
         cmd.setVersion(DummyHostServerResource.class.getPackage().getImplementationVersion());
 
         return new StartupCommand[] {cmd};
-	}
-	
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -103,95 +104,89 @@ public class DummyHostServerResource extends ServerResourceBase {
         _zone = (String)params.get("zone");
         _pod = (String)params.get("pod");
         _url = (String)params.get("url");
-        
+
         _instanceId = getNextSequenceId();
         return true;
     }
-    
+
     public static int getNextSequenceId() {
-    	return s_nextSequence++;
+        return s_nextSequence++;
     }
-    
-	public MacAddress getHostMacAddress() {
-		long address = 0;
-		
-		address = (_prefix & 0xff);
-		address <<= 40;
-		address |= _instanceId;
-		return new MacAddress(address);
-	}
-	
-	public String getHostPrivateIp() {
-		int id = _instanceId;
-		
-		return "172.16." +
-			String.valueOf((id >> 8) & 0xff) + "." +
-			String.valueOf(id & 0xff);
-	}
-	
-	public MacAddress getHostStorageMacAddress() {
-		long address = 0;
-		
-		address = (_prefix & 0xff);
-		address <<= 40;
-		address |= (_instanceId | (1L << 31)) & 0xffffffff;
-		return new MacAddress(address);
-	}
-	
-	public MacAddress getHostStorageMacAddress2() {
-		long address = 0;
-		
-		address = (_prefix & 0xff);
-		address <<= 40;
-		address |= (_instanceId | (3L << 30)) & 0xffffffff;
-		return new MacAddress(address);
-	}
-	
-	public String getHostStoragePrivateIp() {
-		int id = _instanceId;
-		id |= 1 << 15;
-		
-		return "172.16." +
-			String.valueOf((id >> 8) & 0xff) + "." +
-			String.valueOf(id & 0xff);
-	}
-	
-	public String getHostStoragePrivateIp2() {
-		int id = _instanceId;
-		id |= 3 << 14;
-		
-		return "172.16." +
-			String.valueOf((id >> 8) & 0xff) + "." +
-			String.valueOf((id) & 0xff);
-	}
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    public MacAddress getHostMacAddress() {
+        long address = 0;
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+        address = (_prefix & 0xff);
+        address <<= 40;
+        address |= _instanceId;
+        return new MacAddress(address);
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String getHostPrivateIp() {
+        int id = _instanceId;
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+        return "172.16." + String.valueOf((id >> 8) & 0xff) + "." + String.valueOf(id & 0xff);
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    public MacAddress getHostStorageMacAddress() {
+        long address = 0;
+
+        address = (_prefix & 0xff);
+        address <<= 40;
+        address |= (_instanceId | (1L << 31)) & 0xffffffff;
+        return new MacAddress(address);
+    }
+
+    public MacAddress getHostStorageMacAddress2() {
+        long address = 0;
+
+        address = (_prefix & 0xff);
+        address <<= 40;
+        address |= (_instanceId | (3L << 30)) & 0xffffffff;
+        return new MacAddress(address);
+    }
+
+    public String getHostStoragePrivateIp() {
+        int id = _instanceId;
+        id |= 1 << 15;
+
+        return "172.16." + String.valueOf((id >> 8) & 0xff) + "." + String.valueOf(id & 0xff);
+    }
+
+    public String getHostStoragePrivateIp2() {
+        int id = _instanceId;
+        id |= 3 << 14;
+
+        return "172.16." + String.valueOf((id >> 8) & 0xff) + "." + String.valueOf((id) & 0xff);
+    }
+
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 }

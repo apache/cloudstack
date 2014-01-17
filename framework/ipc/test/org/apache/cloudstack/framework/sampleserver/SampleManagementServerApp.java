@@ -28,29 +28,29 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class SampleManagementServerApp {
 
-	private static void setupLog4j() {
-		URL configUrl = System.class.getResource("/resources/log4j-cloud.xml");
-		if(configUrl != null) {
-			System.out.println("Configure log4j using log4j-cloud.xml");
+    private static void setupLog4j() {
+        URL configUrl = System.class.getResource("/resources/log4j-cloud.xml");
+        if (configUrl != null) {
+            System.out.println("Configure log4j using log4j-cloud.xml");
 
-			try {
-				File file = new File(configUrl.toURI());
-				
-				System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-				DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
-			} catch (URISyntaxException e) {
-				System.out.println("Unable to convert log4j configuration Url to URI");
-			}
-		} else {
-			System.out.println("Configure log4j with default properties");
-		}
-	}
-	
-	public static void main(String args[]) {
-		setupLog4j();
-		
-		ApplicationContext context = new ClassPathXmlApplicationContext("/resources/SampleManagementServerAppContext.xml");
-		SampleManagementServer server = context.getBean(SampleManagementServer.class);
-		server.mainLoop();
-	}
+            try {
+                File file = new File(configUrl.toURI());
+
+                System.out.println("Log4j configuration from : " + file.getAbsolutePath());
+                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+            } catch (URISyntaxException e) {
+                System.out.println("Unable to convert log4j configuration Url to URI");
+            }
+        } else {
+            System.out.println("Configure log4j with default properties");
+        }
+    }
+
+    public static void main(String args[]) {
+        setupLog4j();
+
+        ApplicationContext context = new ClassPathXmlApplicationContext("/resources/SampleManagementServerAppContext.xml");
+        SampleManagementServer server = context.getBean(SampleManagementServer.class);
+        server.mainLoop();
+    }
 }

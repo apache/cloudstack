@@ -99,11 +99,10 @@ public class RebootVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
-
         if (result !=null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());

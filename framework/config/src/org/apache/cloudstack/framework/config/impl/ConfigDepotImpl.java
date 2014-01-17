@@ -27,14 +27,15 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,7 +48,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Gather all of the Configurable interfaces and insert their config
  *     variables into the config table.
  *   - Hide the data source where configs are stored and retrieved.
- * 
+ *
  * When dealing with this class, we must be very careful on cluster situations.
  *
  * TODO:
@@ -69,15 +70,21 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
-    ConfigurationDao   _configDao;
+    ConfigurationDao _configDao;
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
 
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
+    HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
+
     public ConfigDepotImpl() {
         ConfigKey.init(this);
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new HashSet<ConfigKey<?>>());
     }
 
     @Override
@@ -96,37 +103,42 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     protected void populateConfiguration(Date date, Configurable configurable) {
-        if ( _configured.contains(configurable) )
+        if (_configured.contains(configurable))
             return;
-        
+
         s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
 
         for (ConfigKey<?> key : configurable.getConfigKeys()) {
             Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
             if (previous != null && !previous.first().equals(configurable.getConfigComponentName())) {
-                throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " + previous.first() +
-                                                ": " + key.toString());
+                throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " +
+                    previous.first() + ": " + key.toString());
             }
             _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
-            
+
             ConfigurationVO vo = _configDao.findById(key.key());
             if (vo == null) {
                 vo = new ConfigurationVO(configurable.getConfigComponentName(), key);
                 vo.setUpdated(date);
                 _configDao.persist(vo);
             } else {
-                if (vo.isDynamic() != key.isDynamic() ||
-                    !ObjectUtils.equals(vo.getDescription(), key.description()) ||
-                    !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
+                if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) ||
+                    !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
+                    !ObjectUtils.equals(vo.getScope(), key.scope().toString())) {
                     vo.setDynamic(key.isDynamic());
                     vo.setDescription(key.description());
                     vo.setDefaultValue(key.defaultValue());
+                    vo.setScope(key.scope().toString());
                     vo.setUpdated(date);
                     _configDao.persist(vo);
                 }
             }
+            if ((key.scope() != null) && (key.scope() != ConfigKey.Scope.Global)) {
+                Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
+                currentConfigs.add(key);
+            }
         }
-        
+
         _configured.add(configurable);
     }
 
@@ -134,7 +146,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public void populateConfiguration(Configurable configurable) {
         populateConfiguration(new Date(), configurable);
     }
-    
+
     @Override
     public List<String> getComponentsInDepot() {
         return new ArrayList<String>();
@@ -143,7 +155,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public ConfigurationDao global() {
         return _configDao;
     }
-    
+
     public ScopedConfigStorage scoped(ConfigKey<?> config) {
         for (ScopedConfigStorage storage : _scopedStorages) {
             if (storage.getScope() == config.scope()) {
@@ -160,7 +172,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     @Inject
     public void setScopedStorages(List<ScopedConfigStorage> scopedStorages) {
-        this._scopedStorages = scopedStorages;
+        _scopedStorages = scopedStorages;
     }
 
     public List<Configurable> getConfigurables() {
@@ -169,7 +181,16 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     @Inject
     public void setConfigurables(List<Configurable> configurables) {
-        this._configurables = configurables;
+        _configurables = configurables;
     }
 
+    @Override
+    public Set<ConfigKey<?>> getConfigListByScope(String scope) {
+        return _scopeLevelConfigsMap.get(ConfigKey.Scope.valueOf(scope));
+    }
+
+    @Override
+    public <T> void set(ConfigKey<T> key, T value) {
+        _configDao.update(key.key(), value.toString());
+    }
 }

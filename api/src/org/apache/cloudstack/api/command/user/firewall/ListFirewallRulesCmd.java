@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -27,12 +29,12 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listFirewallRules", description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
+@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
     private static final String s_name = "listfirewallrulesresponse";
@@ -40,13 +42,21 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists rule with the specified ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            description="the id of IP address of the firwall services")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the id of IP address of the firwall services")
     private Long ipAddressId;
+
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "list firewall rules for ceratin network",
+               since = "4.3")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,12 +66,16 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         return ipAddressId;
     }
 
-    public FirewallRule.TrafficType getTrafficType () {
-    	return FirewallRule.TrafficType.Ingress;
+    public FirewallRule.TrafficType getTrafficType() {
+        return FirewallRule.TrafficType.Ingress;
     }
-   
+
     public Long getId() {
         return id;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////
@@ -74,7 +88,7 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends FirewallRule>, Integer> result = _firewallService.listFirewallRules(this);
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();

@@ -57,18 +57,11 @@ public class NetworkModelTest {
         SearchBuilder<IPAddressVO> fakeSearch = mock(SearchBuilder.class);
         modelImpl.IpAddressSearch = fakeSearch;
         VlanDao fakeVlanDao = mock(VlanDao.class);
-        when (fakeVlanDao.findById(anyLong())).thenReturn(mock(VlanVO.class));
+        when(fakeVlanDao.findById(anyLong())).thenReturn(mock(VlanVO.class));
         modelImpl._vlanDao = fakeVlanDao;
         when(fakeSearch.create()).thenReturn(mock(SearchCriteria.class));
-        when(
-                ipAddressDao.search(
-                        any(SearchCriteria.class), 
-                        (Filter)org.mockito.Matchers.isNull()
-                        )
-                ).thenReturn(fakeList);
-        when (
-                ipAddressDao.findById(anyLong())
-                ).thenReturn(fakeIp);
+        when(ipAddressDao.search(any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(fakeList);
+        when(ipAddressDao.findById(anyLong())).thenReturn(fakeIp);
         Account fakeAccount = mock(Account.class);
         when(fakeAccount.getId()).thenReturn(1L);
         Network fakeNetwork = mock(Network.class);
@@ -77,9 +70,7 @@ public class NetworkModelTest {
         Assert.assertNull(answer);
         IPAddressVO fakeIp2 = new IPAddressVO(new Ip("76.75.75.75"), 1, 0xaabb10ddeeffL, 10, true);
         fakeList.add(fakeIp2);
-        when (
-                ipAddressDao.findById(anyLong())
-                ).thenReturn(fakeIp2);
+        when(ipAddressDao.findById(anyLong())).thenReturn(fakeIp2);
         answer = modelImpl.getSourceNatIpAddressForGuestNetwork(fakeAccount, fakeNetwork);
         Assert.assertNotNull(answer);
         Assert.assertEquals(answer.getAddress().addr(), "76.75.75.75");

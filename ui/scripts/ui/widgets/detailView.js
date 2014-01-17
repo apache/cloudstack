@@ -46,11 +46,13 @@
 
         // Refresh detail view context
         if ($detailView) {
-            $.extend(
-                $detailView.data('view-args').context[
-                    $detailView.data('view-args').section
-                ][0], newData
-            );
+            var detailViewArgs = $detailView.data('view-args');
+            var listViewArgs = $listView.data('view-args');
+            var contextID = listViewArgs.sections && listViewArgs.sections[detailViewArgs.section].id ?
+                listViewArgs.sections[detailViewArgs.section].id :
+                detailViewArgs.section;
+
+            $.extend($detailView.data('view-args').context[contextID][0], newData);
         }
     };
 
@@ -93,7 +95,8 @@
                 var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
                 var viewArgs = $detailView.data('view-args');
                 var context = viewArgs.context;
-                var activeContextItem = viewArgs.section ? context[viewArgs.section][0] : null;
+                var activeContextItem = viewArgs.section && context[viewArgs.section] ?
+                    context[viewArgs.section][0] : null;
 
                 $detailView.tabs('destroy');
                 $detailView.data('view-args').jsonObj = newData;
@@ -144,11 +147,20 @@
 
                             var $item = args.$item;
                             var $row = $detailView.data('list-view-row');
+                            var error = args.error;
 
                             notification.desc = messages.notification(args.messageArgs);
                             notification._custom = $.extend(args._custom ? args._custom : {}, {
                                 $detailView: $detailView
                             });
+
+                            if (error) {
+                                notification.interval = 1;
+                                notification.poll = function(args) {
+                                    cloudStack.dialog.notice({ message: error });
+                                    args.error(error);
+                                }
+                            }
 
                             cloudStack.ui.notifications.add(
                                 notification,
@@ -368,13 +380,7 @@
                 }
             });
         },
-
-        prepareObjectStoreMigration: function($detailView, args) {        	
-            var tab = args.tabs[args.activeTab];
-            var isMultiple = tab.multiple;
-            uiActions.remove($detailView, args);
-        },            
-               
+            
         destroy: function($detailView, args) {
             var tab = args.tabs[args.activeTab];
             var isMultiple = tab.multiple;
@@ -462,7 +468,9 @@
                         $value.html(_s(
                             $input.attr('value')
                         ));
-                    else if ($input.is('input[type=checkbox]')) {
+                    else if ($input.is('input[type=password]')) {
+                        $value.html('');
+                    } else if ($input.is('input[type=checkbox]')) {
                         var val = $input.is(':checked');
 
                         $value.data('detail-view-boolean-value', _s(val));
@@ -628,6 +636,7 @@
                 var isBoolean = $value.data('detail-view-editable-boolean');
                 var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
                 var rules = $value.data('validation-rules') ? $value.data('validation-rules') : {};
+                var isPassword = $value.data('detail-view-is-password');
 
                 $value.html('');
 
@@ -667,7 +676,7 @@
                     $value.append(
                         $('<input>').attr({
                             name: name,
-                            type: 'text',
+                            type: isPassword ? 'password' : 'text',
                             value: data
                         }).addClass('disallowSpecialCharacters').data('original-value', data)
                     );
@@ -739,15 +748,16 @@
         viewAllPath = viewAllID.split('.');
 
         if (viewAllPath.length == 2) {
-            if (viewAllPath[0] != '_zone')
-                listViewArgs = cloudStackArgs.sections[viewAllPath[0]].sections[viewAllPath[1]];
-            else {
+            if (viewAllPath[0] != '_zone') {
+                listViewArgs = $.extend(true, {}, cloudStackArgs.sections[viewAllPath[0]].sections[viewAllPath[1]]);
+            } else {
                 // Sub-section of the zone chart
-                listViewArgs = cloudStackArgs.sections.system
-                    .subsections[viewAllPath[1]];
+                listViewArgs = $.extend(true, {}, cloudStackArgs.sections.system
+                    .subsections[viewAllPath[1]]);
             }
-        } else
-            listViewArgs = cloudStackArgs.sections[viewAllPath[0]];
+        } else {
+            listViewArgs = $.extend(true, {}, cloudStackArgs.sections[viewAllPath[0]]);
+        }
 
         // Make list view
         listViewArgs.$browser = $browser;
@@ -1004,6 +1014,8 @@
                 } else if (value.isBoolean) {
                     $value.data('detail-view-editable-boolean', true);
                     $value.data('detail-view-boolean-value', content == 'Yes' ? true : false);
+                } else {
+                    $value.data('detail-view-is-password', value.isPassword);
                 }
 
                 return true;
@@ -1151,7 +1163,7 @@
             tab: targetTabID,
             id: args.id,
             jsonObj: jsonObj,
-            context: args.context,
+            context: $.extend(args.context, options),
             response: {
                 success: function(args) {
                     if (options.newData) {
@@ -1466,7 +1478,8 @@
         if ($target.closest('div.toolbar div.refresh').size()) {
             loadTabContent(
                 $target.closest('div.detail-view').find('div.detail-group:visible'),
-                $target.closest('div.detail-view').data('view-args')
+                $target.closest('div.detail-view').data('view-args'),
+                { refresh: true }
             );
 
             return false;

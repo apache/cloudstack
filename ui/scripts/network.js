@@ -539,38 +539,47 @@
                                     },
                                     domain: {
                                         label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
                                         select: function(args) {
-                                            var items = [];
-                                            $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    var items = [];
-                                                    items.push({
-                                                        id: "",
-                                                        description: ""
-                                                    });
-                                                    var domainObjs = json.listdomainsresponse.domain;
-                                                    $(domainObjs).each(function() {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
                                                         items.push({
-                                                            id: this.id,
-                                                            description: this.path
+                                                            id: "",
+                                                            description: ""
                                                         });
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
-                                            });
-                                            args.$select.change(function() {
-                                                var $form = $(this).closest('form');
-                                                if ($(this).val() == "") {
-                                                    $form.find('.form-item[rel=account]').hide();
-                                                } else {
-                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                                }
-                                            });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                data: null
+                                                });
+                                            }
                                         },
                                     },
                                     account: {
@@ -578,6 +587,12 @@
                                         validation: {
                                             required: true
                                         },
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        }
                                     }
                                 }
                             },
@@ -1136,6 +1151,16 @@
                                         label: 'label.state'
                                     },
 
+                                    vpcid: {
+                                        label: 'label.vpc.id',
+                                        converter: function(args) {
+                                            if (args != null)
+                                                return args;
+                                            else
+                                                return 'N/A';
+                                        }
+                                    },
+                                    
                                     ispersistent: {
                                         label: 'Persistent ',
                                         converter: cloudStack.converters.toBooleanText
@@ -1245,16 +1270,6 @@
                                     },
                                     account: {
                                         label: 'label.account'
-                                    },
-
-                                    vpcid: {
-                                        label: 'label.vpc.id',
-                                        converter: function(args) {
-                                            if (args != null)
-                                                return args;
-                                            else
-                                                return 'N/A';
-                                        }
                                     }
                                 }],
 
@@ -2207,12 +2222,18 @@
                                 }
                             }
 
-                            if (ipAddress.vpcid && ipAddress.issourcenat) {
+                            if (ipAddress.issourcenat) {
+                                disableIpRules = true;
+                            }
+                            
+                            if (('vpc' in args.context) == false && ipAddress.vpcid != null) { //from Guest Network section, don't show Configuration(ipRules) tab on VPC IP
                                 disableIpRules = true;
                             }
 
-                            if (disableVpn) disabledTabs.push('vpn');
-                            if (disableIpRules) disabledTabs.push('ipRules');
+                            if (disableVpn) 
+                            	disabledTabs.push('vpn');
+                            if (disableIpRules) 
+                            	disabledTabs.push('ipRules');
 
                             return disabledTabs;
                         },
@@ -3368,6 +3389,46 @@
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
                                                     action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
+                                                },
+                                                isHidden: function(args) {      
+                                                	if (!('vpc' in args.context)) {  //from Guest Network section                                       	
+	                                                	var lbProviderIsNetscaler = false;
+	                                                    $.ajax({
+	                                                    	url: createURL('listNetworkOfferings'),
+	                                                    	data: {
+	                                                    		id: args.context.networks[0].networkofferingid
+	                                                    	},
+	                                                    	async: false,
+	                                                    	success: function(json) {                                                    		
+	                                                    		var networkOffering = json.listnetworkofferingsresponse.networkoffering[0];                                                    		
+	                                                    		var services = networkOffering.service;
+	                                                    		if (services != null) {
+		                                                    		for (var i = 0; i < services.length; i++) {
+		                                                    			if (services[i].name == 'Lb') {
+		                                                    				var providers = services[i].provider;
+		                                                    				if (providers != null) {
+			                                                    				for (var k = 0; k < providers.length; k++) {
+			                                                    					if (providers[k].name == 'Netscaler') {
+			                                                    						lbProviderIsNetscaler = true;
+			                                                    						break;
+			                                                    					}
+			                                                    				}  
+		                                                    				}
+		                                                    				break;
+		                                                    			}
+		                                                    		}
+	                                                    		}
+	                                                    	}
+	                                                    });    
+	                                                    if (lbProviderIsNetscaler == true) { //AutoScale is only supported on Netscaler (but not on any other provider like VirtualRouter)
+	                                                    	return false; //show AutoScale button
+	                                                    } else {
+	                                                    	return 2; //hide Autoscale button (both header and form)
+	                                                    }     
+                                                    } else { //from VPC section
+                                                    	//VPC doesn't support autoscale
+                                                    	return 2;
+                                                    }   
                                                 }
                                             },
 
@@ -3876,6 +3937,10 @@
                                                     });
                                                 }
                                             },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
+                                            },
                                             'add-vm': {
                                                 label: 'label.add.vm',
                                                 addButton: true
@@ -3936,7 +4001,10 @@
                                                     success: function(data) {
                                                         args.response.success({
                                                             _custom: {
-                                                                jobId: data.createportforwardingruleresponse.jobid
+                                                                jobId: data.createportforwardingruleresponse.jobid,
+                                                                getUpdatedItem: function(json) {                                                        	        
+                                                                    return json.queryasyncjobresultresponse.jobresult.portforwardingrule;
+                                                                }
                                                             },
                                                             notification: {
                                                                 label: 'label.add.port.forwarding.rule',

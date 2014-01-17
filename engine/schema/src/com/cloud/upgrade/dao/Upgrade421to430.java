@@ -18,17 +18,17 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
+import java.sql.Types;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.RoleType;
-
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -57,100 +57,130 @@ public class Upgrade421to430 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-421to430.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
     public void performDataMigration(Connection conn) {
-        populateACLGroupAccountMap(conn);
-        //populateACLRoleBasedAPIPermission(conn);
+        encryptLdapConfigParams(conn);
+        upgradeMemoryOfSsvmOffering(conn);
     }
 
-    // populate acl_group_account_map table for existing accounts
-    private void populateACLGroupAccountMap(Connection conn) {
-        PreparedStatement acctInsert = null;
-        PreparedStatement acctQuery = null;
-        ResultSet rs = null;
+    private void upgradeMemoryOfSsvmOffering(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+        ResultSet selectResultSet = null;
+        int newRamSize = 512; //512MB
+        long serviceOfferingId = 0;
 
-        s_logger.debug("Populating acl_group_account_map table for existing accounts...");
+            /**
+             * Pick first row in service_offering table which has system vm type as secondary storage vm. User added offerings would start from 2nd row onwards.
+             * We should not update/modify any user-defined offering.
+             */
+
         try {
-            acctInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`acl_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
-            acctQuery = conn
-                    .prepareStatement("select id, type from `cloud`.`account` where removed is null");
-            rs = acctQuery.executeQuery();
-
-            while (rs.next()) {
-                Long acct_id = rs.getLong("id");
-                short type = rs.getShort("type");
-
-                // insert entry in acl_group_account_map table
-                acctInsert.setLong(1, type + 1);
-                acctInsert.setLong(2, acct_id);
-                acctInsert.executeUpdate();
+            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='secondarystoragevm'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+            selectResultSet = selectPstmt.executeQuery();
+            if(selectResultSet.next()) {
+                serviceOfferingId = selectResultSet.getLong("id");
             }
+
+            updatePstmt.setInt(1, newRamSize);
+            updatePstmt.setLong(2, serviceOfferingId);
+            updatePstmt.executeUpdate();
         } catch (SQLException e) {
-            String msg = "Unable to populate acl_group_account_map for existing accounts." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
+            throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for secondary storage vm. ", e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (selectPstmt != null) {
+                    selectPstmt.close();
                 }
-
-                if (acctInsert != null) {
-                    acctInsert.close();
+                if (selectResultSet != null) {
+                    selectResultSet.close();
                 }
-                if (acctQuery != null) {
-                    acctQuery.close();
+                if (updatePstmt != null) {
+                    updatePstmt.close();
                 }
             } catch (SQLException e) {
             }
         }
-        s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
+        s_logger.debug("Done upgrading RAM for service offering of Secondary Storage VM to " + newRamSize);
     }
 
+    private void encryptLdapConfigParams(Connection conn) {
+        PreparedStatement pstmt = null;
 
-    private void populateACLRoleBasedAPIPermission(Connection conn) {
-        // read the commands.properties.in and populate the table
-        PreparedStatement apiInsert = null;
+        String[][] ldapParams = { {"ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP"},
+                {"ldap.username.attribute", "uid", "Sets the username attribute used within LDAP"}, {"ldap.email.attribute", "mail", "Sets the email attribute used within LDAP"},
+                {"ldap.firstname.attribute", "givenname", "Sets the firstname attribute used within LDAP"},
+                {"ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP"},
+                {"ldap.group.object", "groupOfUniqueNames", "Sets the object type of groups within LDAP"},
+                {"ldap.group.user.uniquemember", "uniquemember", "Sets the attribute for uniquemembers within a group"}};
 
-        s_logger.debug("Populating acl_api_permission table for existing commands...");
+        String insertSql = "INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description) VALUES ('Secure', 'DEFAULT', 'management-server', ?, ?, "
+                + "?) ON DUPLICATE KEY UPDATE category='Secure';";
+
         try {
-            apiInsert = conn.prepareStatement("INSERT INTO `cloud`.`acl_api_permission` (role_id, api, created) values(?, ?, Now())");
 
-            Map<String, String> commandMap = PropertiesUtil.processConfigFile(new String[] { "commands.properties" });
-            for (Map.Entry<String, String> entry : commandMap.entrySet()) {
-                String apiName = entry.getKey();
-                String roleMask = entry.getValue();
-                try {
-                    short cmdPermissions = Short.parseShort(roleMask);
-                    for (RoleType roleType : RoleType.values()) {
-                        if ((cmdPermissions & roleType.getValue()) != 0) {
-                            // insert entry into api_permission for this role
-                            apiInsert.setLong(1, roleType.ordinal() + 1);
-                            apiInsert.setString(2, apiName);
-                            apiInsert.executeUpdate();
-                        }
-                    }
-                } catch (NumberFormatException nfe) {
-                    s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+            for (String[] ldapParam : ldapParams) {
+                String name = ldapParam[0];
+                String value = ldapParam[1];
+                String desc = ldapParam[2];
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement(insertSql);
+                pstmt.setString(1, name);
+                pstmt.setBytes(2, encryptedValue.getBytes("UTF-8"));
+                pstmt.setString(3, desc);
+                pstmt.executeUpdate();
+            }
+
+            /**
+             * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
+             */
+            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname'");
+            ResultSet resultSet = pstmt.executeQuery();
+            String hostname = null;
+            String port;
+            int portNumber = 0;
+            if (resultSet.next()) {
+                hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
+            }
+
+            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
+            resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                port = DBEncryptionUtil.decrypt(resultSet.getString(1));
+                if (StringUtils.isNotBlank(port)) {
+                    portNumber = Integer.valueOf(port);
                 }
             }
+
+            if (StringUtils.isNotBlank(hostname)) {
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");
+                pstmt.setString(1, hostname);
+                if (portNumber != 0) {
+                    pstmt.setInt(2, portNumber);
+                } else {
+                    pstmt.setNull(2, Types.INTEGER);
+                }
+                pstmt.executeUpdate();
+            }
+
         } catch (SQLException e) {
-            String msg = "Unable to populate acl_api_permission for existing commands." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
+            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
         } finally {
             try {
-                if (apiInsert != null) {
-                    apiInsert.close();
+                if (pstmt != null) {
+                    pstmt.close();
                 }
             } catch (SQLException e) {
             }
         }
-        s_logger.debug("Completed populate acl_api_permission for existing commands.");
+        s_logger.debug("Done encrypting ldap Config values");
+
     }
 
     @Override
@@ -160,7 +190,7 @@ public class Upgrade421to430 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-421to430-cleanup.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
 }

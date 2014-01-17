@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +34,10 @@ import com.cloud.utils.fsm.StateObject;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable {
 
     public enum GuestType {
-        Shared,
-        Isolated
+        Shared, Isolated
     }
 
     public static class Service {
@@ -47,11 +47,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols,
-                Capability.MultipleIps, Capability.TrafficStatistics, Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
-                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps,
-                Capability.SupportedStickinessMethods, Capability.ElasticLb, Capability.LbSchemes);
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
+                Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols,
+                Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb, Capability.LbSchemes);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
         public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
@@ -59,7 +58,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity");
-
 
         private final String name;
         private final Capability[] caps;
@@ -82,7 +80,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             boolean success = false;
             if (caps != null) {
                 int length = caps.length;
-                for (int i = 0; i< length; i++) {
+                for (int i = 0; i < length; i++) {
                     if (caps[i].getName().equalsIgnoreCase(cap.getName())) {
                         success = true;
                         break;
@@ -102,7 +100,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             return null;
         }
 
-        public static List<Service> listAllServices(){
+        public static List<Service> listAllServices() {
             return supportedServices;
         }
     }
@@ -114,8 +112,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
-        public static final Provider JuniperContrail = new Provider("JuniperContrail", false);
+        public static final Provider JuniperContrailRouter = new Provider("JuniperContrailRouter", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
+        public static final Provider PaloAlto = new Provider("PaloAlto", true);
         public static final Provider F5BigIp = new Provider("F5BigIp", true);
         public static final Provider Netscaler = new Provider("Netscaler", true);
         public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer", true);
@@ -128,6 +127,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider NiciraNvp = new Provider("NiciraNvp", false);
         public static final Provider InternalLbVm = new Provider("InternalLbVm", false);
         public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
+        // add new Ovs provider
+        public static final Provider Ovs = new Provider("Ovs", false);
+        public static final Provider Opendaylight = new Provider("Opendaylight", false);
 
         private final String name;
         private final boolean isExternal;
@@ -180,6 +182,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability SupportedTrafficDirection = new Capability("SupportedTrafficDirection");
         public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
         public static final Capability HealthCheckPolicy = new Capability("HealthCheckPolicy");
+        public static final Capability SslTermination = new Capability("SslTermination");
         public static final Capability LbSchemes = new Capability("LbSchemes");
         public static final Capability DhcpAccrossMultipleSubnets = new Capability("DhcpAccrossMultipleSubnets");
 
@@ -205,20 +208,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     }
 
     enum Event {
-        ImplementNetwork,
-        DestroyNetwork,
-        OperationSucceeded,
-        OperationFailed;
+        ImplementNetwork, DestroyNetwork, OperationSucceeded, OperationFailed;
     }
 
     public enum State {
 
-        Allocated("Indicates the network configuration is in allocated but not setup"),
-        Setup("Indicates the network configuration is setup"),
-        Implementing("Indicates the network configuration is being implemented"),
-        Implemented("Indicates the network configuration is in use"),
-        Shutdown("Indicates the network configuration is being destroyed"),
-        Destroy("Indicates that the network is destroyed");
+        Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
+                "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
+                        "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 
@@ -228,7 +225,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             s_fsm.addTransition(State.Implementing, Event.OperationFailed, State.Shutdown);
             s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Shutdown);
             s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
-            s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
+            s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Shutdown);
             s_fsm.addTransition(State.Setup, Event.DestroyNetwork, State.Destroy);
             s_fsm.addTransition(State.Allocated, Event.DestroyNetwork, State.Destroy);
         }
@@ -238,37 +235,38 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
 
         String _description;
+
         private State(String description) {
             _description = description;
         }
     }
 
     public class IpAddresses {
-    	private String ip4Address;
-    	private String ip6Address;
-    	
-    	public IpAddresses(String ip4Address, String ip6Address) {
-    		setIp4Address(ip4Address);
-    		setIp6Address(ip6Address);
-    	}
+        private String ip4Address;
+        private String ip6Address;
 
-		public String getIp4Address() {
-			return ip4Address;
-		}
+        public IpAddresses(String ip4Address, String ip6Address) {
+            setIp4Address(ip4Address);
+            setIp6Address(ip6Address);
+        }
 
-		public void setIp4Address(String ip4Address) {
-			this.ip4Address = ip4Address;
-		}
+        public String getIp4Address() {
+            return ip4Address;
+        }
 
-		public String getIp6Address() {
-			return ip6Address;
-		}
+        public void setIp4Address(String ip4Address) {
+            this.ip4Address = ip4Address;
+        }
 
-		public void setIp6Address(String ip6Address) {
-			this.ip6Address = ip6Address;
-		}
+        public String getIp6Address() {
+            return ip6Address;
+        }
+
+        public void setIp6Address(String ip6Address) {
+            this.ip6Address = ip6Address;
+        }
     }
-    
+
     String getName();
 
     Mode getMode();

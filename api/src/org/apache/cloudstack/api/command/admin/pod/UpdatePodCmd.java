@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.pod;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,12 +25,11 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePod", description="Updates a Pod.", responseObject=PodResponse.class)
+@APICommand(name = "updatePod", description = "Updates a Pod.", responseObject = PodResponse.class)
 public class UpdatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
 
@@ -38,26 +39,25 @@ public class UpdatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Pod")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the Pod")
     private String podName;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the starting IP address for the Pod")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the Pod")
     private String netmask;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
     /////////////////////////////////////////////////////
@@ -91,6 +91,7 @@ public class UpdatePodCmd extends BaseCmd {
     public String getAllocationState() {
         return allocationState;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -106,10 +107,10 @@ public class UpdatePodCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pod result = _configService.editPod(this);
         if (result != null) {
-            PodResponse response = _responseGenerator.createPodResponse(result,false);
+            PodResponse response = _responseGenerator.createPodResponse(result, false);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

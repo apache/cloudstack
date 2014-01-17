@@ -26,55 +26,56 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="firewall_rule_details")
-public class FirewallRuleDetailVO implements ResourceDetail{
-        @Id
-        @GeneratedValue(strategy= GenerationType.IDENTITY)
-        @Column(name="id")
-        private long id;
+@Table(name = "firewall_rule_details")
+public class FirewallRuleDetailVO implements ResourceDetail {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
 
-        @Column(name="firewall_rule_id")
-        private long resourceId;
+    @Column(name = "firewall_rule_id")
+    private long resourceId;
 
-        @Column(name="name")
-        private String name;
+    @Column(name = "name")
+    private String name;
 
-        @Column(name="value", length=1024)
-        private String value;
-        
-        @Column(name="display")
-        private boolean display;
+    @Column(name = "value", length = 1024)
+    private String value;
 
-        public FirewallRuleDetailVO() {}
+    @Column(name = "display")
+    private boolean display;
 
-        public FirewallRuleDetailVO(long networkId, String name, String value) {
-            this.resourceId = networkId;
-            this.name = name;
-            this.value = value;
-        }
+    public FirewallRuleDetailVO() {
+    }
 
-        @Override
-        public long getId() {
-            return id;
-        }
+    public FirewallRuleDetailVO(long id, String name, String value) {
+        this.resourceId = id;
+        this.name = name;
+        this.value = value;
+    }
 
-        @Override
-        public String getName() {
-            return name;
-        }
+    @Override
+    public long getId() {
+        return id;
+    }
 
-        @Override
-        public String getValue() {
-            return value;
-        }
+    @Override
+    public String getName() {
+        return name;
+    }
 
-        @Override
-        public long getResourceId() {
-            return resourceId;
-        }
+    @Override
+    public String getValue() {
+        return value;
+    }
 
-        @Override
-        public boolean isDisplay() {
-            return display;
-        }
+    @Override
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
 }

@@ -30,39 +30,43 @@ import com.cloud.utils.net.NetUtils;
 
 /**
  * This VO represent Public Load Balancer
- * It references source ip address by its Id. 
+ * It references source ip address by its Id.
  * To get the VO for Internal Load Balancer rule, please refer to LoadBalancerRuleVO
  *
  */
 @Entity
-@Table(name=("load_balancing_rules"))
-@DiscriminatorValue(value="LoadBalancing")
-@PrimaryKeyJoinColumn(name="id")
+@Table(name = ("load_balancing_rules"))
+@DiscriminatorValue(value = "LoadBalancing")
+@PrimaryKeyJoinColumn(name = "id")
 public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description", length=4096)
+    @Column(name = "description", length = 4096)
     private String description;
 
-    @Column(name="algorithm")
+    @Column(name = "algorithm")
     private String algorithm;
 
-    @Column(name="default_port_start")
+    @Column(name = "default_port_start")
     private int defaultPortStart;
-    
-    @Column(name="default_port_end")
+
+    @Column(name = "default_port_end")
     private int defaultPortEnd;
-    
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="scheme")
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "scheme")
     Scheme scheme = Scheme.Public;
 
-    public LoadBalancerVO() { 
+    @Column(name = "lb_protocol")
+    String lbProtocol;
+
+    public LoadBalancerVO() {
     }
 
-    public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
+    public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId,
+            long domainId, String lbProtocol) {
         super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null, null, null);
         this.name = name;
         this.description = description;
@@ -70,8 +74,9 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
         this.defaultPortStart = dstPort;
         this.defaultPortEnd = dstPort;
         this.scheme = Scheme.Public;
+        this.lbProtocol = lbProtocol;
     }
-    
+
     @Override
     public String getName() {
         return name;
@@ -86,9 +91,9 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public String getAlgorithm() {
         return algorithm;
     }
-    
+
     @Override
-    public int getDefaultPortStart() { 
+    public int getDefaultPortStart() {
         return defaultPortStart;
     }
 
@@ -99,6 +104,15 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getLbProtocol() {
+        return lbProtocol;
+    }
+
+    public void setLbProtocol(String lbProtocol) {
+        this.lbProtocol = lbProtocol;
     }
 
     public void setAlgorithm(String algorithm) {
@@ -112,5 +126,5 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Override
     public Scheme getScheme() {
         return scheme;
-    }  
+    }
 }

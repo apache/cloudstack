@@ -20,66 +20,66 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackSnapshotPolicy {
-	
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.INTERVAL_TYPE)
-	private String intervalType;
-	@SerializedName(ApiConstants.MAX_SNAPS)
-	private Long maxSnaps;
-	@SerializedName(ApiConstants.SCHEDULE)
-	private String schedule;
-	@SerializedName(ApiConstants.TIMEZONE)
-	private String timeZone;
-	@SerializedName(ApiConstants.VOLUME_ID)
-	private String volumeId;
 
-	/**
-	 * 
-	 */
-	public CloudStackSnapshotPolicy() {
-	}
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
+    private String intervalType;
+    @SerializedName(ApiConstants.MAX_SNAPS)
+    private Long maxSnaps;
+    @SerializedName(ApiConstants.SCHEDULE)
+    private String schedule;
+    @SerializedName(ApiConstants.TIMEZONE)
+    private String timeZone;
+    @SerializedName(ApiConstants.VOLUME_ID)
+    private String volumeId;
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackSnapshotPolicy() {
+    }
 
-	/**
-	 * @return the intervalType
-	 */
-	public String getIntervalType() {
-		return intervalType;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the maxSnaps
-	 */
-	public Long getMaxSnaps() {
-		return maxSnaps;
-	}
+    /**
+     * @return the intervalType
+     */
+    public String getIntervalType() {
+        return intervalType;
+    }
 
-	/**
-	 * @return the schedule
-	 */
-	public String getSchedule() {
-		return schedule;
-	}
+    /**
+     * @return the maxSnaps
+     */
+    public Long getMaxSnaps() {
+        return maxSnaps;
+    }
 
-	/**
-	 * @return the timeZone
-	 */
-	public String getTimeZone() {
-		return timeZone;
-	}
+    /**
+     * @return the schedule
+     */
+    public String getSchedule() {
+        return schedule;
+    }
 
-	/**
-	 * @return the volumeId
-	 */
-	public String getVolumeId() {
-		return volumeId;
-	}
+    /**
+     * @return the timeZone
+     */
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    /**
+     * @return the volumeId
+     */
+    public String getVolumeId() {
+        return volumeId;
+    }
 
 }

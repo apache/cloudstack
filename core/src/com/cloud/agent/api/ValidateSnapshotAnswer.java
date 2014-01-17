@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class ValidateSnapshotAnswer extends Answer {
     private String expectedSnapshotBackupUuid;
     private String actualSnapshotBackupUuid;
@@ -26,7 +25,8 @@ public class ValidateSnapshotAnswer extends Answer {
 
     }
 
-    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid, String actualSnapshotUuid) {
+    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid,
+            String actualSnapshotUuid) {
         super(cmd, success, result);
         this.expectedSnapshotBackupUuid = expectedSnapshotBackupUuid;
         this.actualSnapshotBackupUuid = actualSnapshotBackupUuid;

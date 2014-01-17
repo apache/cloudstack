@@ -20,11 +20,10 @@ import com.cloud.storage.StoragePool;
 
 public class CreateStoragePoolCommand extends ModifyStoragePoolCommand {
 
-
-	public CreateStoragePoolCommand() {
-	}
+    public CreateStoragePoolCommand() {
+    }
 
     public CreateStoragePoolCommand(boolean add, StoragePool pool) {
         super(add, pool);
-	}
+    }
 }

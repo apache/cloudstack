@@ -27,11 +27,13 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
-
-import com.cloud.utils.db.GenericDao;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "autoscale_vmgroups")
@@ -70,6 +72,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Column(name = "interval")
     private int interval;
 
+    @Column(name = "last_interval", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastInterval;
+
     @Column(name = "profile_id")
     private long profileId;
 
@@ -85,9 +91,12 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     public AutoScaleVmGroupVO() {
     }
 
-    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, int minMembers, int maxMembers, int memberPort, int interval, long profileId, String state) {
-        this.uuid = UUID.randomUUID().toString();
-        this.loadBalancerId = lbRuleId;
+    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId,
+            long accountId, int minMembers, int maxMembers, int memberPort,
+            int interval, Date lastInterval, long profileId, String state) {
+
+        uuid = UUID.randomUUID().toString();
+        loadBalancerId = lbRuleId;
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -97,6 +106,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         this.zoneId = zoneId;
         this.state = state;
         this.interval = interval;
+        this.lastInterval = lastInterval;
     }
 
     @Override
@@ -149,6 +159,11 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     }
 
     @Override
+    public Date getLastInterval() {
+        return lastInterval;
+    }
+
+    @Override
     public long getProfileId() {
         return profileId;
     }
@@ -180,6 +195,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
 
     public void setInterval(Integer interval) {
         this.interval = interval;
+    }
+
+    public void setLastInterval(Date lastInterval) {
+        this.lastInterval = lastInterval;
     }
 
     public void setLoadBalancerId(Long loadBalancerId) {

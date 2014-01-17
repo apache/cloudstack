@@ -26,65 +26,66 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("s2s_customer_gateway"))
+@Table(name = ("s2s_customer_gateway"))
 public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="gateway_ip")
+    @Column(name = "gateway_ip")
     private String gatewayIp;
 
-    @Column(name="guest_cidr_list")
+    @Column(name = "guest_cidr_list")
     private String guestCidrList;
 
     @Encrypt
-    @Column(name="ipsec_psk")
+    @Column(name = "ipsec_psk")
     private String ipsecPsk;
 
-    @Column(name="ike_policy")
+    @Column(name = "ike_policy")
     private String ikePolicy;
 
-    @Column(name="esp_policy")
+    @Column(name = "esp_policy")
     private String espPolicy;
 
-    @Column(name="ike_lifetime")
+    @Column(name = "ike_lifetime")
     private long ikeLifetime;
 
-    @Column(name="esp_lifetime")
+    @Column(name = "esp_lifetime")
     private long espLifetime;
 
-    @Column(name="dpd")
+    @Column(name = "dpd")
     private boolean dpd;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long domainId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    public Site2SiteCustomerGatewayVO() { }
+    public Site2SiteCustomerGatewayVO() {
+    }
 
-    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy,
-            long ikeLifetime, long espLifetime, boolean dpd) {
+    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy,
+            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd) {
         this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
@@ -94,7 +95,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikeLifetime = ikeLifetime;
         this.espLifetime = espLifetime;
         this.dpd = dpd;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
     }
@@ -194,6 +195,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.dpd = dpd;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

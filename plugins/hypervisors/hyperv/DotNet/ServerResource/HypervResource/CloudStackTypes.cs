@@ -31,23 +31,129 @@ namespace HypervResource
 {
     public class PrimaryDataStoreTO
     {
-        public string path;
+        private string path;
+        public string host;
+        private string poolType;
+        public Uri uri;
+        public string _role;
+
+        public string Path
+        {
+            get
+            {
+                if (this.isLocal)
+                {
+                    return path;
+                }
+                else
+                {
+                    return this.UncPath;
+                }
+            }
+            set
+            {
+                this.path = value;
+            }
+        }
+
+        public string UncPath
+        {
+            get
+            {
+                string uncPath = null;
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem")))
+                {
+                    uncPath = @"\\" + uri.Host + uri.LocalPath;
+                }
+                return uncPath;
+            }
+        }
+
+        public string User
+        {
+            get
+            {
+                string user = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    user = System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+                }
+                return user;
+            }
+        }
+
+        public string Password
+        {
+            get
+            {
+                string password = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    password = System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+                }
+                return password;
+            }
+        }
+
+        public string Domain
+        {
+            get
+            {
+                string domain = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    if (queryDictionary["domain"] != null)
+                    {
+                        domain = System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                    }
+                    else domain = uri.Host;
+                }
+                return domain;
+            }
+        }
+
+        public Boolean isLocal
+        {
+            get
+            {
+                if (poolType.Equals("Filesystem"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
 
         public static PrimaryDataStoreTO ParseJson(dynamic json)
         {
             PrimaryDataStoreTO result = null;
-
             if (json == null)
             {
                 return result;
             }
+
             dynamic primaryDataStoreTOJson = json[CloudStackTypes.PrimaryDataStoreTO];
             if (primaryDataStoreTOJson != null)
             {
                 result = new PrimaryDataStoreTO()
                 {
-                    path = (string)primaryDataStoreTOJson.path
+                    path = (string)primaryDataStoreTOJson.path,
+                    host = (string)primaryDataStoreTOJson.host,
+                    poolType = (string)primaryDataStoreTOJson.poolType
                 };
+
+                if (!result.isLocal)
+                {
+                    // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
+                    String uriStr = @"cifs://" + result.host + result.path;
+                    result.uri = new Uri(uriStr);
+                }
             }
             return result;
         }
@@ -61,20 +167,65 @@ namespace HypervResource
         {
             get
             {
-                String result = Path.Combine(this.primaryDataStore.path, this.name);
-                if (this.format != null)
+                string fileName = null;
+                if (this.primaryDataStore != null)
                 {
-                    result = result + "." + this.format.ToLowerInvariant();
+                    PrimaryDataStoreTO store = this.primaryDataStore;
+                    if (store.isLocal)
+                    {
+                        fileName = Path.Combine(store.Path, this.name);
+                    }
+                    else
+                    {
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = Utils.NormalizePath(fileName);
+                    }
                 }
-                return result;
+                else if (this.nfsDataStore != null)
+                {
+                    if (this.path != null && File.Exists(this.path))
+                    {
+                        fileName = this.path;
+                    }
+                    else
+                    {
+                        fileName = this.nfsDataStore.UncPath;
+                        if (this.path != null)
+                        {
+                            fileName += @"\" + this.path;
+                        }
+
+                        fileName = Utils.NormalizePath(fileName);
+                        if (Directory.Exists(fileName))
+                        {
+                            fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+                        }
+                    }
+                }
+                else
+                {
+                    String errMsg = "Invalid dataStore in VolumeObjectTO spec";
+                    logger.Error(errMsg);
+                    throw new InvalidDataException(errMsg);
+                }
+
+                if (fileName != null && !Path.HasExtension(fileName) && this.format != null)
+                {
+                    fileName = fileName + "." + this.format.ToLowerInvariant();
+                }
+
+                return fileName;
             }
         }
 
         public dynamic dataStore;
         public string format;
         public string name;
+        public string path;
         public string uuid;
+        public ulong size;
         public PrimaryDataStoreTO primaryDataStore;
+        public NFSTO nfsDataStore;
 
         public static VolumeObjectTO ParseJson(dynamic json)
         {
@@ -93,14 +244,17 @@ namespace HypervResource
                     dataStore = volumeObjectTOJson.dataStore,
                     format = ((string)volumeObjectTOJson.format),
                     name = (string)volumeObjectTOJson.name,
-                    uuid = (string)volumeObjectTOJson.uuid
+                    path = volumeObjectTOJson.path,
+                    uuid = (string)volumeObjectTOJson.uuid,
+                    size = (ulong)volumeObjectTOJson.size
                 };
                 result.primaryDataStore = PrimaryDataStoreTO.ParseJson(volumeObjectTOJson.dataStore);
+                result.nfsDataStore = NFSTO.ParseJson(volumeObjectTOJson.dataStore);
 
                 // Assert
-                if (result.dataStore == null || result.primaryDataStore == null)
+                if (result.dataStore == null || (result.primaryDataStore == null && result.nfsDataStore == null))
                 {
-                    String errMsg = "VolumeObjectTO missing primary dataStore in spec " + volumeObjectTOJson.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volumeObjectTOJson.ToString();
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -116,17 +270,48 @@ namespace HypervResource
             {
                 logger.Info("No image format in VolumeObjectTO, going to use format from first file that matches " + volInfo.FullFileName);
 
-                string[] choices = Directory.GetFiles(volInfo.primaryDataStore.path, volInfo.name + ".vhd*");
-
-                if (choices.Length != 1)
+                string path = null;
+                if (volInfo.primaryDataStore != null)
                 {
-                    String errMsg = "Tried to guess file extension, but cannot find file corresponding to " + Path.Combine(volInfo.primaryDataStore.path, volInfo.name); // format being guessed.
-                    logger.Debug(errMsg);
+                    if (volInfo.primaryDataStore.isLocal)
+                    {
+                        path = volInfo.primaryDataStore.Path;
+                    }
+                    else
+                    {
+                        path = volInfo.primaryDataStore.UncPath;
+                    }
+                }
+                else if (volInfo.nfsDataStore != null)
+                {
+                    path = volInfo.nfsDataStore.UncPath;
+                    if (volInfo.path != null)
+                    {
+                        path += @"\" + volInfo.path;
+                    }
                 }
                 else
                 {
-                    string[] splitFileName = choices[0].Split(new char[] { '.' });
-                    volInfo.format = splitFileName[splitFileName.Length - 1];
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volInfo.ToString();
+                    logger.Error(errMsg);
+                    throw new ArgumentNullException(errMsg);
+                }
+
+                path = Utils.NormalizePath(path);
+                if (Directory.Exists(path))
+                {
+                    string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
+                    if (choices.Length != 1)
+                    {
+                        String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
+                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.name);
+                        logger.Debug(errMsg);
+                    }
+                    else
+                    {
+                        string[] splitFileName = choices[0].Split(new char[] { '.' });
+                        volInfo.format = splitFileName[splitFileName.Length - 1];
+                    }
                 }
                 logger.Debug("Going to use file " + volInfo.FullFileName);
             }
@@ -143,11 +328,34 @@ namespace HypervResource
         {
             get
             {
-                if (String.IsNullOrEmpty(this.path))
+                string fileName = null;
+                if (this.primaryDataStore != null)
                 {
-                    return Path.Combine(this.primaryDataStore.path, this.name) + '.' + this.format.ToLowerInvariant();
+                    PrimaryDataStoreTO store = this.primaryDataStore;
+                    if (store.isLocal)
+                    {
+                        fileName = Path.Combine(store.Path, this.name);
+                    }
+                    else
+                    {
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                    }
+                    fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
-                return this.path;
+                else if (this.nfsDataStoreTO != null)
+                {
+                    NFSTO store = this.nfsDataStoreTO;
+                    fileName = store.UncPath + @"\" + this.path + @"\" + this.name;
+                    if (!this.format.Equals("RAW"))
+                    {
+                        fileName = fileName + '.' + this.format.ToLowerInvariant();
+                    }
+                }
+                else
+                {
+                    fileName = this.path;
+                }
+                return Utils.NormalizePath(fileName);
             }
         }
 
@@ -160,6 +368,8 @@ namespace HypervResource
         public PrimaryDataStoreTO primaryDataStore = null;
         public string path;
         public string checksum;
+        public string size;
+        public string id;
 
         public static TemplateObjectTO ParseJson(dynamic json)
         {
@@ -174,7 +384,9 @@ namespace HypervResource
                     name = (string)templateObjectTOJson.name,
                     uuid = (string)templateObjectTOJson.uuid,
                     path = (string)templateObjectTOJson.path,
-                    checksum = (string)templateObjectTOJson.checksum
+                    checksum = (string)templateObjectTOJson.checksum,
+                    size = (string)templateObjectTOJson.size,
+                    id = (string)templateObjectTOJson.id
                 };
                 result.s3DataStoreTO = S3TO.ParseJson(templateObjectTOJson.imageDataStore);
                 result.nfsDataStoreTO = NFSTO.ParseJson(templateObjectTOJson.imageDataStore);
@@ -196,20 +408,23 @@ namespace HypervResource
         public static S3TO ParseJson(dynamic json)
         {
             S3TO result = null;
-            dynamic s3TOJson = json[CloudStackTypes.S3TO];
-            if (s3TOJson != null)
+            if (json != null)
             {
-                result = new S3TO()
+                dynamic s3TOJson = json[CloudStackTypes.S3TO];
+                if (s3TOJson != null)
                 {
-                    bucketName = (string)s3TOJson.bucketName,
-                    secretKey = (string)s3TOJson.secretKey,
-                    accessKey = (string)s3TOJson.accessKey,
-                    endpoint = (string)s3TOJson.endPoint,
-                    httpsFlag = (bool)s3TOJson.httpsFlag
-                };
-                // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
-                s3TOJson.secretKey = string.Empty;
-                s3TOJson.accessKey = string.Empty;
+                    result = new S3TO()
+                    {
+                        bucketName = (string)s3TOJson.bucketName,
+                        secretKey = (string)s3TOJson.secretKey,
+                        accessKey = (string)s3TOJson.accessKey,
+                        endpoint = (string)s3TOJson.endPoint,
+                        httpsFlag = (bool)s3TOJson.httpsFlag
+                    };
+                    // Delete security credentials in original command. Prevents logger from spilling the beans, as it were.
+                    s3TOJson.secretKey = string.Empty;
+                    s3TOJson.accessKey = string.Empty;
+                }
             }
             return result;
         }
@@ -264,17 +479,45 @@ namespace HypervResource
         public static NFSTO ParseJson(dynamic json)
         {
             NFSTO result = null;
-            dynamic nfsTOJson = json[CloudStackTypes.NFSTO];
-            if (nfsTOJson != null)
+            if (json != null)
             {
-                result = new NFSTO()
+                dynamic nfsTOJson = json[CloudStackTypes.NFSTO];
+                if (nfsTOJson != null)
                 {
-                    _role = (string)nfsTOJson._role,
-                };
-                // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
-                String uriStr = (String)nfsTOJson._url;
-                result.uri = new Uri(uriStr);
+                    result = new NFSTO()
+                    {
+                        _role = (string)nfsTOJson._role,
+                    };
+                    // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
+                    String uriStr = (String)nfsTOJson._url;
+                    result.uri = new Uri(uriStr);
+                }
             }
+            return result;
+        }
+    }
+
+    public class DiskTO
+    {
+        public string type;
+        public string diskSequence = null;
+        public TemplateObjectTO templateObjectTO = null;
+        public VolumeObjectTO volumeObjectTO = null;
+
+        public static DiskTO ParseJson(dynamic json)
+        {
+            DiskTO result = null;
+            if (json != null)
+            {
+                result = new DiskTO()
+                {
+                    templateObjectTO = TemplateObjectTO.ParseJson(json.data),
+                    volumeObjectTO = VolumeObjectTO.ParseJson(json.data),
+                    type = (string)json.type,
+                    diskSequence = json.diskSeq
+                };
+            }
+
             return result;
         }
     }
@@ -372,6 +615,20 @@ namespace HypervResource
             this.storagePoolUuid = poolUuid;
             this.mountPoint = mountPoint;
             this.chainInfo = chainInfo;
+        }
+    }
+
+    public class VmState
+    {
+        [JsonProperty("state")]
+        public String state;
+        [JsonProperty("host")]
+        String host;
+        public VmState() { }
+        public VmState(String vmState, String host)
+        {
+            this.state = vmState;
+            this.host = host;
         }
     }
 
@@ -589,6 +846,7 @@ namespace HypervResource
         public const string SwiftTO = "com.cloud.agent.api.to.SwiftTO";
         public const string VirtualMachineTO = "com.cloud.agent.api.to.VirtualMachineTO";
         public const string VolumeTO = "com.cloud.agent.api.to.VolumeTO";
+        public const string DiskTO = "com.cloud.agent.api.to.DiskTO";
         public const string InternalErrorException = "com.cloud.exception.InternalErrorException";
         public const string HostType = "com.cloud.host.Host.Type";
         public const string HypervisorType = "com.cloud.hypervisor.Hypervisor.HypervisorType";

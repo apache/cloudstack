@@ -118,8 +118,9 @@ public class StorageAllocatorTest {
     }
 
     protected void createDb() {
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
 
@@ -162,8 +163,9 @@ public class StorageAllocatorTest {
         diskOffering = diskOfferingDao.persist(diskOffering);
         diskOfferingId = diskOffering.getId();
 
-        volume = new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(),
-                diskOffering.getMinIops(), diskOffering.getMaxIops(), "");
+        volume =
+            new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getMinIops(), diskOffering.getMaxIops(),
+                "");
         volume = volumeDao.persist(volume);
         volumeId = volume.getId();
     }
@@ -195,9 +197,7 @@ public class StorageAllocatorTest {
 
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -227,9 +227,7 @@ public class StorageAllocatorTest {
             createDb();
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -263,9 +261,7 @@ public class StorageAllocatorTest {
 
             DiskProfile profile = new DiskProfile(volume, diskOff, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -299,9 +295,7 @@ public class StorageAllocatorTest {
 
             DiskProfile profile = new DiskProfile(volume, diskOff, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -335,11 +329,8 @@ public class StorageAllocatorTest {
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.KVM);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
             Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
-            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class),
-                    Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -371,18 +362,14 @@ public class StorageAllocatorTest {
             pool.setPodId(null);
             storagePoolDao.update(pool.getId(), pool);
 
-
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.KVM);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
             Account account = Mockito.mock(Account.class);
             Mockito.when(account.getAccountId()).thenReturn(1L);
             Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
             Mockito.when(vmProfile.getOwner()).thenReturn(account);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
-            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class),
-                    Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -414,9 +401,7 @@ public class StorageAllocatorTest {
 
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {
@@ -451,9 +436,7 @@ public class StorageAllocatorTest {
 
             DiskProfile profile = new DiskProfile(volume, diskOff, HypervisorType.XenServer);
             VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-            Mockito.when(
-                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
-                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class), Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {

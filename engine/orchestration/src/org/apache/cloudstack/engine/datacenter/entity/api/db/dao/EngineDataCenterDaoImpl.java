@@ -26,12 +26,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -51,8 +52,8 @@ import com.cloud.utils.net.NetUtils;
  *    || mac.address.prefix | prefix to attach to all public and private mac addresses | number | 06 ||
  *  }
  **/
-@Component(value="EngineDataCenterDao")
-@Local(value={EngineDataCenterDao.class})
+@Component(value = "EngineDataCenterDao")
+@Local(value = {EngineDataCenterDao.class})
 public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, Long> implements EngineDataCenterDao {
     private static final Logger s_logger = Logger.getLogger(EngineDataCenterDaoImpl.class);
 
@@ -69,8 +70,8 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
 
-    @Inject protected DcDetailsDao _detailsDao;
-
+    @Inject
+    protected DcDetailsDao _detailsDao;
 
     @Override
     public EngineDataCenterVO findByName(String name) {
@@ -79,23 +80,22 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         return findOneBy(sc);
     }
 
-
     @Override
-    public EngineDataCenterVO findByToken(String zoneToken){
+    public EngineDataCenterVO findByToken(String zoneToken) {
         SearchCriteria<EngineDataCenterVO> sc = TokenSearch.create();
         sc.setParameters("zoneToken", zoneToken);
         return findOneBy(sc);
     }
 
     @Override
-    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId){
+    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId) {
         SearchCriteria<EngineDataCenterVO> sc = ListZonesByDomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         return listBy(sc);
     }
 
     @Override
-    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId, String keyword){
+    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId, String keyword) {
         SearchCriteria<EngineDataCenterVO> sc = ListZonesByDomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         if (keyword != null) {
@@ -108,7 +108,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     }
 
     @Override
-    public List<EngineDataCenterVO> findChildZones(Object[] ids, String keyword){
+    public List<EngineDataCenterVO> findChildZones(Object[] ids, String keyword) {
         SearchCriteria<EngineDataCenterVO> sc = ChildZonesSearch.create();
         sc.setParameters("domainid", ids);
         if (keyword != null) {
@@ -121,7 +121,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     }
 
     @Override
-    public List<EngineDataCenterVO> listPublicZones(String keyword){
+    public List<EngineDataCenterVO> listPublicZones(String keyword) {
         SearchCriteria<EngineDataCenterVO> sc = PublicZonesSearch.create();
         if (keyword != null) {
             SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
@@ -134,13 +134,12 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     }
 
     @Override
-    public List<EngineDataCenterVO> findByKeyword(String keyword){
+    public List<EngineDataCenterVO> findByKeyword(String keyword) {
         SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
         ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         return listBy(ssc);
     }
-
 
     @Override
     public String[] getNextAvailableMacAddressPair(long id) {
@@ -160,7 +159,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         pair[1] = NetUtils.long2Mac(seq | 0x1l << 39);
         return pair;
     }
-
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -209,12 +207,12 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         UUIDSearch.done();
 
-
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
-    @Override @DB
+    @Override
+    @DB
     public boolean update(Long zoneId, EngineDataCenterVO zone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -229,7 +227,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
 
     @Override
     public void loadDetails(EngineDataCenterVO zone) {
-        Map<String, String> details =_detailsDao.findDetails(zone.getId());
+        Map<String, String> details = _detailsDao.findDetails(zone.getId());
         zone.setDetails(details);
     }
 
@@ -243,21 +241,21 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     }
 
     @Override
-    public List<EngineDataCenterVO> listDisabledZones(){
+    public List<EngineDataCenterVO> listDisabledZones() {
         SearchCriteria<EngineDataCenterVO> sc = DisabledZonesSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
 
-        List<EngineDataCenterVO> dcs =  listBy(sc);
+        List<EngineDataCenterVO> dcs = listBy(sc);
 
         return dcs;
     }
 
     @Override
-    public List<EngineDataCenterVO> listEnabledZones(){
+    public List<EngineDataCenterVO> listEnabledZones() {
         SearchCriteria<EngineDataCenterVO> sc = DisabledZonesSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
 
-        List<EngineDataCenterVO> dcs =  listBy(sc);
+        List<EngineDataCenterVO> dcs = listBy(sc);
 
         return dcs;
     }
@@ -293,7 +291,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         return result;
     }
 
-
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, Object data) {
 
@@ -315,10 +312,23 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
             EngineDataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbDC.getId()).append("; state=").append(dbDC.getState()).append(";updatedTime=")
-                .append(dbDC.getLastUpdated());
-                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatedTime=").append(vo.getLastUpdated());
-                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=").append(dbDC.getId()).append("; state=").append(dbDC.getState()).append(";updatedTime=").append(dbDC.getLastUpdated());
+                str.append(": New Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatedTime=")
+                    .append(vo.getLastUpdated());
+                str.append(": stale Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
             }
@@ -326,6 +336,5 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         return rows > 0;
 
     }
-
 
 }

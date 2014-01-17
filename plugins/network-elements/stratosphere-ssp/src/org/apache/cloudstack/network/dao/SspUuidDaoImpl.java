@@ -60,7 +60,7 @@ public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements S
         cs.setParameters("obj_class", SspUuidVO.objClassNetwork);
         cs.setParameters("obj_id", network.getId());
         SspUuidVO vo = findOneBy(cs);
-        if(vo != null){
+        if (vo != null) {
             return vo.getUuid();
         }
         return null;
@@ -72,7 +72,7 @@ public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements S
         cs.setParameters("obj_class", SspUuidVO.objClassNicProfile);
         cs.setParameters("obj_id", nicProfile.getId());
         SspUuidVO vo = findOneBy(cs);
-        if(vo != null){
+        if (vo != null) {
             return vo.getUuid();
         }
         return null;
@@ -96,19 +96,19 @@ public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements S
         return findByUuid(SspUuidVO.objClassNicProfile, uuid);
     }
 
-    private Long findByUuid(String clazz, String uuid){
+    private Long findByUuid(String clazz, String uuid) {
         SearchCriteria<SspUuidVO> cs = uuid2native.create();
         cs.setParameters("obj_class", clazz);
         cs.setParameters("uuid", uuid);
         SspUuidVO vo = findOneBy(cs);
-        if(vo != null){
+        if (vo != null) {
             return vo.getObjId();
         }
         return null;
     }
 
-
-    public int removeUuid(String uuid){
+    @Override
+    public int removeUuid(String uuid) {
         SearchCriteria<SspUuidVO> cs = uuidfetch.create();
         cs.setParameters("uuid", uuid);
         return this.remove(cs);

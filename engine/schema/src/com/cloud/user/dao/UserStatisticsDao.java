@@ -31,5 +31,5 @@ public interface UserStatisticsDao extends GenericDao<UserStatisticsVO, Long> {
 
     List<UserStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
 
-	List<UserStatisticsVO> listUpdatedStats();
+    List<UserStatisticsVO> listUpdatedStats();
 }

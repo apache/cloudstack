@@ -25,9 +25,10 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { AutoScalePolicyDao.class })
-public class AutoScalePolicyDaoImpl extends GenericDaoBase<AutoScalePolicyVO, Long>  implements AutoScalePolicyDao {
+@Local(value = {AutoScalePolicyDao.class})
+public class AutoScalePolicyDaoImpl extends GenericDaoBase<AutoScalePolicyVO, Long> implements AutoScalePolicyDao {
 
+    @Override
     public int removeByAccountId(long accountId) {
         SearchCriteria<AutoScalePolicyVO> sc = createSearchCriteria();
 

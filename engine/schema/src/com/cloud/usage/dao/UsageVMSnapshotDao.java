@@ -24,6 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UsageVMSnapshotDao extends GenericDao<UsageVMSnapshotVO, Long> {
     public void update(UsageVMSnapshotVO usage);
+
     public List<UsageVMSnapshotVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate);
+
     UsageVMSnapshotVO getPreviousUsageRecord(UsageVMSnapshotVO rec);
 }

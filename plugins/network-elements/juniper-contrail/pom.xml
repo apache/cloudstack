@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.3.0-SNAPSHOT</version>
+    <version>4.4.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <repositories>
@@ -85,7 +85,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${cs.guava.version}</version>
     </dependency>
     <dependency>
       <groupId>net.juniper.contrail</groupId>
@@ -95,7 +94,6 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

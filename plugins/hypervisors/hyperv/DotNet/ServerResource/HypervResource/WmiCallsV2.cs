@@ -36,6 +36,26 @@ namespace HypervResource
     {
         public static String CloudStackUserDataKey = "cloudstack-vm-userdata";
 
+        /// <summary>
+        /// Defines the migration types.
+        /// </summary>
+        public enum MigrationType
+        {
+            VirtualSystem = 32768,
+            Storage = 32769,
+            Staged = 32770,
+            VirtualSystemAndStorage = 32771
+        };
+
+        /// <summary>
+        /// Defines migration transport types.
+        /// </summary>
+        public enum TransportType
+        {
+            TCP = 5,
+            SMB = 32768
+        };
+
         public static void Initialize()
         {
             // Trigger assembly load into curren appdomain
@@ -187,14 +207,14 @@ namespace HypervResource
             return new SyntheticEthernetPortSettingData(newResourcePaths[0]);
         }
 
-        public const string IDE_HARDDISK_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
+        public const string IDE_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
         public const string SCSI_CONTROLLER = "Microsoft:Hyper-V:Synthetic SCSI Controller";
-        public const string IDE_HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
-        public const string IDE_ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
+        public const string HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
+        public const string ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
 
         // TODO: names harvested from Msvm_ResourcePool, not clear how to create new instances
-        public const string IDE_ISO_DISK = "Microsoft:Hyper-V:Virtual CD/DVD Disk"; // For IDE_ISO_DRIVE
-        public const string IDE_HARDDISK_DISK = "Microsoft:Hyper-V:Virtual Hard Disk"; // For IDE_HARDDISK_DRIVE
+        public const string ISO_DISK = "Microsoft:Hyper-V:Virtual CD/DVD Disk"; // For IDE_ISO_DRIVE
+        public const string HARDDISK_DISK = "Microsoft:Hyper-V:Virtual Hard Disk"; // For IDE_HARDDISK_DRIVE
 
         /// <summary>
         /// Create new VM.  By default we start it. 
@@ -260,13 +280,16 @@ namespace HypervResource
             var newVm = CreateVM(vmName, memSize, vcpus);
 
             // Add a SCSI controller for attaching/detaching data volumes.
-            AddScsiControllerToVm(newVm);
+            AddScsiController(newVm);
 
             foreach (var diskDrive in diskDrives)
             {
                 string vhdFile = null;
                 string diskName = null;
+                string isoPath = null;
                 VolumeObjectTO volInfo = VolumeObjectTO.ParseJson(diskDrive.data);
+                TemplateObjectTO templateInfo = TemplateObjectTO.ParseJson(diskDrive.data);
+
                 if (volInfo != null)
                 {
                     // assert
@@ -286,13 +309,13 @@ namespace HypervResource
                         throw new ArgumentException(errMsg);
                     }
                     errMsg = vmName + ": Malformed PrimaryDataStore for disk " + diskDrive.ToString();
-                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.path))
+                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);
                     }
-                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.path;
-                    if (!Directory.Exists(volInfo.primaryDataStore.path))
+                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.Path;
+                    if (!Directory.Exists(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);
@@ -307,19 +330,27 @@ namespace HypervResource
                     }
                     logger.Debug("Going to create " + vmName + " with attached voluem " + diskName + " at " + vhdFile);
                 }
+                else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
+                {
+                    NFSTO share = templateInfo.nfsDataStoreTO;
+                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+                    // The share is mapped, now attach the iso
+                    isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, templateInfo.path));
+                }
 
                 string driveType = diskDrive.type;
-
                 string ideCtrllr = "0";
                 string driveResourceType = null;
                 switch (driveType) {
                     case "ROOT":
                         ideCtrllr = "0";
-                        driveResourceType = IDE_HARDDISK_DRIVE;
+                        driveResourceType = HARDDISK_DRIVE;
                         break;
                     case "ISO":
                         ideCtrllr = "1";
-                        driveResourceType = IDE_ISO_DRIVE;
+                        driveResourceType = ISO_DRIVE;
+                        break;
+                    case "DATADISK":
                         break;
                     default: 
                         // TODO: double check exception type
@@ -330,14 +361,27 @@ namespace HypervResource
                         logger.Error(errMsg, ex);
                         throw ex;
                 }
-                logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName, 
-                                        string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" +vhdFile );
-                AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
+
+                logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName,
+                        string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" + vhdFile);
+                if (driveType.Equals("DATADISK"))
+                {
+                    AttachDisk(vmName, vhdFile, (string)diskDrive.diskSeq);
+                }
+                else
+                {
+                    AddDiskDriveToIdeController(newVm, vhdFile, ideCtrllr, driveResourceType);
+                    if (isoPath != null)
+                    {
+                        AttachIso(vmName, isoPath);
+                    }
+                }
             }
 
             String publicIpAddress = "";
+            int nicCount = 0;
             // Add the Nics to the VM in the deviceId order.
-            for (int i = 0; i <= 2; i++)
+            foreach (var nc in nicInfo)
             {
                 foreach (var nic in nicInfo)
                 {
@@ -346,9 +390,17 @@ namespace HypervResource
                     string mac = nic.mac;
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
-                    if (isolationUri != null && isolationUri.StartsWith("vlan://") && !isolationUri.Equals("vlan://untagged"))
+                    string broadcastUri = nic.broadcastUri;
+                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")) && !isolationUri.Equals("vlan://untagged"))
                     {
-                        vlan = isolationUri.Substring("vlan://".Length);
+                        if (broadcastUri != null && broadcastUri.StartsWith("storage"))
+                        {
+                            vlan = broadcastUri.Substring("storage://".Length);
+                        }
+                        else
+                        {
+                            vlan = isolationUri.Substring("vlan://".Length);
+                        }
                         int tmp;
                         if (!int.TryParse(vlan, out tmp))
                         {
@@ -360,18 +412,23 @@ namespace HypervResource
                         }
                     }
 
-                    if (i == 2)
+                    if (nicCount == 2)
                     {
                          publicIpAddress = nic.ip;
                     }
 
-                    if (nicid == i)
+                    if (nicid == nicCount)
                     {
                         // Create network adapter
                         var newAdapter = CreateNICforVm(newVm, mac);
+                        String switchName ="";
+                        if (nic.name != null)
+                        {
+                            switchName =  nic.name;
+                        }
 
                         // connection to vswitch
-                        var portSettings = AttachNicToPort(newVm, newAdapter);
+                        var portSettings = AttachNicToPort(newVm, newAdapter, switchName);
 
                         // set vlan
                         if (vlan != null)
@@ -383,6 +440,7 @@ namespace HypervResource
                             newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
                     }
                 }
+                nicCount++;
             }
 
             // pass the boot args for the VM using KVP component.
@@ -395,13 +453,6 @@ namespace HypervResource
                 String bootargs = bootArgs;
                 AddUserData(vm, bootargs);
 
-
-                // Get existing KVP
-                //var vmSettings = GetVmSettings(vm);
-                //var kvpInfo = GetKvpSettings(vmSettings);
-                //logger.DebugFormat("Boot Args presisted on the VM are ", kvpInfo);
-                //AddUserData(vm, bootargs);
-
                 // Verify key added to subsystem
                 //kvpInfo = GetKvpSettings(vmSettings);
 
@@ -412,7 +463,10 @@ namespace HypervResource
             // call patch systemvm iso only for systemvms
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
-                patchSystemVmIso(vmName, systemVmIso);
+                if (systemVmIso != null && systemVmIso.Length != 0)
+                {
+                    patchSystemVmIso(vmName, systemVmIso);
+                }
             }
 
             logger.DebugFormat("Starting VM {0}", vmName);
@@ -422,9 +476,16 @@ namespace HypervResource
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                SetState(newVm, RequiredState.Reset);
                 // wait for the second boot and then return with sucesss
-                pingResource(publicIpAddress);
+                //if publicIPAddress is empty or null don't ping the ip
+              /*if (publicIpAddress.Equals("") == true)
+                {
+                    System.Threading.Thread.Sleep(90000);
+                }
+                else
+                {
+                    pingResource(publicIpAddress);
+                }*/
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
@@ -436,7 +497,7 @@ namespace HypervResource
             PingReply pingReply = null;
             IPAddress ipAddress = null;
             Ping pingSender = new Ping();
-            int numberOfPings = 4;
+            int numberOfPings = 6;
             int pingTimeout = 1000;
             int byteSize = 32;
             byte[] buffer = new byte[byteSize];
@@ -447,6 +508,7 @@ namespace HypervResource
                 pingReply = pingSender.Send(ipAddress, pingTimeout, buffer, pingOptions);
                 if (pingReply.Status == IPStatus.Success)
                 {
+                    System.Threading.Thread.Sleep(30000);
                     return true;
                 }
                 else
@@ -458,10 +520,18 @@ namespace HypervResource
             return false;
         }
 
-        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter)
+        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter, String vSwitchName)
         {
             // Get the virtual switch
-            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch();
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
+            //check the the recevied vSwitch is the same as vSwitchName.
+            if (!vSwitchName.Equals("")  && !vSwitch.ElementName.Equals(vSwitchName))
+            {
+               var errMsg = string.Format("Internal error, coudl not find Virtual Switch with the name : " +vSwitchName);
+               var ex = new WmiException(errMsg);
+               logger.Error(errMsg, ex);
+               throw ex;
+            }
 
             // Create port for adapter
             var defaultEthernetPortSettings = EthernetPortAllocationSettingData.GetInstances(vSwitch.Scope, "InstanceID LIKE \"%Default\"");
@@ -505,16 +575,36 @@ namespace HypervResource
         public void patchSystemVmIso(String vmName, String systemVmIso)
         {
             ComputerSystem vmObject = GetComputerSystem(vmName);
-            AddDiskDriveToVm(vmObject, "", "1", IDE_ISO_DRIVE);
+            AddDiskDriveToIdeController(vmObject, "", "1", ISO_DRIVE);
             AttachIso(vmName, systemVmIso);
         }
 
+        public void AttachDisk(string vmName, string diskPath, string addressOnController)
+        {
+            logger.DebugFormat("Got request to attach disk {0} to vm {1}", diskPath, vmName);
+
+            ComputerSystem vm = GetComputerSystem(vmName);
+            if (vm == null)
+            {
+                logger.DebugFormat("VM {0} not found", vmName);
+                return;
+            }
+            else
+            {
+                ManagementPath newDrivePath = GetDiskDriveOnScsiController(vm, addressOnController);
+                if (newDrivePath == null)
+                {
+                    newDrivePath = AttachDiskDriveToScsiController(vm, addressOnController);
+                }
+                InsertDiskImage(vm, diskPath, HARDDISK_DISK, newDrivePath);
+            }
+        }
 
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="cntrllerAddr"></param>
         /// <param name="driveResourceType">IDE_HARDDISK_DRIVE or IDE_ISO_DRIVE</param>
-        public ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
+        public ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
         {
             logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}", 
                         vm.ElementName,
@@ -524,11 +614,11 @@ namespace HypervResource
             // Determine disk type for drive and assert drive type valid
             string diskResourceSubType = null;
             switch(driveResourceType) {
-                case IDE_HARDDISK_DRIVE:
-                    diskResourceSubType = IDE_HARDDISK_DISK;
+                case HARDDISK_DRIVE:
+                    diskResourceSubType = HARDDISK_DISK;
                     break;
-                case IDE_ISO_DRIVE: 
-                    diskResourceSubType = IDE_ISO_DISK;
+                case ISO_DRIVE: 
+                    diskResourceSubType = ISO_DISK;
                     break;
                 default:
                     var errMsg = string.Format(
@@ -541,7 +631,7 @@ namespace HypervResource
                     throw ex;
             }
 
-            ManagementPath newDrivePath = AttachNewDriveToVm(vm, cntrllerAddr, driveResourceType);
+            ManagementPath newDrivePath = AttachNewDrive(vm, cntrllerAddr, driveResourceType);
 
             // If there's not disk to insert, we are done.
             if (String.IsNullOrEmpty(vhdfile))
@@ -568,7 +658,7 @@ namespace HypervResource
             }
             else
             {
-                RemoveStorageImageFromVm(vm, diskFileName);
+                RemoveStorageImage(vm, diskFileName);
             }
         }
 
@@ -577,7 +667,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="diskFileName"></param>
-        private void RemoveStorageImageFromVm(ComputerSystem vm, string diskFileName)
+        private void RemoveStorageImage(ComputerSystem vm, string diskFileName)
         {
             // Obtain StorageAllocationSettingData for disk
             StorageAllocationSettingData.StorageAllocationSettingDataCollection storageSettingsObjs = StorageAllocationSettingData.GetInstances();
@@ -591,11 +681,11 @@ namespace HypervResource
                 }
 
                 string hostResource = item.HostResource[0];
-                if (!hostResource.Equals(diskFileName))
+                if (Path.Equals(hostResource, diskFileName))
                 {
-                    continue;
+                    imageToRemove = item;
+                    break;
                 }
-                imageToRemove = item;
             }
 
             // assert
@@ -613,13 +703,13 @@ namespace HypervResource
 
             RemoveStorageResource(imageToRemove.Path, vm);
 
-            logger.InfoFormat("REmoved disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
+            logger.InfoFormat("Removed disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
                     diskFileName,
                     vm.ElementName,
                     vm.Name);
         }
 
-        private ManagementPath AttachNewDriveToVm(ComputerSystem vm, string cntrllerAddr, string driveType)
+        private ManagementPath AttachNewDrive(ComputerSystem vm, string cntrllerAddr, string driveType)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
@@ -661,7 +751,7 @@ namespace HypervResource
             return newDrivePaths[0];
         }
 
-        private ManagementPath AddScsiControllerToVm(ComputerSystem vm)
+        private ManagementPath AddScsiController(ComputerSystem vm)
         {
             // A description of the controller is created by modifying a clone of the default ResourceAllocationSettingData for scsi controller
             string scsiQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", SCSI_CONTROLLER);
@@ -691,6 +781,66 @@ namespace HypervResource
                 scsiSettings.ResourceSubType,
                 newResourcePaths[0].Path);
             return newResourcePaths[0];
+        }
+
+        private ManagementPath GetDiskDriveOnScsiController(ComputerSystem vm, string addrOnController)
+        {
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceSubType == HARDDISK_DRIVE)
+                {
+                    ResourceAllocationSettingData parent = new ResourceAllocationSettingData(new ManagementObject(wmiObj.Parent));
+                    if (parent.ResourceSubType == SCSI_CONTROLLER && wmiObj.AddressOnParent == addrOnController)
+                    {
+                        return wmiObj.Path;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private ManagementPath AttachDiskDriveToScsiController(ComputerSystem vm, string addrOnController)
+        {
+            // Disk drives are attached to a 'Parent' Scsi controller.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetScsiControllerSettings(vmSettings);
+
+            // A description of the drive is created by modifying a clone of the default ResourceAllocationSettingData for that drive type
+            string defaultDriveQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", HARDDISK_DRIVE);
+            var newDiskDriveSettings = CloneResourceAllocationSetting(defaultDriveQuery);
+
+            // Set IDE controller and address on the controller for the new drive
+            newDiskDriveSettings.LateBoundObject["Parent"] = ctrller.Path.ToString();
+            newDiskDriveSettings.LateBoundObject["AddressOnParent"] = addrOnController;
+            newDiskDriveSettings.CommitObject();
+
+            // Add this new disk drive to the VM
+            logger.DebugFormat("Creating disk drive type {0}, parent IDE controller is {1} and address on controller is {2}",
+                newDiskDriveSettings.ResourceSubType,
+                newDiskDriveSettings.Parent,
+                newDiskDriveSettings.AddressOnParent);
+            string[] newDriveResource = new string[] { newDiskDriveSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDrivePaths = AddVirtualResource(newDriveResource, vm);
+
+            // assert
+            if (newDrivePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk drive type {3} to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDrivePaths.Length,
+                    HARDDISK_DRIVE);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.DebugFormat("New disk drive type {0} WMI path is {1}s",
+                newDiskDriveSettings.ResourceSubType,
+                newDrivePaths[0].Path);
+            return newDrivePaths[0];
         }
 
 
@@ -734,16 +884,13 @@ namespace HypervResource
         /// Create Msvm_StorageAllocationSettingData corresponding to the ISO image, and 
         /// associate this with the VM's DVD drive.
         /// </summary>
-        private void AttachIsoToVm(ComputerSystem vm, string isoPath)
+        private void AttachIso(ComputerSystem vm, string isoPath)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             var driveWmiObj = GetDvdDriveSettings(vmSettings);
-
-            InsertDiskImage(vm, isoPath, IDE_ISO_DISK, driveWmiObj.Path);
+            InsertDiskImage(vm, isoPath, ISO_DISK, driveWmiObj.Path);
         }
-
-
 
         private static ResourceAllocationSettingData CloneResourceAllocationSetting(string wmiQuery)
         {
@@ -774,7 +921,7 @@ namespace HypervResource
             }
             else
             {
-                AttachIsoToVm(vm, iso);
+                AttachIso(vm, iso);
             }
         }
 
@@ -835,7 +982,46 @@ namespace HypervResource
             }
             while (vm != null);
         }
-        
+
+        /// <summary>
+        /// Migrates a vm to the given destination host
+        /// </summary>
+        /// <param name="desplayName"></param>
+        /// <param name="destination host"></param>
+        public void MigrateVm(string vmName, string destination)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystem;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, null, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating VM {0} (GUID {1}) due to {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
         /// <summary>
         /// Create new storage media resources, e.g. hard disk images and ISO disk images
         /// see http://msdn.microsoft.com/en-us/library/hh859775(v=vs.85).aspx
@@ -1153,11 +1339,11 @@ namespace HypervResource
         /// With V2 API, there are two kinds of lan endpoint:  one on the computer system and one on the switch
         /// e.g. Msvm_ExternalEthernetPort -> LANEndpoint -> LANEdnpoint -> EthernetSwitchPort -> VirtualEthernetSwitch
         /// </remarks>
-        public static VirtualEthernetSwitch GetExternalVirtSwitch()
+        public static VirtualEthernetSwitch GetExternalVirtSwitch(String vSwitchName)
         {
             // Work back from the first *bound* external NIC we find.
             var externNICs = ExternalEthernetPort.GetInstances("IsBound = TRUE");
-
+            VirtualEthernetSwitch vSwitch = null;
             // Assert
             if (externNICs.Count == 0 )
             {
@@ -1166,8 +1352,7 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-
-            ExternalEthernetPort externNIC = externNICs.OfType<ExternalEthernetPort>().First();
+            foreach(ExternalEthernetPort externNIC in externNICs.OfType<ExternalEthernetPort>()) { 
             // A sequence of ASSOCIATOR objects need to be traversed to get from external NIC the vswitch.
             // We use ManagementObjectSearcher objects to execute this sequence of questions
             // NB: default scope of ManagementObjectSearcher is '\\.\root\cimv2', which does not contain
@@ -1217,7 +1402,7 @@ namespace HypervResource
             var vSwitchQuery = new RelatedObjectQuery(switchPort.Path.Path, VirtualEthernetSwitch.CreatedClassName);
             var vSwitchSearch = new ManagementObjectSearcher(externNIC.Scope, vSwitchQuery);
             var vSwitchCollection = new VirtualEthernetSwitch.VirtualEthernetSwitchCollection(vSwitchSearch.Get());
-        
+
             // assert
             if (vSwitchCollection.Count < 1)
             {
@@ -1226,7 +1411,12 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-            VirtualEthernetSwitch vSwitch = vSwitchCollection.OfType<VirtualEthernetSwitch>().First();
+            vSwitch = vSwitchCollection.OfType<VirtualEthernetSwitch>().First();
+            if (vSwitch.ElementName.Equals(vSwitchName) == true)
+            {
+                return vSwitch;
+            }
+            }
             return vSwitch;
         }
 
@@ -1378,7 +1568,7 @@ namespace HypervResource
             // Is there a template we can use to fill in the settings?
             var newVirtHDSettings = VirtualHardDiskSettingData.CreateInstance();
             newVirtHDSettings.LateBoundObject["Type"] = 3; // Dynamic
-            newVirtHDSettings.LateBoundObject["Format"] = 3; // VHDX
+            newVirtHDSettings.LateBoundObject["Format"] = 2; // VHD
             newVirtHDSettings.LateBoundObject["Path"] = Path;
             newVirtHDSettings.LateBoundObject["MaxInternalSize"] = MaxInternalSize;
             newVirtHDSettings.LateBoundObject["BlockSize"] = 0; // Use defaults
@@ -1398,7 +1588,7 @@ namespace HypervResource
             // If the Job is done asynchronously
             if (ret_val == ReturnCode.Started)
             {
-                JobCompleted(jobPath);
+                StorageJobCompleted(jobPath);
             }
             else if (ret_val != ReturnCode.Completed)
             {
@@ -1448,6 +1638,21 @@ namespace HypervResource
             throw ex;
         }
 
+        public VirtualSystemMigrationService GetVirtualisationSystemMigrationService()
+        {
+
+            var virtSysMigSvcCollection = VirtualSystemMigrationService.GetInstances();
+            foreach (VirtualSystemMigrationService item in virtSysMigSvcCollection)
+            {
+                return item;
+            }
+
+            var errMsg = string.Format("No Hyper-V migration service subsystem on server");
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
+
         /// <summary>
         /// Similar to http://msdn.microsoft.com/en-us/library/hh850031%28v=vs.85%29.aspx
         /// </summary>
@@ -1481,16 +1686,70 @@ namespace HypervResource
             logger.DebugFormat("WMI job succeeded: {0}, Elapsed={1}", jobObj.Description, jobObj.ElapsedTime);
         }
 
-        public void GetProcessorResources(out uint cores, out uint mhz)
+        private static void MigrationJobCompleted(ManagementPath jobPath)
+        {
+            MigrationJob jobObj = null;
+            for (;;)
+            {
+                jobObj = new MigrationJob(jobPath);
+                if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
+                {
+                    break;
+                }
+                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            if (jobObj.JobState != JobState.Completed)
+            {
+                var errMsg = string.Format(
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
+                    jobObj.ErrorDescription);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        private static void StorageJobCompleted(ManagementPath jobPath)
+        {
+            StorageJob jobObj = null;
+            for (; ; )
+            {
+                jobObj = new StorageJob(jobPath);
+                if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
+                {
+                    break;
+                }
+                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            if (jobObj.JobState != JobState.Completed)
+            {
+                var errMsg = string.Format(
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
+                    jobObj.ErrorDescription);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        public void GetProcessorResources(out uint sockets, out uint cores, out uint mhz)
         {
             //  Processor processors
             cores = 0;
             mhz = 0;
+            sockets = 0;
             Processor.ProcessorCollection procCol = Processor.GetInstances();
             foreach (Processor procInfo in procCol)
             {
                 cores += procInfo.NumberOfCores;
                 mhz = procInfo.MaxClockSpeed;
+                sockets++;
            }
         }
         
@@ -1547,6 +1806,19 @@ namespace HypervResource
                 return vm;
             }
             return null;
+        }
+
+        public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
+        {
+            List<String> vms = GetVmElementNames();
+            Dictionary<String, VmState> vmSyncStates = new Dictionary<string, VmState>();
+            String vmState;
+            foreach (String vm in vms)
+            {
+                 vmState = EnabledState.ToCloudStackState(GetComputerSystem(vm).EnabledState);
+                 vmSyncStates.Add(vm, new VmState(vmState, privateIpAddress));
+            }
+            return vmSyncStates;
         }
 
         public List<string> GetVmElementNames()
@@ -1644,7 +1916,7 @@ namespace HypervResource
 
             foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
             {
-                if (wmiObj.ResourceSubType == IDE_HARDDISK_CONTROLLER && wmiObj.Address == cntrllerAddr)
+                if (wmiObj.ResourceSubType == IDE_CONTROLLER && wmiObj.Address == cntrllerAddr)
                 {
                     return wmiObj;
                 }
@@ -1653,6 +1925,26 @@ namespace HypervResource
             var errMsg = string.Format(
                                 "Cannot find the Microsoft Emulated IDE Controlle at address {0} in VirtualSystemSettingData {1}", 
                                 cntrllerAddr, 
+                                vmSettings.Path.Path);
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
+
+        public ResourceAllocationSettingData GetScsiControllerSettings(VirtualSystemSettingData vmSettings)
+        {
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceSubType == SCSI_CONTROLLER)
+                {
+                    return wmiObj;
+                }
+            }
+
+            var errMsg = string.Format(
+                                "Cannot find the Microsoft Synthetic SCSI Controller in VirtualSystemSettingData {1}",
                                 vmSettings.Path.Path);
             var ex = new WmiException(errMsg);
             logger.Error(errMsg, ex);

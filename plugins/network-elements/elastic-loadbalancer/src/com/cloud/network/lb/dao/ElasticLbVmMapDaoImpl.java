@@ -26,58 +26,55 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.router.VirtualRouter.Role;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.DomainRouterDaoImpl;
 
 @Component
-@Local(value={ElasticLbVmMapDao.class})
+@Local(value = {ElasticLbVmMapDao.class})
 public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long> implements ElasticLbVmMapDao {
-    @Inject protected DomainRouterDao _routerDao;
-    @Inject protected LoadBalancerDao _loadbalancerDao;
+    @Inject
+    protected DomainRouterDao _routerDao;
+    @Inject
+    protected LoadBalancerDao _loadbalancerDao;
 
-    
     protected SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
     protected SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
     protected SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
 
-
     protected SearchBuilder<DomainRouterVO> ElbVmSearch;
-    
+
     protected SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
-   
+
     public ElasticLbVmMapDaoImpl() {
     }
-    
+
     @PostConstruct
     protected void init() {
-        AllFieldsSearch  = createSearchBuilder();
+        AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("ipId", AllFieldsSearch.entity().getIpAddressId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("lbId", AllFieldsSearch.entity().getLbId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("elbVmId", AllFieldsSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-   
+
         ElbVmSearch = _routerDao.createSearchBuilder();
         ElbVmSearch.and("role", ElbVmSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        UnusedVmSearch  = createSearchBuilder();
+        UnusedVmSearch = createSearchBuilder();
         UnusedVmSearch.and("elbVmId", UnusedVmSearch.entity().getElbVmId(), SearchCriteria.Op.NULL);
         ElbVmSearch.join("UnusedVmSearch", UnusedVmSearch, ElbVmSearch.entity().getId(), UnusedVmSearch.entity().getElbVmId(), JoinType.LEFTOUTER);
         ElbVmSearch.done();
-        UnusedVmSearch.done();    
-        
+        UnusedVmSearch.done();
+
         LoadBalancerSearch = _loadbalancerDao.createSearchBuilder();
         LoadBalancersForElbVmSearch = createSearchBuilder();
         LoadBalancersForElbVmSearch.and("elbVmId", LoadBalancersForElbVmSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
-        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getId(), LoadBalancersForElbVmSearch.entity().getLbId(), JoinType.INNER);
+        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getId(),
+            LoadBalancersForElbVmSearch.entity().getLbId(), JoinType.INNER);
         LoadBalancersForElbVmSearch.done();
         LoadBalancerSearch.done();
 
@@ -107,7 +104,7 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
 
     @Override
     public int deleteLB(long lbId) {
-    	SearchCriteria<ElasticLbVmMapVO> sc = AllFieldsSearch.create();
+        SearchCriteria<ElasticLbVmMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("lbId", lbId);
         return super.expunge(sc);
     }
@@ -127,17 +124,18 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         return findOneBy(sc);
     }
 
+    @Override
     public List<DomainRouterVO> listUnusedElbVms() {
         SearchCriteria<DomainRouterVO> sc = ElbVmSearch.create();
         sc.setParameters("role", Role.LB);
         return _routerDao.search(sc, null);
     }
-    
+
     @Override
     public List<LoadBalancerVO> listLbsForElbVm(long elbVmId) {
         SearchCriteria<LoadBalancerVO> sc = LoadBalancerSearch.create();
         sc.setJoinParameters("LoadBalancersForElbVm", "elbVmId", elbVmId);
         return _loadbalancerDao.search(sc, null);
     }
-	
+
 }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,13 +18,13 @@ package org.apache.cloudstack.resourcedetail.dao;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 @Component
-@Local (value={FirewallRuleDetailsDao.class})
+@Local(value = {FirewallRuleDetailsDao.class})
 public class FirewallRuleDetailsDaoImpl extends ResourceDetailsDaoBase<FirewallRuleDetailVO> implements FirewallRuleDetailsDao {
 
     @Override

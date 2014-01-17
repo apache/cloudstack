@@ -28,7 +28,7 @@ public interface NetworkOrchestrator {
     void prepare(String vm, String reservationId);
 
     /**
-     * Release all reservation 
+     * Release all reservation
      */
     void release(String vm, String reservationId);
 

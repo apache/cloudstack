@@ -19,7 +19,7 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.2.0
+CLOUDSTACK_RELEASE=4.3.0
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
@@ -36,7 +36,7 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
   apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl e2fsprogs dhcp3-client tcpdump socat wget
   # apt-get --no-install-recommends -q -y --force-yes install grub-legacy
-  apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping
+  apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps  inetutils-ping iputils-arping httping
   apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
 
   # sysstat
@@ -51,6 +51,10 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
   apt-get --no-install-recommends -q -y --force-yes install irqbalance
+  
+ # cifs client
+  apt-get --no-install-recommends -q -y --force-yes install samba-common
+  apt-get --no-install-recommends -q -y --force-yes install cifs-utils
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
@@ -70,6 +74,13 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+  
+  # Hyperv  kvp daemon
+  # Download the hv kvp daemon 
+  wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
+  dpkg -i hv-kvp-daemon_3.1_amd64.deb
+  #libraries required for rdp client (Hyper-V) 
+   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
@@ -89,6 +100,12 @@ install_packages() {
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
 
+  #32 bit architecture support:: not required for 32 bit template
+  dpkg --add-architecture i386
+  apt-get update
+  apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
+
+  apt-get --no-install-recommends -q -y --force-yes install radvd
 }
 
 setup_accounts() {
@@ -220,8 +237,9 @@ configure_services() {
   chkconfig cloud-passwd-srvr off
   chkconfig --add cloud
   chkconfig cloud off
-  chkconfig monit off
   chkconfig xl2tpd off
+  chkconfig hv_kvp_daemon off
+  chkconfig radvd off
 }
 
 do_signature() {

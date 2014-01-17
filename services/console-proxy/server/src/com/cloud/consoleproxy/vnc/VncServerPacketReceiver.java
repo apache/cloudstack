@@ -38,8 +38,8 @@ public class VncServerPacketReceiver implements Runnable {
     private final FrameBufferUpdateListener fburListener;
     private final ConsoleProxyClientListener clientListener;
 
-    public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection, FrameBufferUpdateListener fburListener,
-            ConsoleProxyClientListener clientListener) {
+    public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection,
+            FrameBufferUpdateListener fburListener, ConsoleProxyClientListener clientListener) {
         this.screen = screen;
         this.canvas = canvas;
         this.is = is;
@@ -63,27 +63,27 @@ public class VncServerPacketReceiver implements Runnable {
                 // Invoke packet handler by packet type.
                 switch (messageType) {
 
-                case RfbConstants.SERVER_FRAMEBUFFER_UPDATE: {
-                    // Notify sender that frame buffer update is received,
-                    // so it can send another frame buffer update request
-                    fburListener.frameBufferPacketReceived();
-                    // Handle frame buffer update
-                    new FramebufferUpdatePacket(canvas, screen, is, clientListener);
-                    break;
-                }
+                    case RfbConstants.SERVER_FRAMEBUFFER_UPDATE: {
+                        // Notify sender that frame buffer update is received,
+                        // so it can send another frame buffer update request
+                        fburListener.frameBufferPacketReceived();
+                        // Handle frame buffer update
+                        new FramebufferUpdatePacket(canvas, screen, is, clientListener);
+                        break;
+                    }
 
-                case RfbConstants.SERVER_BELL: {
-                    serverBell();
-                    break;
-                }
+                    case RfbConstants.SERVER_BELL: {
+                        serverBell();
+                        break;
+                    }
 
-                case RfbConstants.SERVER_CUT_TEXT: {
-                    serverCutText(is);
-                    break;
-                }
+                    case RfbConstants.SERVER_CUT_TEXT: {
+                        serverCutText(is);
+                        break;
+                    }
 
-                default:
-                    throw new RuntimeException("Unknown server packet type: " + messageType + ".");
+                    default:
+                        throw new RuntimeException("Unknown server packet type: " + messageType + ".");
                 }
             }
         } catch (Throwable e) {
@@ -92,7 +92,7 @@ public class VncServerPacketReceiver implements Runnable {
                 closeConnection();
             }
         } finally {
-        	s_logger.info("Receiving thread exit processing, shutdown connection");
+            s_logger.info("Receiving thread exit processing, shutdown connection");
             vncConnection.shutdown();
         }
     }

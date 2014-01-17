@@ -23,6 +23,10 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AutoScalePolicyConditionMapDao extends GenericDao<AutoScalePolicyConditionMapVO, Long> {
     List<AutoScalePolicyConditionMapVO> listByAll(Long policyId, Long conditionId);
+
     public boolean isConditionInUse(Long conditionId);
-	boolean removeByAutoScalePolicyId(long id);
+
+    boolean removeByAutoScalePolicyId(long id);
+
+    List<AutoScalePolicyConditionMapVO> findByPolicyId(long id);
 }

@@ -32,8 +32,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -63,6 +63,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     ConfigurationDao configurationDao;
     @Inject
     AgentManager agentMgr;
+
     @Override
     public DataTO introduceObject(DataTO object, Scope scope, Long storeId) {
         EndPoint ep = selector.select(scope, storeId);
@@ -110,11 +111,12 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         String value = configurationDao.getValue("vmsnapshot.create.wait");
         int wait = NumbersUtil.parseInt(value, 1800);
         Long hostId = vmSnapshotHelper.pickRunningHost(virtualMachine.getId());
-        VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(1L,  UUID.randomUUID().toString(), VMSnapshot.Type.DiskAndMemory, null, null, false,
-                null);
+        VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(1L,  UUID.randomUUID().toString(), VMSnapshot.Type.Disk, null, null, false,
+                null, true);
         GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
-        CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(virtualMachine.getInstanceName(),vmSnapshotTO ,volumeTOs, guestOS.getDisplayName(),virtualMachine.getState());
+        CreateVMSnapshotCommand ccmd =
+            new CreateVMSnapshotCommand(virtualMachine.getInstanceName(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName(), virtualMachine.getState());
         ccmd.setWait(wait);
         try {
             Answer answer = agentMgr.send(hostId, ccmd);

@@ -20,11 +20,13 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
 public interface XSerializerAdapter {
-	void setSerializer(XSerializer serializer);
-	
-	void beginElement(String element, String namespace, int indentLevel, PrintWriter writer);
-	void endElement(String element, int indentLevel, PrintWriter writer);
-	
-	void writeElement(String elementName, String itemName, Object fieldValue, Field f, int indentLevel, PrintWriter writer);
-	void writeSeparator(int indentLevel, PrintWriter writer);
+    void setSerializer(XSerializer serializer);
+
+    void beginElement(String element, String namespace, int indentLevel, PrintWriter writer);
+
+    void endElement(String element, int indentLevel, PrintWriter writer);
+
+    void writeElement(String elementName, String itemName, Object fieldValue, Field f, int indentLevel, PrintWriter writer);
+
+    void writeSeparator(int indentLevel, PrintWriter writer);
 }

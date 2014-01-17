@@ -168,8 +168,8 @@
                             expires: 1
                         });
 
-                        g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
-                        $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
+                        $.cookie('kvmsnapshotenabled', g_kvmsnapshotenabled, {
                             expires: 1
                         });                        
                                                
@@ -309,8 +309,8 @@
                                     expires: 1
                                 });
 
-                                g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
-                                $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
+                                $.cookie('kvmsnapshotenabled', g_kvmsnapshotenabled, {
                                     expires: 1
                                 });   
                                 
@@ -386,7 +386,7 @@
                         g_timezoneoffset = null;
                         g_timezone = null;
                         g_supportELB = null;
-                        g_KVMsnapshotenabled = null;
+                        g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
 

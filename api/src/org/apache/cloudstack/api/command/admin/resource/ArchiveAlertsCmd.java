@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.resource;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,7 +29,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -43,16 +44,19 @@ public class ArchiveAlertsCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AlertResponse.class,
-            description = "the IDs of the alerts")
+    @Parameter(name = ApiConstants.IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AlertResponse.class,
+               description = "the IDs of the alerts")
     private List<Long> ids;
 
-    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="end date range to archive alerts" +
-            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date range to archive alerts"
+        + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="start date range to archive alerts" +
-            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date range to archive alerts"
+        + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "archive by alert type")
@@ -94,7 +98,7 @@ public class ArchiveAlertsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if(ids == null && type == null && endDate == null) {
+        if (ids == null && type == null && endDate == null) {
             throw new InvalidParameterValueException("either ids, type, startdate or enddate must be specified");
         } else if (startDate != null && endDate == null) {
             throw new InvalidParameterValueException("enddate must be specified with startdate parameter");

@@ -47,7 +47,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         }
     }
 
-    @Override public long[] getCurrentTimes() {
+    @Override
+    public long[] getCurrentTimes() {
         long[] results = new long[2];
         results[0] = time;
         results[1] = System.currentTimeMillis();
@@ -63,7 +64,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         return "Restarted";
     }
 
-    @Override public String turnOff() {
+    @Override
+    public String turnOff() {
         if (s_executor != null) {
             try {
                 s_executor.shutdown();
@@ -85,7 +87,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
     }
 
     protected class SetTimeTask implements Runnable {
-        @Override public void run() {
+        @Override
+        public void run() {
             try {
                 time = System.currentTimeMillis();
             } catch (Throwable th) {

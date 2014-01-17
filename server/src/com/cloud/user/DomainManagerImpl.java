@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -73,7 +74,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 
 @Component
-@Local(value = { DomainManager.class, DomainService.class })
+@Local(value = {DomainManager.class, DomainService.class})
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
 
@@ -116,11 +117,11 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public Domain getDomainByName(String name, long parentId) {
-	SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-	sc.addAnd("name", SearchCriteria.Op.EQ, name);
-	sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
-	Domain domain = _domainDao.findOneBy(sc);
-	return domain;
+        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+        sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
+        Domain domain = _domainDao.findOneBy(sc);
+        return domain;
     }
 
     @Override
@@ -149,7 +150,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         Account caller = CallContext.current().getCallingAccount();
 
         if (parentId == null) {
-            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+            parentId = Long.valueOf(Domain.ROOT_DOMAIN);
         }
 
         DomainVO parentDomain = _domainDao.findById(parentId);
@@ -188,7 +189,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
-        if(domainUUID == null){
+        if (domainUUID == null) {
             domainUUID = UUID.randomUUID().toString();
         }
 
@@ -235,7 +236,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         if (domain == null) {
             throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
-        } else if (domainId == DomainVO.ROOT_DOMAIN) {
+        } else if (domainId == Domain.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
 
@@ -257,8 +258,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             long ownerId = domain.getAccountId();
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
-                    rollBackState=true;
-                    CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
+                    rollBackState = true;
+                    CloudRuntimeException e =
+                        new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " +
+                            domain.getId() + ").");
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
@@ -271,10 +274,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     s_logger.error("There are dedicated resources for the domain " + domain.getId());
                     hasDedicatedResources = true;
                 }
-                if (accountsForCleanup.isEmpty() && networkIds.isEmpty()&& !hasDedicatedResources) {
+                if (accountsForCleanup.isEmpty() && networkIds.isEmpty() && !hasDedicatedResources) {
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
-                        CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
+                        CloudRuntimeException e =
+                            new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() +
+                                "); Please make sure all users and sub domains have been removed from the domain before deleting");
                         e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
                     }
@@ -288,7 +293,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     } else if (hasDedicatedResources) {
                         msg = "dedicated resources.";
                     }
-                    
+
                     CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + msg);
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
@@ -307,7 +312,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         } finally {
             //when success is false
             if (rollBackState) {
-                s_logger.debug("Changing domain id=" + domain.getId() + " state back to " + Domain.State.Active + " because it can't be removed due to resources referencing to it");
+                s_logger.debug("Changing domain id=" + domain.getId() + " state back to " + Domain.State.Active +
+                    " because it can't be removed due to resources referencing to it");
                 domain.setState(Domain.State.Active);
                 _domainDao.update(domain.getId(), domain);
             }
@@ -380,7 +386,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 success = (success && deleteProject);
             }
         }
-        
+
         //delete the domain shared networks
         boolean networksDeleted = true;
         s_logger.debug("Deleting networks for domain id=" + domainId);
@@ -389,15 +395,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallingUserId()), ctx.getCallingAccount());
         for (Long networkId : networkIds) {
             s_logger.debug("Deleting network id=" + networkId + " as a part of domain id=" + domainId + " cleanup");
-            
-            if (!_networkMgr.destroyNetwork(networkId, context)) {
+            if (!_networkMgr.destroyNetwork(networkId, context, false)) {
                 s_logger.warn("Unable to destroy network id=" + networkId + " as a part of domain id=" + domainId + " cleanup.");
                 networksDeleted = false;
             } else {
                 s_logger.debug("Network " + networkId + " successfully deleted as a part of domain id=" + domainId + " cleanup.");
             }
         }
-        
+
         //don't proceed if networks failed to cleanup. The cleanup will be performed for inactive domain once again
         if (!networksDeleted) {
             s_logger.debug("Failed to delete the shared networks as a part of domain id=" + domainId + " clenaup");
@@ -412,7 +417,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domainId);
             if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
                 s_logger.debug("Releasing dedicated resources for domain" + domainId);
-                for (DedicatedResourceVO dr : dedicatedResources){
+                for (DedicatedResourceVO dr : dedicatedResources) {
                     if (!_dedicatedDao.remove(dr.getId())) {
                         s_logger.warn("Fail to release dedicated resources for domain " + domainId);
                         return false;
@@ -526,7 +531,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         return new Pair<List<? extends Domain>, Integer>(result.first(), result.second());
     }
 
-    private Pair<List<DomainVO>, Integer> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
+    private Pair<List<DomainVO>, Integer> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path,
+        boolean listActiveOnly) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -588,7 +594,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
 
             if (!domains.isEmpty() && !sameDomain) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
+                InvalidParameterValueException ex =
+                    new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
                 ex.addProxyObject(domain.getUuid(), "domainId");
                 throw ex;
             }
@@ -624,7 +631,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         CallContext.current().putContextParameter(Domain.class, domain.getUuid());
             }
         });
-
 
         return _domainDao.findById(domainId);
 

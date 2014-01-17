@@ -24,7 +24,7 @@ public class NicTO extends NetworkTO {
     Integer networkRateMulticastMbps;
     boolean defaultNic;
     String uuid;
-    List <String> nicSecIps;
+    List<String> nicSecIps;
 
     public NicTO() {
         super();

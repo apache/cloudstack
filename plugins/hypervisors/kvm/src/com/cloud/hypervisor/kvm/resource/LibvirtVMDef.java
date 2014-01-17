@@ -20,12 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class LibvirtVMDef {
     private String _hvsType;
-    private static long _libvirtVersion;
-    private static long _qemuVersion;
+    private static long s_libvirtVersion;
+    private static long s_qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -57,7 +56,7 @@ public class LibvirtVMDef {
         private String _initrd;
         private String _root;
         private String _cmdline;
-        private List<bootOrder> _bootdevs = new ArrayList<bootOrder>();
+        private final List<bootOrder> _bootdevs = new ArrayList<bootOrder>();
         private String _machine;
 
         public void setGuestType(guestType type) {
@@ -80,8 +79,7 @@ public class LibvirtVMDef {
             _loader = loader;
         }
 
-        public void setBootKernel(String kernel, String initrd, String rootdev,
-                String cmdline) {
+        public void setBootKernel(String kernel, String initrd, String rootdev, String cmdline) {
             _kernel = kernel;
             _initrd = initrd;
             _root = rootdev;
@@ -119,7 +117,7 @@ public class LibvirtVMDef {
                 guestDef.append("<init>/sbin/init</init>\n");
                 guestDef.append("</os>\n");
                 return guestDef.toString();
-             } else {
+            } else {
                 return null;
             }
         }
@@ -130,7 +128,7 @@ public class LibvirtVMDef {
         private long _currentMem = -1;
         private String _memBacking;
         private int _vcpu = -1;
-        private boolean _memBalloning= false;
+        private boolean _memBalloning = false;
 
         public void setMemorySize(long mem) {
             _mem = mem;
@@ -148,8 +146,8 @@ public class LibvirtVMDef {
             _vcpu = vcpu;
         }
 
-        public void setMemBalloning(boolean turnon){
-              _memBalloning = turnon;
+        public void setMemBalloning(boolean turnon) {
+            _memBalloning = turnon;
         }
 
         @Override
@@ -157,14 +155,12 @@ public class LibvirtVMDef {
             StringBuilder resBuidler = new StringBuilder();
             resBuidler.append("<memory>" + _mem + "</memory>\n");
             if (_currentMem != -1) {
-                resBuidler.append("<currentMemory>" + _currentMem
-                        + "</currentMemory>\n");
+                resBuidler.append("<currentMemory>" + _currentMem + "</currentMemory>\n");
             }
             if (_memBacking != null) {
-                resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>"
-                        + "</memoryBacking>\n");
+                resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>" + "</memoryBacking>\n");
             }
-            if (_memBalloning){
+            if (_memBalloning) {
                 resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
@@ -226,8 +222,7 @@ public class LibvirtVMDef {
 
     public static class ClockDef {
         public enum ClockOffset {
-            UTC("utc"), LOCALTIME("localtime"), TIMEZONE("timezone"), VARIABLE(
-                    "variable");
+            UTC("utc"), LOCALTIME("localtime"), TIMEZONE("timezone"), VARIABLE("variable");
 
             private String _offset;
 
@@ -303,7 +298,7 @@ public class LibvirtVMDef {
                 devs.add(device);
                 devices.put(device.getClass().toString(), devs);
             } else {
-                List<Object> devs = (List<Object>) dev;
+                List<Object> devs = (List<Object>)dev;
                 devs.add(device);
             }
             return true;
@@ -322,16 +317,13 @@ public class LibvirtVMDef {
             StringBuilder devicesBuilder = new StringBuilder();
             devicesBuilder.append("<devices>\n");
             if (_emulator != null) {
-                devicesBuilder.append("<emulator>" + _emulator
-                        + "</emulator>\n");
+                devicesBuilder.append("<emulator>" + _emulator + "</emulator>\n");
             }
 
             for (List<?> devs : devices.values()) {
                 for (Object dev : devs) {
                     if (_guestType == GuestDef.guestType.LXC) {
-                        if (dev instanceof GraphicDef ||
-                            dev instanceof InputDef ||
-                            dev instanceof DiskDef) {
+                        if (dev instanceof GraphicDef || dev instanceof InputDef || dev instanceof DiskDef) {
                             continue;
                         }
                     }
@@ -344,13 +336,12 @@ public class LibvirtVMDef {
 
         @SuppressWarnings("unchecked")
         public List<DiskDef> getDisks() {
-            return (List<DiskDef>) devices.get(DiskDef.class.toString());
+            return (List<DiskDef>)devices.get(DiskDef.class.toString());
         }
 
         @SuppressWarnings("unchecked")
         public List<InterfaceDef> getInterfaces() {
-            return (List<InterfaceDef>) devices.get(InterfaceDef.class
-                    .toString());
+            return (List<InterfaceDef>)devices.get(InterfaceDef.class.toString());
         }
 
     }
@@ -399,8 +390,7 @@ public class LibvirtVMDef {
         }
 
         public enum diskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML(
-                    "uml"), FDC("fdc");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc");
             String _bus;
 
             diskBus(String bus) {
@@ -427,6 +417,23 @@ public class LibvirtVMDef {
             }
         }
 
+        public enum diskCacheMode {
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            String _diskCacheMode;
+
+            diskCacheMode(String cacheMode) {
+                _diskCacheMode = cacheMode;
+            }
+
+            @Override
+            public String toString() {
+                if (_diskCacheMode == null) {
+                    return "none";
+                }
+                return _diskCacheMode;
+            }
+        }
+
         private deviceType _deviceType; /* floppy, disk, cdrom */
         private diskType _diskType;
         private diskProtocol _diskProtocol;
@@ -445,15 +452,16 @@ public class LibvirtVMDef {
         private Long _bytesWriteRate;
         private Long _iopsReadRate;
         private Long _iopsWriteRate;
+        private diskCacheMode _diskCacheMode;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
         }
 
-        public void defFileBasedDisk(String filePath, String diskLabel,
-                diskBus bus, diskFmtType diskFmtType) {
+        public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus, diskFmtType diskFmtType) {
             _diskType = diskType.FILE;
             _deviceType = deviceType.DISK;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = filePath;
             _diskLabel = diskLabel;
             _diskFmtType = diskFmtType;
@@ -467,7 +475,7 @@ public class LibvirtVMDef {
                 devId++;
             }
 
-            char suffix = (char) ('a' + devId);
+            char suffix = (char)('a' + devId);
             if (bus == diskBus.SCSI) {
                 return "sd" + suffix;
             } else if (bus == diskBus.VIRTIO) {
@@ -477,11 +485,11 @@ public class LibvirtVMDef {
 
         }
 
-        public void defFileBasedDisk(String filePath, int devId, diskBus bus,
-                diskFmtType diskFmtType) {
+        public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType) {
 
             _diskType = diskType.FILE;
             _deviceType = deviceType.DISK;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = filePath;
             _diskLabel = getDevLabel(devId, bus);
             _diskFmtType = diskFmtType;
@@ -495,6 +503,7 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
             _diskLabel = "hdc";
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _bus = diskBus.IDE;
         }
 
@@ -502,27 +511,28 @@ public class LibvirtVMDef {
             _diskType = diskType.BLOCK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _diskLabel = getDevLabel(devId, bus);
             _bus = bus;
         }
 
-        public void defBlockBasedDisk(String diskName, String diskLabel,
-                diskBus bus) {
+        public void defBlockBasedDisk(String diskName, String diskLabel, diskBus bus) {
             _diskType = diskType.BLOCK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _diskLabel = diskLabel;
             _bus = bus;
         }
 
-        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort,
-                                        String authUserName, String authSecretUUID,
-                                        int devId, diskBus bus, diskProtocol protocol) {
+        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
+            diskProtocol protocol) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
             _sourcePort = sourcePort;
@@ -533,12 +543,12 @@ public class LibvirtVMDef {
             _diskProtocol = protocol;
         }
 
-        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort,
-                                        String authUserName, String authSecretUUID,
-                                        String diskLabel, diskBus bus, diskProtocol protocol) {
+        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
+            diskProtocol protocol) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
             _sourcePort = sourcePort;
@@ -578,7 +588,7 @@ public class LibvirtVMDef {
         }
 
         public void setDiskPath(String volPath) {
-            this._sourcePath = volPath;
+            _sourcePath = volPath;
         }
 
         public diskBus getBusType() {
@@ -586,7 +596,7 @@ public class LibvirtVMDef {
         }
 
         public int getDiskSeq() {
-            char suffix = this._diskLabel.charAt(this._diskLabel.length() - 1);
+            char suffix = _diskLabel.charAt(_diskLabel.length() - 1);
             return suffix - 'a';
         }
 
@@ -606,6 +616,10 @@ public class LibvirtVMDef {
             _iopsWriteRate = iopsWriteRate;
         }
 
+        public void setCacheMode(diskCacheMode cacheMode) {
+            _diskCacheMode = cacheMode;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -616,7 +630,7 @@ public class LibvirtVMDef {
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
             diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                    + "' cache='none' " + "/>\n");
+                + "' cache='" + _diskCacheMode + "' " + "/>\n");
             if (_diskType == diskType.FILE) {
                 diskBuilder.append("<source ");
                 if (_sourcePath != null) {
@@ -650,9 +664,11 @@ public class LibvirtVMDef {
             }
             diskBuilder.append("/>\n");
 
-            if ((_deviceType != deviceType.CDROM) && (_libvirtVersion >= 9008) && (_qemuVersion >= 1001000)
-                    && (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
-                    || ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)) )) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+            if ((_deviceType != deviceType.CDROM) &&
+                (s_libvirtVersion >= 9008) &&
+                (s_qemuVersion >= 1001000) &&
+                (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
+                    ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 diskBuilder.append("<iotune>\n");
                 if ((_bytesReadRate != null) && (_bytesReadRate > 0))
                     diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
@@ -672,8 +688,7 @@ public class LibvirtVMDef {
 
     public static class InterfaceDef {
         enum guestNetType {
-            BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET(
-                    "ethernet"), INTERNAL("internal");
+            BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal");
             String _type;
 
             guestNetType(String type) {
@@ -687,8 +702,7 @@ public class LibvirtVMDef {
         }
 
         enum nicModel {
-            E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI(
-                    "ne2k_pci");
+            E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI("ne2k_pci");
             String _model;
 
             nicModel(String model) {
@@ -722,13 +736,11 @@ public class LibvirtVMDef {
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
 
-        public void defBridgeNet(String brName, String targetBrName,
-                String macAddr, nicModel model) {
+        public void defBridgeNet(String brName, String targetBrName, String macAddr, nicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
         }
 
-        public void defBridgeNet(String brName, String targetBrName,
-                String macAddr, nicModel model, Integer networkRateKBps) {
+        public void defBridgeNet(String brName, String targetBrName, String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.BRIDGE;
             _sourceName = brName;
             _networkName = targetBrName;
@@ -737,13 +749,11 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
         }
 
-        public void defDirectNet(String sourceName, String targetName,
-                                 String macAddr, nicModel model, String sourceMode) {
+        public void defDirectNet(String sourceName, String targetName, String macAddr, nicModel model, String sourceMode) {
             defDirectNet(sourceName, targetName, macAddr, model, sourceMode, 0);
         }
 
-        public void defDirectNet(String sourceName, String targetName,
-                                 String macAddr, nicModel model, String sourceMode, Integer networkRateKBps) {
+        public void defDirectNet(String sourceName, String targetName, String macAddr, nicModel model, String sourceMode, Integer networkRateKBps) {
             _netType = guestNetType.DIRECT;
             _netSourceMode = sourceMode;
             _sourceName = sourceName;
@@ -753,13 +763,11 @@ public class LibvirtVMDef {
             _networkRateKBps = networkRateKBps;
         }
 
-        public void defPrivateNet(String networkName, String targetName,
-                String macAddr, nicModel model) {
+        public void defPrivateNet(String networkName, String targetName, String macAddr, nicModel model) {
             defPrivateNet(networkName, targetName, macAddr, model, 0);
         }
 
-        public void defPrivateNet(String networkName, String targetName,
-                String macAddr, nicModel model, Integer networkRateKBps) {
+        public void defPrivateNet(String networkName, String targetName, String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.NETWORK;
             _sourceName = networkName;
             _networkName = targetName;
@@ -780,7 +788,7 @@ public class LibvirtVMDef {
             _model = model;
             _scriptPath = scriptPath;
             _networkRateKBps = networkRateKBps;
-         }
+        }
 
         public void defEthernet(String targetName, String macAddr, nicModel model) {
             defEthernet(targetName, macAddr, model, null);
@@ -813,7 +821,7 @@ public class LibvirtVMDef {
         public String getMacAddress() {
             return _macAddr;
         }
-        
+
         public void setVirtualPortType(String virtualPortType) {
             _virtualPortType = virtualPortType;
         }
@@ -837,7 +845,7 @@ public class LibvirtVMDef {
         public int getVlanTag() {
             return _vlanTag;
         }
-        
+
         @Override
         public String toString() {
             StringBuilder netBuilder = new StringBuilder();
@@ -858,7 +866,7 @@ public class LibvirtVMDef {
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
             }
-            if ((_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
+            if ((s_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
                 netBuilder.append("<bandwidth>\n");
                 netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
                 netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
@@ -941,6 +949,8 @@ public class LibvirtVMDef {
     public static class CpuModeDef {
         private String _mode;
         private String _model;
+        private int _coresPerSocket = -1;
+        private int _sockets = -1;
 
         public void setMode(String mode) {
             _mode = mode;
@@ -950,18 +960,34 @@ public class LibvirtVMDef {
             _model = model;
         }
 
+        public void setTopology(int coresPerSocket, int sockets) {
+            _coresPerSocket = coresPerSocket;
+            _sockets = sockets;
+        }
+
         @Override
         public String toString() {
-            StringBuilder modeBuidler = new StringBuilder();
-            if ("custom".equalsIgnoreCase(_mode) && _model != null) {
-                modeBuidler.append("<cpu mode='custom' match='exact'><model fallback='allow'>"
-                            + _model + "</model></cpu>");
+            StringBuilder modeBuilder = new StringBuilder();
+
+            // start cpu def, adding mode, model
+            if ("custom".equalsIgnoreCase(_mode) && _model != null){
+                modeBuilder.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model>");
             } else if ("host-model".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-model'><model fallback='allow'></model></cpu>");
+                modeBuilder.append("<cpu mode='host-model'><model fallback='allow'></model>");
             } else if ("host-passthrough".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-passthrough'></cpu>");
+                modeBuilder.append("<cpu mode='host-passthrough'>");
+            } else {
+                modeBuilder.append("<cpu>");
             }
-            return modeBuidler.toString();
+
+            // add topology
+            if (_sockets > 0 && _coresPerSocket > 0) {
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+            }
+
+            // close cpu def
+            modeBuilder.append("</cpu>");
+            return modeBuilder.toString();
         }
     }
 
@@ -1003,12 +1029,11 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
-            if(_path == null) {
+            if (_path == null) {
                 _path = "/var/lib/libvirt/qemu";
             }
             virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path
-                                        + "/" + _name + ".agent'/>\n");
+            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
             virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
             virtioSerialBuilder.append("</channel>\n");
@@ -1024,8 +1049,7 @@ public class LibvirtVMDef {
         private final String _passwd;
         private final String _keyMap;
 
-        public GraphicDef(String type, short port, boolean autoPort,
-                String listenAddr, String passwd, String keyMap) {
+        public GraphicDef(String type, short port, boolean autoPort, String listenAddr, String passwd, String keyMap) {
             _type = type;
             _port = port;
             _autoPort = autoPort;
@@ -1108,11 +1132,11 @@ public class LibvirtVMDef {
     }
 
     public void setLibvirtVersion(long libvirtVersion) {
-        _libvirtVersion = libvirtVersion;
+        s_libvirtVersion = libvirtVersion;
     }
 
     public void setQemuVersion(long qemuVersion) {
-        _qemuVersion = qemuVersion;
+        s_qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {
@@ -1138,7 +1162,7 @@ public class LibvirtVMDef {
     public DevicesDef getDevices() {
         Object o = components.get(DevicesDef.class.toString());
         if (o != null) {
-            return (DevicesDef) o;
+            return (DevicesDef)o;
         }
         return null;
     }

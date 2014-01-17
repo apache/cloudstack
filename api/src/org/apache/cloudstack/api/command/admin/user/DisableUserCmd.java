@@ -18,26 +18,25 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "disableUser", description="Disables a user account", responseObject=UserResponse.class)
+@APICommand(name = "disableUser", description = "Disables a user account", responseObject = UserResponse.class)
 public class DisableUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";
@@ -46,11 +45,11 @@ public class DisableUserCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class,
-            required=true, description="Disables user by user ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "Disables user by user ID.")
     private Long id;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -86,16 +85,15 @@ public class DisableUserCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "disabling user: " + getId();
+        return "disabling user: " + getId();
     }
 
-
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("UserId: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("UserId: " + getId());
         UserAccount user = _regionService.disableUser(this);
 
-        if (user != null){
+        if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

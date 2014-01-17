@@ -53,12 +53,12 @@ public class ConsoleProxyListener implements Listener {
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
         if (cmd instanceof ConsoleProxyLoadReportCommand) {
-            _proxyMgr.onLoadReport((ConsoleProxyLoadReportCommand) cmd);
+            _proxyMgr.onLoadReport((ConsoleProxyLoadReportCommand)cmd);
 
             // return dummy answer
             return new AgentControlAnswer(cmd);
         } else if (cmd instanceof ConsoleAccessAuthenticationCommand) {
-            return _proxyMgr.onConsoleAccessAuthentication((ConsoleAccessAuthenticationCommand) cmd);
+            return _proxyMgr.onConsoleAccessAuthentication((ConsoleAccessAuthenticationCommand)cmd);
         }
         return null;
     }
@@ -66,10 +66,10 @@ public class ConsoleProxyListener implements Listener {
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         _proxyMgr.onAgentConnect(host, cmd);
-    	
-    	if (cmd instanceof StartupProxyCommand) {
-    		_proxyMgr.startAgentHttpHandlerInVM((StartupProxyCommand)cmd);
-    	}
+
+        if (cmd instanceof StartupProxyCommand) {
+            _proxyMgr.startAgentHttpHandlerInVM((StartupProxyCommand)cmd);
+        }
     }
 
     @Override
@@ -87,5 +87,5 @@ public class ConsoleProxyListener implements Listener {
     public int getTimeout() {
         return -1;
     }
-    
+
 }

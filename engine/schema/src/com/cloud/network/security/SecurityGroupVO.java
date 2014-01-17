@@ -26,8 +26,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))
@@ -53,7 +51,7 @@ public class SecurityGroupVO implements SecurityGroup {
     private String uuid;
 
     public SecurityGroupVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public SecurityGroupVO(String name, String description, long domainId, long accountId) {
@@ -61,7 +59,7 @@ public class SecurityGroupVO implements SecurityGroup {
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
-    	this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -91,11 +89,11 @@ public class SecurityGroupVO implements SecurityGroup {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     @Override

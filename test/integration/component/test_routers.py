@@ -70,7 +70,7 @@ class Services:
                         "natrule":
                                 {
                                     "privateport": 22,
-                                    "publicport": 222,
+                                    "publicport": 22,
                                     "protocol": "TCP"
                                 },
                          "lbrule":
@@ -79,7 +79,7 @@ class Services:
                                     "alg": "roundrobin",
                                     # Algorithm used for load balancing
                                     "privateport": 22,
-                                    "publicport": 2222,
+                                    "publicport": 22,
                                     "protocol": 'TCP',
                                 },
                          "fw_rule": {
@@ -350,16 +350,31 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         # Router associated with account should be in running state
-        for router in routers:
-            self.debug("Router ID: %s & Router state: %s" % (
+        timeout = 180
+        router = routers[0]
+        self.debug("Router ID: %s & Router state: %s" % (
                                                              router.id,
                                                              router.state
                                                              ))
-            self.assertEqual(
+        self.debug("Wait for %s secs max for router to reach Running state" % timeout)
+        while timeout:
+            time.sleep(60)
+            routers = list_routers(
+                               self.apiclient,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               id=router.id)
+            router = routers[0]
+            if router.state == 'Running':
+                break
+
+            timeout = timeout - 60
+            if timeout == 0:
+                self.assertEqual(
                         router.state,
                         'Running',
-                        "Check list router response for router state"
-                    )
+                        "Router not in Running state")
+
 
         # Network state associated with account should be 'Implemented'
         networks = list_networks(
@@ -700,7 +715,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         # 4. listPublicIpAddresses account=user, domainid=1 - pick ipaddressid
         # 5. createPortForwardingRule (ipaddressid from step 5.)
         #    a. for port 22 (ssh) for user VM deployed in step 1.
-        #    b. public port 222 , private port 22
+        #    b. public port 22 , private port 22
         # 6. startRouter stopped for this account
         # 7. wait for listRouters to show router as Running
 
@@ -759,6 +774,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                         True,
                         "Check for list public IPs response return valid data"
                         )
+
         public_ip = public_ips[0]
 
         # Open up firewall port for SSH
@@ -823,12 +839,11 @@ class TestRouterStopCreatePF(cloudstackTestCase):
 
             self.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
 
-            self.vm_1.ssh_port = nat_rule.publicport
-            self.vm_1.get_ssh_client(nat_rule.ipaddress)
+            self.vm_1.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services["natrule"]["publicport"])
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.vm_1.ipaddress, e)
+                      (nat_rule.ipaddress, e)
                       )
         return
 
@@ -905,10 +920,10 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         """
         # validate the following
         # 1. listLoadBalancerRules (publicipid=ipaddressid of source NAT)
-        # 2. rule should be for port 2222 as applied and
+        # 2. rule should be for port 22 as applied and
         #    should be in state=Active
         # 3. ssh access should be allowed to the userVMs over the source NAT IP
-        #    and port 2222
+        #    and port 22
 
         # Get router details associated for that account
         routers = list_routers(

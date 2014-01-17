@@ -22,9 +22,10 @@ public class EC2Address {
     private String ipAddress = null;
     private String associatedInstanceId = null;
 
-    public EC2Address() { }
+    public EC2Address() {
+    }
 
-    public void setIpAddress( String ipAddress ) {
+    public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
@@ -32,7 +33,7 @@ public class EC2Address {
         return this.ipAddress;
     }
 
-    public void setAssociatedInstanceId( String associatedInstanceId ) {
+    public void setAssociatedInstanceId(String associatedInstanceId) {
         this.associatedInstanceId = associatedInstanceId;
     }
 

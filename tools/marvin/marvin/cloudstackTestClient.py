@@ -23,6 +23,7 @@ import random
 import string
 import hashlib
 from configGenerator import ConfigManager
+from marvin.integration.lib.utils import random_gen
 
 '''
 @Desc  : CloudStackTestClient is encapsulated class for getting various \
@@ -32,7 +33,7 @@ from configGenerator import ConfigManager
                        Server. Retrieved from configuration file.
          asyncTimeout :
          defaultWorkerThreads :
-         logging :
+         logger : provides logging facilities for this library 
 '''
 
 
@@ -40,11 +41,12 @@ class cloudstackTestClient(object):
     def __init__(self, mgmtDetails,
                  dbSvrDetails, asyncTimeout=3600,
                  defaultWorkerThreads=10,
-                 logging=None):
+                 logger=None):
+        self.mgmtDetails = mgmtDetails
         self.connection = \
-            cloudstackConnection.cloudConnection(mgmtDetails,
+            cloudstackConnection.cloudConnection(self.mgmtDetails,
                                                  asyncTimeout,
-                                                 logging)
+                                                 logger)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
@@ -124,7 +126,7 @@ class cloudstackTestClient(object):
             createAcctCmd = createAccount.createAccountCmd()
             createAcctCmd.accounttype = acctType
             createAcctCmd.domainid = domId
-            createAcctCmd.email = "test-" + self.random_gen()\
+            createAcctCmd.email = "test-" + random_gen()\
                 + "@cloudstack.org"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
@@ -148,14 +150,14 @@ class cloudstackTestClient(object):
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
 
+        mgtDetails = self.mgmtDetails
+        mgtDetails.apiKey = apiKey
+        mgtDetails.securityKey = securityKey
+
         newUserConnection =\
-            cloudstackConnection.cloudConnection(self.connection.mgtSvr,
-                                                 self.connection.port,
-                                                 self.connection.user,
-                                                 self.connection.passwd,
-                                                 apiKey, securityKey,
+            cloudstackConnection.cloudConnection(mgtDetails,
                                                  self.connection.asyncTimeout,
-                                                 self.connection.logging)
+                                                 self.connection.logger)
         self.userApiClient =\
             cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
         self.userApiClient.connection = newUserConnection

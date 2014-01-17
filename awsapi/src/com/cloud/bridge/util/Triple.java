@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.bridge.util;
 
-/** 
+/**
  * Reusable class whose instances encode any triple (or 3-tuple) of values of types T1, T2 and T3
  * Provide getters: getFirst(), getSecond(), getThird()
  * Provide setters: setFirst(val), setSecond(val), setThird(val)
@@ -24,41 +24,41 @@ package com.cloud.bridge.util;
  * @param <T2>
  * @param <T3>
  */
-public class Triple <T1, T2, T3> {
-	T1 first;
-	T2 second;
-	T3 third;
+public class Triple<T1, T2, T3> {
+    T1 first;
+    T2 second;
+    T3 third;
 
-	public Triple(T1 t1, T2 t2, T3 t3) {
-		first = t1;
-		second = t2;
-		third = t3;
-	}
-	
-	public T1 getFirst() {
-		return first;
-	}
-	
-	public Triple<T1, T2, T3> setFirst(T1 t1) {
-		first = t1;
-		return this;
-	}
-	
-	public T2 getSecond() {
-		return second;
-	}
-	
-	public Triple<T1, T2, T3> setSecond(T2 t2) {
-		second = t2;
-		return this;
-	}
-	
-	public T3 getThird() {
-		return third;
-	}
-	
-	public Triple<T1, T2, T3> setThird(T3 t3) {
-		third = t3;
-		return this;
-	}
+    public Triple(T1 t1, T2 t2, T3 t3) {
+        first = t1;
+        second = t2;
+        third = t3;
+    }
+
+    public T1 getFirst() {
+        return first;
+    }
+
+    public Triple<T1, T2, T3> setFirst(T1 t1) {
+        first = t1;
+        return this;
+    }
+
+    public T2 getSecond() {
+        return second;
+    }
+
+    public Triple<T1, T2, T3> setSecond(T2 t2) {
+        second = t2;
+        return this;
+    }
+
+    public T3 getThird() {
+        return third;
+    }
+
+    public Triple<T1, T2, T3> setThird(T3 t3) {
+        third = t3;
+        return this;
+    }
 }

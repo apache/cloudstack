@@ -43,7 +43,7 @@ public class ListVolumesCmdByAdmin extends ListVolumesCmd {
             description="the ID of the storage pool, available to ROOT admin only", since="4.3", authorized = { RoleType.Admin })
     private Long storageId;
 
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -59,5 +59,5 @@ public class ListVolumesCmdByAdmin extends ListVolumesCmd {
     public Long getStorageId() {
         return storageId;
     }
-    
+
 }

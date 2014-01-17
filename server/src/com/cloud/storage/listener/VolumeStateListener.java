@@ -17,26 +17,28 @@
 
 package com.cloud.storage.listener;
 
-import com.cloud.event.EventCategory;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Event;
-import com.cloud.storage.Volume.State;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.fsm.StateListener;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
+import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementService;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Event;
+import com.cloud.storage.Volume.State;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.fsm.StateListener;
+
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
-    protected static EventBus _eventBus = null;
+    protected static EventBus s_eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
@@ -59,17 +61,14 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                ManagementServer.Name,
-                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                event,
-                resourceName,
+        org.apache.cloudstack.framework.events.Event eventMsg =
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
                 vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
@@ -82,7 +81,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
         eventMsg.setDescription(eventDescription);
         try {
-            _eventBus.publish(eventMsg);
+            s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
             s_logger.warn("Failed to state change event on the the event bus.");
         }
@@ -92,7 +91,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         int index = entityClassName.lastIndexOf(".");
         String entityName = entityClassName;
         if (index != -1) {
-            entityName = entityClassName.substring(index+1);
+            entityName = entityClassName.substring(index + 1);
         }
         return entityName;
     }

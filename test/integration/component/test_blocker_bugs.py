@@ -88,7 +88,7 @@ class Services:
                         },
                         "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
-                        "sleep": 60,
+                        "sleep": 180,
                      }
 
 
@@ -216,7 +216,7 @@ class TestTemplate(cloudstackTestCase):
         self.assertEqual(
                             template_response.isready,
                             True,
-                            "Check display text of newly created template"
+                            "Template state is not ready, it is %s" % template_response.isready
                         )
 
         # Deploy new virtual machine using template
@@ -630,7 +630,7 @@ class TestRouterRestart(cloudstackTestCase):
         # No need
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "advancedns", "eip"])
+    @attr(tags = ["advanced", "advancedns", "eip"])
     def test_01_restart_network_cleanup(self):
         """TS_BUG_008-Test restart network
         """

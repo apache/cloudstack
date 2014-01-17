@@ -18,17 +18,33 @@
 """ Component tests for VPC network functionality - with and without Netscaler (Netscaler tests will be skipped if Netscaler configuration fails)
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine
+from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.integration.lib.base import (VirtualMachine,
+                                         ServiceOffering,
+                                         Account,
+                                         NATRule,
+                                         NetworkOffering,
+                                         Network,
+                                         VPC,
+                                         VpcOffering,
+                                         LoadBalancerRule,
+                                         Router,
+                                         StaticNATRule,
+                                         NetworkACL,
+                                         PublicIPAddress)
+from marvin.integration.lib.common import (get_zone,
+                                           get_domain,
+                                           get_template,
+                                           wait_for_cleanup,
+                                           add_netscaler,
+                                           list_networks)
 # For more info on ddt refer to http://ddt.readthedocs.org/en/latest/api.html#module-ddt
 from ddt import ddt, data
+import time
+from marvin.codes import PASS
 
 class Services:
     """Test VPC network services
@@ -75,7 +91,7 @@ class Services:
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
                 },
             },
-            # Offering that uses Netscaler as provider for LB inside VPC, dedicated = false            
+            # Offering that uses Netscaler as provider for LB inside VPC, dedicated = false
             "network_off_netscaler": {
                 "name": 'Network offering-netscaler',
                 "displaytext": 'Network offering-netscaler',
@@ -98,7 +114,7 @@ class Services:
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
                 },
             },
-            # Offering that uses Netscaler as provider for LB in VPC, dedicated = True 
+            # Offering that uses Netscaler as provider for LB in VPC, dedicated = True
             # This offering is required for the tests that use Netscaler as external LB provider in VPC
             "network_offering_vpcns": {
                                     "name": 'VPC Network offering',
@@ -228,8 +244,8 @@ class TestVPCNetwork(cloudstackTestCase):
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
-        # Added an attribute to track if Netscaler addition was successful. 
-        # Value is checked in tests and if not configured, Netscaler tests will be skipped 
+        # Added an attribute to track if Netscaler addition was successful.
+        # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -249,7 +265,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                             )
         cls._cleanup.append(cls.service_offering)
         # Configure Netscaler device
-        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed                
+        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
@@ -339,7 +355,7 @@ class TestVPCNetwork(cloudstackTestCase):
                 )
         self.debug("VPC network validated - %s" % network.name)
         return
-    
+
     @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
     def test_01_create_network(self, value):
@@ -441,17 +457,17 @@ class TestVPCNetwork(cloudstackTestCase):
     def test_02_create_network_fail(self, value):
         """ Test create network in VPC mismatched services (Should fail)
         """
-        
+
         # Validate the following
-        # 1. Create a VPC using Default VPC Offering 
+        # 1. Create a VPC using Default VPC Offering
         # 2. Create a network offering with guest type=Isolated" that has
         #    one of supported Services(Vpn,dhcpdns,UserData, Static
-        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR, SourceNat by VR 
+        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR, SourceNat by VR
         #    and conserve mode is ON
         # 3. Create a network using the network offering created in step2 as
         #    part of this VPC.
         # 4. Network creation should fail since SourceNat offered by VR instead of VPCVR
-        # 5. Repeat test for offering which has Netscaler as external LB provider 
+        # 5. Repeat test for offering which has Netscaler as external LB provider
 
         if (value == "network_offering_vpcns" and self.ns_configured == False):
            self.skipTest('Netscaler not configured: skipping test')
@@ -471,7 +487,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                   )
         vpc_off=vpc_off_list[0]
         self.debug("Creating a VPC with offering: %s" % vpc_off.id)
-        
+
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -511,7 +527,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 )
         return
 
-    @data("network_offering", "network_offering_vpcns") 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
     def test_04_create_multiple_networks_with_lb(self, value):
         """ Test create multiple networks with LB service (Should fail)
@@ -525,7 +541,7 @@ class TestVPCNetwork(cloudstackTestCase):
         #    part of this VPC.
         # 4. Create another network using the network offering created in
         #    step3 as part of this VPC
-        # 5. Create Network should fail 
+        # 5. Create Network should fail
         # 6. Repeat test for offering which has Netscaler as external LB provider
         if (value == "network_offering_vpcns" and self.ns_configured == False):
            self.skipTest('Netscaler not configured: skipping test')
@@ -884,7 +900,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                    )
         self.debug("Network creation failed as VPC doesn't have LB service")
         return
-    
+
     @data("network_off_shared", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
     def test_09_create_network_shared_nwoff(self, value):
@@ -992,8 +1008,8 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
-        # Added an attribute to track if Netscaler addition was successful. 
-        # Value is checked in tests and if not configured, Netscaler tests will be skipped 
+        # Added an attribute to track if Netscaler addition was successful.
+        # Value is checked in tests and if not configured, Netscaler tests will be skipped
         cls.ns_configured = False
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -1013,7 +1029,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                             )
         cls._cleanup.append(cls.service_offering)
         # Configure Netscaler device
-        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed              
+        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
@@ -1628,7 +1644,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                 )
         self.debug("VPC network validated - %s" % network.name)
         return
-    
+
     @attr(tags=["advanced", "intervlan"])
     def test_01_network_services_upgrade(self):
         """ Test update Network that is part of a VPC to a network offering that has more services
@@ -1761,9 +1777,8 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                     domainid=self.account.domainid
                                 )
 
-        self.debug("Adding virtual machines %s and %s to LB rule" % (
-                                                        vm_1.name, vm_2.name))
-        lb_rule.assign(self.apiclient, [vm_1, vm_2])
+        self.debug("Adding virtual machines %s to LB rule" % vm_1.name)
+        lb_rule.assign(self.apiclient, [vm_1])
 
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_2 = PublicIPAddress.create(
@@ -1813,22 +1828,22 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                          )
 
         self.debug("Adding NetwrokACl rules to make PF and LB accessible")
-        nwacl_lb = NetworkACL.create(
-                                self.apiclient,
-                                networkid=network_1.id,
-                                services=self.services["lbrule"],
-                                traffictype='Ingress'
-                                )
+        NetworkACL.create(
+                          self.apiclient,
+                          networkid=network_1.id,
+                          services=self.services["lbrule"],
+                          traffictype='Ingress'
+                          )
 
         self.debug(
             "Adding Egress rules to network %s to access internet" %
                                                         (network_1.name))
-        nwacl_internet_1 = NetworkACL.create(
-                                self.apiclient,
-                                networkid=network_1.id,
-                                services=self.services["icmp_rule"],
-                                traffictype='Egress'
-                                )
+        NetworkACL.create(
+                          self.apiclient,
+                          networkid=network_1.id,
+                          services=self.services["icmp_rule"],
+                          traffictype='Egress'
+                          )
 
         self.debug("Checking if we can SSH into VM_1? - IP: %s" %
                                             public_ip_1.ipaddress.ipaddress)
@@ -1899,15 +1914,15 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
         self.debug("Creatinng NAT rule in network shall through exception?")
         with self.assertRaises(Exception):
-            nat_rule = NATRule.create(
-                                  self.apiclient,
-                                  vm_1,
-                                  self.services["natrule"],
-                                  ipaddressid=public_ip_3.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=network_1.id,
-                                  vpcid=vpc.id
-                                  )
+            NATRule.create(
+                           self.apiclient,
+                           vm_1,
+                           self.services["natrule"],
+                           ipaddressid=public_ip_3.ipaddress.id,
+                           openfirewall=False,
+                           networkid=network_1.id,
+                           vpcid=vpc.id
+                           )
         self.debug("Create NAT rule failed!")
 
         self.debug(
@@ -1920,12 +1935,26 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
         wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
 
+        # When all Vms ain network are stopped, network state changes from Implemented --> Shutdown --> Allocated
+        # We can't update the network when it is in Shutodown state, hence we should wait for the state to change to
+        # Allocated and then update the network
+        retriesCount = 10
+        while True:
+            networks = list_networks(self.apiclient, id=network_1.id)
+            self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list id %s" % networks)
+            self.debug("network state is %s" % networks[0].state)
+            if networks[0].state == "Allocated":
+                break
+            if retriesCount == 0:
+                self.fail("Network state should change to Allocated, it is %s" % networks[0].state)
+            retriesCount -= 1
+            time.sleep(6)
+
         self.debug("Upgrading network offering to support PF services")
         try:
             network_1.update(
                             self.apiclient,
-                            networkofferingid=nw_off.id,
-                            changecidr=True
+                            networkofferingid=nw_off.id
                             )
         except Exception as e:
             self.fail("failed to upgrade the network offering- %s" % e)
@@ -1938,23 +1967,23 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start VMs, %s" % e)
 
-        nat_rule = NATRule.create(
-                                  self.apiclient,
-                                  vm_1,
-                                  self.services["natrule"],
-                                  ipaddressid=public_ip_3.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=network_1.id,
-                                  vpcid=vpc.id
-                                  )
+        NATRule.create(
+                       self.apiclient,
+                       vm_1,
+                       self.services["natrule"],
+                       ipaddressid=public_ip_3.ipaddress.id,
+                       openfirewall=False,
+                       networkid=network_1.id,
+                       vpcid=vpc.id
+                       )
 
         self.debug("Adding NetwrokACl rules to make NAT rule accessible")
-        nwacl_nat = NetworkACL.create(
-                                         self.apiclient,
-                                         networkid=network_1.id,
-                                         services=self.services["natrule"],
-                                         traffictype='Ingress'
-                                    )
+        NetworkACL.create(
+                          self.apiclient,
+                          networkid=network_1.id,
+                          services=self.services["natrule"],
+                          traffictype='Ingress'
+                          )
         self.debug("Checking if we can SSH into VM using NAT rule?")
         try:
             ssh_3 = vm_1.get_ssh_client(
@@ -2332,11 +2361,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
         # Wait for the network garbage collection thread to run
         wait_for_cleanup(self.apiclient,
                          ["network.gc.interval", "network.gc.wait"])
-
-        #Bug???: Network Acls are not cleared
-        netacls = NetworkACL.list(self.apiclient, networkid=self.network_1.id)
-        self.debug("List of NetACLS %s" % netacls)
-        self.assertEqual(netacls, None, "Netacls were not cleared after network GC thread is run")
 
         lbrules = LoadBalancerRule.list(self.apiclient, networkid=self.network_1.id)
         self.debug("List of LB Rules %s" % lbrules)

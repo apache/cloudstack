@@ -21,15 +21,12 @@ import java.util.List;
 import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.utils.db.GenericDao;
 
-
-public interface LBHealthCheckPolicyDao extends
-        GenericDao<LBHealthCheckPolicyVO, Long> {
+public interface LBHealthCheckPolicyDao extends GenericDao<LBHealthCheckPolicyVO, Long> {
     void remove(long loadBalancerId);
 
     void remove(long loadBalancerId, Boolean pending);
 
     List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId);
 
-    List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId,
-            boolean revoke);
+    List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean revoke);
 }

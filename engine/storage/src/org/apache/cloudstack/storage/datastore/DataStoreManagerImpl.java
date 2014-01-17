@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -83,8 +84,21 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public boolean isRegionStore(DataStore store) {
+        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
+            return true;
+        else
+            return false;
+    }
+
+    @Override
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStoreMgr.getPrimaryDataStore(storeId);
+    }
+
+    @Override
+    public DataStore getPrimaryDataStore(String storeUuid) {
+        return primaryStoreMgr.getPrimaryDataStore(storeUuid);
     }
 
     @Override

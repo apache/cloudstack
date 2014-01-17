@@ -50,9 +50,11 @@ public class RestoreVMCmd extends BaseAsyncCmd {
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class, description="an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+               type = CommandType.UUID,
+               entityType = TemplateResponse.class,
+               description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
     private Long templateId;
-
 
     @Override
     public String getEventType() {

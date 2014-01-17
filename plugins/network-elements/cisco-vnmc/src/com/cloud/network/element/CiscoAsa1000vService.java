@@ -31,8 +31,7 @@ public interface CiscoAsa1000vService extends PluggableService {
 
     public CiscoAsa1000vDevice addCiscoAsa1000vResource(AddCiscoAsa1000vResourceCmd cmd);
 
-    public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(
-            CiscoAsa1000vDevice ciscoAsa1000vDeviceVO);
+    public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(CiscoAsa1000vDevice ciscoAsa1000vDeviceVO);
 
     boolean deleteCiscoAsa1000vResource(DeleteCiscoAsa1000vResourceCmd cmd);
 

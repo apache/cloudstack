@@ -30,83 +30,86 @@ import com.cloud.storage.DiskOfferingVO.Type;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="disk_offering_view")
+@Table(name = "disk_offering_view")
 public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="display_text")
+    @Column(name = "display_text")
     private String displayText;
 
-    @Column(name="disk_size")
+    @Column(name = "disk_size")
     long diskSize;
 
-    @Column(name="tags", length=4096)
+    @Column(name = "tags", length = 4096)
     String tags;
 
-    @Column(name="use_local_storage")
+    @Column(name = "use_local_storage")
     private boolean useLocalStorage;
 
-    @Column(name="system_use")
+    @Column(name = "system_use")
     private boolean systemUse;
 
-    @Column(name="customized")
+    @Column(name = "customized")
     private boolean customized;
 
-    @Column(name="customized_iops")
+    @Column(name = "customized_iops")
     private Boolean customizedIops;
 
-    @Column(name="min_iops")
+    @Column(name = "min_iops")
     private Long minIops;
 
-    @Column(name="max_iops")
+    @Column(name = "max_iops")
     private Long maxIops;
 
-    @Column(name="sort_key")
+    @Column(name = "sort_key")
     int sortKey;
 
-    @Column(name="bytes_read_rate")
+    @Column(name = "bytes_read_rate")
     Long bytesReadRate;
 
-    @Column(name="bytes_write_rate")
+    @Column(name = "bytes_write_rate")
     Long bytesWriteRate;
 
-    @Column(name="iops_read_rate")
+    @Column(name = "iops_read_rate")
     Long iopsReadRate;
 
-    @Column(name="iops_write_rate")
+    @Column(name = "iops_write_rate")
     Long iopsWriteRate;
 
-    @Column(name="type")
+    @Column(name = "cache_mode")
+    String cacheMode;
+
+    @Column(name = "type")
     Type type;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
-    private String domainName = null;
+    @Column(name = "domain_name")
+    private final String domainName = null;
 
-    @Column(name="domain_path")
-    private String domainPath = null;
+    @Column(name = "domain_path")
+    private final String domainPath = null;
 
-    @Column(name="display_offering")
+    @Column(name = "display_offering")
     boolean displayOffering;
 
     public DiskOfferingJoinVO() {
@@ -160,6 +163,18 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
     }
 
     public boolean isDisplayOffering() {

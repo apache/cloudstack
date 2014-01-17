@@ -20,19 +20,16 @@ import java.util.concurrent.CancellationException;
 
 import com.cloud.utils.SerialVersionUID;
 
-
 /**
  * This exception is fired when the job has been cancelled
  *
  */
 public class JobCancellationException extends CancellationException {
-    
+
     private static final long serialVersionUID = SerialVersionUID.AffinityConflictException;
 
     public enum Reason {
-        RequestedByUser,
-        RequestedByCaller,
-        TimedOut;
+        RequestedByUser, RequestedByCaller, TimedOut;
     }
 
     Reason reason;

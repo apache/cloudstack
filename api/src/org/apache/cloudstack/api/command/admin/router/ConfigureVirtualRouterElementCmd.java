@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,8 +32,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +40,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "configureVirtualRouterElement", responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
+@APICommand(name = "configureVirtualRouterElement", responseObject = VirtualRouterProviderResponse.class, description = "Configures a virtual router element.")
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
     private static final String s_name = "configurevirtualrouterelementresponse";
@@ -52,11 +52,14 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VirtualRouterProviderResponse.class,
-            required=true, description="the ID of the virtual router provider")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = VirtualRouterProviderResponse.class,
+               required = true,
+               description = "the ID of the virtual router provider")
     private Long id;
 
-    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enabled/Disabled the service provider")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enabled/Disabled the service provider")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
@@ -104,22 +107,24 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "configuring virtual router provider: " + id;
+        return "configuring virtual router provider: " + id;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.None;
     }
 
+    @Override
     public Long getInstanceId() {
         return id;
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         CallContext.current().setEventDetails("Virtual router element: " + id);
         VirtualRouterProvider result = _service.get(0).configure(this);
-        if (result != null){
+        if (result != null) {
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);

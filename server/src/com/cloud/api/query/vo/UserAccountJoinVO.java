@@ -30,90 +30,90 @@ import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="user_view")
+@Table(name = "user_view")
 public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="username")
+    @Column(name = "username")
     private String username = null;
 
-    @Column(name="password")
+    @Column(name = "password")
     private String password = null;
 
-    @Column(name="firstname")
+    @Column(name = "firstname")
     private String firstname = null;
 
-    @Column(name="lastname")
+    @Column(name = "lastname")
     private String lastname = null;
 
-    @Column(name="email")
+    @Column(name = "email")
     private String email = null;
 
-    @Column(name="state")
+    @Column(name = "state")
     private String state;
 
-    @Column(name="api_key")
+    @Column(name = "api_key")
     private String apiKey = null;
 
     @Encrypt
-    @Column(name="secret_key")
+    @Column(name = "secret_key")
     private String secretKey = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="timezone")
+    @Column(name = "timezone")
     private String timezone;
 
-    @Column(name="registration_token")
+    @Column(name = "registration_token")
     private String registrationToken = null;
 
-    @Column(name="is_registered")
+    @Column(name = "is_registered")
     boolean registered;
 
-    @Column (name="incorrect_login_attempts")
+    @Column(name = "incorrect_login_attempts")
     int loginAttempts;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name="job_id")
+    @Column(name = "job_id")
     private Long jobId;
 
-    @Column(name="job_uuid")
+    @Column(name = "job_uuid")
     private String jobUuid;
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     private int jobStatus;
 
     @Column(name = "default")

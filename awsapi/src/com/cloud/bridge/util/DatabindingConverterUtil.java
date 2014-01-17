@@ -32,33 +32,28 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
  * simpletype 4. Object list -> array
  */
 
-
 public class DatabindingConverterUtil extends ConverterUtil {
 
     // Custom behaviour for java.util.Date
-	public static String convertToString(Date dateValue) 
-	{
-		
-		return (new ISO8601SimpleDateTimeFormat()).format(dateValue);
-	 }
-    
-	// Custom behaviour for java.util.Calendar
-	public static String convertToString(Calendar calendarValue) 
-	{
-		
-		return (new ISO8601SimpleDateTimeFormat()).format(calendarValue.getTime());
-	 }
+    public static String convertToString(Date dateValue) {
+
+        return (new ISO8601SimpleDateTimeFormat()).format(dateValue);
+    }
+
+    // Custom behaviour for java.util.Calendar
+    public static String convertToString(Calendar calendarValue) {
+
+        return (new ISO8601SimpleDateTimeFormat()).format(calendarValue.getTime());
+    }
 
     // Custom behaviour for java.sql.Timestamp
-	public static String convertToString(Timestamp timestampValue) 
-	{
-		
-		return timestampValue.toString();
-	 }
-	
-	// Otherwise String convertToString(Object any) is handled by invoker (which happens to be superclass).
-	// No need to reference super explicitly because it is the invoker of static methods 
-	// @see org.apache.axis2.databinding.utils.ConverterUtil
-	
-	
+    public static String convertToString(Timestamp timestampValue) {
+
+        return timestampValue.toString();
+    }
+
+    // Otherwise String convertToString(Object any) is handled by invoker (which happens to be superclass).
+    // No need to reference super explicitly because it is the invoker of static methods
+    // @see org.apache.axis2.databinding.utils.ConverterUtil
+
 }

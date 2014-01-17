@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -28,83 +30,77 @@ import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import org.apache.cloudstack.ldap.LdapManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listLdapConfigurations", responseObject = LdapConfigurationResponse.class, description = "Lists all LDAP configurations", since = "4.2.0")
 public class LdapListConfigurationCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger
-			.getLogger(LdapListConfigurationCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(LdapListConfigurationCmd.class.getName());
 
-	private static final String s_name = "ldapconfigurationresponse";
+    private static final String s_name = "ldapconfigurationresponse";
 
-	@Inject
-	private LdapManager _ldapManager;
+    @Inject
+    private LdapManager _ldapManager;
 
-	@Parameter(name = "hostname", type = CommandType.STRING, required = false, description = "Hostname")
-	private String hostname;
+    @Parameter(name = "hostname", type = CommandType.STRING, required = false, description = "Hostname")
+    private String hostname;
 
-	@Parameter(name = "port", type = CommandType.INTEGER, required = false, description = "Port")
-	private int port;
+    @Parameter(name = "port", type = CommandType.INTEGER, required = false, description = "Port")
+    private int port;
 
-	public LdapListConfigurationCmd() {
-		super();
-	}
+    public LdapListConfigurationCmd() {
+        super();
+    }
 
-	public LdapListConfigurationCmd(final LdapManager ldapManager) {
-		super();
-		_ldapManager = ldapManager;
-	}
+    public LdapListConfigurationCmd(final LdapManager ldapManager) {
+        super();
+        _ldapManager = ldapManager;
+    }
 
-	private List<LdapConfigurationResponse> createLdapConfigurationResponses(
-			final List<? extends LdapConfigurationVO> configurations) {
-		final List<LdapConfigurationResponse> responses = new ArrayList<LdapConfigurationResponse>();
-		for (final LdapConfigurationVO resource : configurations) {
-			final LdapConfigurationResponse configurationResponse = _ldapManager
-					.createLdapConfigurationResponse(resource);
-			configurationResponse.setObjectName("LdapConfiguration");
-			responses.add(configurationResponse);
-		}
-		return responses;
-	}
+    private List<LdapConfigurationResponse> createLdapConfigurationResponses(final List<? extends LdapConfigurationVO> configurations) {
+        final List<LdapConfigurationResponse> responses = new ArrayList<LdapConfigurationResponse>();
+        for (final LdapConfigurationVO resource : configurations) {
+            final LdapConfigurationResponse configurationResponse = _ldapManager.createLdapConfigurationResponse(resource);
+            configurationResponse.setObjectName("LdapConfiguration");
+            responses.add(configurationResponse);
+        }
+        return responses;
+    }
 
-	@Override
-	public void execute() {
-		final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager
-				.listConfigurations(this);
-		final List<LdapConfigurationResponse> responses = createLdapConfigurationResponses(result
-				.first());
-		final ListResponse<LdapConfigurationResponse> response = new ListResponse<LdapConfigurationResponse>();
-		response.setResponses(responses, result.second());
-		response.setResponseName(getCommandName());
-		setResponseObject(response);
-	}
+    @Override
+    public void execute() {
+        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(this);
+        final List<LdapConfigurationResponse> responses = createLdapConfigurationResponses(result.first());
+        final ListResponse<LdapConfigurationResponse> response = new ListResponse<LdapConfigurationResponse>();
+        response.setResponses(responses, result.second());
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		return Account.ACCOUNT_ID_SYSTEM;
-	}
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
 
-	public String getHostname() {
-		return hostname;
-	}
+    public String getHostname() {
+        return hostname;
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getPort() {
+        return port;
+    }
 
-	public void setHostname(final String hostname) {
-		this.hostname = hostname;
-	}
+    public void setHostname(final String hostname) {
+        this.hostname = hostname;
+    }
 
-	public void setPort(final int port) {
-		this.port = port;
-	}
+    public void setPort(final int port) {
+        this.port = port;
+    }
 }

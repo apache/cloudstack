@@ -17,28 +17,13 @@
 package com.cloud.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import org.apache.commons.io.FileUtils;
 
 public class FileUtil {
 
-    public static void copyfile(File f1, File f2) throws IOException {
-        InputStream in = new FileInputStream(f1);
-        OutputStream out = new FileOutputStream(f2);
-
-        try {
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-        } finally {
-            in.close();
-            out.close();
-        }
+    public static void copyfile(File source, File destination) throws IOException {
+        FileUtils.copyFile(source, destination);
     }
 }
-

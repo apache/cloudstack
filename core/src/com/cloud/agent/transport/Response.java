@@ -27,11 +27,11 @@ public class Response extends Request {
     }
 
     public Response(Request request, Answer answer) {
-        this(request, new Answer[] { answer });
+        this(request, new Answer[] {answer});
     }
 
     public Response(Request request, Answer answer, long mgmtId, long agentId) {
-        this(request, new Answer[] { answer }, mgmtId, agentId);
+        this(request, new Answer[] {answer}, mgmtId, agentId);
     }
 
     public Response(Request request, Answer[] answers) {
@@ -64,7 +64,6 @@ public class Response extends Request {
     protected String getType() {
         return "Ans: ";
     }
-
 
     public static Response parse(byte[] bytes) throws ClassNotFoundException, UnsupportedVersionException {
         return (Response)Request.parse(bytes);

@@ -23,13 +23,13 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVmVO;
 
 public interface StorageNetworkManager extends Manager {
-	StorageNetworkIpAddressVO acquireIpAddress(long podId);
+    StorageNetworkIpAddressVO acquireIpAddress(long podId);
 
-	void releaseIpAddress(String ip);
-	
-	boolean isStorageIpRangeAvailable(long zoneId);
-	
-	List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId);
-	
-	boolean isAnyStorageIpInUseInZone(long zoneId);
+    void releaseIpAddress(String ip);
+
+    boolean isStorageIpRangeAvailable(long zoneId);
+
+    List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId);
+
+    boolean isAnyStorageIpInUseInZone(long zoneId);
 }

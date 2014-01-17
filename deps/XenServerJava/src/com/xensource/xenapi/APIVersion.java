@@ -91,28 +91,28 @@ public enum APIVersion
     {
         switch (this)
         {
-        case API_1_1:
-            return "1.1";
-        case API_1_2:
-            return "1.2";
-        case API_1_3:
-            return "1.3";
-        case API_1_4:
-            return "1.4";
-        case API_1_5:
-            return "1.5";
-        case API_1_6:
-            return "1.6";
-        case API_1_7:
-            return "1.7";
-        case API_1_8:
-            return "1.8";
-        case API_1_9:
-            return "1.9";
-        case API_1_10:
-            return "1.10";
-        default:
-            return "Unknown";
+            case API_1_1:
+                return "1.1";
+            case API_1_2:
+                return "1.2";
+            case API_1_3:
+                return "1.3";
+            case API_1_4:
+                return "1.4";
+            case API_1_5:
+                return "1.5";
+            case API_1_6:
+                return "1.6";
+            case API_1_7:
+                return "1.7";
+            case API_1_8:
+                return "1.8";
+            case API_1_9:
+                return "1.9";
+            case API_1_10:
+                return "1.10";
+            default:
+                return "Unknown";
         }
     }
 }

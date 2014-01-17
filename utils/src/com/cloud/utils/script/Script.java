@@ -66,8 +66,8 @@ public class Script implements Callable<String> {
         _command.add(command);
         _timeout = timeout;
         if (_timeout == 0) {
-        	/* always using default timeout 1 hour to avoid thread hang */
-        	_timeout = _defaultTimeout;
+            /* always using default timeout 1 hour to avoid thread hang */
+            _timeout = _defaultTimeout;
         }
         _process = null;
         _logger = logger != null ? logger : s_logger;
@@ -107,9 +107,9 @@ public class Script implements Callable<String> {
         _command.add(value);
         return this;
     }
-    
+
     public void setWorkDir(String workDir) {
-    	_workDir = workDir;
+        _workDir = workDir;
     }
 
     protected String buildCommandLine(String[] command) {
@@ -157,10 +157,10 @@ public class Script implements Callable<String> {
 
     @Override
     public String toString() {
-    	String[] command = _command.toArray(new String[_command.size()]);
-    	return buildCommandLine(command);
+        String[] command = _command.toArray(new String[_command.size()]);
+        return buildCommandLine(command);
     }
-    
+
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 
@@ -171,9 +171,9 @@ public class Script implements Callable<String> {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
-            if(_workDir != null) 
-            	pb.directory(new File(_workDir));
-            
+            if (_workDir != null)
+                pb.directory(new File(_workDir));
+
             _process = pb.start();
             if (_process == null) {
                 _logger.warn("Unable to execute: " + buildCommandLine(command));
@@ -243,11 +243,10 @@ public class Script implements Callable<String> {
             String error;
             if (interpreter != null) {
                 error = interpreter.processError(reader);
-            }
-            else {
+            } else {
                 error = String.valueOf(_process.exitValue());
             }
-            
+
             if (_logger.isDebugEnabled()) {
                 _logger.debug(error);
             }
@@ -307,6 +306,7 @@ public class Script implements Callable<String> {
             this.result = null;
         }
 
+        @Override
         public void run() {
             done = false;
             try {
@@ -359,22 +359,20 @@ public class Script implements Callable<String> {
          * URI workaround the URL encoding of url.getFile
          */
         if (path.endsWith(File.separator)) {
-        	url = Script.class.getClassLoader().getResource(path + script);
-        }
-        else {
-        	url = Script.class.getClassLoader().getResource(path + File.separator + script);
+            url = Script.class.getClassLoader().getResource(path + script);
+        } else {
+            url = Script.class.getClassLoader().getResource(path + File.separator + script);
         }
         s_logger.debug("Classpath resource: " + url);
         if (url != null) {
-       	    try {
+            try {
                 file = new File(new URI(url.toString()).getPath());
                 s_logger.debug("Absolute path =  " + file.getAbsolutePath());
                 return file.getAbsolutePath();
-            }
-            catch (URISyntaxException e) {
+            } catch (URISyntaxException e) {
                 s_logger.warn("Unable to convert " + url.toString() + " to a URI");
             }
-        }       
+        }
 
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.lastIndexOf(File.separator));
@@ -399,12 +397,12 @@ public class Script implements Callable<String> {
 
                 int endBang = cp.lastIndexOf("!");
                 int end = cp.lastIndexOf(File.separator, endBang);
-                if (end < 0) 
-                	end = cp.lastIndexOf('/', endBang);
-                if(end < 0)
-                	cp = cp.substring(begin);
+                if (end < 0)
+                    end = cp.lastIndexOf('/', endBang);
+                if (end < 0)
+                    cp = cp.substring(begin);
                 else
-                	cp = cp.substring(begin, end);
+                    cp = cp.substring(begin, end);
 
                 s_logger.debug("Current binaries reside at " + cp);
                 search = cp;
@@ -445,7 +443,7 @@ public class Script implements Callable<String> {
         }
 
         search = System.getProperty("paths.script");
-        
+
         search += File.separatorChar + path + File.separator;
         do {
             search = search.substring(0, search.lastIndexOf(File.separator));
@@ -464,7 +462,7 @@ public class Script implements Callable<String> {
     public static String runSimpleBashScript(String command) {
         return Script.runSimpleBashScript(command, 0);
     }
-    
+
     public static String runSimpleBashScript(String command, int timeout) {
 
         Script s = new Script("/bin/bash", timeout);

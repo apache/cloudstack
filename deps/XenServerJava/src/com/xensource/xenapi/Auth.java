@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -52,7 +51,6 @@ import org.apache.xmlrpc.XmlRpcException;
  */
 public class Auth extends XenAPIObject {
 
-
     public String toWireString() {
         return null;
     }
@@ -64,15 +62,15 @@ public class Auth extends XenAPIObject {
      * @return the subject_identifier obtained from the external directory service
      */
     public static String getSubjectIdentifier(Connection c, String subjectName) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "auth.get_subject_identifier";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(subjectName)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -82,15 +80,15 @@ public class Auth extends XenAPIObject {
      * @return key-value pairs containing at least a key called subject_name
      */
     public static Map<String, String> getSubjectInformationFromIdentifier(Connection c, String subjectIdentifier) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "auth.get_subject_information_from_identifier";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(subjectIdentifier)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -100,15 +98,15 @@ public class Auth extends XenAPIObject {
      * @return set of subject_identifiers that provides the group membership of subject_identifier passed as argument, it contains, recursively, all groups a subject_identifier is member of.
      */
     public static Set<String> getGroupMembership(Connection c, String subjectIdentifier) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "auth.get_group_membership";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(subjectIdentifier)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
 }

@@ -24,49 +24,56 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_stratosphere_ssp_uuids")
+@Table(name = "external_stratosphere_ssp_uuids")
 public class SspUuidVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="obj_class")
+    @Column(name = "obj_class")
     private String objClass;
 
-    @Column(name="obj_id")
+    @Column(name = "obj_id")
     private long objId;
 
     static public final String objClassNetwork = "net";
     static public final String objClassNicProfile = "nic";
 
-    @Column(name="reservation_id")
+    @Column(name = "reservation_id")
     private String reservationId;
 
     public String getUuid() {
         return uuid;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public String getObjClass() {
         return objClass;
     }
+
     public void setObjClass(String objClass) {
         this.objClass = objClass;
     }
+
     public long getObjId() {
         return objId;
     }
+
     public void setObjId(long objId) {
         this.objId = objId;
     }
+
     public String getReservationId() {
         return reservationId;
     }
+
     public void setReservationId(String reservationId) {
         this.reservationId = reservationId;
     }

@@ -47,11 +47,9 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     }
 
-    public S3TO(final Long id, final String uuid, final String accessKey,
-            final String secretKey, final String endPoint,
-            final String bucketName, final Boolean httpsFlag,
-            final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created, final boolean enableRRS, final long maxUploadSize) {
+    public S3TO(final Long id, final String uuid, final String accessKey, final String secretKey, final String endPoint, final String bucketName,
+            final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout, final Date created,
+            final boolean enableRRS, final long maxUploadSize) {
 
         super();
 
@@ -81,26 +79,21 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             return false;
         }
 
-        final S3TO thatS3TO = (S3TO) thatObject;
+        final S3TO thatS3TO = (S3TO)thatObject;
 
-        if (httpsFlag != null ? !httpsFlag.equals(thatS3TO.httpsFlag)
-                : thatS3TO.httpsFlag != null) {
+        if (httpsFlag != null ? !httpsFlag.equals(thatS3TO.httpsFlag) : thatS3TO.httpsFlag != null) {
             return false;
         }
 
-        if (accessKey != null ? !accessKey.equals(thatS3TO.accessKey)
-                : thatS3TO.accessKey != null) {
+        if (accessKey != null ? !accessKey.equals(thatS3TO.accessKey) : thatS3TO.accessKey != null) {
             return false;
         }
 
-        if (connectionTimeout != null ? !connectionTimeout
-                .equals(thatS3TO.connectionTimeout)
-                : thatS3TO.connectionTimeout != null) {
+        if (connectionTimeout != null ? !connectionTimeout.equals(thatS3TO.connectionTimeout) : thatS3TO.connectionTimeout != null) {
             return false;
         }
 
-        if (endPoint != null ? !endPoint.equals(thatS3TO.endPoint)
-                : thatS3TO.endPoint != null) {
+        if (endPoint != null ? !endPoint.equals(thatS3TO.endPoint) : thatS3TO.endPoint != null) {
             return false;
         }
 
@@ -112,30 +105,23 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             return false;
         }
 
-        if (maxErrorRetry != null ? !maxErrorRetry
-                .equals(thatS3TO.maxErrorRetry)
-                : thatS3TO.maxErrorRetry != null) {
+        if (maxErrorRetry != null ? !maxErrorRetry.equals(thatS3TO.maxErrorRetry) : thatS3TO.maxErrorRetry != null) {
             return false;
         }
 
-        if (secretKey != null ? !secretKey.equals(thatS3TO.secretKey)
-                : thatS3TO.secretKey != null) {
+        if (secretKey != null ? !secretKey.equals(thatS3TO.secretKey) : thatS3TO.secretKey != null) {
             return false;
         }
 
-        if (socketTimeout != null ? !socketTimeout
-                .equals(thatS3TO.socketTimeout)
-                : thatS3TO.socketTimeout != null) {
+        if (socketTimeout != null ? !socketTimeout.equals(thatS3TO.socketTimeout) : thatS3TO.socketTimeout != null) {
             return false;
         }
 
-        if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName)
-                : thatS3TO.bucketName != null) {
+        if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName) : thatS3TO.bucketName != null) {
             return false;
         }
 
-        if (created != null ? !created.equals(thatS3TO.created)
-                : thatS3TO.created != null) {
+        if (created != null ? !created.equals(thatS3TO.created) : thatS3TO.created != null) {
             return false;
         }
 
@@ -157,13 +143,9 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         result = 31 * result + (endPoint != null ? endPoint.hashCode() : 0);
         result = 31 * result + (bucketName != null ? bucketName.hashCode() : 0);
         result = 31 * result + (httpsFlag ? 1 : 0);
-        result = 31
-                * result
-                + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
-        result = 31 * result
-                + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
-        result = 31 * result
-                + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+        result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
+        result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
+        result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
 
         return result;
 
@@ -177,6 +159,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.id = id;
     }
 
+    @Override
     public String getUuid() {
         return this.uuid;
     }
@@ -274,7 +257,6 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         return DataStoreRole.Image;
     }
 
-
     public boolean getEnableRRS() {
         return enableRRS;
     }
@@ -291,20 +273,20 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.maxSingleUploadSizeInBytes = maxSingleUploadSizeInBytes;
     }
 
-    public boolean getSingleUpload(long objSize){
-        if ( maxSingleUploadSizeInBytes < 0 ){
+    public boolean getSingleUpload(long objSize) {
+        if (maxSingleUploadSizeInBytes < 0) {
             // always use single part upload
             return true;
-        } else if ( maxSingleUploadSizeInBytes == 0 ){
+        } else if (maxSingleUploadSizeInBytes == 0) {
             // always use multi part upload
             return false;
         } else {
             // check object size to set flag
-            if (objSize < maxSingleUploadSizeInBytes){
+            if (objSize < maxSingleUploadSizeInBytes) {
                 return true;
-            } else{
+            } else {
                 return false;
             }
-        }        
+        }
     }
 }

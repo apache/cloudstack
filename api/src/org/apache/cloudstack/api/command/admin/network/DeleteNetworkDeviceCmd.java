@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -36,19 +37,19 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNetworkDevice", description="Deletes network device.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteNetworkDevice", description = "Deletes network device.", responseObject = SuccessResponse.class)
 public class DeleteNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkDeviceCmd.class);
     private static final String s_name = "deletenetworkdeviceresponse";
 
-    @Inject ExternalNetworkDeviceManager nwDeviceMgr;
+    @Inject
+    ExternalNetworkDeviceManager nwDeviceMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class,
-            required=true, description = "Id of network device to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "Id of network device to delete")
     private Long id;
 
     public Long getId() {
@@ -57,7 +58,7 @@ public class DeleteNetworkDeviceCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException {
+        ResourceAllocationException {
         try {
             boolean result = nwDeviceMgr.deleteNetworkDevice(this);
             if (result) {

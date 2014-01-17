@@ -22,7 +22,6 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
@@ -771,7 +770,7 @@ class TestDeployVM(cloudstackTestCase):
                               type='DATADISK',
                               account=self.account.name,
                               domainid=self.account.domainid,
-                              listall=True
+                              virtualmachineid=self.virtual_machine_2.id
                               )
         self.assertEqual(
                          isinstance(volumes, list),
@@ -1257,7 +1256,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags = ["advanced", "eip", "advancedns"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """

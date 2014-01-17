@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
@@ -61,6 +60,7 @@ import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -68,6 +68,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
@@ -100,6 +101,7 @@ import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -134,6 +136,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
@@ -242,8 +245,7 @@ public interface ResponseGenerator {
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
 
-    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies,
-            LoadBalancer lb);
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb);
 
     LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb);
 
@@ -285,7 +287,7 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
 
-    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
+    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
@@ -343,6 +345,8 @@ public interface ResponseGenerator {
 
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
+    OvsProviderResponse createOvsProviderResponse(OvsProvider result);
+
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 
     RegionResponse createRegionResponse(Region region);
@@ -356,9 +360,7 @@ public interface ResponseGenerator {
      */
     ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly);
 
-
     Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
-
 
     /**
      * @param offering
@@ -417,9 +419,11 @@ public interface ResponseGenerator {
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
+
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
 
     NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
+
     public NicResponse createNicResponse(Nic result);
 
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
@@ -435,5 +439,7 @@ public interface ResponseGenerator {
     InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
 
     IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
+
+    ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds);
 
 }

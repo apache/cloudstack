@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.acl.AclEntityType;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ TYPE })
+@Target({TYPE})
 public @interface APICommand {
     Class<? extends BaseResponse> responseObject();
 

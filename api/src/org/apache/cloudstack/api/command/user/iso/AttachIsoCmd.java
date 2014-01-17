@@ -44,14 +44,13 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            required=true, description="the ID of the ISO file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class,
+            required = true, description = "the ID of the ISO file")
     protected Long id;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            required=true, description="the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            required = true, description = "the ID of the virtual machine")
     protected Long virtualMachineId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,7 +63,6 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -96,8 +94,8 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: " +getVirtualMachineId()+ " ISO Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getVirtualMachineId() + " ISO Id: " + getId());
         boolean result = _templateService.attachIso(id, virtualMachineId);
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);

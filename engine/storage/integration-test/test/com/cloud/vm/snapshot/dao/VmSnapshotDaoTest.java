@@ -18,16 +18,20 @@
  */
 package com.cloud.vm.snapshot.dao;
 
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import junit.framework.Assert;
-import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.inject.Inject;
-import java.util.Map;
+import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
+
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/storageContext.xml")
@@ -39,7 +43,7 @@ public class VmSnapshotDaoTest extends CloudStackTestNGBase {
     public void testVmSnapshotDetails() {
         VMSnapshotDetailsVO detailsVO = new VMSnapshotDetailsVO(1L, "test", "foo");
         vmsnapshotDetailsDao.persist(detailsVO);
-        Map<String, String> details = vmsnapshotDetailsDao.getDetails(1L);
+        Map<String, String> details = vmsnapshotDetailsDao.listDetailsKeyPairs(1L);
         Assert.assertTrue(details.containsKey("test"));
     }
 

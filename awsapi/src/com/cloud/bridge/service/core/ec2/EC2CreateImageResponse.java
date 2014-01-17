@@ -18,17 +18,17 @@ package com.cloud.bridge.service.core.ec2;
 
 public class EC2CreateImageResponse {
 
-	private String id;
+    private String id;
 
-	public EC2CreateImageResponse() {
-		id = null;
-	}
-	
-	public void setId( String id ) {
-		this.id = id;
-	}
-	
-	public String getId() {
-		return this.id;
-	}
+    public EC2CreateImageResponse() {
+        id = null;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return this.id;
+    }
 }

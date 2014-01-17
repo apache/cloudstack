@@ -16,22 +16,25 @@
 // under the License.
 package com.cloud.simulator.dao;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.simulator.MockSecurityRulesVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
 
 @Component
-@Local(value={MockSecurityRulesDao.class})
+@Local(value = {MockSecurityRulesDao.class})
 public class MockSecurityRulesDaoImpl extends GenericDaoBase<MockSecurityRulesVO, Long> implements MockSecurityRulesDao {
-    protected  SearchBuilder<MockSecurityRulesVO> vmIdSearch;
-    protected  SearchBuilder<MockSecurityRulesVO> hostSearch;
+    protected SearchBuilder<MockSecurityRulesVO> vmIdSearch;
+    protected SearchBuilder<MockSecurityRulesVO> hostSearch;
+
     @Override
     public MockSecurityRulesVO findByVmId(Long vmId) {
         SearchCriteria<MockSecurityRulesVO> sc = vmIdSearch.create();

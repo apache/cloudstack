@@ -27,7 +27,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
-
 /*
  * Data Access Object for vm_instance table
  */
@@ -37,28 +36,28 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      * @param hostId host.
      * @return list of VMInstanceVO running on that host.
      */
-	List<VMInstanceVO> listByHostId(long hostId);
+    List<VMInstanceVO> listByHostId(long hostId);
 
-	/**
-	 * List VMs by zone ID
-	 * @param zoneId
-	 * @return list of VMInstanceVO in the specified zone
-	 */
-	List<VMInstanceVO> listByZoneId(long zoneId);
+    /**
+     * List VMs by zone ID
+     * @param zoneId
+     * @return list of VMInstanceVO in the specified zone
+     */
+    List<VMInstanceVO> listByZoneId(long zoneId);
 
-	/**
+    /**
      * List VMs by pod ID
      * @param podId
      * @return list of VMInstanceVO in the specified pod
      */
     List<VMInstanceVO> listByPodId(long podId);
 
-	/**
-	 * Lists non-expunged VMs by zone ID and templateId
-	 * @param zoneId
-	 * @return list of VMInstanceVO in the specified zone, deployed from the specified template, that are not expunged
-	 */
-	public List<VMInstanceVO> listNonExpungedByZoneAndTemplate(long zoneId, long templateId);
+    /**
+     * Lists non-expunged VMs by zone ID and templateId
+     * @param zoneId
+     * @return list of VMInstanceVO in the specified zone, deployed from the specified template, that are not expunged
+     */
+    public List<VMInstanceVO> listNonExpungedByZoneAndTemplate(long zoneId, long templateId);
 
     /**
      * Find vm instance with names like.
@@ -69,6 +68,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> findVMInstancesLike(String name);
 
     List<VMInstanceVO> findVMInTransition(Date time, State... states);
+
+    List<VMInstanceVO> listByHostAndState(long hostId, State... states);
 
     List<VMInstanceVO> listByTypes(VirtualMachine.Type... types);
 
@@ -83,16 +84,21 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByHostIdTypes(long hostid, VirtualMachine.Type... types);
 
     List<VMInstanceVO> listUpByHostIdTypes(long hostid, VirtualMachine.Type... types);
+
     List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type);
-	List<VMInstanceVO> listUpByHostId(Long hostId);
-	List<VMInstanceVO> listByLastHostId(Long hostId);
+
+    List<VMInstanceVO> listUpByHostId(Long hostId);
+
+    List<VMInstanceVO> listByLastHostId(Long hostId);
 
     List<VMInstanceVO> listByTypeAndState(VirtualMachine.Type type, State state);
 
     List<VMInstanceVO> listByAccountId(long accountId);
+
     public List<Long> findIdsOfAllocatedVirtualRoutersForAccount(long accountId);
 
     List<VMInstanceVO> listByClusterId(long clusterId);  // this does not pull up VMs which are starting
+
     List<VMInstanceVO> listLHByClusterId(long clusterId);  // get all the VMs even starting one on this cluster
 
     List<VMInstanceVO> listVmsMigratingFromHost(Long hostId);
@@ -122,4 +128,9 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listStartingWithNoHostId();
 
+    boolean updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState);
+
+    void resetVmPowerStateTracking(long instanceId);
+
+    void resetHostPowerStateTracking(long hostId);
 }

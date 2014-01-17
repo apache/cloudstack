@@ -66,13 +66,13 @@ public class AclPolicyVO implements AclPolicy {
     private AclPolicy.PolicyType policyType;
 
     public AclPolicyVO() {
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AclPolicyVO(String name, String description) {
         this.name = name;
         this.description = description;
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         policyType = AclPolicy.PolicyType.Static;
     }
 
@@ -94,11 +94,11 @@ public class AclPolicyVO implements AclPolicy {
 
     @Override
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public Date getRemoved() {

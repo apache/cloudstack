@@ -17,11 +17,6 @@
 
 package org.apache.cloudstack.syslog;
 
-import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.net.SyslogAppender;
-import org.apache.log4j.spi.LoggingEvent;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -30,6 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.net.SyslogAppender;
+import org.apache.log4j.spi.LoggingEvent;
+
+import com.cloud.utils.net.NetUtils;
 
 public class AlertsSyslogAppender extends AppenderSkeleton {
     String _syslogHosts = null;
@@ -97,8 +98,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
                     parseMessage(logMessage);
                     String syslogMessage = createSyslogMessage();
 
-                    LoggingEvent syslogEvent = new LoggingEvent(event.getFQNOfLoggerClass(), event.getLogger(),
-                        event.getLevel(), syslogMessage, null);
+                    LoggingEvent syslogEvent = new LoggingEvent(event.getFQNOfLoggerClass(), event.getLogger(), event.getLevel(), syslogMessage, null);
 
                     for (SyslogAppender syslogAppender : _syslogAppenders) {
                         syslogAppender.append(syslogEvent);
@@ -168,37 +168,37 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     }
 
     void parseMessage(String logMessage) {
-            final StringTokenizer messageSplitter = new StringTokenizer(logMessage, _pairDelimiter);
-            while (messageSplitter.hasMoreTokens()) {
-                final String pairToken = messageSplitter.nextToken();
-                final StringTokenizer pairSplitter = new StringTokenizer(pairToken, _keyValueDelimiter);
-                String keyToken;
-                String valueToken;
+        final StringTokenizer messageSplitter = new StringTokenizer(logMessage, _pairDelimiter);
+        while (messageSplitter.hasMoreTokens()) {
+            final String pairToken = messageSplitter.nextToken();
+            final StringTokenizer pairSplitter = new StringTokenizer(pairToken, _keyValueDelimiter);
+            String keyToken;
+            String valueToken;
 
-                if (pairSplitter.hasMoreTokens()) {
-                    keyToken = pairSplitter.nextToken().trim();
-                } else {
-                    break;
-                }
-
-                if (pairSplitter.hasMoreTokens()) {
-                    valueToken = pairSplitter.nextToken().trim();
-                } else {
-                    break;
-                }
-
-                if (keyToken.equalsIgnoreCase("alertType") && !valueToken.equalsIgnoreCase("null")) {
-                    alertType = Short.parseShort(valueToken);
-                } else if (keyToken.equalsIgnoreCase("dataCenterId") && !valueToken.equalsIgnoreCase("null")) {
-                    dataCenterId = Long.parseLong(valueToken);
-                } else if (keyToken.equalsIgnoreCase("podId") && !valueToken.equalsIgnoreCase("null")) {
-                    podId = Long.parseLong(valueToken);
-                } else if (keyToken.equalsIgnoreCase("clusterId") && !valueToken.equalsIgnoreCase("null")) {
-                    clusterId = Long.parseLong(valueToken);
-                } else if (keyToken.equalsIgnoreCase("message") && !valueToken.equalsIgnoreCase("null")) {
-                    sysMessage = getSyslogMessage(logMessage);
-                }
+            if (pairSplitter.hasMoreTokens()) {
+                keyToken = pairSplitter.nextToken().trim();
+            } else {
+                break;
             }
+
+            if (pairSplitter.hasMoreTokens()) {
+                valueToken = pairSplitter.nextToken().trim();
+            } else {
+                break;
+            }
+
+            if (keyToken.equalsIgnoreCase("alertType") && !valueToken.equalsIgnoreCase("null")) {
+                alertType = Short.parseShort(valueToken);
+            } else if (keyToken.equalsIgnoreCase("dataCenterId") && !valueToken.equalsIgnoreCase("null")) {
+                dataCenterId = Long.parseLong(valueToken);
+            } else if (keyToken.equalsIgnoreCase("podId") && !valueToken.equalsIgnoreCase("null")) {
+                podId = Long.parseLong(valueToken);
+            } else if (keyToken.equalsIgnoreCase("clusterId") && !valueToken.equalsIgnoreCase("null")) {
+                clusterId = Long.parseLong(valueToken);
+            } else if (keyToken.equalsIgnoreCase("message") && !valueToken.equalsIgnoreCase("null")) {
+                sysMessage = getSyslogMessage(logMessage);
+            }
+        }
     }
 
     String createSyslogMessage() {
@@ -218,21 +218,17 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         }
 
         if (alertType >= 0) {
-            message.append("alertType").append(_keyValueDelimiter).append(" ").append(alertsMap.get(alertType))
-                .append(MESSAGE_DELIMITER_STRING);
+            message.append("alertType").append(_keyValueDelimiter).append(" ").append(alertsMap.get(alertType)).append(MESSAGE_DELIMITER_STRING);
             if (dataCenterId != 0) {
-                message.append("dataCenterId").append(_keyValueDelimiter).append(" ").append(dataCenterId)
-                    .append(MESSAGE_DELIMITER_STRING);
+                message.append("dataCenterId").append(_keyValueDelimiter).append(" ").append(dataCenterId).append(MESSAGE_DELIMITER_STRING);
             }
 
             if (podId != 0) {
-                message.append("podId").append(_keyValueDelimiter).append(" ").append(podId)
-                    .append(MESSAGE_DELIMITER_STRING);
+                message.append("podId").append(_keyValueDelimiter).append(" ").append(podId).append(MESSAGE_DELIMITER_STRING);
             }
 
             if (clusterId != 0) {
-                message.append("clusterId").append(_keyValueDelimiter).append(" ").append(clusterId)
-                    .append(MESSAGE_DELIMITER_STRING);
+                message.append("clusterId").append(_keyValueDelimiter).append(" ").append(clusterId).append(MESSAGE_DELIMITER_STRING);
             }
 
             if (sysMessage != null) {
@@ -251,16 +247,13 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         int lastIndexOfKeyValueDelimiter = message.lastIndexOf(_keyValueDelimiter);
         int lastIndexOfMessageInString = message.lastIndexOf("message");
 
-        if (lastIndexOfKeyValueDelimiter - lastIndexOfMessageInString <=
-            LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER) {
+        if (lastIndexOfKeyValueDelimiter - lastIndexOfMessageInString <= LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER) {
             return message.substring(lastIndexOfKeyValueDelimiter + _keyValueDelimiter.length()).trim();
         } else if (lastIndexOfMessageInString < lastIndexOfKeyValueDelimiter) {
-            return message.substring(
-                lastIndexOfMessageInString + _keyValueDelimiter.length() + LENGTH_OF_STRING_MESSAGE).trim();
+            return message.substring(lastIndexOfMessageInString + _keyValueDelimiter.length() + LENGTH_OF_STRING_MESSAGE).trim();
         }
 
-        return message.substring(message.lastIndexOf("message" + _keyValueDelimiter) +
-            LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER).trim();
+        return message.substring(message.lastIndexOf("message" + _keyValueDelimiter) + LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER).trim();
     }
 
     private void reset() {

@@ -21,112 +21,122 @@ package com.cloud.network.nicira;
  */
 public class Match {
     private Integer protocol;
-    private String source_ip_addresses;
-    private String destination_ip_addresses;
-    private Integer source_port;
-    private Integer destination_port;
+    private String sourceIpAddresses;
+    private String destinationIpAddresses;
+    private Integer sourcePort;
+    private Integer destinationPort;
     private String ethertype = "IPv4";
 
     public Integer getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(Integer protocol) {
+    public void setProtocol(final Integer protocol) {
         this.protocol = protocol;
     }
 
     public Integer getSourcePort() {
-        return source_port;
+        return sourcePort;
     }
 
-    public void setSourcePort(Integer source_port) {
-        this.source_port = source_port;
+    public void setSourcePort(final Integer sourcePort) {
+        this.sourcePort = sourcePort;
     }
 
     public Integer getDestinationPort() {
-        return destination_port;
+        return destinationPort;
     }
 
-    public void setDestinationPort(Integer destination_port) {
-        this.destination_port = destination_port;
+    public void setDestinationPort(final Integer destinationPort) {
+        this.destinationPort = destinationPort;
     }
 
     public String getEthertype() {
         return ethertype;
     }
 
-    public void setEthertype(String ethertype) {
+    public void setEthertype(final String ethertype) {
         this.ethertype = ethertype;
     }
 
     public String getSourceIpAddresses() {
-        return source_ip_addresses;
+        return sourceIpAddresses;
     }
 
-    public void setSourceIpAddresses(String source_ip_addresses) {
-        this.source_ip_addresses = source_ip_addresses;
+    public void setSourceIpAddresses(final String sourceIpAddresses) {
+        this.sourceIpAddresses = sourceIpAddresses;
     }
 
     public String getDestinationIpAddresses() {
-        return destination_ip_addresses;
+        return destinationIpAddresses;
     }
 
-    public void setDestinationIpAddresses(String destination_ip_addresses) {
-        this.destination_ip_addresses = destination_ip_addresses;
+    public void setDestinationIpAddresses(final String destinationIpAddresses) {
+        this.destinationIpAddresses = destinationIpAddresses;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((destination_ip_addresses == null) ? 0 : destination_ip_addresses.hashCode());
-        result = prime * result + ((destination_port == null) ? 0 : destination_port.hashCode());
+        result = prime * result + ((destinationIpAddresses == null) ? 0 : destinationIpAddresses.hashCode());
+        result = prime * result + ((destinationPort == null) ? 0 : destinationPort.hashCode());
         result = prime * result + ((ethertype == null) ? 0 : ethertype.hashCode());
         result = prime * result + ((protocol == null) ? 0 : protocol.hashCode());
-        result = prime * result + ((source_ip_addresses == null) ? 0 : source_ip_addresses.hashCode());
-        result = prime * result + ((source_port == null) ? 0 : source_port.hashCode());
+        result = prime * result + ((sourceIpAddresses == null) ? 0 : sourceIpAddresses.hashCode());
+        result = prime * result + ((sourcePort == null) ? 0 : sourcePort.hashCode());
         return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
+    public boolean equals(final Object obj) {
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
-        Match other = (Match) obj;
-        if (destination_ip_addresses == null) {
-            if (other.destination_ip_addresses != null)
+        }
+        Match other = (Match)obj;
+        if (destinationIpAddresses == null) {
+            if (other.destinationIpAddresses != null)
                 return false;
-        } else if (!destination_ip_addresses.equals(other.destination_ip_addresses))
+        } else if (!destinationIpAddresses.equals(other.destinationIpAddresses)) {
             return false;
-        if (destination_port == null) {
-            if (other.destination_port != null)
+        }
+        if (destinationPort == null) {
+            if (other.destinationPort != null) {
                 return false;
-        } else if (!destination_port.equals(other.destination_port))
+            }
+        } else if (!destinationPort.equals(other.destinationPort)) {
             return false;
+        }
         if (ethertype == null) {
             if (other.ethertype != null)
                 return false;
-        } else if (!ethertype.equals(other.ethertype))
+        } else if (!ethertype.equals(other.ethertype)) {
             return false;
+        }
         if (protocol == null) {
             if (other.protocol != null)
                 return false;
-        } else if (!protocol.equals(other.protocol))
+        } else if (!protocol.equals(other.protocol)) {
             return false;
-        if (source_ip_addresses == null) {
-            if (other.source_ip_addresses != null)
+        }
+        if (sourceIpAddresses == null) {
+            if (other.sourceIpAddresses != null)
                 return false;
-        } else if (!source_ip_addresses.equals(other.source_ip_addresses))
+        } else if (!sourceIpAddresses.equals(other.sourceIpAddresses)) {
             return false;
-        if (source_port == null) {
-            if (other.source_port != null)
+        }
+        if (sourcePort == null) {
+            if (other.sourcePort != null)
                 return false;
-        } else if (!source_port.equals(other.source_port))
+        } else if (!sourcePort.equals(other.sourcePort)) {
             return false;
+        }
         return true;
     }
 

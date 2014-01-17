@@ -18,37 +18,37 @@ package com.cloud.bridge.service.core.ec2;
 
 public class EC2CreateImage {
 
-	private String instanceId;
-	private String name;
-	private String description;
-    
-	public EC2CreateImage() {
-		instanceId  = null;
-		name        = null;
-		description = null;
-	}
-	
-	public void setInstanceId( String instanceId ) {
-		this.instanceId = instanceId;
-	}
-	
-	public String getInstanceId() {
-		return this.instanceId;
-	}
+    private String instanceId;
+    private String name;
+    private String description;
 
-	public void setName( String name ) {
-		this.name = name;
-	}
-	
-	public String getName() {
-		return this.name;
-	}
+    public EC2CreateImage() {
+        instanceId = null;
+        name = null;
+        description = null;
+    }
 
-	public void setDescription( String description ) {
-		this.description = description;
-	}
-	
-	public String getDescription() {
-		return this.description;
-	}
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    public String getInstanceId() {
+        return this.instanceId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
 }

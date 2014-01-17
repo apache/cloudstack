@@ -22,6 +22,7 @@
 
 import cloudstack_pluginlib as lib
 import logging
+import commands
 import os
 import sys
 import subprocess
@@ -34,7 +35,7 @@ import util
 from time import localtime as _localtime, asctime as _asctime
 
 xePath = "/opt/xensource/bin/xe"
-lib.setup_logging("/var/log/ovstunnel.log")
+lib.setup_logging("/var/log/cloud/ovstunnel.log")
 
 
 def block_ipv6_v5(bridge):
@@ -53,9 +54,9 @@ block_ipv6_handlers = {
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name)
+        logging.debug("#### VMOPS enter  %s ####" % name)
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name)
+        logging.debug("#### VMOPS exit  %s ####" % name)
         return res
     return wrapped
 
@@ -81,6 +82,10 @@ def setup_ovs_bridge(session, args):
     # TODO: Make sure xs-network-uuid is set into external_ids
     lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge,
                             "external_ids:xs-network-uuid=%s" % xs_nw_uuid])
+
+    # enable stp
+    lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge, "stp_enable=true"])
+
     # Non empty result means something went wrong
     if res:
         result = "FAILURE:%s" % res
@@ -107,14 +112,15 @@ def setup_ovs_bridge(session, args):
                    "other-config:ovs-host-setup=%s" % conf_hosts])
 
         # BLOCK IPv6 - Flow spec changes with ovs version
-        host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
-        host_list_str = lib.do_cmd(host_list_cmd)
-        host_uuid = host_list_str.split(',')[0].strip()
-        version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
-                                   'param-name=software-version',
-                                   'param-key=product_version']
-        version = lib.do_cmd(version_cmd).split('.')[0]
-        block_ipv6_handlers[version](bridge)
+        # Temporarily no need BLOCK IPv6
+#        host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
+#        host_list_str = lib.do_cmd(host_list_cmd)
+#        host_uuid = host_list_str.split(',')[0].strip()
+#        version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
+#                                   'param-name=software-version',
+#                                   'param-key=product_version']
+#        version = lib.do_cmd(version_cmd).split('.')[0]
+#        block_ipv6_handlers[version](bridge)
     logging.debug("Setup_ovs_bridge completed with result:%s" % result)
     return result
 
@@ -253,9 +259,44 @@ def get_field_of_interface(iface_name, field):
     res = lib.do_cmd(get_iface_cmd)
     return res
 
+def is_xcp(session, args):
+    host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
+    host_list_str = lib.do_cmd(host_list_cmd)
+    host_uuid = host_list_str.split(',')[0].strip()
+
+    status, output = commands.getstatusoutput("xe host-param-list uuid="+host_uuid+" | grep platform_name")
+    if (status != 0):
+       return "FALSE"
+
+    platform_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
+                               'param-name=software-version',
+                               'param-key=platform_name']
+    platform = lib.do_cmd(platform_cmd).split('.')[0]
+    return platform
+
+def getLabel(session, args):
+    i = 0
+    pif_list_cmd = [lib.XE_PATH, 'pif-list', '--minimal']
+    pif_list_str = lib.do_cmd(pif_list_cmd)
+    while True:
+	pif_uuid = pif_list_str.split(',')[i].strip()
+	network_cmd = [lib.XE_PATH, 'pif-param-get', 'uuid=%s' % pif_uuid, 'param-name=network-uuid']
+	network_uuid = lib.do_cmd(network_cmd).split('.')[0]
+	iface_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=bridge']
+	iface = lib.do_cmd(iface_cmd)
+	status,output = commands.getstatusoutput("ifconfig "+iface+" | grep inet")
+	if (status != 0):
+		i += 1
+		continue
+    	label_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=name-label']
+    	label = lib.do_cmd(label_cmd).split('.')[0]
+    	return label
+    return False
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,
                            "destroy_tunnel": destroy_tunnel,
                            "setup_ovs_bridge": setup_ovs_bridge,
-                           "destroy_ovs_bridge": destroy_ovs_bridge})
+                           "destroy_ovs_bridge": destroy_ovs_bridge,
+                           "is_xcp": is_xcp,
+                           "getLabel": getLabel})

@@ -21,101 +21,99 @@ import java.net.URI;
 import com.cloud.utils.net.NetUtils;
 
 public class PvlanSetupCommand extends Command {
-	public enum Type {
-		DHCP,
-		VM
-	}
-	private String op;
-	private String primary;
-	private String isolated;
-	private String vmMac;
-	private String dhcpName;
-	private String dhcpMac;
-	private String dhcpIp;
-	private Type type;
-	private String networkTag;
+    public enum Type {
+        DHCP, VM
+    }
 
-	protected PvlanSetupCommand() {}
-	
-	protected PvlanSetupCommand(Type type, String op, URI uri, String networkTag)
-	{
-		this.type = type;
-		this.op = op;
-		this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
-		this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
-		this.networkTag = networkTag;
-	}
-	
-	static public PvlanSetupCommand createDhcpSetup(String op, URI uri, String networkTag, String dhcpName, String dhcpMac, String dhcpIp)
-	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, uri, networkTag);
-		cmd.setDhcpName(dhcpName);
-		cmd.setDhcpMac(dhcpMac);
-		cmd.setDhcpIp(dhcpIp);
-		return cmd;
-	}
-	
-	static public PvlanSetupCommand createVmSetup(String op, URI uri, String networkTag, String vmMac)
-	{
-		PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, uri, networkTag);
-		cmd.setVmMac(vmMac);
-		return cmd;
-	}
-	
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    private String op;
+    private String primary;
+    private String isolated;
+    private String vmMac;
+    private String dhcpName;
+    private String dhcpMac;
+    private String dhcpIp;
+    private Type type;
+    private String networkTag;
 
-	public String getOp() {
-		return op;
-	}
+    protected PvlanSetupCommand() {
+    }
 
-	public String getPrimary() {
-		return primary;
-	}
+    protected PvlanSetupCommand(Type type, String op, URI uri, String networkTag) {
+        this.type = type;
+        this.op = op;
+        this.primary = NetUtils.getPrimaryPvlanFromUri(uri);
+        this.isolated = NetUtils.getIsolatedPvlanFromUri(uri);
+        this.networkTag = networkTag;
+    }
 
-	public String getIsolated() {
-		return isolated;
-	}
+    static public PvlanSetupCommand createDhcpSetup(String op, URI uri, String networkTag, String dhcpName, String dhcpMac, String dhcpIp) {
+        PvlanSetupCommand cmd = new PvlanSetupCommand(Type.DHCP, op, uri, networkTag);
+        cmd.setDhcpName(dhcpName);
+        cmd.setDhcpMac(dhcpMac);
+        cmd.setDhcpIp(dhcpIp);
+        return cmd;
+    }
 
-	public String getVmMac() {
-		return vmMac;
-	}
+    static public PvlanSetupCommand createVmSetup(String op, URI uri, String networkTag, String vmMac) {
+        PvlanSetupCommand cmd = new PvlanSetupCommand(Type.VM, op, uri, networkTag);
+        cmd.setVmMac(vmMac);
+        return cmd;
+    }
 
-	protected void setVmMac(String vmMac) {
-		this.vmMac = vmMac;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public String getDhcpMac() {
-		return dhcpMac;
-	}
+    public String getOp() {
+        return op;
+    }
 
-	protected void setDhcpMac(String dhcpMac) {
-		this.dhcpMac = dhcpMac;
-	}
+    public String getPrimary() {
+        return primary;
+    }
 
-	public String getDhcpIp() {
-		return dhcpIp;
-	}
+    public String getIsolated() {
+        return isolated;
+    }
 
-	protected void setDhcpIp(String dhcpIp) {
-		this.dhcpIp = dhcpIp;
-	}
+    public String getVmMac() {
+        return vmMac;
+    }
 
-	public Type getType() {
-		return type;
-	}
+    protected void setVmMac(String vmMac) {
+        this.vmMac = vmMac;
+    }
 
-	public String getDhcpName() {
-		return dhcpName;
-	}
+    public String getDhcpMac() {
+        return dhcpMac;
+    }
 
-	public void setDhcpName(String dhcpName) {
-		this.dhcpName = dhcpName;
-	}
+    protected void setDhcpMac(String dhcpMac) {
+        this.dhcpMac = dhcpMac;
+    }
 
-	public String getNetworkTag() {
-		return networkTag;
-	}
+    public String getDhcpIp() {
+        return dhcpIp;
+    }
+
+    protected void setDhcpIp(String dhcpIp) {
+        this.dhcpIp = dhcpIp;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public String getDhcpName() {
+        return dhcpName;
+    }
+
+    public void setDhcpName(String dhcpName) {
+        this.dhcpName = dhcpName;
+    }
+
+    public String getNetworkTag() {
+        return networkTag;
+    }
 }

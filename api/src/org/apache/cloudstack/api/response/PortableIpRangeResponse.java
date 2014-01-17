@@ -17,19 +17,18 @@
 
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
 import java.util.List;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-
-import com.cloud.network.IpAddress;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.region.PortableIpRange;
 
-@EntityReference(value=PortableIpRange.class)
+import com.cloud.serializer.Param;
+
+@EntityReference(value = PortableIpRange.class)
 public class PortableIpRangeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -40,23 +39,28 @@ public class PortableIpRangeResponse extends BaseResponse {
     @Param(description = "Region Id in which portable ip range is provisioned")
     private Integer regionId;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the VLAN IP range")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway of the VLAN IP range")
     private String gateway;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the VLAN IP range")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the netmask of the VLAN IP range")
     private String netmask;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the ID or VID of the VLAN.")
     private String vlan;
 
-    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the portable IP range")
+    @SerializedName(ApiConstants.START_IP)
+    @Param(description = "the start ip of the portable IP range")
     private String startIp;
 
-    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the portable IP range")
+    @SerializedName(ApiConstants.END_IP)
+    @Param(description = "the end ip of the portable IP range")
     private String endIp;
 
     @SerializedName(ApiConstants.PORTABLE_IP_ADDRESS)
-    @Param(description="List of portable IP and association with zone/network/vpc details that are part of GSLB rule", responseObject = PortableIpResponse.class)
+    @Param(description = "List of portable IP and association with zone/network/vpc details that are part of GSLB rule", responseObject = PortableIpResponse.class)
     private List<PortableIpResponse> portableIpResponses;
 
     public void setId(String id) {

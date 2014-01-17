@@ -22,124 +22,122 @@ import com.cloud.agent.api.to.TemplateTO;
 import com.cloud.storage.Upload.Type;
 import com.cloud.template.VirtualMachineTemplate;
 
-
 public class UploadCommand extends AbstractUploadCommand implements InternalIdentity {
 
-	private TemplateTO template;
-	private String url;
-	private String installPath;
-	private boolean hvm;
-	private String description;
-	private String checksum;
-	private PasswordAuth auth;
-	private long templateSizeInBytes;
-	private long id;
-	private Type type;
+    private TemplateTO template;
+    private String url;
+    private String installPath;
+    private boolean hvm;
+    private String description;
+    private String checksum;
+    private PasswordAuth auth;
+    private long templateSizeInBytes;
+    private long id;
+    private Type type;
 
-	public UploadCommand(VirtualMachineTemplate template, String url, String installPath, long sizeInBytes) {
+    public UploadCommand(VirtualMachineTemplate template, String url, String installPath, long sizeInBytes) {
 
-		this.template = new TemplateTO(template);
-		this.url = url;
-		this.installPath = installPath;
-		checksum = template.getChecksum();
-		id = template.getId();
-		templateSizeInBytes = sizeInBytes;
+        this.template = new TemplateTO(template);
+        this.url = url;
+        this.installPath = installPath;
+        checksum = template.getChecksum();
+        id = template.getId();
+        templateSizeInBytes = sizeInBytes;
 
-	}
+    }
 
-	public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type){
-		template = null;
-		this.url = url;
-		this.installPath = installPath;
-		this.id = id;
-		this.type = type;
-		templateSizeInBytes = sizeInBytes;
-	}
+    public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type) {
+        template = null;
+        this.url = url;
+        this.installPath = installPath;
+        this.id = id;
+        this.type = type;
+        templateSizeInBytes = sizeInBytes;
+    }
 
-	protected UploadCommand() {
-	}
+    protected UploadCommand() {
+    }
 
-	public UploadCommand(UploadCommand that) {
-		template = that.template;
-		url = that.url;
-		installPath = that.installPath;
-		checksum = that.getChecksum();
-		id = that.id;
-	}
+    public UploadCommand(UploadCommand that) {
+        template = that.template;
+        url = that.url;
+        installPath = that.installPath;
+        checksum = that.getChecksum();
+        id = that.id;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
+    public TemplateTO getTemplate() {
+        return template;
+    }
 
-	public TemplateTO getTemplate() {
-		return template;
-	}
+    public void setTemplate(TemplateTO template) {
+        this.template = template;
+    }
 
-	public void setTemplate(TemplateTO template) {
-		this.template = template;
-	}
-
-	@Override
+    @Override
     public String getUrl() {
-		return url;
-	}
+        return url;
+    }
 
-	@Override
+    @Override
     public void setUrl(String url) {
-		this.url = url;
-	}
+        this.url = url;
+    }
 
-	public boolean isHvm() {
-		return hvm;
-	}
+    public boolean isHvm() {
+        return hvm;
+    }
 
-	public void setHvm(boolean hvm) {
-		this.hvm = hvm;
-	}
+    public void setHvm(boolean hvm) {
+        this.hvm = hvm;
+    }
 
-	public PasswordAuth getAuth() {
-		return auth;
-	}
+    public PasswordAuth getAuth() {
+        return auth;
+    }
 
-	public void setAuth(PasswordAuth auth) {
-		this.auth = auth;
-	}
+    public void setAuth(PasswordAuth auth) {
+        this.auth = auth;
+    }
 
-	public Long getTemplateSizeInBytes() {
-		return templateSizeInBytes;
-	}
+    public Long getTemplateSizeInBytes() {
+        return templateSizeInBytes;
+    }
 
-	public void setTemplateSizeInBytes(Long templateSizeInBytes) {
-		this.templateSizeInBytes = templateSizeInBytes;
-	}
+    public void setTemplateSizeInBytes(Long templateSizeInBytes) {
+        this.templateSizeInBytes = templateSizeInBytes;
+    }
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setInstallPath(String installPath) {
-		this.installPath = installPath;
-	}
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public void setChecksum(String checksum) {
-		this.checksum = checksum;
-	}
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
 
-	public String getInstallPath() {
-		return installPath;
-	}
+    public String getInstallPath() {
+        return installPath;
+    }
 
-	public String getChecksum() {
-		return checksum;
-	}
+    public String getChecksum() {
+        return checksum;
+    }
 }

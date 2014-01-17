@@ -28,13 +28,12 @@ public class MockVm {
     private int cpuCount;
     private int utilization; // in percentage
     private int vncPort; // 0-based allocation, real port number needs to be
-                            // applied with base
+                         // applied with base
 
     public MockVm() {
     }
 
-    public MockVm(String vmName, State state, long ramSize, int cpuCount,
-            int utilization, int vncPort) {
+    public MockVm(String vmName, State state, long ramSize, int cpuCount, int utilization, int vncPort) {
         this.vmName = vmName;
         this.state = state;
         this.ramSize = ramSize;

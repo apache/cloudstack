@@ -20,66 +20,66 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackInstanceGroup {
-	@SerializedName(ApiConstants.ID)
-	private Long id;
-	@SerializedName(ApiConstants.ACCOUNT)
-	private String account;
-	@SerializedName(ApiConstants.CREATED)
-	private String created;
-	@SerializedName(ApiConstants.DOMAIN)
-	private String domain;
-	@SerializedName(ApiConstants.DOMAIN_ID)
-	private Long domainId;
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	
-	/**
-	 * 
-	 */
-	public CloudStackInstanceGroup() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ID)
+    private Long id;
+    @SerializedName(ApiConstants.ACCOUNT)
+    private String account;
+    @SerializedName(ApiConstants.CREATED)
+    private String created;
+    @SerializedName(ApiConstants.DOMAIN)
+    private String domain;
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    private Long domainId;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
 
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackInstanceGroup() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the account
-	 */
-	public String getAccount() {
-		return account;
-	}
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the account
+     */
+    public String getAccount() {
+        return account;
+    }
 
-	/**
-	 * @return the domain
-	 */
-	public String getDomain() {
-		return domain;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public Long getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domain
+     */
+    public String getDomain() {
+        return domain;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the domainId
+     */
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
 }

@@ -18,78 +18,109 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Site2SiteVpnConnection.class)
+@EntityReference(value = Site2SiteVpnConnection.class)
 @SuppressWarnings("unused")
 public class Site2SiteVpnConnectionResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the vpn gateway ID")
     private String id;
 
-    @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID) @Param(description="the vpn gateway ID")
+    @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID)
+    @Param(description = "the vpn gateway ID")
     private String vpnGatewayId;
 
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address") //from VpnGateway
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    @Param(description = "the public IP address")
+    //from VpnGateway
     private String ip;
 
-    @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID) @Param(description="the customer gateway ID")
+    @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID)
+    @Param(description = "the customer gateway ID")
     private String customerGatewayId;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "public ip address id of the customer gateway")
+    //from CustomerGateway
     private String gatewayIp;
 
-    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="guest cidr list of the customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.CIDR_LIST)
+    @Param(description = "guest cidr list of the customer gateway")
+    //from CustomerGateway
     private String guestCidrList;
 
-    @SerializedName(ApiConstants.IPSEC_PSK) @Param(description="IPsec Preshared-Key of the customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.IPSEC_PSK)
+    @Param(description = "IPsec Preshared-Key of the customer gateway")
+    //from CustomerGateway
     private String ipsecPsk;
 
-    @SerializedName(ApiConstants.IKE_POLICY) @Param(description="IKE policy of the customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.IKE_POLICY)
+    @Param(description = "IKE policy of the customer gateway")
+    //from CustomerGateway
     private String ikePolicy;
 
-    @SerializedName(ApiConstants.ESP_POLICY) @Param(description="ESP policy of the customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.ESP_POLICY)
+    @Param(description = "ESP policy of the customer gateway")
+    //from CustomerGateway
     private String espPolicy;
 
-    @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.IKE_LIFETIME)
+    @Param(description = "Lifetime of IKE SA of customer gateway")
+    //from CustomerGateway
     private Long ikeLifetime;
 
-    @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.ESP_LIFETIME)
+    @Param(description = "Lifetime of ESP SA of customer gateway")
+    //from CustomerGateway
     private Long espLifetime;
 
-    @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway") //from CustomerGateway
+    @SerializedName(ApiConstants.DPD)
+    @Param(description = "if DPD is enabled for customer gateway")
+    //from CustomerGateway
     private Boolean dpd;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="State of vpn connection")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "State of vpn connection")
     private String state;
 
-    @SerializedName(ApiConstants.PASSIVE) @Param(description="State of vpn connection")
+    @SerializedName(ApiConstants.PASSIVE)
+    @Param(description = "State of vpn connection")
     private boolean passive;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the owner")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the owner")
     private String domain;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the host was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date and time the host was created")
     private Date created;
 
-    @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
+    @SerializedName(ApiConstants.REMOVED)
+    @Param(description = "the date and time the host was removed")
     private Date removed;
 
     public void setId(String id) {
@@ -137,16 +168,16 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     }
 
     public void setDpd(Boolean dpd) {
-        this.dpd= dpd;
+        this.dpd = dpd;
     }
 
     public void setState(String state) {
         this.state = state;
     }
 
-	public void setPassive(boolean passive) {
-		this.passive = passive;
-	}
+    public void setPassive(boolean passive) {
+        this.passive = passive;
+    }
 
     public void setCreated(Date created) {
         this.created = created;

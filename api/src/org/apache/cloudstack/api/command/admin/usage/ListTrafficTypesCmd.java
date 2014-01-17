@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.usage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -27,22 +29,24 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listTrafficTypes", description="Lists traffic types of a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = ProviderResponse.class, since = "3.0.0")
 public class ListTrafficTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
-    private static final String _name = "listtraffictypesresponse";
+    private static final String Name = "listtraffictypesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////
@@ -62,7 +66,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override
@@ -71,7 +75,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
         ListResponse<TrafficTypeResponse> response = new ListResponse<TrafficTypeResponse>();
         List<TrafficTypeResponse> trafficTypesResponses = new ArrayList<TrafficTypeResponse>();

@@ -361,6 +361,18 @@
                                                     id: 'QCOW2',
                                                     description: 'QCOW2'
                                                 });
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });
+                                                items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                                items.push({
+                                                    id: 'VMDK',
+                                                    description: 'VMDK'
+                                                });
                                             } else if (args.hypervisor == "BareMetal") {
                                                 //formatSelect.append("<option value='BareMetal'>BareMetal</option>");
                                                 items.push({
@@ -423,6 +435,7 @@
 
                                     isdynamicallyscalable: {
                                         label: "Dynamically Scalable",
+                                        docID: 'helpRegisterTemplateDynamicallyScalable',
                                         isBoolean: true
                                     },
 
@@ -441,6 +454,7 @@
                                     },
                                     isrouting: {
                                         label: 'label.routing',
+                                        docID: 'helpRegisterTemplateRouting',
                                         isBoolean: true,
                                         isHidden: true
                                     }
@@ -623,7 +637,7 @@
                                         //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
-                                    //if args.data.ispublic is undefined, do not pass ispublic to API call.
+                                    //if args.data.ispublic is undefined(i.e. checkbox is hidden), do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {
                                         $.extend(data, {
                                             ispublic: true
@@ -633,7 +647,7 @@
                                             ispublic: false
                                         });
                                     }
-                                    //if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+                                    //if args.data.isfeatured is undefined(i.e. checkbox is hidden), do not pass isfeatured to API call.
                                     if (args.data.isfeatured == "on") {
                                         $.extend(data, {
                                             isfeatured: true
@@ -643,7 +657,7 @@
                                             isfeatured: false
                                         });
                                     }
-                                    //if args.data.isextractable is undefined, do not pass isextractable to API call.
+                                    //if args.data.isextractable is undefined(i.e. checkbox is hidden), do not pass isextractable to API call.
                                     if (args.data.isextractable == "on") {
                                         $.extend(data, {
                                             isextractable: true
@@ -781,11 +795,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyTemplate&id=" + args.context.templates[0].id + "&sourcezoneid=" + args.context.templates[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.templates[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.templates[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.templates[0].zoneid
+                                        });	
+                                    }                                    
+                                    
+                                	$.ajax({
+                                        url: createURL('copyTemplate'),
+                                        data: data,                                        
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
@@ -1439,7 +1462,7 @@
                                         id: args.context.isos[0].id,
                                         //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
-                                    //if args.data.ispublic is undefined, do not pass ispublic to API call.
+                                    //if args.data.ispublic is undefined(i.e. checkbox is hidden), do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {
                                         $.extend(data, {
                                             ispublic: true
@@ -1449,7 +1472,7 @@
                                             ispublic: false
                                         });
                                     }
-                                    //if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+                                    //if args.data.isfeatured is undefined(i.e. checkbox is hidden), do not pass isfeatured to API call.
                                     if (args.data.isfeatured == "on") {
                                         $.extend(data, {
                                             isfeatured: true
@@ -1459,7 +1482,7 @@
                                             isfeatured: false
                                         });
                                     }
-                                    //if args.data.isextractable is undefined, do not pass isextractable to API call.
+                                    //if args.data.isextractable is undefined(i.e. checkbox is hidden), do not pass isextractable to API call.
                                     if (args.data.isextractable == "on") {
                                         $.extend(data, {
                                             isextractable: true
@@ -1543,11 +1566,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyIso&id=" + args.context.isos[0].id + "&sourcezoneid=" + args.context.isos[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.isos[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.isos[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.isos[0].zoneid
+                                        });	
+                                    }                                    
+                                	
+                                	$.ajax({
+                                        url: createURL('copyIso'),
+                                        data: data,
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
@@ -1699,7 +1731,12 @@
                                     isextractable: {
                                         label: 'extractable',
                                         isBoolean: true,
-                                        isEditable: true,
+                                        isEditable: function() {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     bootable: {
@@ -1715,7 +1752,12 @@
                                     isfeatured: {
                                         label: 'label.featured',
                                         isBoolean: true,
-                                        isEditable: true,
+                                        isEditable: function() {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     crossZones: {
@@ -1802,9 +1844,12 @@
         } else {
             allowedActions.push("edit");
             
+            allowedActions.push("copyTemplate");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyTemplate");
             }
+            */
 			
             //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
         }
@@ -1840,9 +1885,12 @@
         } else {
             allowedActions.push("edit");
 
+            allowedActions.push("copyISO");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyISO");
 			}
+			*/
         }
 
         // "Create VM"

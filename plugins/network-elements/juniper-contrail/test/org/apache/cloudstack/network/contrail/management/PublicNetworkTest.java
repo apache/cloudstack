@@ -17,19 +17,22 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import junit.framework.TestCase;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiConnectorFactory;
 import net.juniper.contrail.api.ApiObjectBase;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,6 +45,8 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
@@ -52,54 +57,51 @@ import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.db.Merovingian2;
 import com.cloud.utils.mgmt.JmxUtil;
 
-import junit.framework.TestCase;
-import static org.mockito.Mockito.*;
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/publicNetworkContext.xml")
-
+@ContextConfiguration(locations = "classpath:/publicNetworkContext.xml")
 public class PublicNetworkTest extends TestCase {
-    private static final Logger s_logger =
-            Logger.getLogger(PublicNetworkTest.class);
+    private static final Logger s_logger = Logger.getLogger(PublicNetworkTest.class);
 
-    @Inject public ContrailManager _contrailMgr;
-    @Inject public NetworkDao _networksDao;
+    @Inject
+    public ContrailManager _contrailMgr;
+    @Inject
+    public NetworkDao _networksDao;
 
-    private static boolean _initDone = false;
-    private static int _mysql_server_port;
-    private static long _msId;
-    private static Merovingian2 _lockMaster;
+    private static boolean s_initDone = false;
+    private static int s_mysqlServerPort;
+    private static long s_msId;
+    private static Merovingian2 s_lockMaster;
     private ManagementServerMock _server;
     private ApiConnector _spy;
-    
 
     @BeforeClass
     public static void globalSetUp() throws Exception {
         ApiConnectorFactory.setImplementation(ApiConnectorMockito.class);
         s_logger.info("mysql server is getting launched ");
-        _mysql_server_port = TestDbSetup.init(null);
-        s_logger.info("mysql server launched on port " + _mysql_server_port);
-        _msId = ManagementServerNode.getManagementServerId();
-        _lockMaster = Merovingian2.createLockMaster(_msId);
+        s_mysqlServerPort = TestDbSetup.init(null);
+        s_logger.info("mysql server launched on port " + s_mysqlServerPort);
+        s_msId = ManagementServerNode.getManagementServerId();
+        s_lockMaster = Merovingian2.createLockMaster(s_msId);
     }
 
     @AfterClass
     public static void globalTearDown() throws Exception {
-        _lockMaster.cleanupForServer(_msId);
+        s_lockMaster.cleanupForServer(s_msId);
         JmxUtil.unregisterMBean("Locks", "Locks");
-        _lockMaster = null;
+        s_lockMaster = null;
 
-        AbstractApplicationContext ctx = (AbstractApplicationContext) ComponentContext.getApplicationContext();
+        AbstractApplicationContext ctx = (AbstractApplicationContext)ComponentContext.getApplicationContext();
         Map<String, ComponentLifecycle> lifecycleComponents = ctx.getBeansOfType(ComponentLifecycle.class);
-        for (ComponentLifecycle bean: lifecycleComponents.values()) {
+        for (ComponentLifecycle bean : lifecycleComponents.values()) {
             bean.stop();
         }
         ctx.close();
 
-        s_logger.info("destroying mysql server instance running at port <" + _mysql_server_port + ">");
-        TestDbSetup.destroy(_mysql_server_port, null);
+        s_logger.info("destroying mysql server instance running at port <" + s_mysqlServerPort + ">");
+        TestDbSetup.destroy(s_mysqlServerPort, null);
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         try {
@@ -110,11 +112,12 @@ public class PublicNetworkTest extends TestCase {
         }
         _server = ComponentContext.inject(new ManagementServerMock());
 
-        _server.initialize(!_initDone);
-        _initDone = false;
+        _server.initialize(!s_initDone);
+        s_initDone = false;
         _spy = ((ApiConnectorMockito)_contrailMgr.getApiConnector()).getSpy();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         _server.shutdown();
@@ -122,7 +125,7 @@ public class PublicNetworkTest extends TestCase {
 
     @Test
     public void testPublicNetwork() throws IOException {
-    	DataCenter zone = _server.getZone();
+        DataCenter zone = _server.getZone();
         List<NetworkVO> networks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Public);
         assertNotNull(networks);
         assertFalse(networks.isEmpty());
@@ -130,14 +133,14 @@ public class PublicNetworkTest extends TestCase {
 
         ArgumentCaptor<ApiObjectBase> createArg = ArgumentCaptor.forClass(ApiObjectBase.class);
         verify(_spy, times(4)).create(createArg.capture());
-        
+
         List<ApiObjectBase> argumentList = createArg.getAllValues();
         ApiObjectBase vmObj = argumentList.get(0);
         assertEquals(VirtualNetwork.class, vmObj.getClass());
         assertEquals("__default_Public__", vmObj.getName());
-        
+
         String vmiName = null;
-        for (ApiObjectBase obj: argumentList) {
+        for (ApiObjectBase obj : argumentList) {
             if (obj.getClass() == VirtualMachineInterface.class) {
                 vmiName = obj.getName();
             }

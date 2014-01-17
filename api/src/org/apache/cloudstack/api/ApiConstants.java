@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
@@ -36,6 +35,9 @@ public class ApiConstants {
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
     public static final String CERTIFICATE = "certificate";
+    public static final String CERTIFICATE_CHAIN = "certchain";
+    public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
+    public static final String CERTIFICATE_ID = "certid";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
@@ -52,14 +54,17 @@ public class ApiConstants {
     public static final String CREATED = "created";
     public static final String CUSTOMIZED = "customized";
     public static final String CUSTOMIZED_IOPS = "customizediops";
+    public static final String CUSTOM_ID = "customid";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
+    public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
+    public static final String ROOT_DISK_SIZE = "rootdisksize";
     public static final String DISPLAY_NAME = "displayname";
     public static final String DISPLAY_NETWORK = "displaynetwork";
     public static final String DISPLAY_NIC = "displaynic";
@@ -204,10 +209,12 @@ public class ApiConstants {
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SHOW_CAPACITIES = "showcapacities";
+    public static final String SHOW_REMOVED = "showremoved";
     public static final String SIZE = "size";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
+    public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
@@ -217,6 +224,7 @@ public class ApiConstants {
     public static final String STATUS = "status";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
+    public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String TARGET_IQN = "targetiqn";
@@ -241,7 +249,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
-    public static final String REMOVE_VLAN="removevlan";
+    public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";
@@ -349,6 +357,7 @@ public class ApiConstants {
     public static final String XEN_NETWORK_LABEL = "xennetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
+    public static final String HYPERV_NETWORK_LABEL = "hypervnetworklabel";
     public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
@@ -400,10 +409,20 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+    // Ovs controller
+    public static final String OVS_DEVICE_ID = "ovsdeviceid";
+    public static final String OVS_DEVICE_NAME = "ovsdevicename";
+    // OpenDaylight controller
+    public static final String ODL_DEVICE_ID = "odldeviceid";
+    public static final String ODL_DEVICE_NAME = "odldevicename";
+    public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
-    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this later.
+    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this
+// later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     public static final String VSM_USERNAME = "vsmusername";
@@ -483,6 +502,7 @@ public class ApiConstants {
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
+    public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
     public static final String GSLB_PROVIDER_PUBLIC_IP = "gslbproviderpublicip";
     public static final String GSLB_PROVIDER_PRIVATE_IP = "gslbproviderprivateip";
     public static final String VM_SNAPSHOT_DESCRIPTION = "description";
@@ -543,6 +563,8 @@ public class ApiConstants {
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
+    public static final String VERSION = "version";
+    public static final String START = "start";
 
 
     public enum HostDetails {
@@ -550,6 +572,6 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
     }
 }

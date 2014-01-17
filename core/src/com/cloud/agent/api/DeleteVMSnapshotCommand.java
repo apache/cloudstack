@@ -18,12 +18,10 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.VolumeTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 
 public class DeleteVMSnapshotCommand extends VMSnapshotBaseCommand {
     public DeleteVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
-        super( vmName,  snapshot, volumeTOs, guestOSType);
+        super(vmName, snapshot, volumeTOs, guestOSType);
     }
 }

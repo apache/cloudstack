@@ -27,8 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -60,7 +64,6 @@ import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
@@ -79,37 +82,32 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
-
 
 @Local(value = Discoverer.class)
-public class VmwareServerDiscoverer extends DiscovererBase implements
-		Discoverer, ResourceStateAdapter {
-	private static final Logger s_logger = Logger
-			.getLogger(VmwareServerDiscoverer.class);
+public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
+    private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
 
-	@Inject
-	ClusterDao _clusterDao;
-	@Inject
-	VmwareManager _vmwareMgr;
-	@Inject
-	AlertManager _alertMgr;
-	@Inject
-	VMTemplateDao _tmpltDao;
-	@Inject
-	ClusterDetailsDao _clusterDetailsDao;
-	@Inject
-	HostDao _hostDao;
-	@Inject
-	DataCenterDao _dcDao;
-	@Inject
-	ResourceManager _resourceMgr;
-	@Inject
-	CiscoNexusVSMDeviceDao _nexusDao;
-	CiscoNexusVSMElement _nexusElement;
-	List<NetworkElement> networkElements;
-	@Inject
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
+    VmwareManager _vmwareMgr;
+    @Inject
+    AlertManager _alertMgr;
+    @Inject
+    VMTemplateDao _tmpltDao;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    CiscoNexusVSMDeviceDao _nexusDao;
+    CiscoNexusVSMElement _nexusElement;
+    List<NetworkElement> networkElements;
+    @Inject
     NetworkModel _netmgr;
     @Inject
     HypervisorCapabilitiesDao _hvCapabilitiesDao;
@@ -122,30 +120,30 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
     protected boolean useDVS = false;
     protected boolean nexusDVS = false;
 
-	public VmwareServerDiscoverer() {
-		s_logger.info("VmwareServerDiscoverer is constructed");
-	}
+    public VmwareServerDiscoverer() {
+        s_logger.info("VmwareServerDiscoverer is constructed");
+    }
 
-	@Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url,
-    	String username, String password, List<String> hostTags) throws DiscoveryException {
+    @Override
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
 
-    	if(s_logger.isInfoEnabled())
-    		s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
+        if (s_logger.isInfoEnabled())
+            s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
 
-    	if(podId == null) {
-        	if(s_logger.isInfoEnabled())
-				s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
-			return null;
-		}
+        if (podId == null) {
+            if (s_logger.isInfoEnabled())
+                s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
+            return null;
+        }
         boolean failureInClusterDiscovery = true;
         String vsmIp = "";
-		ClusterVO cluster = _clusterDao.findById(clusterId);
-        if(cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
-        	if(s_logger.isInfoEnabled())
-				s_logger.info("invalid cluster id or cluster is not for VMware hypervisors");
-			return null;
-		}
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if (cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
+            if (s_logger.isInfoEnabled())
+                s_logger.info("invalid cluster id or cluster is not for VMware hypervisors");
+            return null;
+        }
 
         Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
         boolean legacyZone = _vmwareMgr.isLegacyZone(dcId);
@@ -159,8 +157,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             // If either or both not provided, try to retrieve & use the credentials from database, which are provided earlier while adding VMware DC to zone.
             if (usernameNotProvided || passwordNotProvided) {
                 // Retrieve credentials associated with VMware DC
-                s_logger.info("Username and/or Password not provided while adding cluster to cloudstack zone. " +
-                        "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
+                s_logger.info("Username and/or Password not provided while adding cluster to cloudstack zone. "
+                    + "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
                 username = vmwareDc.getUser();
                 password = vmwareDc.getPassword();
                 clusterDetails.put("username", username);
@@ -196,10 +194,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             }
         }
 
-		String privateTrafficLabel = null;
-		String publicTrafficLabel = null;
-		String guestTrafficLabel = null;
-		Map<String, String> vsmCredentials = null;
+        String privateTrafficLabel = null;
+        String publicTrafficLabel = null;
+        String guestTrafficLabel = null;
+        Map<String, String> vsmCredentials = null;
 
         VirtualSwitchType defaultVirtualSwitchType = VirtualSwitchType.StandardVirtualSwitch;
 
@@ -253,32 +251,34 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
 
             // Process traffic label information provided at zone level and cluster level
-            publicTrafficLabelObj = getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
+            publicTrafficLabelObj =
+                getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
 
-        // Configuration Check: A physical network cannot be shared by different types of virtual switches.
-        //
-        // Check if different vswitch types are chosen for same physical network
-        // 1. Get physical network for guest traffic - multiple networks
-        // 2. Get physical network for public traffic - single network
-        // See if 2 is in 1
-        //  if no - pass
-        //  if yes - compare publicTrafficLabelObj.getVirtualSwitchType() == guestTrafficLabelObj.getVirtualSwitchType()
-        //      true  - pass
-        //      false - throw exception - fail cluster add operation
+            // Configuration Check: A physical network cannot be shared by different types of virtual switches.
+            //
+            // Check if different vswitch types are chosen for same physical network
+            // 1. Get physical network for guest traffic - multiple networks
+            // 2. Get physical network for public traffic - single network
+            // See if 2 is in 1
+            //  if no - pass
+            //  if yes - compare publicTrafficLabelObj.getVirtualSwitchType() == guestTrafficLabelObj.getVirtualSwitchType()
+            //      true  - pass
+            //      false - throw exception - fail cluster add operation
 
-        List<? extends PhysicalNetwork> pNetworkListGuestTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
-        List<? extends PhysicalNetwork> pNetworkListPublicTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Public);
-        // Public network would be on single physical network hence getting first object of the list would suffice.
-        PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
-        if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
-            if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
-                String msg = "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
-                        ". And virtual switch type chosen for each traffic is different" +
-                        ". A physical network cannot be shared by different types of virtual switches.";
-                s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
+            List<? extends PhysicalNetwork> pNetworkListGuestTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
+            List<? extends PhysicalNetwork> pNetworkListPublicTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Public);
+            // Public network would be on single physical network hence getting first object of the list would suffice.
+            PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
+            if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
+                if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
+                    String msg =
+                        "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
+                            ". And virtual switch type chosen for each traffic is different" +
+                            ". A physical network cannot be shared by different types of virtual switches.";
+                    s_logger.error(msg);
+                    throw new InvalidParameterValueException(msg);
+                }
             }
-        }
         } else {
             // Distributed virtual switch is not supported in Basic zone for now.
             // Private / Management network traffic is not yet supported over distributed virtual switch.
@@ -290,25 +290,24 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         }
 
         privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
-		if (privateTrafficLabel != null) {
+        if (privateTrafficLabel != null) {
             s_logger.info("Detected private network label : " + privateTrafficLabel);
-		}
+        }
         Pair<Boolean, Long> vsmInfo = new Pair<Boolean, Long>(false, 0L);
-        if (nexusDVS &&
-                (guestTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) ||
-                ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
+        if (nexusDVS && (guestTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) ||
+            ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
             // Expect Cisco Nexus VSM details only if following 2 condition met
             // 1) The global config parameter vmware.use.nexus.vswitch
             // 2) Atleast 1 traffic type uses Nexus distributed virtual switch as backend.
-			if (zoneType != NetworkType.Basic) {
+            if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
-				if (publicTrafficLabel != null) {
+                if (publicTrafficLabel != null) {
                     s_logger.info("Detected public network label : " + publicTrafficLabel);
-				}
-			}
-			// Get physical network label
+                }
+            }
+            // Get physical network label
             guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
-			if (guestTrafficLabel != null) {
+            if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
             vsmIp = _urlParams.get("vsmipaddress");
@@ -317,150 +316,132 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             String clusterName = cluster.getName();
             try {
                 vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
-            } catch(ResourceInUseException ex) {
+            } catch (ResourceInUseException ex) {
                 DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
                 throw discEx;
             }
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
-		}
+        }
 
-		VmwareContext context = null;
-		try {
-			context = VmwareContextFactory.create(url.getHost(), username,
-					password);
-			if (privateTrafficLabel != null)
-				context.registerStockObject("privateTrafficLabel",
-						privateTrafficLabel);
+        VmwareContext context = null;
+        try {
+            context = VmwareContextFactory.create(url.getHost(), username, password);
+            if (privateTrafficLabel != null)
+                context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
 
             if (nexusDVS) {
-				if (vsmCredentials != null) {
-					s_logger.info("Stocking credentials of Nexus VSM");
-					context.registerStockObject("vsmcredentials",
-							vsmCredentials);
-				}
-			}
-			List<ManagedObjectReference> morHosts = _vmwareMgr
-					.addHostToPodCluster(context, dcId, podId, clusterId,
-							URLDecoder.decode(url.getPath()));
-			if (morHosts == null)
-				s_logger.info("Found 0 hosts.");
-			if (privateTrafficLabel != null)
-				context.uregisterStockObject("privateTrafficLabel");
+                if (vsmCredentials != null) {
+                    s_logger.info("Stocking credentials of Nexus VSM");
+                    context.registerStockObject("vsmcredentials", vsmCredentials);
+                }
+            }
+            List<ManagedObjectReference> morHosts = _vmwareMgr.addHostToPodCluster(context, dcId, podId, clusterId, URLDecoder.decode(url.getPath()));
+            if (morHosts == null)
+                s_logger.info("Found 0 hosts.");
+            if (privateTrafficLabel != null)
+                context.uregisterStockObject("privateTrafficLabel");
 
-			if (morHosts == null) {
-				s_logger.error("Unable to find host or cluster based on url: "
-						+ URLDecoder.decode(url.getPath()));
-				return null;
-			}
+            if (morHosts == null) {
+                s_logger.error("Unable to find host or cluster based on url: " + URLDecoder.decode(url.getPath()));
+                return null;
+            }
 
-			ManagedObjectReference morCluster = null;
+            ManagedObjectReference morCluster = null;
             clusterDetails = _clusterDetailsDao.findDetails(clusterId);
-			if (clusterDetails.get("url") != null) {
-				URI uriFromCluster = new URI(
-						UriUtils.encodeURIComponent(clusterDetails.get("url")));
-				morCluster = context.getHostMorByPath(URLDecoder
-						.decode(uriFromCluster.getPath()));
+            if (clusterDetails.get("url") != null) {
+                URI uriFromCluster = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url")));
+                morCluster = context.getHostMorByPath(URLDecoder.decode(uriFromCluster.getPath()));
 
-				if (morCluster == null
-						|| !morCluster.getType().equalsIgnoreCase(
-								"ClusterComputeResource")) {
-					s_logger.warn("Cluster url does not point to a valid vSphere cluster, url: "
-							+ clusterDetails.get("url"));
-					return null;
-				} else {
-					ClusterMO clusterMo = new ClusterMO(context, morCluster);
-					ClusterDasConfigInfo dasConfig = clusterMo.getDasConfig();
-					if (dasConfig != null && dasConfig.isEnabled() != null
-							&& dasConfig.isEnabled().booleanValue()) {
-						clusterDetails.put("NativeHA", "true");
-						_clusterDetailsDao.persist(clusterId, clusterDetails);
-					}
-				}
-			}
+                if (morCluster == null || !morCluster.getType().equalsIgnoreCase("ClusterComputeResource")) {
+                    s_logger.warn("Cluster url does not point to a valid vSphere cluster, url: " + clusterDetails.get("url"));
+                    return null;
+                } else {
+                    ClusterMO clusterMo = new ClusterMO(context, morCluster);
+                    ClusterDasConfigInfo dasConfig = clusterMo.getDasConfig();
+                    if (dasConfig != null && dasConfig.isEnabled() != null && dasConfig.isEnabled().booleanValue()) {
+                        clusterDetails.put("NativeHA", "true");
+                        _clusterDetailsDao.persist(clusterId, clusterDetails);
+                    }
+                }
+            }
 
-			if (!validateDiscoveredHosts(context, morCluster, morHosts)) {
-				if (morCluster == null)
-					s_logger.warn("The discovered host is not standalone host, can not be added to a standalone cluster");
-				else
-					s_logger.warn("The discovered host does not belong to the cluster");
-				return null;
-			}
+            if (!validateDiscoveredHosts(context, morCluster, morHosts)) {
+                if (morCluster == null)
+                    s_logger.warn("The discovered host is not standalone host, can not be added to a standalone cluster");
+                else
+                    s_logger.warn("The discovered host does not belong to the cluster");
+                return null;
+            }
 
-			Map<VmwareResource, Map<String, String>> resources = new HashMap<VmwareResource, Map<String, String>>();
-			for (ManagedObjectReference morHost : morHosts) {
-				Map<String, String> details = new HashMap<String, String>();
-				Map<String, Object> params = new HashMap<String, Object>();
+            Map<VmwareResource, Map<String, String>> resources = new HashMap<VmwareResource, Map<String, String>>();
+            for (ManagedObjectReference morHost : morHosts) {
+                Map<String, String> details = new HashMap<String, String>();
+                Map<String, Object> params = new HashMap<String, Object>();
 
-				HostMO hostMo = new HostMO(context, morHost);
-				details.put("url", hostMo.getHostName());
-				details.put("username", username);
-				details.put("password", password);
-				String guid = morHost.getType() + ":" + morHost.getValue()
-						+ "@" + url.getHost();
-				details.put("guid", guid);
+                HostMO hostMo = new HostMO(context, morHost);
+                details.put("url", hostMo.getHostName());
+                details.put("username", username);
+                details.put("password", password);
+                String guid = morHost.getType() + ":" + morHost.getValue() + "@" + url.getHost();
+                details.put("guid", guid);
 
-				params.put("url", hostMo.getHostName());
-				params.put("username", username);
-				params.put("password", password);
-				params.put("zone", Long.toString(dcId));
-				params.put("pod", Long.toString(podId));
-				params.put("cluster", Long.toString(clusterId));
-				params.put("guid", guid);
-				if (privateTrafficLabel != null) {
-					params.put("private.network.vswitch.name",
-							privateTrafficLabel);
-				}
+                params.put("url", hostMo.getHostName());
+                params.put("username", username);
+                params.put("password", password);
+                params.put("zone", Long.toString(dcId));
+                params.put("pod", Long.toString(podId));
+                params.put("cluster", Long.toString(clusterId));
+                params.put("guid", guid);
+                if (privateTrafficLabel != null) {
+                    params.put("private.network.vswitch.name", privateTrafficLabel);
+                }
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
 
-				VmwareResource resource = new VmwareResource();
-				try {
-					resource.configure("VMware", params);
-				} catch (ConfigurationException e) {
-					_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId,
-							podId, "Unable to add " + url.getHost(),
-							"Error is " + e.getMessage());
-					s_logger.warn("Unable to instantiate " + url.getHost(), e);
-				}
-				resource.start();
+                VmwareResource resource = new VmwareResource();
+                try {
+                    resource.configure("VMware", params);
+                } catch (ConfigurationException e) {
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + url.getHost(), "Error is " + e.getMessage());
+                    s_logger.warn("Unable to instantiate " + url.getHost(), e);
+                }
+                resource.start();
 
-				resources.put(resource, details);
-			}
+                resources.put(resource, details);
+            }
 
-			// place a place holder guid derived from cluster ID
-			cluster.setGuid(UUID.nameUUIDFromBytes(
-					String.valueOf(clusterId).getBytes()).toString());
-			_clusterDao.update(clusterId, cluster);
+            // place a place holder guid derived from cluster ID
+            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            _clusterDao.update(clusterId, cluster);
             // Flag cluster discovery success
             failureInClusterDiscovery = false;
-			return resources;
-		} catch (DiscoveredWithErrorException e) {
-			throw e;
-		} catch (Exception e) {
-			s_logger.warn("Unable to connect to Vmware vSphere server. service address: "
-					+ url.getHost());
-			return null;
-		} finally {
-			if (context != null)
-				context.close();
+            return resources;
+        } catch (DiscoveredWithErrorException e) {
+            throw e;
+        } catch (Exception e) {
+            s_logger.warn("Unable to connect to Vmware vSphere server. service address: " + url.getHost());
+            return null;
+        } finally {
+            if (context != null)
+                context.close();
             if (failureInClusterDiscovery && vsmInfo.first()) {
                 try {
                     s_logger.debug("Deleting Nexus 1000v VSM " + vsmIp + " because cluster discovery and addition to zone has failed.");
                     _nexusElement.deleteCiscoNexusVSM(vsmInfo.second().longValue());
-                } catch(Exception e) {
+                } catch (Exception e) {
                 }
             }
-		}
-	}
-	
-	protected CiscoNexusVSMElement getCiscoNexusVSMElement() {
-	    for ( NetworkElement networkElement : networkElements ) {
-	        if ( networkElement instanceof CiscoNexusVSMElement )
-	            return (CiscoNexusVSMElement)networkElement;
-	    }
-	    
-	    throw new IllegalStateException("Failed to CiscoNexusVSMElement");
-	}
+        }
+    }
+
+    protected CiscoNexusVSMElement getCiscoNexusVSMElement() {
+        for (NetworkElement networkElement : networkElements) {
+            if (networkElement instanceof CiscoNexusVSMElement)
+                return (CiscoNexusVSMElement)networkElement;
+        }
+
+        throw new IllegalStateException("Failed to CiscoNexusVSMElement");
+    }
 
     private VmwareDatacenterVO fetchVmwareDatacenterByZone(Long dcId) throws DiscoveryException {
         VmwareDatacenterVO vmwareDc;
@@ -471,8 +452,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         // Check if zone is associated with DC
         vmwareDcZone = _vmwareDcZoneMapDao.findByZoneId(dcId);
         if (vmwareDcZone == null) {
-            msg = "Zone " + dcId + " is not associated with any VMware DC yet. "
-                    + "Please add VMware DC to this zone first and then try to add clusters.";
+            msg = "Zone " + dcId + " is not associated with any VMware DC yet. " + "Please add VMware DC to this zone first and then try to add clusters.";
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         }
@@ -510,172 +490,150 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         }
 
         if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
-            msg = "This cluster " + clusterName + " belongs to vCenter " + url.getHost()
-                + ". But this zone is associated with VMware DC from vCenter " + vCenterHost
-                + ". Make sure the cluster being added belongs to vCenter " + vCenterHost
-                + " and VMware DC " + vmwareDcNameFromDb;
+            msg =
+                "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
+                    ". Make sure the cluster being added belongs to vCenter " + vCenterHost + " and VMware DC " + vmwareDcNameFromDb;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         } else if (!vmwareDcNameFromDb.equalsIgnoreCase(vmwareDcNameFromApi)) {
-            msg = "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi
-                + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb
-                + ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb
-                + " in vCenter " + vCenterHost;
+            msg =
+                "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb +
+                    ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb + " in vCenter " + vCenterHost;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         }
         return updatedInventoryPath;
     }
 
-	private boolean validateDiscoveredHosts(VmwareContext context,
-			ManagedObjectReference morCluster,
-			List<ManagedObjectReference> morHosts) throws Exception {
-		if (morCluster == null) {
-			for (ManagedObjectReference morHost : morHosts) {
-				ManagedObjectReference morParent = (ManagedObjectReference) context
-						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (morParent.getType().equalsIgnoreCase(
-						"ClusterComputeResource"))
-					return false;
-			}
-		} else {
-			for (ManagedObjectReference morHost : morHosts) {
-				ManagedObjectReference morParent = (ManagedObjectReference) context
-						.getVimClient().getDynamicProperty(morHost, "parent");
-				if (!morParent.getType().equalsIgnoreCase(
-						"ClusterComputeResource"))
-					return false;
+    private boolean validateDiscoveredHosts(VmwareContext context, ManagedObjectReference morCluster, List<ManagedObjectReference> morHosts) throws Exception {
+        if (morCluster == null) {
+            for (ManagedObjectReference morHost : morHosts) {
+                ManagedObjectReference morParent = (ManagedObjectReference)context.getVimClient().getDynamicProperty(morHost, "parent");
+                if (morParent.getType().equalsIgnoreCase("ClusterComputeResource"))
+                    return false;
+            }
+        } else {
+            for (ManagedObjectReference morHost : morHosts) {
+                ManagedObjectReference morParent = (ManagedObjectReference)context.getVimClient().getDynamicProperty(morHost, "parent");
+                if (!morParent.getType().equalsIgnoreCase("ClusterComputeResource"))
+                    return false;
 
-				if (!morParent.getValue().equals(morCluster.getValue()))
-					return false;
-			}
-		}
+                if (!morParent.getValue().equals(morCluster.getValue()))
+                    return false;
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public void postDiscovery(List<HostVO> hosts, long msId) {
-		// do nothing
-	}
+    @Override
+    public void postDiscovery(List<HostVO> hosts, long msId) {
+        // do nothing
+    }
 
-	@Override
-	public boolean matchHypervisor(String hypervisor) {
-		if (hypervisor == null)
-			return true;
+    @Override
+    public boolean matchHypervisor(String hypervisor) {
+        if (hypervisor == null)
+            return true;
 
-		return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(
-				hypervisor);
-	}
+        return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor);
+    }
 
-	@Override
-	public Hypervisor.HypervisorType getHypervisorType() {
-		return Hypervisor.HypervisorType.VMware;
-	}
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return Hypervisor.HypervisorType.VMware;
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		if (s_logger.isInfoEnabled())
-			s_logger.info("Configure VmwareServerDiscoverer, discover name: "
-					+ name);
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        if (s_logger.isInfoEnabled())
+            s_logger.info("Configure VmwareServerDiscoverer, discover name: " + name);
 
-		super.configure(name, params);
+        super.configure(name, params);
 
-		createVmwareToolsIso();
+        createVmwareToolsIso();
 
-		if (s_logger.isInfoEnabled()) {
-			s_logger.info("VmwareServerDiscoverer has been successfully configured");
-		}
-		_resourceMgr.registerResourceStateAdapter(this.getClass()
-				.getSimpleName(), this);
-		return true;
-	}
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("VmwareServerDiscoverer has been successfully configured");
+        }
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+        return true;
+    }
 
-	private void createVmwareToolsIso() {
-		String isoName = "vmware-tools.iso";
-		VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);
-		Long id;
-		if (tmplt == null) {
-			id = _tmpltDao.getNextInSequence(Long.class, "id");
-			VMTemplateVO template = VMTemplateVO.createPreHostIso(id, isoName, isoName,
-					ImageFormat.ISO, true, true, TemplateType.PERHOST, null,
-					null, true, 64, Account.ACCOUNT_ID_SYSTEM, null,
-					"VMware Tools Installer ISO", false, 1, false,
-					HypervisorType.VMware);
-			_tmpltDao.persist(template);
-		} else {
-			id = tmplt.getId();
-			tmplt.setTemplateType(TemplateType.PERHOST);
-			tmplt.setUrl(null);
-			_tmpltDao.update(id, tmplt);
-		}
-	}
+    private void createVmwareToolsIso() {
+        String isoName = "vmware-tools.iso";
+        VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);
+        Long id;
+        if (tmplt == null) {
+            id = _tmpltDao.getNextInSequence(Long.class, "id");
+            VMTemplateVO template =
+                VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
+                    null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
+            _tmpltDao.persist(template);
+        } else {
+            id = tmplt.getId();
+            tmplt.setTemplateType(TemplateType.PERHOST);
+            tmplt.setUrl(null);
+            _tmpltDao.update(id, tmplt);
+        }
+    }
 
+    @Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public HostVO createHostVOForConnectedAgent(HostVO host,
-			StartupCommand[] cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
+        StartupCommand firstCmd = startup[0];
+        if (!(firstCmd instanceof StartupRoutingCommand)) {
+            return null;
+        }
 
-	@Override
-	public HostVO createHostVOForDirectConnectAgent(HostVO host,
-			StartupCommand[] startup, ServerResource resource,
-			Map<String, String> details, List<String> hostTags) {
-		StartupCommand firstCmd = startup[0];
-		if (!(firstCmd instanceof StartupRoutingCommand)) {
-			return null;
-		}
+        StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
+        if (ssCmd.getHypervisorType() != HypervisorType.VMware) {
+            return null;
+        }
 
-		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
-		if (ssCmd.getHypervisorType() != HypervisorType.VMware) {
-			return null;
-		}
+        return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.VMware, details, hostTags);
+    }
 
-		return _resourceMgr.fillRoutingHostVO(host, ssCmd,
-				HypervisorType.VMware, details, hostTags);
-	}
+    @Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        if (host.getType() != com.cloud.host.Host.Type.Routing || host.getHypervisorType() != HypervisorType.VMware) {
+            return null;
+        }
 
-	@Override
-	public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-			boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		if (host.getType() != com.cloud.host.Host.Type.Routing
-				|| host.getHypervisorType() != HypervisorType.VMware) {
-			return null;
-		}
+        _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+        return new DeleteHostAnswer(true);
 
-		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
-		return new DeleteHostAnswer(true);
-
-	}
+    }
 
     @Override
     public boolean start() {
-        if ( ! super.start() )
+        if (!super.start())
             return false;
-        
+
         _nexusElement = getCiscoNexusVSMElement();
-        
+
         return true;
     }
-	
-	@Override
-	public boolean stop() {
-		_resourceMgr.unregisterResourceStateAdapter(this.getClass()
-				.getSimpleName());
-		return super.stop();
-	}
 
-    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, VirtualSwitchType defaultVirtualSwitchType, String vSwitchType, String vSwitchName, Long clusterId) {
+    @Override
+    public boolean stop() {
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
+
+    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, VirtualSwitchType defaultVirtualSwitchType, String vSwitchType,
+        String vSwitchName, Long clusterId) {
         VmwareTrafficLabel trafficLabelObj = null;
         Map<String, String> clusterDetails = null;
         try {
             trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defaultVirtualSwitchType);
         } catch (InvalidParameterValueException e) {
-            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType +
-                           " traffic due to " + e.getMessage());
+            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType + " traffic due to " + e.getMessage());
             throw e;
         }
 
@@ -705,34 +663,34 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         return trafficLabelObj;
     }
 
-    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails, VirtualSwitchType defVirtualSwitchType) {
+    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails,
+        VirtualSwitchType defVirtualSwitchType) {
         VmwareTrafficLabel trafficLabelObj = null;
         try {
             trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defVirtualSwitchType);
         } catch (InvalidParameterValueException e) {
-            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType +
-                           " traffic due to " + e.getMessage());
+            s_logger.error("Failed to recognize virtual switch type specified for " + trafficType + " traffic due to " + e.getMessage());
             throw e;
         }
 
-        if(defVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)) {
+        if (defVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)) {
             return trafficLabelObj;
         }
 
         if (trafficType == TrafficType.Guest) {
-            if(clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC)) {
+            if (clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC)) {
                 trafficLabelObj.setVirtualSwitchName(clusterDetails.get(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC));
             }
-            if(clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC)) {
+            if (clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC)) {
                 trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(clusterDetails.get(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC)));
             }
         } else if (trafficType == TrafficType.Public) {
-            if(clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC)) {
+            if (clusterDetails.containsKey(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC)) {
                 trafficLabelObj.setVirtualSwitchName(clusterDetails.get(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC));
-           }
-           if(clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)) {
-               trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(clusterDetails.get(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)));
-           }
+            }
+            if (clusterDetails.containsKey(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)) {
+                trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(clusterDetails.get(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC)));
+            }
         }
 
         return trafficLabelObj;
@@ -768,7 +726,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
     private VirtualSwitchType getDefaultVirtualSwitchType() {
         if (nexusDVS)
             return VirtualSwitchType.NexusDistributedVirtualSwitch;
-        else if(useDVS)
+        else if (useDVS)
             return VirtualSwitchType.VMwareDistributedVirtualSwitch;
         else
             return VirtualSwitchType.StandardVirtualSwitch;

@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value=ClusterDetailsDao.class)
+@Local(value = ClusterDetailsDao.class)
 public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
@@ -52,7 +52,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     public ClusterDetailsVO findDetail(long clusterId, String name) {
         SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
         // This is temporary fix to support list/update configuration api for cpu and memory overprovisioning ratios
-        if(name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
+        if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
             name = "cpuOvercommitRatio";
         }
         if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
@@ -61,14 +61,12 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("name", name);
 
-
         ClusterDetailsVO detail = findOneIncludingRemovedBy(sc);
-        if("password".equals(name) && detail != null){
+        if ("password".equals(name) && detail != null) {
             detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
         }
         return detail;
     }
-
 
     @Override
     public Map<String, String> findDetails(long clusterId) {
@@ -78,7 +76,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         List<ClusterDetailsVO> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (ClusterDetailsVO result : results) {
-            if("password".equals(result.getName())){
+            if ("password".equals(result.getName())) {
                 details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
             } else {
                 details.put(result.getName(), result.getValue());
@@ -108,7 +106,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
         for (Map.Entry<String, String> detail : details.entrySet()) {
             String value = detail.getValue();
-            if("password".equals(detail.getKey())){
+            if ("password".equals(detail.getKey())) {
                 value = DBEncryptionUtil.encrypt(value);
             }
             ClusterDetailsVO vo = new ClusterDetailsVO(clusterId, detail.getKey(), value);

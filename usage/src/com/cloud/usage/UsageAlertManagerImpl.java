@@ -24,14 +24,15 @@ import java.util.Properties;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.mail.Authenticator;
+import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.URLName;
-import javax.mail.Message.RecipientType;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,26 +41,25 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
-
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 @Component
-@Local(value={AlertManager.class})
+@Local(value = {AlertManager.class})
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
     private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
     private EmailAlert _emailAlert;
-    @Inject private AlertDao _alertDao;
-    @Inject private ConfigurationDao _configDao;
+    @Inject
+    private AlertDao _alertDao;
+    @Inject
+    private ConfigurationDao _configDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
         String emailAddressList = configs.get("alert.email.addresses");
@@ -82,14 +82,14 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         }
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
-         return true;
+        return true;
     }
 
     @Override
-    public void clearAlert(short alertType, long dataCenterId, long podId) {
+    public void clearAlert(AlertType alertType, long dataCenterId, long podId) {
         try {
             if (_emailAlert != null) {
-                _emailAlert.clearAlert(alertType, dataCenterId, podId);
+                _emailAlert.clearAlert(alertType.getType(), dataCenterId, podId);
             }
         } catch (Exception ex) {
             s_logger.error("Problem clearing email alert", ex);
@@ -97,21 +97,20 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     }
 
     @Override
-    public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body) {
+    public void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String body) {
         // TODO:  queue up these messages and send them as one set of issues once a certain number of issues is reached?  If that's the case,
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
         try {
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: "
-                    + podId + " // clusterId:: " + null + " // message:: " + subject );
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
+                    " // message:: " + subject);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
         }
     }
-
 
     class EmailAlert {
         private Session _smtpSession;
@@ -123,7 +122,8 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         private final String _smtpPassword;
         private final String _emailSender;
 
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, boolean smtpDebug) {
+        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword,
+                String emailSender, boolean smtpDebug) {
             if (recipientList != null) {
                 _recipientList = new InternetAddress[recipientList.length];
                 for (int i = 0; i < recipientList.length; i++) {
@@ -146,14 +146,14 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtp.user", smtpUsername);
                 }
 
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
@@ -175,29 +175,31 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         }
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+        protected void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException,
+            UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
                 podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
-            if ((alertType != AlertManager.ALERT_TYPE_HOST) &&
-                (alertType != AlertManager.ALERT_TYPE_USERVM) &&
-                (alertType != AlertManager.ALERT_TYPE_DOMAIN_ROUTER) &&
-                (alertType != AlertManager.ALERT_TYPE_CONSOLE_PROXY) &&
-                (alertType != AlertManager.ALERT_TYPE_SSVM) &&
-                (alertType != AlertManager.ALERT_TYPE_STORAGE_MISC) &&
-                (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE)) {
-                alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
+            if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE)) {
+                alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId);
             }
 
             if (alert == null) {
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();
-                newAlert.setType(alertType);
+                newAlert.setType(alertType.getType());
                 newAlert.setSubject(subject);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);
                 newAlert.setSentCount(1); // initialize sent count to 1 since we are now sending an alert
                 newAlert.setLastSent(new Date());
+                newAlert.setName(alertType.getName());
                 _alertDao.persist(newAlert);
             } else {
                 if (s_logger.isDebugEnabled()) {
@@ -245,6 +247,17 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     @Override
     public void recalculateCapacity() {
         // TODO Auto-generated method stub
-        
+
+    }
+
+    @Override
+    public boolean generateAlert(AlertType alertType, long dataCenterId, Long podId, String msg) {
+        try {
+            sendAlert(alertType, dataCenterId, podId, msg, msg);
+            return true;
+        } catch (Exception ex) {
+            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
+            return false;
+        }
     }
 }

@@ -55,9 +55,10 @@ public class DestroyVMCmd extends BaseAsyncCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-
-    @Parameter(name=ApiConstants.EXPUNGE, type=CommandType.BOOLEAN,
-            description="If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only", since="4.2.1")
+    @Parameter(name = ApiConstants.EXPUNGE,
+               type = CommandType.BOOLEAN,
+               description = "If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only",
+               since = "4.2.1")
     private Boolean expunge;
 
     /////////////////////////////////////////////////////
@@ -115,8 +116,8 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, ConcurrentOperationException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.destroyVm(this);
 
         UserVmResponse response = new UserVmResponse();

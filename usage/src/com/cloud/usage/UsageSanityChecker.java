@@ -25,203 +25,272 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.TransactionLegacy;
 
+/**
+ * This class must not be used concurrently because its state changes often during
+ * execution in a non synchronized way
+ */
 public class UsageSanityChecker {
-    
-    private StringBuffer errors;
-    private String lastCheckId = "";
-    private final String lastCheckFile = "/usr/local/libexec/sanity-check-last-id"; 
-    
-    private boolean checkMaxUsage(Connection conn) throws SQLException{
-        
-       PreparedStatement pstmt = conn.prepareStatement("SELECT value FROM `cloud`.`configuration` where name = 'usage.stats.job.aggregation.range'");
-       ResultSet rs = pstmt.executeQuery();
-       
-       int aggregationRange = 1440; 
-       if(rs.next()){
-           aggregationRange = rs.getInt(1);
-       } else {
-           System.out.println("Failed to retrieve aggregation range. Using default : "+aggregationRange);
-       }
-       
-       int aggregationHours = aggregationRange / 60;
-       
-       /*
-        * Check for usage records with raw_usage > aggregationHours
-        */
-       pstmt = conn.prepareStatement("SELECT count(*) FROM `cloud_usage`.`cloud_usage` cu where usage_type not in (4,5) and raw_usage > "+aggregationHours+lastCheckId);
-       rs = pstmt.executeQuery();
-       if(rs.next() && (rs.getInt(1) > 0)){
-           errors.append("Error: Found "+rs.getInt(1)+" usage records with raw_usage > "+aggregationHours);
-           errors.append("\n");
-           return false;
-       }
-       return true;
+
+    protected static final Logger s_logger = Logger.getLogger(UsageSanityChecker.class);
+    protected static final int DEFAULT_AGGREGATION_RANGE = 1440;
+    protected StringBuilder errors;
+    protected List<CheckCase> checkCases;
+    protected String lastCheckFile = "/usr/local/libexec/sanity-check-last-id";
+    protected String lastCheckId = "";
+    protected int lastId = -1;
+    protected int maxId = -1;
+    protected Connection conn;
+
+    protected void reset() {
+        errors = new StringBuilder();
+        checkCases = new ArrayList<CheckCase>();
     }
-    
-    private boolean checkVmUsage(Connection conn) throws SQLException{
-        boolean success = true;
-        /*
-         * Check for Vm usage records which are created after the vm is destroyed 
-         */
-        PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.vm_instance vm where vm.type = 'User' " +
-                "and cu.usage_type in (1 , 2) and cu.usage_id = vm.id and cu.start_date > vm.removed"+lastCheckId);
-        ResultSet rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" Vm usage records which are created after Vm is destroyed");
-            errors.append("\n");
-            success = false;
-        }
-        
-        /*
-         * Check for Vms which have multiple running vm records in helper table 
-         */
-        pstmt = conn.prepareStatement("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance where usage_type =1 " +
-                "and end_date is null group by vm_instance_id having count(vm_instance_id) > 1) c ;");
-        rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" duplicate running Vm entries in vm usage helper table");
-            errors.append("\n");
-            success = false;
-        }
-        
-        /*
-         * Check for Vms which have multiple allocated vm records in helper table 
-         */
-        pstmt = conn.prepareStatement("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance where usage_type =2 " +
-        "and end_date is null group by vm_instance_id having count(vm_instance_id) > 1) c ;");
-        rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" duplicate allocated Vm entries in vm usage helper table");
-            errors.append("\n");
-            success = false;
-        }
-        
-        /*
-         * Check for Vms which have running vm entry without allocated vm  entry in helper table 
-         */
-        pstmt = conn.prepareStatement("select count(vm_instance_id) from cloud_usage.usage_vm_instance o where o.end_date is null and o.usage_type=1 and not exists " +
-                "(select 1 from cloud_usage.usage_vm_instance i where i.vm_instance_id=o.vm_instance_id and usage_type=2 and i.end_date is null)");
-        rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" running Vm entries without corresponding allocated entries in vm usage helper table");
-            errors.append("\n");
-            success = false;
-        }
-        return success;
-    }
-    
-    private boolean checkVolumeUsage(Connection conn) throws SQLException{
-        boolean success = true;
-        /*
-         * Check for Volume usage records which are created after the volume is removed 
-         */
-        PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.volumes v " +
-                "where cu.usage_type = 6 and cu.usage_id = v.id and cu.start_date > v.removed"+lastCheckId);
-        ResultSet rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" volume usage records which are created after volume is removed");
-            errors.append("\n");
-            success = false;
-        }
-        
-        /*
-         * Check for duplicate records in volume usage helper table
-         */
-        pstmt = conn.prepareStatement("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_volume " +
-                "where deleted is null group by id having count(id) > 1) c;");
-        rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" duplicate records is volume usage helper table");
-            errors.append("\n");
-            success = false;
-        }
-        return success;
-    }
-    
-    private boolean checkTemplateISOUsage(Connection conn) throws SQLException{
-        /*
-         * Check for Template/ISO usage records which are created after it is removed 
-         */
-        PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.template_zone_ref tzr " +
-                "where cu.usage_id = tzr.template_id and cu.zone_id = tzr.zone_id and cu.usage_type in (7,8) and cu.start_date > tzr.removed"+lastCheckId);
-        ResultSet rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" template/ISO usage records which are created after it is removed");
-            errors.append("\n");
-            return false;
-        }
-        return true;
-    }
-    
-    private boolean checkSnapshotUsage(Connection conn) throws SQLException{
-        /*
-         * Check for snapshot usage records which are created after snapshot is removed 
-         */
-        PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.snapshots s " +
-                "where cu.usage_id = s.id and cu.usage_type = 9 and cu.start_date > s.removed"+lastCheckId);
-        ResultSet rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
-            errors.append("Error: Found "+rs.getInt(1)+" snapshot usage records which are created after snapshot is removed");
-            errors.append("\n");
-            return false;
-        }
-        return true;
-    }
-    
-    public String runSanityCheck() throws SQLException{
-        try {
-            BufferedReader reader = new BufferedReader( new FileReader (lastCheckFile));
-            String last_id  = null;
-            if( (reader != null) && ( last_id = reader.readLine() ) != null ) {
-                int lastId = Integer.parseInt(last_id);
-                if(lastId > 0){
-                    lastCheckId = " and cu.id > "+last_id;
-                }
-            }
-            reader.close();
-        } catch (Exception e) {
-            // Error while reading last check id  
+
+    protected boolean checkItemCountByPstmt() throws SQLException {
+        boolean checkOk = true;
+
+        for(CheckCase check : checkCases) {
+            checkOk &= checkItemCountByPstmt(check);
         }
 
-        Connection conn = TransactionLegacy.getStandaloneConnection();
-        int maxId = 0;
+        return checkOk;
+    }
+
+    protected boolean checkItemCountByPstmt(CheckCase checkCase) throws SQLException {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
+        boolean checkOk = true;
+
+        /*
+         * Check for item usage records which are created after it is removed
+         */
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement(checkCase.sqlTemplate);
+            if(checkCase.checkId) {
+                pstmt.setInt(1, lastId);
+                pstmt.setInt(2, maxId);
+            }
+
+            pstmt2Close.add(pstmt);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next() && (rs.getInt(1) > 0)) {
+                errors.append(String.format("Error: Found %s %s\n", rs.getInt(1), checkCase.itemName));
+                checkOk = false;
+            }
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            TransactionLegacy.closePstmts(pstmt2Close);
+        }
+        return checkOk;
+    }
+
+    protected void checkMaxUsage() throws SQLException {
+        int aggregationRange = DEFAULT_AGGREGATION_RANGE;
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
+        try {
+            PreparedStatement pstmt = conn.prepareStatement(
+                    "SELECT value FROM `cloud`.`configuration` where name = 'usage.stats.job.aggregation.range'");
+            pstmt2Close.add(pstmt);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                aggregationRange = rs.getInt(1);
+            } else {
+                s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
+            }
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            TransactionLegacy.closePstmts(pstmt2Close);
+        }
+
+        int aggregationHours = aggregationRange / 60;
+
+        addCheckCase("SELECT count(*) FROM `cloud_usage`.`cloud_usage` cu where usage_type not in (4,5) and raw_usage > "
+                + aggregationHours,
+                "usage records with raw_usage > " + aggregationHours,
+                lastCheckId);
+    }
+
+    protected void checkVmUsage() {
+        addCheckCase("select count(*) from cloud_usage.cloud_usage cu inner join cloud.vm_instance vm "
+                + "where vm.type = 'User' and cu.usage_type in (1 , 2) "
+                + "and cu.usage_id = vm.id and cu.start_date > vm.removed ",
+                "Vm usage records which are created after Vm is destroyed",
+                lastCheckId);
+
+        addCheckCase("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance "
+                + "where usage_type =1 and end_date is null group by vm_instance_id "
+                + "having count(vm_instance_id) > 1) c ;",
+                "duplicate running Vm entries in vm usage helper table");
+
+        addCheckCase("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance "
+                + "where usage_type =2 and end_date is null group by vm_instance_id "
+                + "having count(vm_instance_id) > 1) c ;",
+                "duplicate allocated Vm entries in vm usage helper table");
+
+        addCheckCase("select count(vm_instance_id) from cloud_usage.usage_vm_instance o "
+                + "where o.end_date is null and o.usage_type=1 and not exists "
+                + "(select 1 from cloud_usage.usage_vm_instance i where "
+                + "i.vm_instance_id=o.vm_instance_id and usage_type=2 and i.end_date is null)",
+                "running Vm entries without corresponding allocated entries in vm usage helper table");
+    }
+
+    protected void checkVolumeUsage() {
+        addCheckCase("select count(*) from cloud_usage.cloud_usage cu inner join cloud.volumes v where "
+                + "cu.usage_type = 6 and cu.usage_id = v.id and cu.start_date > v.removed ",
+                "volume usage records which are created after volume is removed",
+                lastCheckId);
+
+        addCheckCase("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_volume "
+                + "where deleted is null group by id having count(id) > 1) c;",
+                "duplicate records in volume usage helper table");
+    }
+
+    protected void checkTemplateISOUsage() {
+        addCheckCase("select count(*) from cloud_usage.cloud_usage cu inner join cloud.template_zone_ref tzr where "
+                + "cu.usage_id = tzr.template_id and cu.zone_id = tzr.zone_id and cu.usage_type in (7,8) and cu.start_date > tzr.removed ",
+                "template/ISO usage records which are created after it is removed",
+                lastCheckId);
+    }
+
+    protected void checkSnapshotUsage() {
+        addCheckCase("select count(*) from cloud_usage.cloud_usage cu inner join cloud.snapshots s where "
+                + "cu.usage_id = s.id and cu.usage_type = 9 and cu.start_date > s.removed ",
+                "snapshot usage records which are created after it is removed",
+                lastCheckId);
+    }
+
+    protected void readLastCheckId(){
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(lastCheckFile));
+            String lastIdText = null;
+            lastId = -1;
+            if ((reader != null) && (lastIdText = reader.readLine()) != null) {
+                lastId = Integer.parseInt(lastIdText);
+            }
+        } catch (IOException e) {
+            s_logger.error(e);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                s_logger.error(e);
+            }
+        }
+    }
+
+    protected void readMaxId() throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage");
         ResultSet rs = pstmt.executeQuery();
-        if(rs.next() && (rs.getInt(1) > 0)){
+        maxId = -1;
+        if (rs.next() && (rs.getInt(1) > 0)) {
             maxId = rs.getInt(1);
-            lastCheckId += " and cu.id <= "+maxId;
+            lastCheckId += " and cu.id <= ?";
         }
-        errors = new StringBuffer();
-        checkMaxUsage(conn);
-        checkVmUsage(conn);
-        checkVolumeUsage(conn);
-        checkTemplateISOUsage(conn);
-        checkSnapshotUsage(conn);
-        FileWriter fstream;
+    }
+
+    protected void updateNewMaxId() {
+        FileWriter fstream = null;
         try {
             fstream = new FileWriter(lastCheckFile);
             BufferedWriter out = new BufferedWriter(fstream);
-            out.write(""+maxId);
+            out.write("" + maxId);
             out.close();
         } catch (IOException e) {
-         // Error while writing last check id
-        } 
+            // Error while writing last check id
+        } finally {
+            if (fstream != null) {
+                try {
+                    fstream.close();
+                } catch (IOException e) {
+                    s_logger.error(e);
+                }
+            }
+        }
+    }
+
+    public String runSanityCheck() throws SQLException {
+
+        readLastCheckId();
+        if (lastId > 0) {
+            lastCheckId = " and cu.id > ?";
+        }
+
+        conn = getConnection();
+        readMaxId();
+
+        reset();
+
+        checkMaxUsage();
+        checkVmUsage();
+        checkVolumeUsage();
+        checkTemplateISOUsage();
+        checkSnapshotUsage();
+
+        checkItemCountByPstmt();
+
         return errors.toString();
     }
-    
-    public static void main(String args[]){
+
+    /**
+     * Local acquisition of {@link Connection} to remove static cling
+     * @return
+     */
+    protected Connection getConnection() {
+        return TransactionLegacy.getStandaloneConnection();
+    }
+
+    public static void main(String args[]) {
         UsageSanityChecker usc = new UsageSanityChecker();
         String sanityErrors;
         try {
             sanityErrors = usc.runSanityCheck();
-            if(sanityErrors.length() > 0){
-                System.out.println(sanityErrors.toString());
+            if (sanityErrors.length() > 0) {
+                s_logger.error(sanityErrors.toString());
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    protected void addCheckCase(String sqlTemplate, String itemName, String lastCheckId) {
+        checkCases.add(new CheckCase(sqlTemplate, itemName, lastCheckId));
+    }
+
+    protected void addCheckCase(String sqlTemplate, String itemName) {
+        checkCases.add(new CheckCase(sqlTemplate, itemName));
+    }
+}
+
+
+/**
+ * Just an abstraction of the kind of check to repeat across these cases
+ * encapsulating what change for each specific case
+ */
+class CheckCase {
+    public String sqlTemplate;
+    public String itemName;
+    public boolean checkId = false;
+
+    public CheckCase(String sqlTemplate, String itemName, String lastCheckId) {
+        checkId = true;
+        this.sqlTemplate = sqlTemplate + lastCheckId;
+        this.itemName = itemName;
+    }
+
+    public CheckCase(String sqlTemplate, String itemName) {
+        checkId = false;
+        this.sqlTemplate = sqlTemplate;
+        this.itemName = itemName;
     }
 }

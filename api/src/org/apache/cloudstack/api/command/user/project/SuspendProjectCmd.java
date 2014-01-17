@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,15 +27,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "suspendProject", description="Suspends a project", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "suspendProject", description = "Suspends a project", responseObject = ProjectResponse.class, since = "3.0.0")
 public class SuspendProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(SuspendProjectCmd.class.getName());
 
@@ -43,14 +43,12 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            required=true, description="id of the project to be suspended")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be suspended")
     private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long geId() {
         return id;
@@ -66,7 +64,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
         CallContext.current().setEventDetails("Project Id: " + id);
         Project project = _projectService.suspendProject(id);
         if (project != null) {
@@ -85,12 +83,12 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Suspending project: " + id;
+        return "Suspending project: " + id;
     }
 
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(id);
+        Project project = _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + id);

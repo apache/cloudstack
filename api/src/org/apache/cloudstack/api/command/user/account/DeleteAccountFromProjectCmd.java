@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,13 +29,11 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "deleteAccountFromProject", description="Deletes account from the project", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(name = "deleteAccountFromProject", description = "Deletes account from the project", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
 
@@ -42,19 +42,19 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            required=true, description="id of the project to remove the account from")
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               required = true,
+               description = "id of the project to remove the account from")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="name of the account to be removed from the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "name of the account to be removed from the project")
     private String accountName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-
-
 
     @Override
     public String getCommandName() {
@@ -74,8 +74,8 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
+    public void execute() {
+        CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName);
         boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -85,10 +85,9 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
         }
     }
 
-
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(projectId);
+        Project project = _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
@@ -104,6 +103,6 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Removing account " + accountName + " from project: " + projectId;
+        return "Removing account " + accountName + " from project: " + projectId;
     }
 }

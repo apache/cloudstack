@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.DataTO;
 
 public class IntroduceObjectAnswer extends Answer {
     private DataTO dataTO;
+
     public IntroduceObjectAnswer(DataTO dataTO) {
         this.dataTO = dataTO;
     }

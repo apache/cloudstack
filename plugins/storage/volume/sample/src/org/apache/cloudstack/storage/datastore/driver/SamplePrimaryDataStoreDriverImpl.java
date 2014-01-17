@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -40,6 +42,9 @@ import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.host.Host;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -57,6 +62,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
+    public Map<String, String> getCapabilities() {
+        return null;
+    }
+
+    @Override
     public DataTO getTO(DataObject data) {
         return null;
     }
@@ -71,23 +81,34 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         return null;
     }
 
+    @Override
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) { return false; }
+
+    @Override
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {}
+
+    @Override
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        return volume.getSize();
+    }
+
     private class CreateVolumeContext<T> extends AsyncRpcContext<T> {
         private final DataObject volume;
+
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
             super(callback);
             this.volume = volume;
         }
     }
 
-    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
-            CreateVolumeContext<CreateCmdResult> context) {
+    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
         /*
          * CreateCmdResult result = null; CreateObjectAnswer volAnswer =
          * (CreateObjectAnswer) callback.getResult(); if (volAnswer.getResult())
          * { result = new CreateCmdResult(volAnswer.getPath(), volAnswer); }
          * else { result = new CreateCmdResult("", null);
          * result.setResult(volAnswer.getDetails()); }
-         * 
+         *
          * context.getParentCallback().complete(result);
          */
         return null;
@@ -97,7 +118,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     public void deleteAsync(DataStore dataStore, DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
         /*
          * DeleteCommand cmd = new DeleteCommand(vo.getUri());
-         * 
+         *
          * EndPoint ep = selector.select(vo); AsyncRpcContext<CommandResult>
          * context = new AsyncRpcContext<CommandResult>(callback);
          * AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer>
@@ -107,8 +128,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
          */
     }
 
-    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
-            AsyncRpcContext<CommandResult> context) {
+    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcContext<CommandResult> context) {
         CommandResult result = new CommandResult();
         Answer answer = callback.getResult();
         if (!answer.getResult()) {
@@ -121,14 +141,14 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     /*
      * private class CreateVolumeFromBaseImageContext<T> extends
      * AsyncRpcContext<T> { private final VolumeObject volume;
-     * 
+     *
      * public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T>
      * callback, VolumeObject volume) { super(callback); this.volume = volume; }
-     * 
+     *
      * public VolumeObject getVolume() { return this.volume; }
-     * 
+     *
      * }
-     * 
+     *
      * @Override public void createVolumeFromBaseImageAsync(VolumeObject volume,
      * TemplateInfo template, AsyncCompletionCallback<CommandResult> callback) {
      * VolumeTO vol = this.dataStore.getVolumeTO(volume); List<EndPoint>
@@ -137,14 +157,14 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
      * template.getDataStore().grantAccess(template, ep);
      * CreateVolumeFromBaseImageCommand cmd = new
      * CreateVolumeFromBaseImageCommand(vol, templateUri);
-     * 
+     *
      * CreateVolumeFromBaseImageContext<CommandResult> context = new
      * CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);
      * AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller
      * = AsyncCallbackDispatcher.create(this); caller.setContext(context)
      * .setCallback
      * (caller.getTarget().createVolumeFromBaseImageAsyncCallback(null, null));
-     * 
+     *
      * ep.sendMessageAsync(cmd, caller); }
      */
     /*

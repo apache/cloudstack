@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,7 +41,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
  "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
-public class UpdateVMCmd extends BaseCmd{
+public class UpdateVMCmd extends BaseCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 
@@ -49,13 +49,13 @@ public class UpdateVMCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="user generated name")
+    @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "user generated name")
     private String displayName;
 
-    @Parameter(name=ApiConstants.GROUP, type=CommandType.STRING, description="group of the virtual machine")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "group of the virtual machine")
     private String group;
 
-    @Parameter(name=ApiConstants.HA_ENABLE, type=CommandType.BOOLEAN, description="true if high-availability is enabled for the virtual machine, false otherwise")
+    @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "true if high-availability is enabled for the virtual machine, false otherwise")
     private Boolean haEnable;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -63,17 +63,24 @@ public class UpdateVMCmd extends BaseCmd{
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.UUID, entityType=GuestOSResponse.class,
-            description="the ID of the OS type that best represents this VM.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID,
+               type = CommandType.UUID,
+               entityType = GuestOSResponse.class,
+               description = "the ID of the OS type that best represents this VM.")
     private Long osTypeId;
 
-    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length=32768)
+    @Parameter(name = ApiConstants.USER_DATA,
+               type = CommandType.STRING,
+               description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.",
+               length = 32768)
     private String userData;
 
-    @Parameter(name=ApiConstants.DISPLAY_VM, type=CommandType.BOOLEAN, description="an optional field, whether to the display the vm to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
-    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
@@ -126,7 +133,6 @@ public class UpdateVMCmd extends BaseCmd{
     }
 
     @Override
-
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getId());
         if (userVm != null) {
@@ -137,9 +143,8 @@ public class UpdateVMCmd extends BaseCmd{
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException,
-            InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.updateVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);

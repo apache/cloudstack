@@ -25,6 +25,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.Outcome;
 
 import com.cloud.utils.Predicate;
+
 public class OutcomeImpl<T> implements Outcome<T> {
     protected AsyncJob _job;
     protected Class<T> _clazz;
@@ -50,7 +51,9 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     @Override
     public AsyncJob getJob() {
-        return _job;
+        // always reload job so that we retrieve the latest job result
+        AsyncJob job = s_jobMgr.getAsyncJob(_job.getId());
+        return job;
     }
 
     @Override
@@ -109,13 +112,11 @@ public class OutcomeImpl<T> implements Outcome<T> {
     @Override
     public void execute(Task<T> task) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void execute(Task<T> task, long wait, TimeUnit unit) {
         // TODO Auto-generated method stub
-
     }
 
     public Predicate getPredicate() {

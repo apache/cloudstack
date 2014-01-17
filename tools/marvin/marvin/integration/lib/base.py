@@ -98,7 +98,10 @@ class Account:
         cmd.lastname = services["lastname"]
 
         cmd.password = services["password"]
-        cmd.username = "-".join([services["username"], random_gen(id=apiclient.id)])
+
+        username = "-".join([services["username"], random_gen(id=apiclient.id)])
+        #  Trim username to 99 characters to prevent failure
+        cmd.username = username[:99] if len(username) > 99 else username
 
         if "accountUUID" in services:
             cmd.accountid =  "-".join([services["accountUUID"],random_gen()])
@@ -243,13 +246,17 @@ class VirtualMachine:
         if zone.securitygroupsenabled:
             list_security_groups = SecurityGroup.list(
                 apiclient,
+                account=cmd.account,
+                domainid=cmd.domainid,
                 securitygroupname="basic_sec_grp"
             )
 
             if not isinstance(list_security_groups, list):
                 basic_mode_security_group = SecurityGroup.create(
                     apiclient,
-                    {"name": "basic_sec_grp"}
+                    {"name": "basic_sec_grp"},
+                    cmd.account,
+                    cmd.domainid,
                 )
                 sec_grp_services = {
                     "protocol": "TCP",
@@ -530,11 +537,15 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId):
+    def add_nic(self, apiclient, networkId, ipaddress=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
         cmd.networkid = networkId
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+
         return apiclient.addNicToVirtualMachine(cmd)
 
     def remove_nic(self, apiclient, nicId):
@@ -742,7 +753,7 @@ class Volume:
             cmd.url = services["url"]
         return Volume(apiclient.uploadVolume(cmd).__dict__)
 
-    def wait_for_upload(self, apiclient, timeout=5, interval=60):
+    def wait_for_upload(self, apiclient, timeout=10, interval=60):
         """Wait for upload"""
         # Sleep to ensure template is in proper state before download
         time.sleep(interval)
@@ -1860,6 +1871,14 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.findHostsForMigration(cmd))
 
+    @classmethod
+    def update(cls, apiclient, **kwargs):
+        """Update host information"""
+
+        cmd = updateHost.updateHostCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateHost(cmd))
+
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
@@ -2243,6 +2262,8 @@ class Zone:
             cmd.internaldns2 = services["internaldns2"]
         if domainid:
             cmd.domainid = domainid
+        if "securitygroupenabled" in services:
+            cmd.securitygroupenabled = services["securitygroupenabled"]
 
         return Zone(apiclient.createZone(cmd).__dict__)
 

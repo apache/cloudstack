@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.junit.After;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,12 +45,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import com.cloud.exception.InvalidParameterValueException;
-
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.IAMService;
-import org.apache.cloudstack.iam.server.AclGroupAccountMapVO;
 import org.apache.cloudstack.iam.server.AclGroupVO;
 import org.apache.cloudstack.iam.server.AclPolicyVO;
 import org.apache.cloudstack.iam.server.IAMServiceImpl;
@@ -60,11 +56,12 @@ import org.apache.cloudstack.iam.server.dao.AclGroupDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -90,7 +87,6 @@ public class IAMServiceUnitTest {
 
     @Inject
     AclPolicyPermissionDao _policyPermissionDao;
-
 
     @BeforeClass
     public static void setUpClass() throws ConfigurationException {
@@ -127,7 +123,7 @@ public class IAMServiceUnitTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void deleteAclGroupInvalidIdTest(){
+    public void deleteAclGroupInvalidIdTest() {
         when(_aclGroupDao.findById(20L)).thenReturn(null);
         _iamService.deleteAclGroup(20L);
     }
@@ -164,7 +160,7 @@ public class IAMServiceUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = { IAMServiceImpl.class }, includeFilters = { @Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {IAMServiceImpl.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -25,6 +25,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -33,7 +35,6 @@ import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.keystore.KeystoreManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -45,7 +46,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = { ConsoleProxyManager.class })
+@Local(value = {ConsoleProxyManager.class})
 public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 
@@ -53,7 +54,6 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     protected HostDao _hostDao;
     @Inject
     protected UserVmDao _userVmDao;
-    private String _instance;
     protected String _consoleProxyUrlDomain;
     @Inject
     private VMInstanceDao _instanceDao;
@@ -70,14 +70,17 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Inject
     protected KeystoreManager _ksMgr;
 
-    @Inject ConfigurationDao _configDao;
-    @Inject ManagementServer _ms;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    ManagementServer _ms;
+    @Inject
+    KeysManager _keysMgr;
 
     public class AgentBasedAgentHook extends AgentHookBase {
 
-        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
-                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
+        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
         }
 
         @Override
@@ -91,7 +94,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         if (vm.getHostId() == null) {
             return -1;
         }
-        GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getHostName()));
+        GetVncPortAnswer answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getHostName()));
         return (answer == null || !answer.getResult()) ? -1 : answer.getPort();
     }
 
@@ -118,12 +121,9 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _sslEnabled = true;
         }
 
-        _instance = configs.get("instance.name");
-
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
-        _listener =
-                new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
+        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _keysMgr));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         if (s_logger.isInfoEnabled()) {
@@ -147,8 +147,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         HostVO host = findHost(userVm);
         if (host != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP "
-                        + host.getPublicIpAddress());
+                s_logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP " + host.getPublicIpAddress());
             }
 
             // only private IP, public IP, host id have meaningful values, rest
@@ -156,8 +155,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             String publicIp = host.getPublicIpAddress();
             if (publicIp == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress()
-                            + " does not have public interface, we will return its private IP for cosole proxy.");
+                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress() +
+                        " does not have public interface, we will return its private IP for cosole proxy.");
                 }
                 publicIp = host.getPrivateIpAddress();
             }
@@ -174,9 +173,6 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         }
         return null;
     }
-
-
-
 
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId) {

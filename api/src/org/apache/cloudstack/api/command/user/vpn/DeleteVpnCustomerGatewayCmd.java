@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,13 +26,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVpnCustomerGateway", description="Delete site to site vpn customer gateway", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteVpnCustomerGateway", description = "Delete site to site vpn customer gateway", responseObject = SuccessResponse.class)
 public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnCustomerGatewayCmd.class.getName());
 
@@ -39,14 +40,16 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=Site2SiteCustomerGatewayResponse.class,
-            required=true, description="id of customer gateway")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = Site2SiteCustomerGatewayResponse.class,
+               required = true,
+               description = "id of customer gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getId() {
         return id;
@@ -55,7 +58,6 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -82,7 +84,7 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _s2sVpnService.deleteCustomerGateway(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -22,7 +22,10 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/opt/xensource/sm"):
+    sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/usr/lib/xcp/sm"):
+    sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import base64
 import hostvmstats
 import socket
@@ -31,14 +34,18 @@ import tempfile
 import util
 import subprocess
 import zlib
+import cloudstack_pluginlib as lib
+import logging
 from util import CommandException
+
+lib.setup_logging("/var/log/cloud/vmops.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### VMOPS enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### VMOPS exit  %s ####" % name )
         return res
     return wrapped
 
@@ -48,7 +55,7 @@ def add_to_VCPUs_params_live(session, args):
     value = args['value']
     vmname = args['vmname']
     try:
-        cmd = ["bash", "/opt/xensource/bin/add_to_vcpus_params_live.sh", vmname, key, value]
+        cmd = ["bash", "/opt/cloud/bin/add_to_vcpus_params_live.sh", vmname, key, value]
         txt = util.pread2(cmd)
     except:
         return 'false'
@@ -67,7 +74,7 @@ def gethostvmstats(session, args):
 def setup_iscsi(session, args):
    uuid=args['uuid']
    try:
-       cmd = ["bash", "/opt/xensource/bin/setup_iscsi.sh", uuid]
+       cmd = ["bash", "/opt/cloud/bin/setup_iscsi.sh", uuid]
        txt = util.pread2(cmd)
    except:
        txt = ''
@@ -78,7 +85,7 @@ def setup_iscsi(session, args):
 def getgateway(session, args):
     mgmt_ip = args['mgmtIP']
     try:
-        cmd = ["bash", "/opt/xensource/bin/network_info.sh", "-g", mgmt_ip]
+        cmd = ["bash", "/opt/cloud/bin/network_info.sh", "-g", mgmt_ip]
         txt = util.pread2(cmd)
     except:
         txt = ''
@@ -89,11 +96,11 @@ def getgateway(session, args):
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
-        cmd = ["/opt/xensource/bin/make_migratable.sh", uuid]
+        cmd = ["/opt/cloud/bin/make_migratable.sh", uuid]
         util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog("Catch prepare migration exception" )
+        logging.debug("Catch prepare migration exception" )
         txt = ''
 
     return txt
@@ -101,11 +108,11 @@ def preparemigration(session, args):
 @echo
 def setIptables(session, args):
     try:
-        cmd = ["/bin/bash", "/opt/xensource/bin/setupxenserver.sh"]
+        cmd = ["/bin/bash", "/opt/cloud/bin/setupxenserver.sh"]
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog("  setIptables execution failed "  )
+        logging.debug("  setIptables execution failed "  )
         txt = '' 
 
     return txt
@@ -130,7 +137,7 @@ def pingdomr(session, args):
 def kill_copy_process(session, args):
     namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/opt/xensource/bin/kill_copy_process.sh", namelabel]
+        cmd = ["bash", "/opt/cloud/bin/kill_copy_process.sh", namelabel]
         txt = util.pread2(cmd)
     except:
         txt = 'false'
@@ -144,13 +151,13 @@ def pingxenserver(session, args):
 def pingtest(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/pingtest.sh")
+    cmd.insert(0, "/opt/cloud/bin/pingtest.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog("  pingtest failed "  )
+        logging.debug("  pingtest failed "  )
         txt = ''
 
     return txt
@@ -159,13 +166,13 @@ def pingtest(session, args):
 def savePassword(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/save_password_to_domr.sh")
+    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog("  save password to domr failed "  )
+        logging.debug("  save password to domr failed "  )
         txt = '' 
 
     return txt
@@ -174,13 +181,13 @@ def savePassword(session, args):
 def saveDhcpEntry(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/dhcp_entry.sh")
+    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog(" save dhcp entry failed "  )
+        logging.debug(" save dhcp entry failed "  )
         txt = '' 
 
     return txt
@@ -236,13 +243,13 @@ def setLinkLocalIP(session, args):
 def setFirewallRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_firewall.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_firewall.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog(" set firewall rule failed "  )
+        logging.debug(" set firewall rule failed "  )
         txt = '' 
 
     return txt
@@ -251,14 +258,14 @@ def setFirewallRule(session, args):
 def routerProxy(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, "/opt/cloud/bin/router_proxy.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         if txt is None or len(txt) == 0 :
             txt = 'success'
     except:
-        util.SMlog("routerProxy command " + sargs + " failed "  )
+        logging.debug("routerProxy command " + sargs + " failed "  )
         txt = '' 
 
     return txt
@@ -269,13 +276,13 @@ def routerProxy(session, args):
 def setLoadBalancerRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_loadbalancer.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog(" set loadbalancer rule failed "  )
+        logging.debug(" set loadbalancer rule failed "  )
         txt = '' 
 
     return txt
@@ -288,7 +295,7 @@ def configdnsmasq(session, args):
        util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
        txt='success'
     except:
-       util.SMlog("failed to config dnsmasq server")
+       logging.debug("failed to config dnsmasq server")
        txt=''
     return txt
 
@@ -296,13 +303,13 @@ def configdnsmasq(session, args):
 def createipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/createipAlias.sh")
+    cmd.insert(0, "/opt/cloud/bin/createipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
        txt='success'
     except:
-       util.SMlog("failed to create ip alias on router vm")
+       logging.debug("failed to create ip alias on router vm")
        txt=''
     return txt
 
@@ -310,13 +317,13 @@ def createipAlias(session, args):
 def deleteipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/deleteipAlias.sh")
+    cmd.insert(0, "/opt/cloud/bin/deleteipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
        txt='success'
     except:
-       util.SMlog("failed to create ip alias on router vm")
+       logging.debug("failed to create ip alias on router vm")
        txt=''
     return txt
 
@@ -331,7 +338,7 @@ def createFile(session, args):
         f.close()
         txt = 'success'
     except:
-        util.SMlog(" failed to create HA proxy cfg file ")
+        logging.debug(" failed to create HA proxy cfg file ")
         txt = ''
 
     return txt
@@ -351,7 +358,7 @@ def createFileInDomr(session, args):
         util.pread2(['rm',tmpfile])
         txt = 'success'
     except:
-        util.SMlog(" failed to create HA proxy cfg file ")
+        logging.debug(" failed to create HA proxy cfg file ")
         txt = ''
 
     return txt
@@ -365,29 +372,10 @@ def deleteFile(session, args):
             os.remove(file_path)
         txt = 'success'
     except:
-        util.SMlog(" failed to remove HA proxy cfg file ")
+        logging.debug(" failed to remove HA proxy cfg file ")
         txt = ''
 
     return txt
-
-
-    
-def get_private_nic(session, args):
-    vms = session.xenapi.VM.get_all()
-    host_uuid = args.get('host_uuid')
-    host = session.xenapi.host.get_by_uuid(host_uuid)
-    piflist = session.xenapi.host.get_PIFs(host)
-    mgmtnic = 'eth0'
-    for pif in piflist:
-        pifrec = session.xenapi.PIF.get_record(pif)
-        network = pifrec.get('network')
-        nwrec = session.xenapi.network.get_record(network)
-        if nwrec.get('name_label') == 'cloud-guest':
-            return pifrec.get('device')
-        if pifrec.get('management'):
-            mgmtnic = pifrec.get('device')
-    
-    return mgmtnic
 
 def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
@@ -418,7 +406,6 @@ def can_bridge_firewall(session, args):
     except:
         return 'false'
 
-    host_uuid = args.get('host_uuid')
     try:
         util.pread2(['iptables', '-N', 'BRIDGE-FIREWALL'])
         util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
@@ -426,7 +413,7 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
-        util.SMlog('Chain BRIDGE-FIREWALL already exists')
+        logging.debug('Chain BRIDGE-FIREWALL already exists')
 
     try:
         util.pread2(['iptables', '-N', 'BRIDGE-DEFAULT-FIREWALL'])
@@ -438,16 +425,14 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
         util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
     except:
-        util.SMlog('Chain BRIDGE-DEFAULT-FIREWALL already exists')
+        logging.debug('Chain BRIDGE-DEFAULT-FIREWALL already exists')
 
-    privnic = get_private_nic(session, args)
     result = 'true'
     try:
         util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
     except:
         try:
             util.pread2(['iptables', '-I', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '-j', 'BRIDGE-FIREWALL'])
-            util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
             return 'false'
@@ -487,7 +472,7 @@ def default_ebtables_rules():
         # deny all others (e.g., 802.1d, CDP)
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES',  '-j', 'DROP'])
     except:
-        util.SMlog('Chain DEFAULT_EBTABLES already exists')
+        logging.debug('Chain DEFAULT_EBTABLES already exists')
 
 
 @echo
@@ -504,7 +489,7 @@ def allow_egress_traffic(session):
             try:
                 util.pread2(['iptables', '-I', 'FORWARD', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', d, '-j', 'ACCEPT'])
             except:
-                util.SMlog("Failed to add FORWARD rule through to %s" % d)
+                logging.debug("Failed to add FORWARD rule through to %s" % d)
                 return 'false'
     return 'true'
 
@@ -513,7 +498,7 @@ def ipset(ipsetname, proto, start, end, ips):
     try:
         util.pread2(['ipset', '-N', ipsetname, 'iptreemap'])
     except:
-        util.SMlog("ipset chain already exists" + ipsetname)
+        logging.debug("ipset chain already exists" + ipsetname)
 
     result = True
     ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
@@ -521,11 +506,11 @@ def ipset(ipsetname, proto, start, end, ips):
     try: 
         util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
     except:
-        util.SMlog("Failed to create temp ipset, reusing old name= " + ipsettmp)
+        logging.debug("Failed to create temp ipset, reusing old name= " + ipsettmp)
         try: 
             util.pread2(['ipset', '-F', ipsettmp]) 
         except:
-            util.SMlog("Failed to clear old temp ipset name=" + ipsettmp)
+            logging.debug("Failed to clear old temp ipset name=" + ipsettmp)
             return False
         
     try: 
@@ -536,7 +521,7 @@ def ipset(ipsetname, proto, start, end, ips):
                 if cex.reason.rfind('already in set') == -1:
                    raise
     except:
-        util.SMlog("Failed to program ipset " + ipsetname)
+        logging.debug("Failed to program ipset " + ipsetname)
         util.pread2(['ipset', '-F', ipsettmp]) 
         util.pread2(['ipset', '-X', ipsettmp]) 
         return False
@@ -544,7 +529,7 @@ def ipset(ipsetname, proto, start, end, ips):
     try: 
         util.pread2(['ipset', '-W', ipsettmp, ipsetname]) 
     except:
-        util.SMlog("Failed to swap ipset " + ipsetname)
+        logging.debug("Failed to swap ipset " + ipsetname)
         result = False
 
     try: 
@@ -552,7 +537,7 @@ def ipset(ipsetname, proto, start, end, ips):
         util.pread2(['ipset', '-X', ipsettmp]) 
     except:
         # if the temporary name clashes next time we'll just reuse it
-        util.SMlog("Failed to delete temp ipset " + ipsettmp)
+        logging.debug("Failed to delete temp ipset " + ipsettmp)
 
     return result
 
@@ -569,7 +554,7 @@ def destroy_network_rules_for_vm(session, args):
             util.pread2(['iptables', '-F', vmchain_default])
             util.pread2(['iptables', '-X', vmchain_default])
         except:
-            util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
+            logging.debug("Ignoring failure to delete  chain " + vmchain_default)
     
     destroy_ebtables_rules(vmchain)
     destroy_arptables_rules(vmchain)
@@ -578,14 +563,14 @@ def destroy_network_rules_for_vm(session, args):
         util.pread2(['iptables', '-F', vmchain])
         util.pread2(['iptables', '-X', vmchain])
     except:
-        util.SMlog("Ignoring failure to delete ingress chain " + vmchain)
+        logging.debug("Ignoring failure to delete ingress chain " + vmchain)
         
    
     try:
         util.pread2(['iptables', '-F', vmchain_egress])
         util.pread2(['iptables', '-X', vmchain_egress])
     except:
-        util.SMlog("Ignoring failure to delete egress chain " + vmchain_egress)
+        logging.debug("Ignoring failure to delete egress chain " + vmchain_egress)
     
     remove_rule_log_for_vm(vm_name)
     remove_secip_log_for_vm(vm_name)
@@ -601,7 +586,7 @@ def destroy_network_rules_for_vm(session, args):
                 util.pread2(['ipset', '-F', set])       
                 util.pread2(['ipset', '-X', set])       
     except:
-        util.SMlog("Failed to destroy ipsets for %" % vm_name)
+        logging.debug("Failed to destroy ipsets for %" % vm_name)
     
     
     return 'true'
@@ -618,12 +603,12 @@ def destroy_ebtables_rules(vm_chain):
             dc.insert(0, 'ebtables')
             util.pread2(dc)
         except:
-            util.SMlog("Ignoring failure to delete ebtables rules for vm " + vm_chain)
+            logging.debug("Ignoring failure to delete ebtables rules for vm " + vm_chain)
     try:
         util.pread2(['ebtables', '-F', vm_chain])
         util.pread2(['ebtables', '-X', vm_chain])
     except:
-            util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
+            logging.debug("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
 
 @echo
 def destroy_arptables_rules(vm_chain):
@@ -638,18 +623,18 @@ def destroy_arptables_rules(vm_chain):
             dc.insert(2, 'FORWARD')
             util.pread2(dc)
         except:
-            util.SMlog("Ignoring failure to delete arptables rules for vm " + vm_chain)
+            logging.debug("Ignoring failure to delete arptables rules for vm " + vm_chain)
     
     try:
         util.pread2(['arptables', '-F', vm_chain])
         util.pread2(['arptables', '-X', vm_chain])
     except:
-        util.SMlog("Ignoring failure to delete arptables chain for vm " + vm_chain) 
+        logging.debug("Ignoring failure to delete arptables chain for vm " + vm_chain) 
               
 @echo
 def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
     if vm_mac == 'ff:ff:ff:ff:ff:ff':
-        util.SMlog("Ignoring since mac address is not valid")
+        logging.debug("Ignoring since mac address is not valid")
         return 'true'
     
     try:
@@ -658,7 +643,7 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
         try:
             util.pread2(['ebtables', '-F', vm_chain])
         except:
-            util.SMlog("Failed to create ebtables antispoof chain, skipping")
+            logging.debug("Failed to create ebtables antispoof chain, skipping")
             return 'true'
 
     # note all rules for packets into the bridge (-i) precede all output rules (-o)
@@ -668,7 +653,7 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
             util.pread2(['ebtables', '-I', 'FORWARD', '2', '-i',  vif,  '-j', vm_chain])
             util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
-        util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
+        logging.debug("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
         return 'false'
 
     try:
@@ -684,7 +669,7 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
             # do not allow snooping of dhcp requests
             util.pread2(['ebtables', '-A', vm_chain, '-o', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'DROP'])
     except:
-        util.SMlog("Failed to program default ebtables antispoof rules for %s" % vm_chain)
+        logging.debug("Failed to program default ebtables antispoof rules for %s" % vm_chain)
         return 'false'
 
     return 'true'
@@ -692,7 +677,7 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
 @echo
 def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
     if vm_mac == 'ff:ff:ff:ff:ff:ff':
-        util.SMlog("Ignoring since mac address is not valid")
+        logging.debug("Ignoring since mac address is not valid")
         return 'true'
 
     try:
@@ -701,7 +686,7 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
         try:
             util.pread2(['arptables', '-F', vm_chain])
         except:
-            util.SMlog("Failed to create arptables rule, skipping")
+            logging.debug("Failed to create arptables rule, skipping")
             return 'true'
 
     # note all rules for packets into the bridge (-i) precede all output rules (-o)
@@ -710,7 +695,7 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
            util.pread2(['arptables',  '-I', 'FORWARD', '-i',  vif, '-j', vm_chain])
            util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
     except:
-        util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
+        logging.debug("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
         return 'false'
     
     try:
@@ -727,7 +712,7 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
         util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])
 
     except:
-        util.SMlog("Failed to program default arptables  rules")
+        logging.debug("Failed to program default arptables  rules")
         return 'false'
 
     return 'true'
@@ -739,10 +724,10 @@ def network_rules_vmSecondaryIp(session, args):
     vm_mac = args.pop('vmMac')
     ip_secondary = args.pop('vmSecIp')
     action = args.pop('action')
-    util.SMlog("vmMac = "+ vm_mac)
-    util.SMlog("vmName = "+ vm_name)
+    logging.debug("vmMac = "+ vm_mac)
+    logging.debug("vmName = "+ vm_name)
     #action = "-A"
-    util.SMlog("action = "+ action)
+    logging.debug("action = "+ action)
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
         if len(vm) != 1:
@@ -752,11 +737,11 @@ def network_rules_vmSecondaryIp(session, args):
         vifnums = [session.xenapi.VIF.get_record(vif).get('device') for vif in vm_vifs]
         domid = vm_rec.get('domid')
     except:
-        util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
+        logging.debug("### Failed to get domid or vif list for vm  ##" + vm_name)
         return 'false'
 
     if domid == '-1':
-        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        logging.debug("### Failed to get domid for vm (-1):  " + vm_name)
         return 'false'
 
     vifs = ["vif" + domid + "." + v for v in vifnums]
@@ -771,6 +756,11 @@ def network_rules_vmSecondaryIp(session, args):
 
 @echo
 def default_network_rules_systemvm(session, args):
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     vm_name = args.pop('vmName')
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
@@ -781,11 +771,11 @@ def default_network_rules_systemvm(session, args):
         vifnums = [session.xenapi.VIF.get_record(vif).get('device') for vif in vm_vifs]
         domid = vm_rec.get('domid')
     except:
-        util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
+        logging.debug("### Failed to get domid or vif list for vm  ##" + vm_name)
         return 'false'
     
     if domid == '-1':
-        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        logging.debug("### Failed to get domid for vm (-1):  " + vm_name)
         return 'false'
 
     vifs = ["vif" + domid + "." + v for v in vifnums]
@@ -806,26 +796,26 @@ def default_network_rules_systemvm(session, args):
             util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
             util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', 'RETURN'])
         except:
-            util.SMlog("Failed to program default rules")
+            logging.debug("Failed to program default rules")
             return 'false'
 	
 	
     util.pread2(['iptables', '-A', vmchain, '-j', 'ACCEPT'])
     
     if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
-        util.SMlog("Failed to log default network rules for systemvm, ignoring")
+        logging.debug("Failed to log default network rules for systemvm, ignoring")
     return 'true'
 
 @echo
 def create_ipset_forvm (ipsetname):
     result = True
     try:
-        util.SMlog("Creating ipset chain .... " + ipsetname)
+        logging.debug("Creating ipset chain .... " + ipsetname)
         util.pread2(['ipset', '-F', ipsetname])
         util.pread2(['ipset', '-X', ipsetname])
         util.pread2(['ipset', '-N', ipsetname, 'iphash'])
     except:
-        util.SMlog("ipset chain not exists creating.... " + ipsetname)
+        logging.debug("ipset chain not exists creating.... " + ipsetname)
         util.pread2(['ipset', '-N', ipsetname, 'iphash'])
 
     return result
@@ -835,10 +825,10 @@ def add_to_ipset(ipsetname, ips, action):
     result = True
     for ip in ips:
         try:
-            util.SMlog("vm ip " + ip)
+            logging.debug("vm ip " + ip)
             util.pread2(['ipset', action, ipsetname, ip])
         except:
-            util.SMlog("vm ip alreday in ip set" + ip)
+            logging.debug("vm ip alreday in ip set" + ip)
             continue
 
     return result
@@ -860,7 +850,7 @@ def arp_rules_vmip (vm_chain, vifs, ips, vm_mac, action):
                 #also important to restrict source ip and src mac in these requests as they can be used to update arp tables on destination
                 util.pread2(['arptables',  action, vm_chain, '-i', vif, '--opcode', 'Request',  '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'RETURN'])
     except:
-        util.SMlog("Failed to program arptables  rules for ip")
+        logging.debug("Failed to program arptables  rules for ip")
         return 'false'
 
     return 'true'
@@ -878,15 +868,15 @@ def default_network_rules(session, args):
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
         if len(vm) != 1:
-             util.SMlog("### Failed to get record for vm  " + vm_name)
+             logging.debug("### Failed to get record for vm  " + vm_name)
              return 'false'
         vm_rec = session.xenapi.VM.get_record(vm[0])
         domid = vm_rec.get('domid')
     except:
-        util.SMlog("### Failed to get domid for vm " + vm_name)
+        logging.debug("### Failed to get domid for vm " + vm_name)
         return 'false'
     if domid == '-1':     
-        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        logging.debug("### Failed to get domid for vm (-1):  " + vm_name)
         return 'false'
     
     vif = "vif" + domid + ".0"
@@ -926,12 +916,12 @@ def default_network_rules(session, args):
     vmipset = vm_name
     #create ipset and add vm ips to that ip set
     if create_ipset_forvm(vmipset) == False:
-       util.SMlog(" failed to create ipset for rule " + str(tokens))
+       logging.debug(" failed to create ipset for rule " + str(tokens))
        return 'false'
 
     #add primary nic ip to ipset
     if add_to_ipset(vmipset, [vm_ip], action ) == False:
-       util.SMlog(" failed to add vm " + vm_ip + " ip to set ")
+       logging.debug(" failed to add vm " + vm_ip + " ip to set ")
        return 'false'
 
     #add secodnary nic ips to ipset
@@ -942,10 +932,10 @@ def default_network_rules(session, args):
         secIpSet = "0";
 
     if secIpSet == "1":
-        util.SMlog("Adding ipset for secondary ips")
+        logging.debug("Adding ipset for secondary ips")
         add_to_ipset(vmipset, ips, action)
         if write_secip_log_for_vm(vm_name, sec_ips, vm_id) == False:
-            util.SMlog("Failed to log default network rules, ignoring")
+            logging.debug("Failed to log default network rules, ignoring")
 
     keyword = '--' + get_ipset_keyword()
 
@@ -963,21 +953,21 @@ def default_network_rules(session, args):
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-m', 'set', keyword, vmipset, 'src', '-j', vmchain_egress])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v,  '-j', vmchain])
     except:
-        util.SMlog("Failed to program default rules for vm " + vm_name)
+        logging.debug("Failed to program default rules for vm " + vm_name)
         return 'false'
     
     default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
     #add default arp rules for secondary ips;
     if secIpSet == "1":
-        util.SMlog("Adding arp rules for sec ip")
+        logging.debug("Adding arp rules for sec ip")
         arp_rules_vmip(vmchain, vifs, ips, vm_mac, action)
 
     default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1', vm_mac) == False:
-        util.SMlog("Failed to log default network rules, ignoring")
+        logging.debug("Failed to log default network rules, ignoring")
         
-    util.SMlog("Programmed default rules for vm " + vm_name)
+    logging.debug("Programmed default rules for vm " + vm_name)
     return 'true'
 
 @echo
@@ -986,12 +976,12 @@ def check_domid_changed(session, vmName):
     try:
         vm = session.xenapi.VM.get_by_name_label(vmName)
         if len(vm) != 1:
-             util.SMlog("### Could not get record for vm ## " + vmName)
+             logging.debug("### Could not get record for vm ## " + vmName)
         else:
             vm_rec = session.xenapi.VM.get_record(vm[0])
             curr_domid = vm_rec.get('domid')
     except:
-        util.SMlog("### Failed to get domid for vm  ## " + vmName)
+        logging.debug("### Failed to get domid for vm  ## " + vmName)
         
     
     logfilename = "/var/run/cloud/" + vmName +".log"
@@ -1025,7 +1015,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
             dc.pop()
             util.pread2(filter(None, dc))
         except:
-              util.SMlog("Ignoring failure to delete rules for vm " + vmName)
+              logging.debug("Ignoring failure to delete rules for vm " + vmName)
 
   
 @echo
@@ -1042,7 +1032,7 @@ def network_rules_for_rebooted_vm(session, vmName):
     if curr_domid == '-1':
         return True
     
-    util.SMlog("Found a rebooted VM -- reprogramming rules for  " + vm_name)
+    logging.debug("Found a rebooted VM -- reprogramming rules for  " + vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
@@ -1087,9 +1077,9 @@ def network_rules_for_rebooted_vm(session, vmName):
             try:
                 util.pread2(filter(None,ipt))
             except:
-                util.SMlog("Failed to rewrite antispoofing rules for vm " + vm_name)
+                logging.debug("Failed to rewrite antispoofing rules for vm " + vm_name)
     except:
-        util.SMlog("No rules found for vm " + vm_name)
+        logging.debug("No rules found for vm " + vm_name)
 
     destroy_ebtables_rules(vmchain)
     destroy_arptables_rules(vmchain)
@@ -1193,7 +1183,7 @@ def get_rule_logs_for_vms(session, args):
         hostrec = session.xenapi.host.get_record(thishost)
         vms = hostrec.get('resident_VMs')
     except:
-        util.SMlog("Failed to get host from uuid " + host_uuid)
+        logging.debug("Failed to get host from uuid " + host_uuid)
         return ' '
     
     result = []
@@ -1206,7 +1196,7 @@ def get_rule_logs_for_vms(session, args):
                 log = get_rule_log_for_vm(session, name)
                 result.append(log)
     except:
-        util.SMlog("Failed to get rule logs, better luck next time!")
+        logging.debug("Failed to get rule logs, better luck next time!")
         
     return ";".join(result)
 
@@ -1223,13 +1213,13 @@ def cleanup_rules_for_dead_vms(session):
             vm_rec = session.xenapi.VM.get_record(vm[0])
             state = vm_rec.get('power_state')
             if state != 'Running' and state != 'Paused':
-                util.SMlog("vm " + vm_name + " is not running, cleaning up")
+                logging.debug("vm " + vm_name + " is not running, cleaning up")
                 destroy_network_rules_for_vm(session, {'vmName':vm_name})
                 cleaned = cleaned+1
                 
-    util.SMlog("Cleaned up rules for " + str(cleaned) + " vms")
+    logging.debug("Cleaned up rules for " + str(cleaned) + " vms")
   except:
-    util.SMlog("Failed to cleanup rules for dead vms!")
+    logging.debug("Failed to cleanup rules for dead vms!")
         
 
 @echo
@@ -1248,12 +1238,12 @@ def cleanup_rules(session, args):
     hostrec = session.xenapi.host.get_record(thishost[0])
     vms = hostrec.get('resident_VMs')
     resident_vms = [session.xenapi.VM.get_name_label(x) for x in vms]
-    util.SMlog('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
+    logging.debug('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
  
     chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'| sed 's/-eg//' | sort|uniq" % instance
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     vmchains = [ch  for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
-    util.SMlog('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
+    logging.debug('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
     cleaned = 0
     cleanup = []
     for chain in vmchains:
@@ -1261,16 +1251,16 @@ def cleanup_rules(session, args):
         if vmname not in resident_vms:
             vmname = chain + "-untagged"
             if vmname not in resident_vms:
-                util.SMlog("vm " + chain + " is not running on this host, cleaning up")
+                logging.debug("vm " + chain + " is not running on this host, cleaning up")
                 cleanup.append(chain)
 
     for vm_name in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vm_name})
                     
-    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
+    logging.debug("Cleaned up rules for " + str(len(cleanup)) + " chains")
     return str(len(cleanup))                
   except Exception, ex:
-    util.SMlog("Failed to cleanup rules, reason= " + str(ex))
+    logging.debug("Failed to cleanup rules, reason= " + str(ex))
     return '-1';
 
 @echo
@@ -1278,7 +1268,7 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName;
     logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
-        util.SMlog("Failed to find logfile %s" %logfilename)
+        logging.debug("Failed to find logfile %s" %logfilename)
         return [True, True, True]
         
     lines = (line.rstrip() for line in open(logfilename))
@@ -1292,39 +1282,39 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
                 [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
             break
     except:
-        util.SMlog("Failed to parse log file for vm " + vmName)
+        logging.debug("Failed to parse log file for vm " + vmName)
         remove_rule_log_for_vm(vmName)
         return [True, True, True]
     
     reprogramDefault = False
     if (domID != _domID) or (vmID != _vmID) or (vmIP != _vmIP):
-        util.SMlog("Change in default info set of vm %s" % vmName)
+        logging.debug("Change in default info set of vm %s" % vmName)
         return [True, True, True]
     else:
-        util.SMlog("No change in default info set of vm %s" % vmName)
+        logging.debug("No change in default info set of vm %s" % vmName)
     
     reprogramChain = False
     rewriteLog = True
     if (int(seqno) > int(_seqno)):
         if (_signature != signature):
             reprogramChain = True
-            util.SMlog("Seqno increased from %s to %s: reprogamming "\
+            logging.debug("Seqno increased from %s to %s: reprogamming "\
                         "ingress rules for vm %s" % (_seqno, seqno, vmName))
         else:
-            util.SMlog("Seqno increased from %s to %s: but no change "\
+            logging.debug("Seqno increased from %s to %s: but no change "\
                         "in signature for vm: skip programming ingress "\
                         "rules %s" % (_seqno, seqno, vmName))
     elif (int(seqno) < int(_seqno)):
-        util.SMlog("Seqno decreased from %s to %s: ignoring these "\
+        logging.debug("Seqno decreased from %s to %s: ignoring these "\
                         "ingress rules for vm %s" % (_seqno, seqno, vmName))
         rewriteLog = False
     elif (signature != _signature):
-        util.SMlog("Seqno %s stayed the same but signature changed from "\
+        logging.debug("Seqno %s stayed the same but signature changed from "\
                     "%s to %s for vm %s" % (seqno, _signature, signature, vmName))
         rewriteLog = True
         reprogramChain = True
     else:
-        util.SMlog("Seqno and signature stayed the same: %s : ignoring these "\
+        logging.debug("Seqno and signature stayed the same: %s : ignoring these "\
                         "ingress rules for vm %s" % (seqno, vmName))
         rewriteLog = False
         
@@ -1334,7 +1324,7 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
 def write_secip_log_for_vm (vmName, secIps, vmId):
     vm_name = vmName
     logfilename = "/var/run/cloud/"+vm_name+".ip"
-    util.SMlog("Writing log to " + logfilename)
+    logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, secIps, vmId])
     result = True
@@ -1343,7 +1333,7 @@ def write_secip_log_for_vm (vmName, secIps, vmId):
         logf.write(output)
         logf.write('\n')
     except:
-        util.SMlog("Failed to write to rule log file " + logfilename)
+        logging.debug("Failed to write to rule log file " + logfilename)
         result = False
 
     logf.close()
@@ -1359,7 +1349,7 @@ def remove_secip_log_for_vm(vmName):
     try:
         os.remove(logfilename)
     except:
-        util.SMlog("Failed to delete rule log file " + logfilename)
+        logging.debug("Failed to delete rule log file " + logfilename)
         result = False
 
     return result
@@ -1368,7 +1358,7 @@ def remove_secip_log_for_vm(vmName):
 def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff:ff:ff:ff:ff:ff'):
     vm_name = vmName
     logfilename = "/var/run/cloud/" + vm_name +".log"
-    util.SMlog("Writing log to " + logfilename)
+    logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, vmID, vmIP, domID, signature, seqno, vmMac])
     result = True
@@ -1376,7 +1366,7 @@ def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff
         logf.write(output)
         logf.write('\n')
     except:
-        util.SMlog("Failed to write to rule log file " + logfilename)
+        logging.debug("Failed to write to rule log file " + logfilename)
         result = False
         
     logf.close()
@@ -1392,7 +1382,7 @@ def remove_rule_log_for_vm(vmName):
     try:
         os.remove(logfilename)
     except:
-        util.SMlog("Failed to delete rule log file " + logfilename)
+        logging.debug("Failed to delete rule log file " + logfilename)
         result = False
     
     return result
@@ -1422,13 +1412,13 @@ def cache_ipset_keyword():
        pass
        
     cachefile = "/var/cache/cloud/ipset.keyword"
-    util.SMlog("Writing ipset keyword to " + cachefile)
+    logging.debug("Writing ipset keyword to " + cachefile)
     cachef = open(cachefile, 'w')
     try:
         cachef.write(keyword)
         cachef.write('\n')
     except:
-        util.SMlog("Failed to write to cache file " + cachef)
+        logging.debug("Failed to write to cache file " + cachef)
         
     cachef.close()
     return keyword
@@ -1439,7 +1429,7 @@ def get_ipset_keyword():
     keyword = 'match-set'
     
     if not os.path.exists(cachefile):
-        util.SMlog("Failed to find ipset keyword cachefile %s" %cachefile)
+        logging.debug("Failed to find ipset keyword cachefile %s" %cachefile)
         keyword = cache_ipset_keyword()
     else:
         lines = (line.rstrip() for line in open(cachefile))
@@ -1460,21 +1450,27 @@ def network_rules(session, args):
     seqno = args.pop('seqno')
     sec_ips = args.get("secIps")
     deflated = 'false'
+
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     if 'deflated' in args:
         deflated = args.pop('deflated')
     
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
         if len(vm) != 1:
-             util.SMlog("### Could not get record for vm ## " + vm_name)
+             logging.debug("### Could not get record for vm ## " + vm_name)
              return 'false'
         vm_rec = session.xenapi.VM.get_record(vm[0])
         domid = vm_rec.get('domid')
     except:
-        util.SMlog("### Failed to get domid for vm  ## " + vm_name)
+        logging.debug("### Failed to get domid for vm  ## " + vm_name)
         return 'false'
     if domid == '-1':
-        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        logging.debug("### Failed to get domid for vm (-1):  " + vm_name)
         return 'false'
    
     vif = "vif" + domid + ".0"
@@ -1492,21 +1488,21 @@ def network_rules(session, args):
              check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
     
     if not reprogramDefault and not reprogramChain:
-        util.SMlog("No changes detected between current state and received state")
+        logging.debug("No changes detected between current state and received state")
         reason = 'seqno_same_sig_same'
         if rewriteLog:
             reason = 'seqno_increased_sig_same'
             write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno, vm_mac)
-        util.SMlog("Programming network rules for vm  %s seqno=%s signature=%s guestIp=%s,"\
+        logging.debug("Programming network rules for vm  %s seqno=%s signature=%s guestIp=%s,"\
                " do nothing, reason=%s" % (vm_name, seqno, signature, vm_ip, reason))
         return 'true'
            
     if not reprogramChain:
-        util.SMlog("###Not programming any ingress rules since no changes detected?")
+        logging.debug("###Not programming any ingress rules since no changes detected?")
         return 'true'
 
     if reprogramDefault:
-        util.SMlog("Change detected in vmId or vmIp or domId, resetting default rules")
+        logging.debug("Change detected in vmId or vmIp or domId, resetting default rules")
         default_network_rules(session, args)
         reason = 'domid_change'
     
@@ -1516,7 +1512,7 @@ def network_rules(session, args):
     keyword = '--' + get_ipset_keyword() 
     lines = rules.split(' ')
 
-    util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
+    logging.debug("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
               " update iptables, reason=%s" % (vm_name, seqno, len(lines), signature, vm_ip, reason))
     
     cmds = []
@@ -1554,7 +1550,7 @@ def network_rules(session, args):
                 ipsetname = vmchain + "_" + protocol + "_any"
 
             if ipset(ipsetname, protocol, start, end, ips) == False:
-                util.SMlog(" failed to create ipset for rule " + str(tokens))
+                logging.debug(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
                 iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, direction, '-j', action]
@@ -1567,7 +1563,7 @@ def network_rules(session, args):
                 iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, direction, '-j', action]
                 
             cmds.append(iptables)
-            util.SMlog(iptables)
+            logging.debug(iptables)
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
@@ -1578,20 +1574,20 @@ def network_rules(session, args):
                     range = "any"
                 iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', action]
             cmds.append(iptables)
-            util.SMlog(iptables)
+            logging.debug(iptables)
       
     vmchain = chain_name(vm_name)
     try:
         util.pread2(['iptables', '-F', vmchain])
     except:
-        util.SMlog("Ignoring failure to delete chain " + vmchain)
+        logging.debug("Ignoring failure to delete chain " + vmchain)
         util.pread2(['iptables', '-N', vmchain])
 
     egress_vmchain = egress_chain_name(vm_name)
     try:
         util.pread2(['iptables', '-F', egress_vmchain])
     except:
-        util.SMlog("Ignoring failure to delete chain " + egress_vmchain)
+        logging.debug("Ignoring failure to delete chain " + egress_vmchain)
         util.pread2(['iptables', '-N', egress_vmchain])
 
     
@@ -1610,19 +1606,19 @@ def network_rules(session, args):
     
     return 'true'
   except:
-    util.SMlog("Failed to network rule !")
+    logging.debug("Failed to network rule !")
 
 @echo
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/bumpUpPriority.sh")
+    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
         txt = 'success'
     except:
-        util.SMlog("bump up priority fail! ")
+        logging.debug("bump up priority fail! ")
         txt = ''
 
     return txt

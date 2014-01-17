@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.usage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,8 +27,10 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="usage_job")
+@Table(name = "usage_job")
 public class UsageJobVO implements InternalIdentity {
 
     public static final int JOB_TYPE_RECURRING = 0;
@@ -40,48 +40,50 @@ public class UsageJobVO implements InternalIdentity {
     public static final int JOB_SCHEDULED = 1;
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="host")
+    @Column(name = "host")
     private String host;
 
-    @Column(name="pid")
+    @Column(name = "pid")
     private Integer pid;
 
-    @Column(name="job_type")
+    @Column(name = "job_type")
     private int jobType;
 
-    @Column(name="scheduled")
+    @Column(name = "scheduled")
     private int scheduled;
 
-    @Column(name="start_millis")
+    @Column(name = "start_millis")
     private long startMillis;
 
-    @Column(name="end_millis")
+    @Column(name = "end_millis")
     private long endMillis;
 
-    @Column(name="exec_time")
+    @Column(name = "exec_time")
     private long execTime;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="start_date")
+    @Column(name = "start_date")
     private Date startDate;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="end_date")
+    @Column(name = "end_date")
     private Date endDate;
 
-    @Column(name="success")
+    @Column(name = "success")
     private Boolean success;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="heartbeat")
+    @Column(name = "heartbeat")
     private Date heartbeat;
 
-    public UsageJobVO() {}
+    public UsageJobVO() {
+    }
 
+    @Override
     public long getId() {
         return id;
     }

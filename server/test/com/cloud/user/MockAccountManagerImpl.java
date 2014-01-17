@@ -45,11 +45,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value = { AccountManager.class, AccountService.class })
+@Local(value = {AccountManager.class, AccountService.class})
 public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
-
 
     @Override
     public boolean deleteUserAccount(long accountId) {
@@ -192,7 +190,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
 
     }
-    
+
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // TODO Auto-generated method stub
@@ -237,7 +235,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
-
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
         return null;
@@ -247,7 +244,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     public Pair<User, Account> findUserByApiKey(String apiKey) {
         return null;
     }
-
 
     @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
@@ -261,7 +257,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
 
-
     /* (non-Javadoc)
      * @see com.cloud.user.AccountService#getUserByApiKey(java.lang.String)
      */
@@ -272,22 +267,18 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password,
-            String firstName, String lastName, String email, String timezone,
-            String accountName, short accountType, Long domainId,
-            String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public User createUser(String userName, String password, String firstName,
-            String lastName, String email, String timeZone, String accountName,
-            Long domainId, String userUUID) {
+    public User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
+        String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
-
 
     @Override
     public RoleType getRoleType(Account account) {

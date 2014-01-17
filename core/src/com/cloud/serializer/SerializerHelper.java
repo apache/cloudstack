@@ -26,9 +26,10 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
 
 /**
  * Note: toPairList and appendPairList only support simple POJO objects currently
@@ -38,7 +39,7 @@ public class SerializerHelper {
     public static String token = "/";
 
     public static String toSerializedStringOld(Object result) {
-        if(result != null) {
+        if (result != null) {
             Class<?> clz = result.getClass();
             Gson gson = GsonHelper.getGson();
             return clz.getName() + token + gson.toJson(result);
@@ -48,7 +49,7 @@ public class SerializerHelper {
 
     public static Object fromSerializedString(String result) {
         try {
-            if(result != null && !result.isEmpty()) {
+            if (result != null && !result.isEmpty()) {
 
                 String[] serializedParts = result.split(token);
 
@@ -78,7 +79,7 @@ public class SerializerHelper {
                 return obj;
             }
             return null;
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
             throw e;
         }
@@ -90,39 +91,39 @@ public class SerializerHelper {
     }
 
     public static List<Pair<String, Object>> appendPairList(List<Pair<String, Object>> l, Object o, String name) {
-        if(o != null) {
+        if (o != null) {
             Class<?> clz = o.getClass();
 
-            if(clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
+            if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
                 l.add(new Pair<String, Object>(name, o.toString()));
                 return l;
             }
 
-            for(Field f : clz.getDeclaredFields()) {
-                if((f.getModifiers() & Modifier.STATIC) != 0) {
+            for (Field f : clz.getDeclaredFields()) {
+                if ((f.getModifiers() & Modifier.STATIC) != 0) {
                     continue;
                 }
 
                 Param param = f.getAnnotation(Param.class);
-                if(param == null) {
+                if (param == null) {
                     continue;
                 }
 
                 String propName = f.getName();
-                if(!param.propName().isEmpty()) {
+                if (!param.propName().isEmpty()) {
                     propName = param.propName();
                 }
 
                 String paramName = param.name();
-                if(paramName.isEmpty()) {
+                if (paramName.isEmpty()) {
                     paramName = propName;
                 }
 
                 Method method = getGetMethod(o, propName);
-                if(method != null) {
+                if (method != null) {
                     try {
                         Object fieldValue = method.invoke(o);
-                        if(fieldValue != null) {
+                        if (fieldValue != null) {
                             if (f.getType() == Date.class) {
                                 l.add(new Pair<String, Object>(paramName, DateUtil.getOutputString((Date)fieldValue)));
                             } else {
@@ -130,7 +131,7 @@ public class SerializerHelper {
                             }
                         }
                         //else
-                        //	l.add(new Pair<String, Object>(paramName, ""));
+                        //    l.add(new Pair<String, Object>(paramName, ""));
                     } catch (IllegalArgumentException e) {
                         s_logger.error("Illegal argument exception when calling POJO " + o.getClass().getName() + " get method for property: " + propName);
 
@@ -153,12 +154,13 @@ public class SerializerHelper {
         } catch (SecurityException e1) {
             s_logger.error("Security exception in getting POJO " + o.getClass().getName() + " get method for property: " + propName);
         } catch (NoSuchMethodException e1) {
-            if(s_logger.isTraceEnabled()) {
-                s_logger.trace("POJO " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName + ", will check is-prefixed method to see if it is boolean property");
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("POJO " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName +
+                    ", will check is-prefixed method to see if it is boolean property");
             }
         }
 
-        if(method != null) {
+        if (method != null) {
             return method;
         }
 
@@ -176,7 +178,7 @@ public class SerializerHelper {
     private static String getGetMethodName(String prefix, String fieldName) {
         StringBuffer sb = new StringBuffer(prefix);
 
-        if(fieldName.length() >= prefix.length() && fieldName.substring(0, prefix.length()).equals(prefix)) {
+        if (fieldName.length() >= prefix.length() && fieldName.substring(0, prefix.length()).equals(prefix)) {
             return fieldName;
         } else {
             sb.append(fieldName.substring(0, 1).toUpperCase());

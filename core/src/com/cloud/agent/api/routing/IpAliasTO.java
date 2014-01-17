@@ -16,27 +16,26 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-
 public class IpAliasTO {
     String routerip;
     String netmask;
-    String alias_count;
+    String aliasCount;
 
-    public  IpAliasTO(String routerip, String netmask, String alias_count) {
+    public IpAliasTO(String routerip, String netmask, String aliasCount) {
         this.routerip = routerip;
         this.netmask = netmask;
-        this.alias_count = alias_count;
+        this.aliasCount = aliasCount;
     }
 
     public String getRouterip() {
         return routerip;
     }
 
-    public  String getNetmask() {
+    public String getNetmask() {
         return netmask;
     }
 
     public String getAlias_count() {
-        return alias_count;
+        return aliasCount;
     }
 }

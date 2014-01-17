@@ -19,22 +19,22 @@ package com.cloud.agent.api;
 import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
-    private boolean isProxy=false;
-    private String urlPort=null;
-    private String publicConsoleProxyIpAddress=null;
+    private boolean isProxy = false;
+    private String urlPort = null;
+    private String publicConsoleProxyIpAddress = null;
     boolean executeInSequence = false;
 
     protected StopCommand() {
     }
 
     public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean executeInSequence) {
-    	super(vm);
-    	this.isProxy = isProxy;
-    	this.urlPort = urlPort;
-    	this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
-    	this.executeInSequence = executeInSequence;
+        super(vm);
+        this.isProxy = isProxy;
+        this.urlPort = urlPort;
+        this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
+        this.executeInSequence = executeInSequence;
     }
-    
+
     public StopCommand(VirtualMachine vm, boolean executeInSequence) {
         super(vm);
         this.executeInSequence = executeInSequence;
@@ -50,16 +50,16 @@ public class StopCommand extends RebootCommand {
         return executeInSequence;
     }
 
-	public boolean isProxy() {
-		return this.isProxy;
-	}
+    public boolean isProxy() {
+        return this.isProxy;
+    }
 
-	public String getURLPort() {
-		return this.urlPort;
-	}
+    public String getURLPort() {
+        return this.urlPort;
+    }
 
-	public String getPublicConsoleProxyIpAddress() {
-		return this.publicConsoleProxyIpAddress;
-	}
+    public String getPublicConsoleProxyIpAddress() {
+        return this.publicConsoleProxyIpAddress;
+    }
 
 }

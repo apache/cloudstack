@@ -43,7 +43,8 @@
                             label: 'label.level'
                         },
                         type: {
-                            label: 'Type'
+                            label: 'Type',
+                            truncate: true
                         },
                         domain: {
                             label: 'label.domain'

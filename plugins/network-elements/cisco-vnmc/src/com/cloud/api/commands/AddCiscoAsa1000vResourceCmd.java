@@ -18,6 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoAsa1000vResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -40,26 +40,34 @@ import com.cloud.network.cisco.CiscoAsa1000vDevice;
 import com.cloud.network.element.CiscoAsa1000vService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="addCiscoAsa1000vResource", responseObject=CiscoAsa1000vResourceResponse.class, description="Adds a Cisco Asa 1000v appliance")
+@APICommand(name = "addCiscoAsa1000vResource", responseObject = CiscoAsa1000vResourceResponse.class, description = "Adds a Cisco Asa 1000v appliance")
 public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddCiscoAsa1000vResourceCmd.class.getName());
     private static final String s_name = "addCiscoAsa1000vResource";
-    @Inject CiscoAsa1000vService _ciscoAsa1000vService;
+    @Inject
+    CiscoAsa1000vService _ciscoAsa1000vService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname or ip address of the Cisco ASA 1000v appliance.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname or ip address of the Cisco ASA 1000v appliance.")
     private String host;
 
-    @Parameter(name=ApiConstants.ASA_INSIDE_PORT_PROFILE, type=CommandType.STRING, required = true, description="Nexus port profile associated with inside interface of ASA 1000v")
+    @Parameter(name = ApiConstants.ASA_INSIDE_PORT_PROFILE,
+               type = CommandType.STRING,
+               required = true,
+               description = "Nexus port profile associated with inside interface of ASA 1000v")
     private String inPortProfile;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class, required=true, description="the Cluster ID")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the Cluster ID")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -87,7 +95,8 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             CiscoAsa1000vDevice ciscoAsa1000v = _ciscoAsa1000vService.addCiscoAsa1000vResource(this);
             if (ciscoAsa1000v != null) {
@@ -98,7 +107,7 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Cisco ASA 1000v appliance due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

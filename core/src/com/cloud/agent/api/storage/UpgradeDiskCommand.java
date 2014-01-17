@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-
 public class UpgradeDiskCommand extends StorageCommand {
 
     private String _imagePath;
     private String _newSize;
 
-    public UpgradeDiskCommand() {}
+    public UpgradeDiskCommand() {
+    }
 
     public UpgradeDiskCommand(String imagePath, String newSize) {
         _imagePath = imagePath;
@@ -32,6 +32,7 @@ public class UpgradeDiskCommand extends StorageCommand {
     public String getImagePath() {
         return _imagePath;
     }
+
     public void setImagePath(String imagePath) {
         _imagePath = imagePath;
     }
@@ -39,6 +40,7 @@ public class UpgradeDiskCommand extends StorageCommand {
     public String getNewSize() {
         return _newSize;
     }
+
     public void setNewSize(String newSize) {
         _newSize = newSize;
     }

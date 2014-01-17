@@ -25,7 +25,7 @@ var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
-var g_KVMsnapshotenabled =  null;
+var g_kvmsnapshotenabled =  null;
 var g_regionsecondaryenabled = null;
 var g_userPublicTemplateEnabled = "true";
 var g_cloudstackversion = null;
@@ -46,6 +46,7 @@ var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
+//var pageSize = 1; //for testing only
 
 var rootAccountId = 1;
 
@@ -923,11 +924,16 @@ cloudStack.converters = {
         }
         return localDate;
     },
-    toBooleanText: function(booleanValue) {
-        if (booleanValue == true)
-            return "Yes";
-
-        return "No";
+    toBooleanText: function(booleanValue) {    	
+        var text1;
+    	if (booleanValue == true) {
+    		text1 = "Yes";
+        } else if (booleanValue == false) {
+        	text1 = "No";
+        } else { //booleanValue == undefined
+        	text1 = "";
+        }
+    	return text1;        
     },
     convertHz: function(hz) {
         if (hz == null)
@@ -1114,7 +1120,7 @@ cloudStack.converters = {
 
 //data parameter passed to API call in listView
 
-function listViewDataProvider(args, data) {
+function listViewDataProvider(args, data, options) {
     //search
     if (args.filterBy != null) {
         if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
@@ -1135,9 +1141,13 @@ function listViewDataProvider(args, data) {
             switch (args.filterBy.search.by) {
                 case "name":
                     if (args.filterBy.search.value.length > 0) {
-                        $.extend(data, {
-                            keyword: args.filterBy.search.value
-                        });
+                        if (options && options.searchBy) {
+                            data[options.searchBy] = args.filterBy.search.value;
+                        } else {
+                            $.extend(data, {
+                                keyword: args.filterBy.search.value
+                            });
+                        }
                     }
                     break;
             }
@@ -1150,6 +1160,8 @@ function listViewDataProvider(args, data) {
         page: args.page,
         pagesize: pageSize
     });
+
+    return data;
 }
 
 //used by infrastructure page and network page
@@ -1182,6 +1194,15 @@ var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
 	var array1 = jsonObj.bladedn.split('/');
 	jsonObj.chassis = array1[1];
 	jsonObj.bladeid = array1[2];
+}
+
+var processPropertiesInImagestoreObject = function(jsonObj) {	
+	if (jsonObj.url != undefined) {
+		var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
+		var passwordIndex = url.indexOf('&password='); //38
+		var domainIndex = url.indexOf('&domain=');    //51
+		jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
+	}	
 }
 
 //find service object in network object
@@ -1224,6 +1245,17 @@ var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
         return url;
     }
 
+    function smbURL(server, path, smbUsername, smbPassword, smbDomain) {
+        var url = '';
+        if (server.indexOf('://') == -1) {
+        	url += 'cifs://';
+        }
+        
+        url += (server + path + '?user=' + smbUsername + '&password=' + smbPassword + '&domain=' + smbDomain);
+               
+        return url;
+    }
+    
     function presetupURL(server, path) {
         var url;
         if (server.indexOf("://") == -1)
@@ -2040,6 +2072,11 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
+            	args.response.success({
+                    data: args.jsonObj.tags
+                });
+            	
+            	/*
                 var resourceId = args.context[contextId][0].id;
                 var data = {
                     resourceId: resourceId,
@@ -2070,6 +2107,7 @@ cloudStack.api = {
                         args.response.error(parseXMLHttpResponse(json));
                     }
                 });
+                */
             }
         };
     }

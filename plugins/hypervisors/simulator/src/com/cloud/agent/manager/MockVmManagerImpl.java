@@ -16,6 +16,18 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
@@ -75,41 +87,32 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-@Local(value = { MockVmManager.class })
+@Local(value = {MockVmManager.class})
 public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 
-    @Inject MockVMDao _mockVmDao = null;
-    @Inject MockAgentManager _mockAgentMgr = null;
-    @Inject MockHostDao _mockHostDao = null;
-    @Inject MockSecurityRulesDao _mockSecurityDao = null;
+    @Inject
+    MockVMDao _mockVmDao = null;
+    @Inject
+    MockAgentManager _mockAgentMgr = null;
+    @Inject
+    MockHostDao _mockHostDao = null;
+    @Inject
+    MockSecurityRulesDao _mockSecurityDao = null;
     private final Map<String, Map<String, Ternary<String, Long, Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
 
     public MockVmManagerImpl() {
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         return true;
     }
 
-    public String startVM(String vmName, NicTO[] nics,
-            int cpuHz, long ramSize,
-            String bootArgs, String hostGuid) {
+    public String startVM(String vmName, NicTO[] nics, int cpuHz, long ramSize, String bootArgs, String hostGuid) {
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         MockHost host = null;
@@ -132,9 +135,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             txn.close();
         }
 
-        if(vm == null) {
+        if (vm == null) {
             int vncPort = 0;
-            if(vncPort < 0)
+            if (vncPort < 0)
                 return "Unable to allocate VNC port";
             vm = new MockVMVO();
             vm.setCpu(cpuHz);
@@ -144,7 +147,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             vm.setVncPort(vncPort);
             vm.setHostId(host.getId());
             vm.setBootargs(bootArgs);
-            if(vmName.startsWith("s-")) {
+            if (vmName.startsWith("s-")) {
                 vm.setType("SecondaryStorageVm");
             } else if (vmName.startsWith("v-")) {
                 vm.setType("ConsoleProxy");
@@ -156,7 +159,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 txn.start();
-                vm = _mockVmDao.persist((MockVMVO) vm);
+                vm = _mockVmDao.persist((MockVMVO)vm);
                 txn.commit();
             } catch (Exception ex) {
                 txn.rollback();
@@ -167,7 +170,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 txn.close();
             }
         } else {
-            if(vm.getState() == State.Stopped) {
+            if (vm.getState() == State.Stopped) {
                 vm.setState(State.Running);
                 txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
                 try {
@@ -361,7 +364,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Override
     public StartAnswer startVM(StartCommand cmd, SimulatorInfo info) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
+        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus() * vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
             return new StartAnswer(cmd, result);
         } else {
@@ -373,8 +376,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public CheckSshAnswer checkSshCommand(CheckSshCommand cmd) {
         return new CheckSshAnswer(cmd);
     }
-
-
 
     @Override
     public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
@@ -475,7 +476,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         String vmName = cmd.getVmName();
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
 
-        s_logger.debug("Created snapshot " +vmSnapshotName+ " for vm " + vmName);
+        s_logger.debug("Created snapshot " + vmSnapshotName + " for vm " + vmName);
         return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
     }
 
@@ -483,10 +484,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshotName = cmd.getTarget().getSnapshotName();
-        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
-            return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
-        s_logger.debug("Removed snapshot " +snapshotName+ " of VM "+vm);
+        s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
         return new DeleteVMSnapshotAnswer(cmd, true, "success");
     }
 
@@ -494,10 +495,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshot = cmd.getTarget().getSnapshotName();
-        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
-            return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
-        s_logger.debug("Reverted to snapshot " +snapshot+ " of VM "+vm);
+        s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
         return new RevertToVMSnapshotAnswer(cmd, true, "success");
     }
 
@@ -510,7 +511,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
                 vm.setState(State.Stopped);
-                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
+                _mockVmDao.update(vm.getId(), (MockVMVO)vm);
             }
 
             if (vmName.startsWith("s-")) {
@@ -536,7 +537,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
             if (vm != null) {
                 vm.setState(State.Running);
-                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
+                _mockVmDao.update(vm.getId(), (MockVMVO)vm);
             }
             txn.commit();
             return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
@@ -567,7 +568,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        return new GetDomRVersionAnswer(cmd, null, null, null);
+        return new GetDomRVersionAnswer(cmd, null, "CloudStack Release 4.2.0", UUID.randomUUID().toString());
     }
 
     @Override
@@ -576,39 +577,38 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
 
-        Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(info.getHostUuid());
+        Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(info.getHostUuid());
 
         if (rules == null) {
             logSecurityGroupAction(cmd, null);
             rules = new ConcurrentHashMap<String, Ternary<String, Long, Long>>();
-            rules.put(cmd.getVmName(), new Ternary<String,Long, Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
+            rules.put(cmd.getVmName(), new Ternary<String, Long, Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
             _securityRules.put(info.getHostUuid(), rules);
         } else {
             logSecurityGroupAction(cmd, rules.get(cmd.getVmName()));
-            rules.put(cmd.getVmName(), new Ternary<String, Long,Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
+            rules.put(cmd.getVmName(), new Ternary<String, Long, Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
         }
 
         return new SecurityGroupRuleAnswer(cmd);
     }
 
-    private boolean logSecurityGroupAction(SecurityGroupRulesCmd cmd, Ternary<String,Long, Long> rule) {
+    private boolean logSecurityGroupAction(SecurityGroupRulesCmd cmd, Ternary<String, Long, Long> rule) {
         String action = ", do nothing";
         String reason = ", reason=";
-        Long currSeqnum = rule == null? null: rule.third();
-        String currSig = rule == null? null: rule.first();
+        Long currSeqnum = rule == null ? null : rule.third();
+        String currSig = rule == null ? null : rule.first();
         boolean updateSeqnoAndSig = false;
         if (currSeqnum != null) {
             if (cmd.getSeqNum() > currSeqnum) {
                 s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum);
                 updateSeqnoAndSig = true;
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum
-                            + " new signature received:" + cmd.getSignature()  + " curr=" + currSig + ", updated iptables");
+                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" +
+                        currSig + ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_increased_sig_changed";
                 } else {
-                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum
-                            + " no change in signature:" + cmd.getSignature() +  ", do nothing");
+                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() + ", do nothing");
                     reason = reason + "seqno_increased_sig_same";
                 }
             } else if (cmd.getSeqNum() < currSeqnum) {
@@ -616,14 +616,14 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 reason = reason + "seqno_decreased";
             } else {
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum()
-                            + " new signature received:" + cmd.getSignature()  + " curr=" + currSig + ", updated iptables");
+                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
+                        ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_same_sig_changed";
                     updateSeqnoAndSig = true;
                 } else {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum
-                            + " no change in signature:" + cmd.getSignature() +  ", do nothing");
+                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() +
+                        ", do nothing");
                     reason = reason + "seqno_same_sig_same";
                 }
             }
@@ -633,11 +633,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             action = ", updated iptables";
             reason = ", seqno_new";
         }
-        s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum()
-                + " signature=" + cmd.getSignature()
-                + " guestIp=" + cmd.getGuestIp() + ", numIngressRules="
-                + cmd.getIngressRuleSet().length + ", numEgressRules="
-                + cmd.getEgressRuleSet().length + " total cidrs=" + cmd.getTotalNumCidrs() + action + reason);
+        s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
+            cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" +
+            cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;
     }
 
@@ -654,7 +652,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         if (rules == null) {
             return maps;
         }
-        for (Map.Entry<String,Ternary<String, Long, Long>> rule : rules.entrySet()) {
+        for (Map.Entry<String, Ternary<String, Long, Long>> rule : rules.entrySet()) {
             maps.put(rule.getKey(), new Pair<Long, Long>(rule.getValue().second(), rule.getValue().third()));
         }
         return maps;

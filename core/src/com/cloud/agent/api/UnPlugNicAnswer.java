@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
-public class UnPlugNicAnswer extends Answer{
-    public UnPlugNicAnswer() {}
+public class UnPlugNicAnswer extends Answer {
+    public UnPlugNicAnswer() {
+    }
 
     public UnPlugNicAnswer(UnPlugNicCommand cmd, boolean success, String result) {
         super(cmd, success, result);

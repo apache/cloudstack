@@ -21,14 +21,15 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
 
 import com.cloud.utils.Pair;
 
@@ -39,6 +40,7 @@ public class UsageCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
 
@@ -61,8 +63,7 @@ public class UsageCmdTest extends TestCase {
 
         Pair<List<? extends Usage>, Integer> usageRecords = new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
 
-        Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(
-                usageRecords);
+        Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(usageRecords);
 
         getUsageRecordsCmd._usageService = usageService;
         getUsageRecordsCmd.execute();

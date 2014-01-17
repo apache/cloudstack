@@ -27,6 +27,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
@@ -35,8 +38,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -59,28 +60,34 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { UsageService.class })
+@Local(value = {UsageService.class})
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
     public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
-    
+
     //ToDo: Move implementation to ManagaerImpl
-    
-    @Inject private AccountDao _accountDao;
-    @Inject private DomainDao _domainDao;
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageJobDao _usageJobDao;
-    @Inject private ConfigurationDao _configDao;
-    @Inject private ProjectManager _projectMgr;
+
+    @Inject
+    private AccountDao _accountDao;
+    @Inject
+    private DomainDao _domainDao;
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageJobDao _usageJobDao;
+    @Inject
+    private ConfigurationDao _configDao;
+    @Inject
+    private ProjectManager _projectMgr;
     private TimeZone _usageTimezone;
     @Inject
     private AccountService _accountService;
 
     public UsageServiceImpl() {
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name,  params);
+        super.configure(name, params);
         String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
         if (timeZoneStr == null) {
            timeZoneStr = "GMT";
@@ -121,10 +128,10 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)CallContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
-        
+
         if (projectId != null) {
             if (accountId != null) {
                 throw new InvalidParameterValueException("Projectid and accountId can't be specified together");
@@ -135,13 +142,13 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
             accountId = project.getProjectAccountId();
         }
-        
+
         //if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
-                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter); 
-                if(accounts.size() > 0){
+                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
+                if (accounts.size() > 0) {
                     userAccount = accounts.get(0);
                 }
                 if (userAccount != null) {
@@ -152,15 +159,15 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             } else {
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
-        } 
+        }
 
         boolean isAdmin = false;
         boolean isDomainAdmin = false;
-        
+
         //If accountId couldn't be found using accountName and domainId, get it from userContext
-        if(accountId == null){
+        if (accountId == null) {
             accountId = caller.getId();
-            //List records for all the accounts if the caller account is of type admin. 
+            //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
             if (_accountService.isRootAdmin(caller.getId())) {
                 isAdmin = true;
@@ -172,19 +179,20 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
-        if(startDate.after(endDate)){
-        	throw new InvalidParameterValueException("Incorrect Date Range. Start date: "+startDate+" is after end date:"+endDate);
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
         TimeZone usageTZ = getUsageTimezone();
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ, true);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ, false);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate + ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
+            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate +
+                ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
         }
 
         Filter usageFilter = new Filter(UsageVO.class, "startDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
+
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
         if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !isDomainAdmin) {
@@ -196,7 +204,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
             List<DomainVO> domains = _domainDao.search(sdc, null);
             List<Long> domainIds = new ArrayList<Long>();
-            for(DomainVO domain:domains)
+            for (DomainVO domain : domains)
                 domainIds.add(domain.getId());
             sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
         }
@@ -204,7 +212,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        
+
         if (usageType != null) {
             sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
         }
@@ -255,7 +263,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             timezoneOffset += (60 * 60 * 1000);
         }
 
-        calTS.add(Calendar.MILLISECOND, -1*timezoneOffset);
+        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
         if (adjustToDayStart) {
             calTS.set(Calendar.HOUR_OF_DAY, 0);
             calTS.set(Calendar.MINUTE, 0);
@@ -271,10 +279,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         return calTS.getTime();
     }
 
-	@Override
-	public List<UsageTypeResponse> listUsageTypes() {
-		return UsageTypes.listUsageTypes();
-	}
-
+    @Override
+    public List<UsageTypeResponse> listUsageTypes() {
+        return UsageTypes.listUsageTypes();
+    }
 
 }

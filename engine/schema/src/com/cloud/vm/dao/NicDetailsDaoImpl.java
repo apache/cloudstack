@@ -18,13 +18,14 @@ package com.cloud.vm.dao;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.vm.NicDetailVO;
 
 @Component
-@Local (value={NicDetailsDao.class})
+@Local(value = {NicDetailsDao.class})
 public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
 
     @Override

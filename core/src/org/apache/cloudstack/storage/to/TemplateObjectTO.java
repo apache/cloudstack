@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -90,7 +90,7 @@ public class TemplateObjectTO implements DataTO {
         return id;
     }
 
-    public void setId(long id){
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -122,7 +122,6 @@ public class TemplateObjectTO implements DataTO {
         this.displayText = desc;
     }
 
-
     @Override
     public DataObjectType getObjectType() {
         return DataObjectType.TEMPLATE;
@@ -138,7 +137,7 @@ public class TemplateObjectTO implements DataTO {
         return this.hypervisorType;
     }
 
-    public void setDataStore(DataStoreTO store){
+    public void setDataStore(DataStoreTO store) {
         this.imageDataStore = store;
     }
 
@@ -211,7 +210,6 @@ public class TemplateObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl)
-                .append("|name").append(name).append("]").toString();
+        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl).append("|name").append(name).append("]").toString();
     }
 }

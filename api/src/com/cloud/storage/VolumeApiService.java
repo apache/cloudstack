@@ -18,14 +18,15 @@
  */
 package com.cloud.storage;
 
-import java.net.URISyntaxException;
-
-import com.cloud.exception.StorageUnavailableException;
-import org.apache.cloudstack.api.command.user.volume.*;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
@@ -37,7 +38,6 @@ public interface VolumeApiService {
      *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
      *            name)
      * @return the volume object
-     * @throws PermissionDeniedException
      */
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
@@ -50,7 +50,6 @@ public interface VolumeApiService {
      * @return the volume object
      */
     Volume createVolume(CreateVolumeCmd cmd);
-
 
     /**
      * Resizes the volume based on the given criteria
@@ -79,12 +78,11 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
-	Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account)
-			throws ResourceAllocationException;
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm) throws ResourceAllocationException;
 
-	Snapshot allocSnapshot(Long volumeId, Long policyId)
-            throws ResourceAllocationException;
-    Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume);
+    Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException;
+
+    Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner);
 
     /**
      * Extracts the volume to a particular location.
@@ -93,9 +91,6 @@ public interface VolumeApiService {
      *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
      *            exists),
      *            id (the id of the volume)
-     * @throws URISyntaxException
-     * @throws InternalErrorException
-     * @throws PermissionDeniedException
      *
      */
     String extractVolume(ExtractVolumeCmd cmd);

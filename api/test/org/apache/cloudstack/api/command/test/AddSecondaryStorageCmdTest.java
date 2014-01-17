@@ -16,19 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+
+import java.util.Map;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageService;
@@ -56,29 +62,25 @@ public class AddSecondaryStorageCmdTest extends TestCase {
 
         ImageStore store = Mockito.mock(ImageStore.class);
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd))
+        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)anyObject()))
                 .thenReturn(store);
 
-        ResponseGenerator responseGenerator = Mockito
-                .mock(ResponseGenerator.class);
+        ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
         addImageStoreCmd._responseGenerator = responseGenerator;
 
         ImageStoreResponse responseHost = new ImageStoreResponse();
         responseHost.setName("Test");
 
-        Mockito.when(responseGenerator.createImageStoreResponse(store)).thenReturn(
-                responseHost);
+        Mockito.when(responseGenerator.createImageStoreResponse(store)).thenReturn(responseHost);
 
         addImageStoreCmd.execute();
 
         Mockito.verify(responseGenerator).createImageStoreResponse(store);
 
-        ImageStoreResponse actualResponse = (ImageStoreResponse) addImageStoreCmd
-                .getResponseObject();
+        ImageStoreResponse actualResponse = (ImageStoreResponse)addImageStoreCmd.getResponseObject();
 
         Assert.assertEquals(responseHost, actualResponse);
-        Assert.assertEquals("addimagestoreresponse",
-                actualResponse.getResponseName());
+        Assert.assertEquals("addimagestoreresponse", actualResponse.getResponseName());
 
     }
 
@@ -88,14 +90,13 @@ public class AddSecondaryStorageCmdTest extends TestCase {
         StorageService resourceService = Mockito.mock(StorageService.class);
         addImageStoreCmd._storageService = resourceService;
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd))
+        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)anyObject()))
                 .thenReturn(null);
 
         try {
             addImageStoreCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add secondary storage",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add secondary storage", exception.getDescription());
         }
 
     }

@@ -21,6 +21,6 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface FirewallRuleDetailsDao extends GenericDao<FirewallRuleDetailVO, Long>, ResourceDetailsDao<FirewallRuleDetailVO>{
+public interface FirewallRuleDetailsDao extends GenericDao<FirewallRuleDetailVO, Long>, ResourceDetailsDao<FirewallRuleDetailVO> {
 
 }

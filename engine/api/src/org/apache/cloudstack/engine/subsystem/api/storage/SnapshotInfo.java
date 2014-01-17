@@ -29,6 +29,8 @@ public interface SnapshotInfo extends DataObject, Snapshot {
 
     void addPayload(Object data);
 
+    Object getPayload();
+
     Long getDataCenterId();
 
     ObjectInDataStoreStateMachine.State getStatus();

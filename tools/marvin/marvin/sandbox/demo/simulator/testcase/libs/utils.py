@@ -20,10 +20,10 @@
 """
 
 import time
-import marvin.remoteSSHClient
+import marvin.sshClient
 from marvin.cloudstackAPI import *
 import marvin.cloudstackConnection
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 #from marvin.cloudstackConnection import cloudConnection
 import marvin.configGenerator
 import logging
@@ -44,7 +44,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
     loop_cnt = retries
     while True:
         try:
-            ssh = marvin.remoteSSHClient.remoteSSHClient(
+            ssh = marvin.sshClient.SshClient(
                                             ipaddress,
                                             port,
                                             username,
@@ -76,10 +76,7 @@ def fetch_api_client(config_file='datacenterCfg'):
     asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
             cloudstackConnection.cloudConnection(
-                                                mgt.mgtSvrIp,
-                                                mgt.port,
-                                                mgt.apiKey,
-                                                mgt.securityKey,
+                                                mgt,
                                                 asyncTimeout,
                                                 testClientLogger
                                                 )
@@ -89,7 +86,7 @@ def get_process_status(hostip, port, username, password, linklocalip, process):
     """Double hop and returns a process status"""
 
     #SSH to the machine
-    ssh = marvin.remoteSSHClient.remoteSSHClient(
+    ssh = marvin.sshClient.SshClient(
                                           hostip,
                                           port,
                                           username,

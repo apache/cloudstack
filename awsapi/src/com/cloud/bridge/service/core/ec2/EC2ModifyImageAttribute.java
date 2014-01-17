@@ -23,15 +23,15 @@ import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 
 public class EC2ModifyImageAttribute {
 
-	private String imageId        = null;     //AMI id
-	private ImageAttribute attribute = null; 
-	private String  description;
-	private Boolean isPublic = null;
-	
-    private List<EC2ImageLaunchPermission> launchPermissionList = new ArrayList<EC2ImageLaunchPermission>();
-	public EC2ModifyImageAttribute() {
-	}
+    private String imageId = null;     //AMI id
+    private ImageAttribute attribute = null;
+    private String description;
+    private Boolean isPublic = null;
 
+    private List<EC2ImageLaunchPermission> launchPermissionList = new ArrayList<EC2ImageLaunchPermission>();
+
+    public EC2ModifyImageAttribute() {
+    }
 
     public void setAttribute(ImageAttribute attribute) {
         this.attribute = attribute;
@@ -48,15 +48,15 @@ public class EC2ModifyImageAttribute {
     public String getImageId() {
         return imageId;
     }
-    
-    public void setDescription( String description ) {
+
+    public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public String getDescription() {
         return this.description;
     }
-    
+
     public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
     }
@@ -65,12 +65,12 @@ public class EC2ModifyImageAttribute {
         return isPublic;
     }
 
-    public void addLaunchPermission( EC2ImageLaunchPermission param ) {
-        launchPermissionList.add( param );
+    public void addLaunchPermission(EC2ImageLaunchPermission param) {
+        launchPermissionList.add(param);
     }
 
     public EC2ImageLaunchPermission[] getLaunchPermissionSet() {
         return launchPermissionList.toArray(new EC2ImageLaunchPermission[0]);
     }
-	
+
 }

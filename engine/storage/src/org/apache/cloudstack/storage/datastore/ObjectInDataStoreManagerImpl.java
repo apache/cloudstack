@@ -18,6 +18,9 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -37,8 +40,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
@@ -86,6 +87,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     public ObjectInDataStoreManagerImpl() {
         stateMachines = new StateMachine2<State, Event, DataObjectInStore>();
         stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested, State.Creating);
+        stateMachines.addTransition(State.Allocated, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
         stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
@@ -113,7 +115,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
                 ss.setVolumeId(snapshotInfo.getVolumeId());
-                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(),snapshotInfo.getVolumeId());
+                ss.setSize(snapshotInfo.getSize()); // this is the virtual size of snapshot in primary storage.
+                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshotInfo.getVolumeId());
                 if (snapshotDataStoreVO != null) {
                     ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
                 }
@@ -123,56 +126,54 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         } else {
             // Image store
             switch (obj.getType()) {
-            case TEMPLATE:
-                TemplateDataStoreVO ts = new TemplateDataStoreVO();
-                ts.setTemplateId(obj.getId());
-                ts.setDataStoreId(dataStore.getId());
-                ts.setDataStoreRole(dataStore.getRole());
-                String installPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/"
-                        + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR
-                        + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId();
-                if (dataStore.getTO() instanceof S3TO) {
-                    TemplateInfo tmpl = (TemplateInfo) obj;
-                    installPath += "/" + tmpl.getUniqueName(); // for S3, we
-                    // append
-                    // template name
-                    // in the path
-                    // for template
-                    // sync since we
-                    // don't have
-                    // template.properties
-                    // there
-                }
-                ts.setInstallPath(installPath);
-                ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
-                ts = templateDataStoreDao.persist(ts);
-                break;
-            case SNAPSHOT:
-                SnapshotInfo snapshot = (SnapshotInfo) obj;
-                SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
-                ss.setSnapshotId(obj.getId());
-                ss.setDataStoreId(dataStore.getId());
-                ss.setRole(dataStore.getRole());
-                ss.setRole(dataStore.getRole());
-                ss.setVolumeId(snapshot.getVolumeId());
-                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(),snapshot.getVolumeId());
-                if (snapshotDataStoreVO != null) {
-                    ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
-                }
-                ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/"
-                        + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
-                ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
-                ss = snapshotDataStoreDao.persist(ss);
-                break;
-            case VOLUME:
-                VolumeDataStoreVO vs = new VolumeDataStoreVO();
-                vs.setVolumeId(obj.getId());
-                vs.setDataStoreId(dataStore.getId());
-                vs.setInstallPath(TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + "/"
-                        + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
-                vs.setState(ObjectInDataStoreStateMachine.State.Allocated);
-                vs = volumeDataStoreDao.persist(vs);
-                break;
+                case TEMPLATE:
+                    TemplateDataStoreVO ts = new TemplateDataStoreVO();
+                    ts.setTemplateId(obj.getId());
+                    ts.setDataStoreId(dataStore.getId());
+                    ts.setDataStoreRole(dataStore.getRole());
+                    String installPath =
+                        TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR +
+                            templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId();
+                    if (dataStore.getTO() instanceof S3TO) {
+                        TemplateInfo tmpl = (TemplateInfo)obj;
+                        installPath += "/" + tmpl.getUniqueName(); // for S3, we
+                        // append
+                        // template name
+                        // in the path
+                        // for template
+                        // sync since we
+                        // don't have
+                        // template.properties
+                        // there
+                    }
+                    ts.setInstallPath(installPath);
+                    ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                    ts = templateDataStoreDao.persist(ts);
+                    break;
+                case SNAPSHOT:
+                    SnapshotInfo snapshot = (SnapshotInfo)obj;
+                    SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
+                    ss.setSnapshotId(obj.getId());
+                    ss.setDataStoreId(dataStore.getId());
+                    ss.setRole(dataStore.getRole());
+                    ss.setRole(dataStore.getRole());
+                    ss.setVolumeId(snapshot.getVolumeId());
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshot.getVolumeId());
+                    if (snapshotDataStoreVO != null) {
+                        ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    }
+                    ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
+                    ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                    ss = snapshotDataStoreDao.persist(ss);
+                    break;
+                case VOLUME:
+                    VolumeDataStoreVO vs = new VolumeDataStoreVO();
+                    vs.setVolumeId(obj.getId());
+                    vs.setDataStoreId(dataStore.getId());
+                    vs.setInstallPath(TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + "/" + volumeDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                    vs.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                    vs = volumeDataStoreDao.persist(vs);
+                    break;
             }
         }
 
@@ -189,42 +190,37 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (destTmpltPool != null) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
-                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId()
-                            + ", so no need to delete");
+                    s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
             }
         } else {
             // Image store
             switch (dataObj.getType()) {
-            case TEMPLATE:
-                TemplateDataStoreVO destTmpltStore = templateDataStoreDao.findByStoreTemplate(dataStore.getId(), objId);
-                if (destTmpltStore != null) {
-                    return templateDataStoreDao.remove(destTmpltStore.getId());
-                } else {
-                    s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId()
-                            + ", so no need to delete");
-                    return true;
-                }
-            case SNAPSHOT:
-                SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(),
-                        dataStore.getId(), objId);
-                if (destSnapshotStore != null) {
-                    return snapshotDataStoreDao.remove(destSnapshotStore.getId());
-                } else {
-                    s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId()
-                            + ", so no need to delete");
-                    return true;
-                }
-            case VOLUME:
-                VolumeDataStoreVO destVolumeStore = volumeDataStoreDao.findByStoreVolume(dataStore.getId(), objId);
-                if (destVolumeStore != null) {
-                    return volumeDataStoreDao.remove(destVolumeStore.getId());
-                } else {
-                    s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId()
-                            + ", so no need to delete");
-                    return true;
-                }
+                case TEMPLATE:
+                    TemplateDataStoreVO destTmpltStore = templateDataStoreDao.findByStoreTemplate(dataStore.getId(), objId);
+                    if (destTmpltStore != null) {
+                        return templateDataStoreDao.remove(destTmpltStore.getId());
+                    } else {
+                        s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        return true;
+                    }
+                case SNAPSHOT:
+                    SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
+                    if (destSnapshotStore != null) {
+                        return snapshotDataStoreDao.remove(destSnapshotStore.getId());
+                    } else {
+                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        return true;
+                    }
+                case VOLUME:
+                    VolumeDataStoreVO destVolumeStore = volumeDataStoreDao.findByStoreVolume(dataStore.getId(), objId);
+                    if (destVolumeStore != null) {
+                        return volumeDataStoreDao.remove(destVolumeStore.getId());
+                    } else {
+                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        return true;
+                    }
             }
         }
 
@@ -255,30 +251,24 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         } else {
             // Image store
             switch (dataObj.getType()) {
-            case TEMPLATE:
-                TemplateDataStoreVO destTmpltStore = templateDataStoreDao.findByStoreTemplate(dataStore.getId(), objId);
-                if (destTmpltStore != null && destTmpltStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    return templateDataStoreDao.remove(destTmpltStore.getId());
-                } else {
-                    s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                case TEMPLATE:
                     return true;
-                }
-            case SNAPSHOT:
-                SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
-                if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    return snapshotDataStoreDao.remove(destSnapshotStore.getId());
-                } else {
-                    s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
-                    return true;
-                }
-            case VOLUME:
-                VolumeDataStoreVO destVolumeStore = volumeDataStoreDao.findByStoreVolume(dataStore.getId(), objId);
-                if (destVolumeStore != null && destVolumeStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    return volumeDataStoreDao.remove(destVolumeStore.getId());
-                } else {
-                    s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
-                    return true;
-                }
+                case SNAPSHOT:
+                    SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
+                    if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                        return snapshotDataStoreDao.remove(destSnapshotStore.getId());
+                    } else {
+                        s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        return true;
+                    }
+                case VOLUME:
+                    VolumeDataStoreVO destVolumeStore = volumeDataStoreDao.findByStoreVolume(dataStore.getId(), objId);
+                    if (destVolumeStore != null && destVolumeStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                        return volumeDataStoreDao.remove(destVolumeStore.getId());
+                    } else {
+                        s_logger.warn("Volume " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
+                        return true;
+                    }
             }
         }
 
@@ -294,18 +284,17 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         }
 
         boolean result = true;
-        if (data.getDataStore().getRole() == DataStoreRole.Image
-                || data.getDataStore().getRole() == DataStoreRole.ImageCache) {
+        if (data.getDataStore().getRole() == DataStoreRole.Image || data.getDataStore().getRole() == DataStoreRole.ImageCache) {
             switch (data.getType()) {
-            case TEMPLATE:
-                result = this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
-                break;
-            case SNAPSHOT:
-                result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
-                break;
-            case VOLUME:
-                result = this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
-                break;
+                case TEMPLATE:
+                    result = this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
+                    break;
+                case SNAPSHOT:
+                    result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
+                    break;
+                case VOLUME:
+                    result = this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
+                    break;
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
 
@@ -314,11 +303,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
             result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
         } else {
-            throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " "
-                    + data.getDataStore().getRole());
+            throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " " + data.getDataStore().getRole());
         }
 
-        if (!result){
+        if (!result) {
             throw new ConcurrentOperationException("Multiple threads are trying to update data object state, racing condition");
         }
         return true;
@@ -347,15 +335,15 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         DataObjectInStore vo = null;
         if (role == DataStoreRole.Image || role == DataStoreRole.ImageCache) {
             switch (type) {
-            case TEMPLATE:
-                vo = templateDataStoreDao.findByStoreTemplate(dataStoreId, objId);
-                break;
-            case SNAPSHOT:
-                vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
-                break;
-            case VOLUME:
-                vo = volumeDataStoreDao.findByStoreVolume(dataStoreId, objId);
-                break;
+                case TEMPLATE:
+                    vo = templateDataStoreDao.findByStoreTemplate(dataStoreId, objId);
+                    break;
+                case SNAPSHOT:
+                    vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
+                    break;
+                case VOLUME:
+                    vo = volumeDataStoreDao.findByStoreVolume(dataStoreId, objId);
+                    break;
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
@@ -376,15 +364,15 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         if (role == DataStoreRole.Image) {
             DataObjectInStore vo = null;
             switch (type) {
-            case TEMPLATE:
-                vo = templateDataStoreDao.findByTemplate(objId, role);
-                break;
-            case SNAPSHOT:
-                vo = snapshotDataStoreDao.findBySnapshot(objId, role);
-                break;
-            case VOLUME:
-                vo = volumeDataStoreDao.findByVolume(objId);
-                break;
+                case TEMPLATE:
+                    vo = templateDataStoreDao.findByTemplate(objId, role);
+                    break;
+                case SNAPSHOT:
+                    vo = snapshotDataStoreDao.findBySnapshot(objId, role);
+                    break;
+                case VOLUME:
+                    vo = volumeDataStoreDao.findByVolume(objId);
+                    break;
             }
             if (vo != null) {
                 store = this.storeMgr.getDataStore(vo.getDataStoreId(), role);

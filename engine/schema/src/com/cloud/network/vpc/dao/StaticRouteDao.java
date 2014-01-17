@@ -22,14 +22,14 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long>{
-    
+public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long> {
+
     boolean setStateToAdd(StaticRouteVO rule);
 
     List<? extends StaticRoute> listByVpcIdAndNotRevoked(long vpcId);
-    
+
     List<StaticRouteVO> listByVpcId(long vpcId);
-    
+
     long countRoutesByGateway(long gatewayId);
 
 }

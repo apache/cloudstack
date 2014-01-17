@@ -22,6 +22,13 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Answer;
@@ -39,18 +46,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.keystore.KeystoreManager;
-import com.cloud.server.ManagementServer;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 /**
  * Utility class to manage interactions with agent-based console access
@@ -65,19 +65,16 @@ public abstract class AgentHookBase implements AgentHook {
     ConfigurationDao _configDao;
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
-    ManagementServer _ms;
     final Random _random = new Random(System.currentTimeMillis());
-    private String _hashKey;
+    KeysManager _keysMgr;
 
-
-    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
-            AgentManager agentMgr, ManagementServer ms) {
-        this._instanceDao = instanceDao;
-        this._hostDao = hostDao;
-        this._agentMgr = agentMgr;
-        this._configDao = cfgDao;
-        this._ksMgr = ksMgr;
-        this._ms = ms;
+    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+        _instanceDao = instanceDao;
+        _hostDao = hostDao;
+        _agentMgr = agentMgr;
+        _configDao = cfgDao;
+        _ksMgr = ksMgr;
+        _keysMgr = keysMgr;
     }
 
     @Override
@@ -86,40 +83,34 @@ public abstract class AgentHookBase implements AgentHook {
 
         String ticketInUrl = cmd.getTicket();
         if (ticketInUrl == null) {
-            s_logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: "
-                    + cmd.getVmId());
+            s_logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Console authentication. Ticket in url for " + cmd.getHost() + ":" + cmd.getPort() + "-"
-                    + cmd.getVmId() + " is " + ticketInUrl);
+            s_logger.debug("Console authentication. Ticket in url for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticketInUrl);
         }
 
         if (!cmd.isReauthenticating()) {
-            String ticket =
-                    ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+            String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":"
-                        + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
+                s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
             }
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();
                 // considering of minute round-up
                 String minuteEarlyTicket =
-                        ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(),
-                                new Date(now.getTime() - 60 * 1000));
+                    ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":"
-                            + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
+                    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " +
+                        minuteEarlyTicket);
                 }
 
                 if (!minuteEarlyTicket.equals(ticketInUrl)) {
-                    s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId()
-                            + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
-                            + minuteEarlyTicket);
+                    s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl +
+                        ", tickets to check against: " + ticket + "," + minuteEarlyTicket);
                     return new ConsoleAccessAuthenticationAnswer(cmd, false);
                 }
             }
@@ -163,23 +154,20 @@ public abstract class AgentHookBase implements AgentHook {
             authenticationAnswer.setReauthenticating(true);
 
             s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
-            GetVncPortAnswer answer =
-                    (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(),
-                            new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+            GetVncPortAnswer answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
 
             if (answer != null && answer.getResult()) {
                 Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
 
                 if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
 
-                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: "
-                            + parsedHostInfo.second() + ", tunnel session: " + parsedHostInfo.third());
+                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: " + parsedHostInfo.second() + ", tunnel session: " +
+                        parsedHostInfo.third());
 
                     authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
                     authenticationAnswer.setTunnelSession(parsedHostInfo.third());
                 } else {
-                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: "
-                            + parsedHostInfo.first() + ", port: " + answer.getPort());
+                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: " + parsedHostInfo.first() + ", port: " + answer.getPort());
 
                     authenticationAnswer.setHost(parsedHostInfo.first());
                     authenticationAnswer.setPort(answer.getPort());
@@ -222,48 +210,42 @@ public abstract class AgentHookBase implements AgentHook {
                 s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
             }
         } catch (AgentUnavailableException e) {
-            s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:"
-                    + startupCmd.getProxyVmId(), e);
+            s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         } catch (OperationTimedoutException e) {
-            s_logger.error(
-                    "Unable to send http handling startup command(time out) to the console proxy resource for proxy:"
-                            + startupCmd.getProxyVmId(), e);
+            s_logger.error("Unable to send http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         } catch (OutOfMemoryError e) {
             s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Exception e) {
             s_logger.error(
-                    "Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:"
-                            + startupCmd.getProxyVmId(), e);
+                "Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         }
     }
 
     private String getEncryptorPassword() {
-    	String key;
-    	String iv;
-    	ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = null;
+        String key;
+        String iv;
+        ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = null;
 
-    	// if we failed after reset, something is definitely wrong
-    	for(int i = 0; i < 2; i++) {
-	    	key = _ms.getEncryptionKey();
-	    	iv = _ms.getEncryptionIV();
+        // if we failed after reset, something is definitely wrong
+        for (int i = 0; i < 2; i++) {
+            key = _keysMgr.getEncryptionKey();
+            iv = _keysMgr.getEncryptionIV();
 
-	    	keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
+            keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
 
-	    	if(keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 ||
-	    		keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
+            if (keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 || keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
 
-	    		s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
-	    		_ms.resetEncryptionKeyIV();
-	    	} else {
-	    		break;
-	    	}
-    	}
+                s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
+                _keysMgr.resetEncryptionKeyIV();
+            } else {
+                break;
+            }
+        }
 
-		Gson gson = new GsonBuilder().create();
-		return gson.toJson(keyIvPair);
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(keyIvPair);
     }
-
 
     protected abstract HostVO findConsoleProxyHost(StartupProxyCommand cmd);
 

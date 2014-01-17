@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.usage;
 
-import javax.inject.Inject;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,34 +26,36 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addTrafficMonitor", description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = TrafficMonitorResponse.class)
+@APICommand(name = "addTrafficMonitor", description = "Adds Traffic Monitor Host for Direct Network Usage", responseObject = TrafficMonitorResponse.class)
 public class AddTrafficMonitorCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
-    private static final String s_name = "addtrafficmonitorresponse";	
+    public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());
+    private static final String s_name = "addtrafficmonitorresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description="Zone in which to add the external firewall appliance.")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "Zone in which to add the external firewall appliance.")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the traffic monitor Host")
-    private String url;	 
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the traffic monitor Host")
+    private String url;
 
-    @Parameter(name=ApiConstants.INCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will be metered")
-    private String inclZones;	 
+    @Parameter(name = ApiConstants.INCL_ZONES, type = CommandType.STRING, description = "Traffic going into the listed zones will be metered")
+    private String inclZones;
 
-    @Parameter(name=ApiConstants.EXCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will not be metered")
-    private String exclZones;	 
+    @Parameter(name = ApiConstants.EXCL_ZONES, type = CommandType.STRING, description = "Traffic going into the listed zones will not be metered")
+    private String exclZones;
 
     ///////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -90,7 +92,7 @@ public class AddTrafficMonitorCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             Host trafficMonitor = _networkUsageService.addTrafficMonitor(this);
             TrafficMonitorResponse response = _responseGenerator.createTrafficMonitorResponse(trafficMonitor);
@@ -98,10 +100,9 @@ public class AddTrafficMonitorCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (InvalidParameterValueException ipve) {
-			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
         } catch (CloudRuntimeException cre) {
-			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
     }
 }
-

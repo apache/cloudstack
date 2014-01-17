@@ -32,48 +32,47 @@ import org.apache.cloudstack.acl.AclEntityType;
 
 import com.cloud.utils.db.GenericDao;
 
-
 @Entity
-@Table(name="vpc_gateways")
+@Table(name = "vpc_gateways")
 public class VpcGatewayVO implements VpcGateway {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
     @Column(name = "ip4_address")
     String ip4Address;
 
-    @Column(name="gateway")
+    @Column(name = "gateway")
     String gateway;
 
-    @Column(name="netmask")
+    @Column(name = "netmask")
     String netmask;
 
-    @Column(name="vlan_tag")
+    @Column(name = "vlan_tag")
     String broadcastUri;
 
     @Column(name = "type")
     @Enumerated(value = EnumType.STRING)
     VpcGateway.Type type;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     Long vpcId;
 
-    @Column(name="zone_id")
+    @Column(name = "zone_id")
     long zoneId;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     long networkId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "account_id")
@@ -82,19 +81,17 @@ public class VpcGatewayVO implements VpcGateway {
     @Column(name = "domain_id")
     long domainId;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     State state;
 
-    @Column(name="source_nat")
+    @Column(name = "source_nat")
     boolean sourceNat;
 
-    @Column(name="network_acl_id")
+    @Column(name = "network_acl_id")
     long networkACLId;
 
-
-
-    protected VpcGatewayVO(){
+    protected VpcGatewayVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -112,8 +109,8 @@ public class VpcGatewayVO implements VpcGateway {
      * @param account_id
      * @param sourceNat
      */
-    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri,
-            String gateway, String netmask, long accountId, long domainId, boolean sourceNat, long networkACLId) {
+    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri, String gateway, String netmask, long accountId,
+            long domainId, boolean sourceNat, long networkACLId) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;

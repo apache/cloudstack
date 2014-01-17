@@ -50,10 +50,10 @@ import org.apache.commons.logging.LogFactory;
  * you are perfectly aware of security implications of accepting
  * self-signed certificates
  * </p>
- * 
+ *
  * @author <a href="mailto:adrian.sutton@ephox.com">Adrian Sutton</a>
  * @author <a href="mailto:oleg@ural.ru">Oleg Kalnichevski</a>
- * 
+ *
  * <p>
  * DISCLAIMER: HttpClient developers DO NOT actively support this component.
  * The component is provided as a reference material, which may be inappropriate
@@ -61,8 +61,7 @@ import org.apache.commons.logging.LogFactory;
  * </p>
  */
 
-public class EasyX509TrustManager implements X509TrustManager
-{
+public class EasyX509TrustManager implements X509TrustManager {
     private X509TrustManager standardTrustManager = null;
 
     /** Log object for this class. */

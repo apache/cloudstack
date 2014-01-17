@@ -24,8 +24,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -55,11 +56,11 @@ public class TemplateLocation {
         _formats = new ArrayList<FormatInfo>(5);
         _props = new Properties();
         //TO DO - remove this hack
-        if (_templatePath.matches(".*"+"volumes"+".*")){
-        	_file = _storage.getFile(_templatePath + "volume.properties");
-        	_resourceType = ResourceType.VOLUME;
-        }else {
-        	_file = _storage.getFile(_templatePath + Filename);
+        if (_templatePath.matches(".*" + "volumes" + ".*")) {
+            _file = _storage.getFile(_templatePath + "volume.properties");
+            _resourceType = ResourceType.VOLUME;
+        } else {
+            _file = _storage.getFile(_templatePath + Filename);
         }
         _isCorrupted = false;
     }
@@ -109,7 +110,7 @@ public class TemplateLocation {
                 FormatInfo info = new FormatInfo();
                 info.format = format;
                 info.filename = _props.getProperty(format.getFileExtension() + ".filename");
-                if( info.filename == null ) {
+                if (info.filename == null) {
                     continue;
                 }
                 info.size = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".size"), -1);
@@ -159,11 +160,11 @@ public class TemplateLocation {
     public TemplateProp getTemplateInfo() {
         TemplateProp tmplInfo = new TemplateProp();
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
-        tmplInfo.installPath = _templatePath  + _props.getProperty("filename"); // _templatePath endsWith /
-        if (_resourceType == ResourceType.VOLUME){
-        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));
-        }else {
-        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
+        tmplInfo.installPath = _templatePath + _props.getProperty("filename"); // _templatePath endsWith /
+        if (_resourceType == ResourceType.VOLUME) {
+            tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));
+        } else {
+            tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
         }
         tmplInfo.isCorrupted = _isCorrupted;
         tmplInfo.isPublic = Boolean.parseBoolean(_props.getProperty("public"));
@@ -177,7 +178,6 @@ public class TemplateLocation {
 
         return tmplInfo;
     }
-
 
     public FormatInfo getFormat(ImageFormat format) {
         for (FormatInfo info : _formats) {

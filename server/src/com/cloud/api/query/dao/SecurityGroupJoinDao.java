@@ -35,4 +35,3 @@ public interface SecurityGroupJoinDao extends GenericDao<SecurityGroupJoinVO, Lo
 
     List<SecurityGroupJoinVO> searchByIds(Long... ids);
 }
-

@@ -34,50 +34,50 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={UsageNetworkOfferingDao.class})
+@Local(value = {UsageNetworkOfferingDao.class})
 public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOfferingVO, Long> implements UsageNetworkOfferingDao {
-	public static final Logger s_logger = Logger.getLogger(UsageNetworkOfferingDaoImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UsageNetworkOfferingDaoImpl.class.getName());
 
-	protected static final String UPDATE_DELETED = "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
-                                                                 "FROM usage_network_offering " +
-                                                                 "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                                 "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
-                                                                "FROM usage_network_offering " +
-                                                                "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                                "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " +
-                                                          "FROM usage_network_offering " +
-                                                          "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                          "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+    protected static final String UPDATE_DELETED =
+        "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+            + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+            + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_ALL_USAGE_RECORDS =
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+            + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
-	public UsageNetworkOfferingDaoImpl() {}
-
-	public void update(UsageNetworkOfferingVO usage) {
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-		PreparedStatement pstmt = null;
-		try {
-		    txn.start();
-			if (usage.getDeleted() != null) {
-				pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
-				pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-				pstmt.setLong(2, usage.getAccountId());
-				pstmt.setLong(3, usage.getVmInstanceId());
-				pstmt.setLong(4, usage.getNetworkOfferingId());
-			}
-			pstmt.executeUpdate();
-			txn.commit();
-		} catch (Exception e) {
-			txn.rollback();
-			s_logger.warn("Error updating UsageNetworkOfferingVO", e);
-		} finally {
-		    txn.close();
-		}
-	}
+    public UsageNetworkOfferingDaoImpl() {
+    }
 
     @Override
-	public List<UsageNetworkOfferingVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page) {
+    public void update(UsageNetworkOfferingVO usage) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            if (usage.getDeleted() != null) {
+                pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
+                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
+                pstmt.setLong(2, usage.getAccountId());
+                pstmt.setLong(3, usage.getVmInstanceId());
+                pstmt.setLong(4, usage.getNetworkOfferingId());
+            }
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Error updating UsageNetworkOfferingVO", e);
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public List<UsageNetworkOfferingVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page) {
         List<UsageNetworkOfferingVO> usageRecords = new ArrayList<UsageNetworkOfferingVO>();
 
         Long param1 = null;
@@ -95,7 +95,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
         if (limit) {
             int startIndex = 0;
             if (page > 0) {
-                startIndex = 500 * (page-1);
+                startIndex = 500 * (page - 1);
             }
             sql += " LIMIT " + startIndex + ",500";
         }
@@ -119,7 +119,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 //zoneId, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted
-            	Long zoneId = Long.valueOf(rs.getLong(1));
+                Long zoneId = Long.valueOf(rs.getLong(1));
                 Long acctId = Long.valueOf(rs.getLong(2));
                 Long dId = Long.valueOf(rs.getLong(3));
                 long vmId = Long.valueOf(rs.getLong(4));
@@ -130,13 +130,12 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
                 Date deletedDate = null;
                 String createdTS = rs.getString(8);
                 String deletedTS = rs.getString(9);
-                
 
                 if (createdTS != null) {
-                	createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
+                    createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
                 }
                 if (deletedTS != null) {
-                	deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
+                    deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
                 }
 
                 usageRecords.add(new UsageNetworkOfferingVO(zoneId, acctId, dId, vmId, noId, nicId, isDefault, createdDate, deletedDate));
@@ -149,5 +148,5 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
         }
 
         return usageRecords;
-	}
+    }
 }

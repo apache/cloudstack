@@ -19,47 +19,47 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 public class S3PutObjectInlineResponse extends S3Response {
-	protected String ETag;
-	protected Calendar lastModified;
-	protected String version;
-	protected int uploadId;
-	
-	public S3PutObjectInlineResponse() {
-		super();
-		uploadId = -1;
-	}
+    protected String ETag;
+    protected Calendar lastModified;
+    protected String version;
+    protected int uploadId;
 
-	 // add ETag header computed as Base64 MD5 whenever object is uploaded or updated
-	 // the Base64 is represented in lowercase
-	public String getETag() {
-		return ETag;
-	}
+    public S3PutObjectInlineResponse() {
+        super();
+        uploadId = -1;
+    }
 
-	public void setETag(String eTag) {
-		this.ETag = eTag;
-	}
+    // add ETag header computed as Base64 MD5 whenever object is uploaded or updated
+    // the Base64 is represented in lowercase
+    public String getETag() {
+        return ETag;
+    }
 
-	public Calendar getLastModified() {
-		return lastModified;
-	}
+    public void setETag(String eTag) {
+        this.ETag = eTag;
+    }
 
-	public void setLastModified(Calendar lastModified) {
-		this.lastModified = lastModified;
-	}
-	
-	public String getVersion() {
-		return version;
-	}
+    public Calendar getLastModified() {
+        return lastModified;
+    }
 
-	public void setVersion(String version) {
-		this.version = version;
-	}
-	
-	public int getUploadId() {
-		return uploadId;
-	}
+    public void setLastModified(Calendar lastModified) {
+        this.lastModified = lastModified;
+    }
 
-	public void setUploadId(int uploadId) {
-		this.uploadId = uploadId;
-	}
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public int getUploadId() {
+        return uploadId;
+    }
+
+    public void setUploadId(int uploadId) {
+        this.uploadId = uploadId;
+    }
 }

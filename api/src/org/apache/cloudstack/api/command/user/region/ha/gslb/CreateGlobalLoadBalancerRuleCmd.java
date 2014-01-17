@@ -17,24 +17,29 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-
-@APICommand(name = "createGlobalLoadBalancerRule", description="Creates a global load balancer rule",
-        responseObject=GlobalLoadBalancerResponse.class)
+@APICommand(name = "createGlobalLoadBalancerRule", description = "Creates a global load balancer rule", responseObject = GlobalLoadBalancerResponse.class)
 public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreateGlobalLoadBalancerRuleCmd.class.getName());
@@ -45,32 +50,44 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the load balancer rule")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer rule")
     private String globalLoadBalancerRuleName;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule", length=4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer rule", length = 4096)
     private String description;
 
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, entityType = RegionResponse.class, required=true, description="region where the global load balancer is going to be created.")
+    @Parameter(name = ApiConstants.REGION_ID,
+               type = CommandType.INTEGER,
+               entityType = RegionResponse.class,
+               required = true,
+               description = "region where the global load balancer is going to be created.")
     private Integer regionId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the global load balancer. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "the account associated with the global load balancer. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class, description="the domain ID associated with the load balancer")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the load balancer")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.GSLB_LB_METHOD, type=CommandType.STRING, required=false, description="load balancer algorithm (roundrobin, leastconn, proximity) " +
-            "that method is used to distribute traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
+    @Parameter(name = ApiConstants.GSLB_LB_METHOD,
+               type = CommandType.STRING,
+               required = false,
+               description = "load balancer algorithm (roundrobin, leastconn, proximity) "
+                   + "that method is used to distribute traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
     private String algorithm;
 
-    @Parameter(name=ApiConstants.GSLB_STICKY_SESSION_METHOD, type=CommandType.STRING, required=false, description="session sticky method (sourceip) if not specified defaults to sourceip")
+    @Parameter(name = ApiConstants.GSLB_STICKY_SESSION_METHOD,
+               type = CommandType.STRING,
+               required = false,
+               description = "session sticky method (sourceip) if not specified defaults to sourceip")
     private String stickyMethod;
 
-    @Parameter(name=ApiConstants.GSLB_SERVICE_DOMAIN_NAME, type = CommandType.STRING, required = true, description = "domain name for the GSLB service.")
+    @Parameter(name = ApiConstants.GSLB_SERVICE_DOMAIN_NAME, type = CommandType.STRING, required = true, description = "domain name for the GSLB service.")
     private String serviceDomainName;
 
-    @Parameter(name=ApiConstants.GSLB_SERVICE_TYPE, type = CommandType.STRING, required = true, description = "GSLB service type (tcp, udp)")
+    @Parameter(name = ApiConstants.GSLB_SERVICE_TYPE, type = CommandType.STRING, required = true, description = "GSLB service type (tcp, udp, http)")
     private String serviceType;
 
     /////////////////////////////////////////////////////
@@ -151,7 +168,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
         } catch (Exception ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
-        }finally {
+        } finally {
 
         }
     }

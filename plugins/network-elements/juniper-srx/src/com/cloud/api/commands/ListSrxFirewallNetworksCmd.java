@@ -43,19 +43,23 @@ import com.cloud.network.Network;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listSrxFirewallNetworks", responseObject=NetworkResponse.class, description="lists network that are using SRX firewall device")
+@APICommand(name = "listSrxFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using SRX firewall device")
 public class ListSrxFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallNetworksCmd.class.getName());
     private static final String s_name = "listsrxfirewallnetworksresponse";
-    @Inject JuniperSRXFirewallElementService _srxFwService;
+    @Inject
+    JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
-            required = true, description="netscaler load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = SrxFirewallResponse.class,
+               required = true,
+               description = "netscaler load balancer device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -71,7 +75,8 @@ public class ListSrxFirewallNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<? extends Network> networks  = _srxFwService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();

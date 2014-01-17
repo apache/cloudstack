@@ -30,28 +30,27 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.storage.Storage.StoragePoolType;
 
 @Entity
-@Table(name="mockstoragepool")
-
+@Table(name = "mockstoragepool")
 public class MockStoragePoolVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="guid")
+    @Column(name = "guid")
     private String uuid;
 
-    @Column(name="mount_point")
+    @Column(name = "mount_point")
     private String mountPoint;
 
-    @Column(name="capacity")
+    @Column(name = "capacity")
     private long capacity;
 
-    @Column(name="hostguid")
+    @Column(name = "hostguid")
     private String hostGuid;
 
-    @Column(name="pool_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "pool_type")
+    @Enumerated(value = EnumType.STRING)
     private StoragePoolType poolType;
 
     public MockStoragePoolVO() {

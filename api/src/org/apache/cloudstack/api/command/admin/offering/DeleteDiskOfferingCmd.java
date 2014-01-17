@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,11 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteDiskOffering", description="Updates a disk offering.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteDiskOffering", description = "Updates a disk offering.", responseObject = SuccessResponse.class)
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
     private static final String s_name = "deletediskofferingresponse";
@@ -37,10 +38,8 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
-            required=true, description="ID of the disk offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, required = true, description = "ID of the disk offering")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -50,11 +49,11 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getCommandName() {
         return s_name;
     }
@@ -65,7 +64,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deleteDiskOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

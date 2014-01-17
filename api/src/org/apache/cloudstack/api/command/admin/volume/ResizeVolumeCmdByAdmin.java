@@ -34,8 +34,8 @@ public class ResizeVolumeCmdByAdmin extends ResizeVolumeCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
-    	Volume volume = _volumeService.resizeVolume(this);
-    	if (volume != null) {
+        Volume volume = _volumeService.resizeVolume(this);
+        if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, volume);
             //FIXME - have to be moved to ApiResponseHelper
             response.setResponseName(getCommandName());

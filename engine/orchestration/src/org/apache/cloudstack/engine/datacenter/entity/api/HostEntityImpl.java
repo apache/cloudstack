@@ -29,187 +29,185 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public class HostEntityImpl implements HostEntity {
 
-	private DataCenterResourceManager manager;
+    private DataCenterResourceManager manager;
 
     private EngineHostVO hostVO;
 
     public HostEntityImpl(String uuid, DataCenterResourceManager manager) {
-	this.manager = manager;
-	hostVO = manager.loadHost(uuid);
+        this.manager = manager;
+        hostVO = manager.loadHost(uuid);
     }
 
-	@Override
-	public boolean enable() {
-	try {
-			manager.changeState(this, Event.EnableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
-	}
-
-	@Override
-	public boolean disable() {
-	try {
-			manager.changeState(this, Event.DisableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
-	}
-
-	@Override
-	public boolean deactivate() {
-	try {
-			manager.changeState(this, Event.DeactivateRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
-	}
-
-	@Override
-	public boolean reactivate() {
-	try {
-			manager.changeState(this, Event.ActivatedRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
-	}
-
-	@Override
-	public State getState() {
-		return hostVO.getOrchestrationState();
-	}
-
-	@Override
-	public void persist() {
-		manager.saveHost(hostVO);
-	}
-
-	@Override
-	public String getName() {
-		return hostVO.getName();
-	}
-
-	@Override
-	public String getUuid() {
-		return hostVO.getUuid();
-	}
-
-	@Override
-	public long getId() {
-		return hostVO.getId();
-	}
-
-	@Override
-	public String getCurrentState() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDesiredState() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Date getCreatedTime() {
-		return hostVO.getCreated();
-	}
-
-	@Override
-	public Date getLastUpdatedTime() {
-		return hostVO.getLastUpdated();
-	}
-
-	@Override
-	public String getOwner() {
-		// TODO Auto-generated method stub
-		return hostVO.getOwner();
-	}
-
-
-    public void setDetails(Map<String,String> details) {
-	hostVO.setDetails(details);
+    @Override
+    public boolean enable() {
+        try {
+            manager.changeState(this, Event.EnableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
-	@Override
-	public Map<String, String> getDetails() {
-		return hostVO.getDetails();
-	}
+    @Override
+    public boolean disable() {
+        try {
+            manager.changeState(this, Event.DisableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
+    }
 
-	@Override
-	public void addDetail(String name, String value) {
-		hostVO.setDetail(name, value);
-	}
+    @Override
+    public boolean deactivate() {
+        try {
+            manager.changeState(this, Event.DeactivateRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
+    }
 
-	@Override
-	public void delDetail(String name, String value) {
-		// TODO Auto-generated method stub
-	}
+    @Override
+    public boolean reactivate() {
+        try {
+            manager.changeState(this, Event.ActivatedRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
+    }
 
-	@Override
-	public void updateDetail(String name, String value) {
-		// TODO Auto-generated method stub
+    @Override
+    public State getState() {
+        return hostVO.getOrchestrationState();
+    }
 
-	}
+    @Override
+    public void persist() {
+        manager.saveHost(hostVO);
+    }
 
-	@Override
-	public List<Method> getApplicableActions() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getName() {
+        return hostVO.getName();
+    }
 
-	@Override
-	public Long getTotalMemory() {
-		return hostVO.getTotalMemory();
-	}
+    @Override
+    public String getUuid() {
+        return hostVO.getUuid();
+    }
 
-	@Override
-	public Integer getCpus() {
-		return hostVO.getCpus();
-	}
+    @Override
+    public long getId() {
+        return hostVO.getId();
+    }
 
-	@Override
-	public Long getSpeed() {
-		return hostVO.getSpeed();
-	}
+    @Override
+    public String getCurrentState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Long getPodId() {
-		return hostVO.getPodId();
-	}
+    @Override
+    public String getDesiredState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public long getDataCenterId() {
-		return hostVO.getDataCenterId();
-	}
+    @Override
+    public Date getCreatedTime() {
+        return hostVO.getCreated();
+    }
 
-	@Override
-	public HypervisorType getHypervisorType() {
-		return hostVO.getHypervisorType();
-	}
+    @Override
+    public Date getLastUpdatedTime() {
+        return hostVO.getLastUpdated();
+    }
 
-	@Override
-	public String getGuid() {
-		return hostVO.getGuid();
-	}
+    @Override
+    public String getOwner() {
+        // TODO Auto-generated method stub
+        return hostVO.getOwner();
+    }
 
-	@Override
-	public Long getClusterId() {
-		return hostVO.getClusterId();
-	}
+    public void setDetails(Map<String, String> details) {
+        hostVO.setDetails(details);
+    }
 
-	public void setOwner(String owner) {
-		hostVO.setOwner(owner);
-	}
+    @Override
+    public Map<String, String> getDetails() {
+        return hostVO.getDetails();
+    }
 
-	public void setName(String name) {
-		hostVO.setName(name);
-	}
+    @Override
+    public void addDetail(String name, String value) {
+        hostVO.setDetail(name, value);
+    }
 
+    @Override
+    public void delDetail(String name, String value) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void updateDetail(String name, String value) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public List<Method> getApplicableActions() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Long getTotalMemory() {
+        return hostVO.getTotalMemory();
+    }
+
+    @Override
+    public Integer getCpus() {
+        return hostVO.getCpus();
+    }
+
+    @Override
+    public Long getSpeed() {
+        return hostVO.getSpeed();
+    }
+
+    @Override
+    public Long getPodId() {
+        return hostVO.getPodId();
+    }
+
+    @Override
+    public long getDataCenterId() {
+        return hostVO.getDataCenterId();
+    }
+
+    @Override
+    public HypervisorType getHypervisorType() {
+        return hostVO.getHypervisorType();
+    }
+
+    @Override
+    public String getGuid() {
+        return hostVO.getGuid();
+    }
+
+    @Override
+    public Long getClusterId() {
+        return hostVO.getClusterId();
+    }
+
+    public void setOwner(String owner) {
+        hostVO.setOwner(owner);
+    }
+
+    public void setName(String name) {
+        hostVO.setName(name);
+    }
 
 }

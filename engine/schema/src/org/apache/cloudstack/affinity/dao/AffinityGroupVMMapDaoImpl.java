@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -34,9 +35,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value = { AffinityGroupVMMapDao.class })
-public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMapVO, Long> implements
-        AffinityGroupVMMapDao {
+@Local(value = {AffinityGroupVMMapDao.class})
+public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMapVO, Long> implements AffinityGroupVMMapDao {
     private SearchBuilder<AffinityGroupVMMapVO> ListByVmId;
     private SearchBuilder<AffinityGroupVMMapVO> ListByVmIdGroupId;
     protected GenericSearchBuilder<AffinityGroupVMMapVO, Long> CountSGForVm;
@@ -54,21 +54,19 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
     @PostConstruct
     protected void init() {
         ListVmIdByAffinityGroup = createSearchBuilder(Long.class);
-        ListVmIdByAffinityGroup.and("affinityGroupId", ListVmIdByAffinityGroup.entity().getAffinityGroupId(),
-                SearchCriteria.Op.EQ);
+        ListVmIdByAffinityGroup.and("affinityGroupId", ListVmIdByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         ListVmIdByAffinityGroup.selectFields(ListVmIdByAffinityGroup.entity().getInstanceId());
         ListVmIdByAffinityGroup.done();
 
         ListByAffinityGroup = createSearchBuilder();
-        ListByAffinityGroup.and("affinityGroupId", ListByAffinityGroup.entity().getAffinityGroupId(),
-                SearchCriteria.Op.EQ);
+        ListByAffinityGroup.and("affinityGroupId", ListByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         ListByAffinityGroup.done();
 
-        ListByVmId  = createSearchBuilder();
+        ListByVmId = createSearchBuilder();
         ListByVmId.and("instanceId", ListByVmId.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListByVmId.done();
 
-        ListByVmIdGroupId  = createSearchBuilder();
+        ListByVmIdGroupId = createSearchBuilder();
         ListByVmIdGroupId.and("instanceId", ListByVmIdGroupId.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.and("affinityGroupId", ListByVmIdGroupId.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.done();
@@ -87,8 +85,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         CountSGForVm.done();
 
         ListAffinityGroupIdByVm = createSearchBuilder(Long.class);
-        ListAffinityGroupIdByVm.and("instanceId", ListAffinityGroupIdByVm.entity().getInstanceId(),
-                SearchCriteria.Op.EQ);
+        ListAffinityGroupIdByVm.and("instanceId", ListAffinityGroupIdByVm.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListAffinityGroupIdByVm.selectFields(ListAffinityGroupIdByVm.entity().getAffinityGroupId());
         ListAffinityGroupIdByVm.done();
     }
@@ -128,20 +125,20 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         return customSearchIncludingRemoved(sc, null);
     }
 
-	@Override
+    @Override
     public AffinityGroupVMMapVO findByVmIdGroupId(long instanceId, long affinityGroupId) {
         SearchCriteria<AffinityGroupVMMapVO> sc = ListByVmIdGroupId.create();
         sc.setParameters("affinityGroupId", affinityGroupId);
         sc.setParameters("instanceId", instanceId);
-		return findOneIncludingRemovedBy(sc);
-	}
+        return findOneIncludingRemovedBy(sc);
+    }
 
-	@Override
+    @Override
     public long countAffinityGroupsForVm(long instanceId) {
-		SearchCriteria<Long> sc = CountSGForVm.create();
-    	sc.setParameters("vmId", instanceId);
+        SearchCriteria<Long> sc = CountSGForVm.create();
+        sc.setParameters("vmId", instanceId);
         return customSearch(sc, null).get(0);
-	}
+    }
 
     @Override
     public List<AffinityGroupVMMapVO> findByVmIdType(long instanceId, String type) {

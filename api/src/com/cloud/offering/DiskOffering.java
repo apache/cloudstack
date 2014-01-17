@@ -29,11 +29,25 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 public interface DiskOffering extends InfrastructureEntity, Identity, InternalIdentity {
     enum State {
-        Inactive,
-        Active,
+        Inactive, Active,
     }
 
     State getState();
+
+    public enum DiskCacheMode {
+        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+
+        private final String _diskCacheMode;
+
+        DiskCacheMode(String cacheMode) {
+            _diskCacheMode = cacheMode;
+        }
+
+        @Override
+        public String toString() {
+            return _diskCacheMode;
+        }
+    };
 
     String getUniqueName();
 
@@ -89,4 +103,11 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getIopsWriteRate();
 
+    void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
+
+    Integer getHypervisorSnapshotReserve();
+
+    DiskCacheMode getCacheMode();
+
+    void setCacheMode(DiskCacheMode cacheMode);
 }

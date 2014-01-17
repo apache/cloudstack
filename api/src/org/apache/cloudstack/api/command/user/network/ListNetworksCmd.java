@@ -33,57 +33,53 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.Network;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
-    private static final String _name = "listnetworksresponse";
+    private static final String Name = "listnetworksresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list networks by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list networks by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="the Zone ID of the network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the network")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network. Supported values are: Isolated and Shared")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: Isolated and Shared")
     private String guestIpType;
 
-    @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
+    @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
     private Boolean isSystem;
 
-    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="list networks by ACL (access control list) type. Supported values are Account and Domain")
+    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "list networks by ACL (access control list) type. Supported values are Account and Domain")
     private String aclType;
 
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="type of the traffic")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "type of the traffic")
     private String trafficType;
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            description="list networks by physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list networks by physical network id")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list networks supporting certain services")
+    @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list networks supporting certain services")
     private List<String> supportedServices;
 
-    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list networks by restartRequired")
-
+    @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list networks by restartRequired")
     private Boolean restartRequired;
 
-    @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
+    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "true if need to list only networks which support specifying ip ranges")
     private Boolean specifyIpRanges;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            description="List networks by VPC")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List networks by VPC")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.CAN_USE_FOR_DEPLOY, type=CommandType.BOOLEAN, description="list networks available for vm deployment")
+    @Parameter(name = ApiConstants.CAN_USE_FOR_DEPLOY, type = CommandType.BOOLEAN, description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
 
-    @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network belongs to vpc")
+    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to vpc")
     private Boolean forVpc;
 
     /////////////////////////////////////////////////////
@@ -147,20 +143,19 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override
-    public void execute(){
-        List<? extends Network> networks = _networkService.searchForNetworks(this);
+    public void execute() {
+        Pair<List<? extends Network>, Integer> networks = _networkService.searchForNetworks(this);
         ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-        for (Network network : networks) {
+        for (Network network : networks.first()) {
             NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Restricted, network);
             networkResponses.add(networkResponse);
         }
-
-        response.setResponses(networkResponses);
+        response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -37,8 +39,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -71,19 +71,22 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated")
     private List<String> cidrList;
 
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.",
+               entityType = DomainResponse.class)
     private Long domainId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="an optional project of the security group", entityType=ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "an optional project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -189,15 +192,15 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
             Collection userGroupCollection = getUserSecurityGroupList().values();
             Iterator iter = userGroupCollection.iterator();
 
-            HashMap userGroup = (HashMap) iter.next();
-            String group = (String) userGroup.get("group");
-            String authorizedAccountName = (String) userGroup.get("account");
+            HashMap userGroup = (HashMap)iter.next();
+            String group = (String)userGroup.get("group");
+            String authorizedAccountName = (String)userGroup.get("account");
             sb.append(group + "/" + authorizedAccountName);
 
             while (iter.hasNext()) {
-                userGroup = (HashMap) iter.next();
-                group = (String) userGroup.get("group");
-                authorizedAccountName = (String) userGroup.get("account");
+                userGroup = (HashMap)iter.next();
+                group = (String)userGroup.get("group");
+                authorizedAccountName = (String)userGroup.get("account");
                 sb.append(", " + group + "/" + authorizedAccountName);
             }
         } else if (getCidrList() != null) {
@@ -215,7 +218,7 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
         List<? extends SecurityRule> egressRules = _securityGroupService.authorizeSecurityGroupEgress(this);
         if (egressRules != null && !egressRules.isEmpty()) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(egressRules);
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to authorize security group egress rule(s)");
         }

@@ -91,11 +91,9 @@ public interface TemplateApiService {
 
     boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd);
 
-    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd,
-            Account templateOwner) throws ResourceAllocationException;
+    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException;
 
-    VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd command)
-            throws CloudRuntimeException;
+    VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException;
 
     VirtualMachineTemplate updateTemplate(UpdateIsoCmd cmd);
 

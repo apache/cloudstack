@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.agent.api;
@@ -23,7 +23,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public class VMSnapshotTO {
-	private Long id;
+    private Long id;
     private String snapshotName;
     private VMSnapshot.Type type;
     private Long createTime;
@@ -31,50 +31,60 @@ public class VMSnapshotTO {
     private String description;
     private VMSnapshotTO parent;
     private List<VolumeObjectTO> volumes;
-    
+    private boolean quiescevm;
+
     public Long getId() {
-		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
-	}
-	public VMSnapshotTO(Long id, String snapshotName, 
-	        VMSnapshot.Type type, Long createTime, 
-			String description, Boolean current, VMSnapshotTO parent) {
-		super();
-		this.id = id;
-		this.snapshotName = snapshotName;
-		this.type = type;
-		this.createTime = createTime;
-		this.current = current;
-		this.description = description;
-		this.parent = parent;
-	}
-	public VMSnapshotTO() {
-	    
-	}
-	public String getDescription() {
-		return description;
-	}
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	public Boolean getCurrent() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public VMSnapshotTO(Long id, String snapshotName, VMSnapshot.Type type, Long createTime, String description, Boolean current, VMSnapshotTO parent, boolean quiescevm) {
+        super();
+        this.id = id;
+        this.snapshotName = snapshotName;
+        this.type = type;
+        this.createTime = createTime;
+        this.current = current;
+        this.description = description;
+        this.parent = parent;
+        this.quiescevm = quiescevm;
+    }
+
+    public VMSnapshotTO() {
+        this.quiescevm = true;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getCurrent() {
         return current;
     }
+
     public void setCurrent(Boolean current) {
         this.current = current;
     }
+
     public Long getCreateTime() {
         return createTime;
     }
+
     public void setCreateTime(Long createTime) {
         this.createTime = createTime;
     }
- 
+
     public VMSnapshot.Type getType() {
         return type;
     }
+
     public void setType(VMSnapshot.Type type) {
         this.type = type;
     }
@@ -82,12 +92,15 @@ public class VMSnapshotTO {
     public String getSnapshotName() {
         return snapshotName;
     }
+
     public void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
     }
+
     public VMSnapshotTO getParent() {
         return parent;
     }
+
     public void setParent(VMSnapshotTO parent) {
         this.parent = parent;
     }
@@ -98,5 +111,13 @@ public class VMSnapshotTO {
 
     public void setVolumes(List<VolumeObjectTO> volumes) {
         this.volumes = volumes;
+    }
+
+    public boolean getQuiescevm() {
+        return this.quiescevm;
+    }
+
+    public void setQuiescevm(boolean quiescevm) {
+        this.quiescevm = quiescevm;
     }
 }

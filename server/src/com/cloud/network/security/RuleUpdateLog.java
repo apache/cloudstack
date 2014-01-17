@@ -23,7 +23,8 @@ import java.util.Set;
  *
  */
 public interface RuleUpdateLog {
-     void logScheduledDetails(Set<Long> vmIds);
-     void logUpdateDetails(Long vmId, Long seqno);
+    void logScheduledDetails(Set<Long> vmIds);
+
+    void logUpdateDetails(Long vmId, Long seqno);
 
 }

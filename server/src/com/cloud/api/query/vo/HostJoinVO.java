@@ -42,133 +42,136 @@ import com.cloud.utils.db.GenericDao;
  *
  */
 @Entity
-@Table(name="host_view")
+@Table(name = "host_view")
 public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="status")
+    @Column(name = "status")
     private Status status = null;
 
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
     private Type type;
 
-    @Column(name="private_ip_address")
+    @Column(name = "private_ip_address")
     private String privateIpAddress;
 
-    @Column(name="disconnected")
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "disconnected")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date disconnectedOn;
 
-    @Column(name="version")
+    @Column(name = "version")
     private String version;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="hypervisor_version")
+    @Column(name = "hypervisor_version")
     private String hypervisorVersion;
 
-    @Column(name="capabilities")
+    @Column(name = "capabilities")
     private String caps;
 
-    @Column(name="last_ping")
+    @Column(name = "last_ping")
     private long lastPinged;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="resource_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "resource_state")
+    @Enumerated(value = EnumType.STRING)
     private ResourceState resourceState;
 
-    @Column(name="mgmt_server_id")
+    @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
-    @Column(name="cpus")
+    @Column(name = "cpu_sockets")
+    private Integer cpuSockets;
+
+    @Column(name = "cpus")
     private Integer cpus;
 
-    @Column(name="speed")
+    @Column(name = "speed")
     private Long speed;
 
-    @Column(name="ram")
+    @Column(name = "ram")
     private long totalMemory;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private long clusterId;
 
-    @Column(name="cluster_uuid")
+    @Column(name = "cluster_uuid")
     private String clusterUuid;
 
-    @Column(name="cluster_name")
+    @Column(name = "cluster_name")
     private String clusterName;
 
-    @Column(name="cluster_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "cluster_type")
+    @Enumerated(value = EnumType.STRING)
     Cluster.ClusterType clusterType;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long zoneId;
 
-    @Column(name="data_center_uuid")
+    @Column(name = "data_center_uuid")
     private String zoneUuid;
 
-    @Column(name="data_center_name")
+    @Column(name = "data_center_name")
     private String zoneName;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private long podId;
 
-    @Column(name="pod_uuid")
+    @Column(name = "pod_uuid")
     private String podUuid;
 
-    @Column(name="pod_name")
+    @Column(name = "pod_name")
     private String podName;
 
-    @Column(name="guest_os_category_id")
+    @Column(name = "guest_os_category_id")
     private long osCategoryId;
 
-    @Column(name="guest_os_category_uuid")
+    @Column(name = "guest_os_category_uuid")
     private String osCategoryUuid;
 
-    @Column(name="guest_os_category_name")
+    @Column(name = "guest_os_category_name")
     private String osCategoryName;
 
-    @Column(name="tag")
+    @Column(name = "tag")
     private String tag;
 
-    @Column(name="memory_used_capacity")
+    @Column(name = "memory_used_capacity")
     private long memUsedCapacity;
 
-    @Column(name="memory_reserved_capacity")
+    @Column(name = "memory_reserved_capacity")
     private long memReservedCapacity;
 
-    @Column(name="cpu_used_capacity")
+    @Column(name = "cpu_used_capacity")
     private long cpuUsedCapacity;
 
-    @Column(name="cpu_reserved_capacity")
+    @Column(name = "cpu_reserved_capacity")
     private long cpuReservedCapacity;
 
-    @Column(name="job_id")
+    @Column(name = "job_id")
     private Long jobId;
 
-    @Column(name="job_uuid")
+    @Column(name = "job_uuid")
     private String jobUuid;
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     private int jobStatus;
 
     @Override
@@ -247,6 +250,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public Integer getCpuSockets() {
+        return cpuSockets;
     }
 
     public Integer getCpus() {

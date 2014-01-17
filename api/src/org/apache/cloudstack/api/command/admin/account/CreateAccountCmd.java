@@ -35,7 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "createAccount", description="Creates an account", responseObject=AccountResponse.class)
+@APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class)
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
@@ -45,44 +45,53 @@ public class CreateAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.SHORT, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE,
+               type = CommandType.SHORT,
+               required = true,
+               description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="Creates the user under the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Creates the user under the specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, required=true, description="email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "email")
     private String email;
 
-    @Parameter(name=ApiConstants.FIRSTNAME, type=CommandType.STRING, required=true, description="firstname")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "firstname")
     private String firstName;
 
-    @Parameter(name=ApiConstants.LASTNAME, type=CommandType.STRING, required=true, description="lastname")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "lastname")
     private String lastName;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+    @Parameter(name = ApiConstants.PASSWORD,
+               type = CommandType.STRING,
+               required = true,
+               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
     private String password;
 
-    @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    @Parameter(name = ApiConstants.TIMEZONE,
+               type = CommandType.STRING,
+               description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timeZone;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Unique username.")
     private String userName;
 
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the account's networks")
     private String networkDomain;
 
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.STRING, description="Account UUID, required for adding account from external provisioning system")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "Account UUID, required for adding account from external provisioning system")
     private String accountUUID;
 
-    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from external provisioning system")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding account from external provisioning system")
     private String userUUID;
 
     /////////////////////////////////////////////////////
@@ -135,7 +144,7 @@ public class CreateAccountCmd extends BaseCmd {
         }
 
         Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
+        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
         return params;
     }
 
@@ -162,9 +171,10 @@ public class CreateAccountCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
+    public void execute() {
+        CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
+        UserAccount userAccount =
+            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
                 getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount);

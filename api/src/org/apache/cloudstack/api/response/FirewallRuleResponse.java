@@ -18,62 +18,81 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=FirewallRule.class)
+@EntityReference(value = FirewallRule.class)
 @SuppressWarnings("unused")
 public class FirewallRuleResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the port forwarding rule")
     private String id;
 
-    @SerializedName(ApiConstants.PRIVATE_START_PORT) @Param(description = "the starting port of port forwarding rule's private port range")
+    @SerializedName(ApiConstants.PRIVATE_START_PORT)
+    @Param(description = "the starting port of port forwarding rule's private port range")
     private String privateStartPort;
 
-    @SerializedName(ApiConstants.PRIVATE_END_PORT) @Param(description = "the ending port of port forwarding rule's private port range")
+    @SerializedName(ApiConstants.PRIVATE_END_PORT)
+    @Param(description = "the ending port of port forwarding rule's private port range")
     private String privateEndPort;
 
-    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
+    @SerializedName(ApiConstants.PROTOCOL)
+    @Param(description = "the protocol of the port forwarding rule")
     private String protocol;
 
-    @SerializedName(ApiConstants.PUBLIC_START_PORT) @Param(description="the starting port of port forwarding rule's public port range")
+    @SerializedName(ApiConstants.PUBLIC_START_PORT)
+    @Param(description = "the starting port of port forwarding rule's public port range")
     private String publicStartPort;
 
-    @SerializedName(ApiConstants.PUBLIC_END_PORT)  @Param(description = "the ending port of port forwarding rule's private port range")
+    @SerializedName(ApiConstants.PUBLIC_END_PORT)
+    @Param(description = "the ending port of port forwarding rule's private port range")
     private String publicEndPort;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the VM ID for the port forwarding rule")
     private String virtualMachineId;
 
-    @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
+    @SerializedName("virtualmachinename")
+    @Param(description = "the VM name for the port forwarding rule")
     private String virtualMachineName;
 
-    @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
+    @SerializedName("virtualmachinedisplayname")
+    @Param(description = "the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
 
-    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    @Param(description = "the public ip address id for the port forwarding rule")
     private String publicIpAddressId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the public ip address for the port forwarding rule")
     private String publicIpAddress;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the rule")
     private String state;
 
-    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
+    @SerializedName(ApiConstants.CIDR_LIST)
+    @Param(description = "the cidr list to forward traffic from")
     private String cidrList;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    @SerializedName(ApiConstants.VM_GUEST_IP) @Param(description="the vm ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.VM_GUEST_IP)
+    @Param(description = "the vm ip address for the port forwarding rule")
     private String destNatVmIp;
 
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the id of the guest network the port forwarding rule belongs to")
+    private String networkId;
 
     public String getDestNatVmIp() {
         return destNatVmIp;
@@ -82,7 +101,6 @@ public class FirewallRuleResponse extends BaseResponse {
     public void setDestNatVmIp(String destNatVmIp) {
         this.destNatVmIp = destNatVmIp;
     }
-
 
     @Override
     public String getObjectId() {
@@ -195,5 +213,9 @@ public class FirewallRuleResponse extends BaseResponse {
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
     }
 }

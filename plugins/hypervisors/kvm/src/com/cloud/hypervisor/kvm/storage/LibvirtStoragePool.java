@@ -20,16 +20,16 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.log4j.Logger;
 import org.libvirt.StoragePool;
 
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LibvirtStoragePool implements KVMStoragePool {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtStoragePool.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtStoragePool.class);
     protected String uuid;
     protected String uri;
     protected long capacity;
@@ -47,8 +47,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected int sourcePort;
     protected String sourceDir;
 
-    public LibvirtStoragePool(String uuid, String name, StoragePoolType type,
-            StorageAdaptor adaptor, StoragePool pool) {
+    public LibvirtStoragePool(String uuid, String name, StoragePoolType type, StorageAdaptor adaptor, StoragePool pool) {
         this.uuid = uuid;
         this.name = name;
         this.type = type;
@@ -82,6 +81,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return this.used;
     }
 
+    @Override
     public long getAvailable() {
         return this.available;
     }
@@ -94,6 +94,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return this.name;
     }
 
+    @Override
     public String getUuid() {
         return this.uuid;
     }
@@ -112,16 +113,13 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name,
-            PhysicalDiskFormat format, long size) {
-        return this._storageAdaptor
-                .createPhysicalDisk(name, this, format, size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, long size) {
+        return this._storageAdaptor.createPhysicalDisk(name, this, format, size);
     }
 
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, long size) {
-        return this._storageAdaptor.createPhysicalDisk(name, this,
-                this.getDefaultFormat(), size);
+        return this._storageAdaptor.createPhysicalDisk(name, this, this.getDefaultFormat(), size);
     }
 
     @Override
@@ -130,8 +128,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         try {
             disk = this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
         } catch (CloudRuntimeException e) {
-            if ((this.getStoragePoolType() != StoragePoolType.NetworkFilesystem) &&
-                    (this.getStoragePoolType() != StoragePoolType.Filesystem)) {
+            if ((this.getStoragePoolType() != StoragePoolType.NetworkFilesystem) && (this.getStoragePoolType() != StoragePoolType.Filesystem)) {
                 throw e;
             }
         }

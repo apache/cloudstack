@@ -37,6 +37,6 @@ public class RebootAnswer extends Answer {
     }
 
     public Integer getVncPort() {
-    	return vncPort;
+        return vncPort;
     }
 }

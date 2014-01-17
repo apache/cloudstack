@@ -28,7 +28,7 @@ public class ConfigureStaticNatRulesOnLogicalRouterCommand extends Command {
     private String logicalRouterUuid;
     private List<StaticNatRuleTO> rules;
 
-    public ConfigureStaticNatRulesOnLogicalRouterCommand(String logicalRouterUuid, List<StaticNatRuleTO> rules) {
+    public ConfigureStaticNatRulesOnLogicalRouterCommand(final String logicalRouterUuid, final List<StaticNatRuleTO> rules) {
         super();
         this.logicalRouterUuid = logicalRouterUuid;
         this.rules = rules;
@@ -39,7 +39,7 @@ public class ConfigureStaticNatRulesOnLogicalRouterCommand extends Command {
         return logicalRouterUuid;
     }
 
-    public void setLogicalRouterUuid(String logicalRouterUuid) {
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
@@ -47,12 +47,11 @@ public class ConfigureStaticNatRulesOnLogicalRouterCommand extends Command {
         return rules;
     }
 
-    public void setRules(List<StaticNatRuleTO> rules) {
+    public void setRules(final List<StaticNatRuleTO> rules) {
         this.rules = rules;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override

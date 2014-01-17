@@ -50,7 +50,6 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         return id;
     }
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -87,13 +86,13 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Snapshot Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Snapshot Id: " + getId());
         boolean result = _snapshotService.revertSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert snapshot");
         }

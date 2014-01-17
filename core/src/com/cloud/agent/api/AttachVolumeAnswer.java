@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class AttachVolumeAnswer extends Answer {
     private Long deviceId;
     private String vdiUuid;
@@ -49,14 +48,14 @@ public class AttachVolumeAnswer extends Answer {
     }
 
     public String getVdiUuid() {
-    	return vdiUuid;
+        return vdiUuid;
     }
-    
+
     public void setChainInfo(String chainInfo) {
-    	this.chainInfo = chainInfo;
+        this.chainInfo = chainInfo;
     }
 
     public String getChainInfo() {
-    	return chainInfo;
+        return chainInfo;
     }
 }

@@ -38,7 +38,7 @@ public enum ApiErrorCode {
 
     private int httpCode;
 
-    private ApiErrorCode(int httpStatusCode){
+    private ApiErrorCode(int httpStatusCode) {
         httpCode = httpStatusCode;
     }
 
@@ -50,9 +50,9 @@ public enum ApiErrorCode {
         this.httpCode = httpCode;
     }
 
-    public String toString(){
+    @Override
+    public String toString() {
         return String.valueOf(this.httpCode);
     }
-
 
 }

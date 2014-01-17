@@ -27,11 +27,13 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
-
-import com.cloud.utils.db.GenericDao;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "autoscale_policies")
@@ -58,6 +60,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     @Column(name = "quiet_time", updatable = true, nullable = false)
     private int quietTime;
 
+    @Column(name = "last_quiet_time", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastQuiteTime;
+
     @Column(name = "action", updatable = false, nullable = false)
     private String action;
 
@@ -70,12 +76,14 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     public AutoScalePolicyVO() {
     }
 
-    public AutoScalePolicyVO(long domainId, long accountId, int duration, int quietTime, String action) {
-        this.uuid = UUID.randomUUID().toString();
+    public AutoScalePolicyVO(long domainId, long accountId, int duration,
+            int quietTime, Date lastQuiteTime, String action) {
+        uuid = UUID.randomUUID().toString();
         this.domainId = domainId;
         this.accountId = accountId;
         this.duration = duration;
         this.quietTime = quietTime;
+        this.lastQuiteTime = lastQuiteTime;
         this.action = action;
     }
 
@@ -89,6 +97,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         return id;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -114,6 +123,11 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     }
 
     @Override
+    public Date getLastQuiteTime() {
+        return lastQuiteTime;
+    }
+
+    @Override
     public String getAction() {
         return action;
     }
@@ -134,8 +148,13 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         this.quietTime = quietTime;
     }
 
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.AutoScalePolicy;
+    }
+
+    public void setLastQuiteTime(Date lastQuiteTime) {
+        this.lastQuiteTime = lastQuiteTime;
     }
 }

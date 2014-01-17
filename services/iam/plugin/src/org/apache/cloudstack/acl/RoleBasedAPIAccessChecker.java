@@ -157,8 +157,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
      }
 
     @Inject
-    public void setServices(List<PluggableService> _services) {
-        this._services = _services;
+    public void setServices(List<PluggableService> services) {
+        _services = services;
      }
 
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
@@ -200,7 +200,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             break;
          }
 
-       
+
         if (entityTypes == null || entityTypes.length == 0) {
             _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, null, permissionScope.toString(), new Long(-1),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);

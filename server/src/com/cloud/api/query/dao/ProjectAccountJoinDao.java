@@ -28,5 +28,4 @@ public interface ProjectAccountJoinDao extends GenericDao<ProjectAccountJoinVO, 
 
     ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj);
 
-
 }

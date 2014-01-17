@@ -44,6 +44,15 @@ public interface EntityManager {
     public <T> T findByUuid(Class<T> entityType, String uuid);
 
     /**
+     * Finds a unique entity by uuid string, including those removed entries
+     * @param <T> entity class
+     * @param entityType type of entity you're looking for.
+     * @param uuid the unique id
+     * @return T if found, null if not.
+     */
+    public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid);
+
+    /**
      * Finds an entity by external id which is always String
      * @param <T> entity class
      * @param entityType type of entity you're looking for.
@@ -62,4 +71,3 @@ public interface EntityManager {
 
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
 }
-

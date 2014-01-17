@@ -21,18 +21,18 @@ package com.cloud.network.nicira;
  */
 public class PatchAttachment extends Attachment {
     private final String type = "PatchAttachment";
-    private String peer_port_uuid;
+    private String peerPortUuid;
 
     public PatchAttachment(String peerPortUuid) {
-        peer_port_uuid = peerPortUuid;
+        this.peerPortUuid = peerPortUuid;
     }
 
     public String getPeerPortUuid() {
-        return peer_port_uuid;
+        return peerPortUuid;
     }
 
     public void setPeerPortUuid(String peerPortUuid) {
-        peer_port_uuid = peerPortUuid;
+        this.peerPortUuid = peerPortUuid;
     }
 
 }

@@ -58,6 +58,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
     protected String password;
 
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,9 +115,9 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
         password = _mgr.generateRandomPassword();
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);

@@ -17,9 +17,9 @@
 
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.Command;
-
 import java.util.List;
+
+import com.cloud.agent.api.Command;
 
 /**
  * GlobalLoadBalancerConfigCommand used for sending the GSLB configuration to GSLB service provider
@@ -47,12 +47,7 @@ public class GlobalLoadBalancerConfigCommand extends Command {
     // list of the site details that are participating in the GSLB service
     List<SiteLoadBalancerConfig> siteLoadBalancers;
 
-    public GlobalLoadBalancerConfigCommand(String domainName,
-                                                 String lbMethod,
-                                                 String persistenceType,
-                                                 String serviceType,
-                                                 long gslbId,
-                                                 boolean revoked) {
+    public GlobalLoadBalancerConfigCommand(String domainName, String lbMethod, String persistenceType, String serviceType, long gslbId, boolean revoked) {
         this.domainName = domainName;
         this.serviceType = serviceType;
         this.lbMethod = lbMethod;

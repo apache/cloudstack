@@ -34,7 +34,7 @@ import com.cloud.utils.db.Encrypt;
  */
 
 @Entity
-@Table(name="vmware_data_center")
+@Table(name = "vmware_data_center")
 public class VmwareDatacenterVO implements VmwareDatacenter {
 
     @Id
@@ -113,7 +113,8 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public void setUser(String user) {
-        this.user = user; ;
+        this.user = user;
+        ;
     }
 
     public void setPassword(String password) {

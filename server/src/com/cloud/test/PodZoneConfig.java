@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -27,7 +27,6 @@ import java.util.Vector;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
@@ -41,7 +40,8 @@ public class PodZoneConfig {
 
     public void savePod(boolean printOutput, long id, String name, long dcId, String gateway, String cidr, int vlanStart, int vlanEnd) {
         // Check that the cidr was valid
-        if (!IPRangeConfig.validCIDR(cidr)) printError("Please enter a valid CIDR for pod: " + name);
+        if (!IPRangeConfig.validCIDR(cidr))
+            printError("Please enter a valid CIDR for pod: " + name);
 
         // Get the individual cidrAddress and cidrSize values
         String[] cidrPair = cidr.split("\\/");
@@ -49,12 +49,19 @@ public class PodZoneConfig {
         String cidrSize = cidrPair[1];
 
         String sql = null;
-        if (id != -1) sql = "INSERT INTO `cloud`.`host_pod_ref` (id, name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + id + "','" + name + "','" + dcId + "','" + gateway + "','" + cidrAddress + "','" + cidrSize + "')";
-        else sql = "INSERT INTO `cloud`.`host_pod_ref` (name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + name + "','" + dcId + "','" + gateway + "','" + cidrAddress + "','" + cidrSize + "')";
+        if (id != -1)
+            sql =
+                "INSERT INTO `cloud`.`host_pod_ref` (id, name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + id + "','" + name + "','" + dcId +
+                    "','" + gateway + "','" + cidrAddress + "','" + cidrSize + "')";
+        else
+            sql =
+                "INSERT INTO `cloud`.`host_pod_ref` (name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + name + "','" + dcId + "','" + gateway +
+                    "','" + cidrAddress + "','" + cidrSize + "')";
 
         DatabaseConfig.saveSQL(sql, "Failed to save pod due to exception. Please contact Cloud Support.");
 
-        if (printOutput) System.out.println("Successfuly saved pod.");
+        if (printOutput)
+            System.out.println("Successfuly saved pod.");
     }
 
     public void checkAllPodCidrSubnets() {
@@ -62,13 +69,14 @@ public class PodZoneConfig {
         for (Long dcId : allZoneIDs) {
             HashMap<Long, Vector<Object>> currentPodCidrSubnets = getCurrentPodCidrSubnets(dcId.longValue());
             String result = checkPodCidrSubnets(dcId.longValue(), currentPodCidrSubnets);
-            if (!result.equals("success")) printError(result);
+            if (!result.equals("success"))
+                printError(result);
         }
     }
 
     private String checkPodCidrSubnets(long dcId, HashMap<Long, Vector<Object>> currentPodCidrSubnets) {
 
-//		DataCenterDao _dcDao = null;
+//        DataCenterDao _dcDao = null;
 //        final ComponentLocator locator = ComponentLocator.getLocator("management-server");
 
 //        _dcDao = locator.getDao(DataCenterDao.class);
@@ -76,14 +84,15 @@ public class PodZoneConfig {
         // 1. The pod's CIDR subnet conflicts with the guest network subnet
         // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other pod
 
-        String zoneName  = PodZoneConfig.getZoneName(dcId);
+        String zoneName = PodZoneConfig.getZoneName(dcId);
 
         //get the guest network cidr and guest netmask from the zone
-//		DataCenterVO dcVo = _dcDao.findById(dcId);
+//        DataCenterVO dcVo = _dcDao.findById(dcId);
 
         String guestNetworkCidr = IPRangeConfig.getGuestNetworkCidr(dcId);
 
-        if (guestNetworkCidr == null || guestNetworkCidr.isEmpty()) return "Please specify a valid guest cidr";
+        if (guestNetworkCidr == null || guestNetworkCidr.isEmpty())
+            return "Please specify a valid guest cidr";
         String[] cidrTuple = guestNetworkCidr.split("\\/");
 
         String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1]));
@@ -92,16 +101,20 @@ public class PodZoneConfig {
         // Iterate through all pods in this zone
         for (Long podId : currentPodCidrSubnets.keySet()) {
             String podName;
-            if (podId.longValue() == -1) podName = "newPod";
-            else podName = PodZoneConfig.getPodName(podId.longValue(), dcId);
+            if (podId.longValue() == -1)
+                podName = "newPod";
+            else
+                podName = PodZoneConfig.getPodName(podId.longValue(), dcId);
 
             Vector<Object> cidrPair = currentPodCidrSubnets.get(podId);
-            String cidrAddress = (String) cidrPair.get(0);
-            long cidrSize = ((Long) cidrPair.get(1)).longValue();
+            String cidrAddress = (String)cidrPair.get(0);
+            long cidrSize = ((Long)cidrPair.get(1)).longValue();
 
             long cidrSizeToUse = -1;
-            if (cidrSize < guestCidrSize) cidrSizeToUse = cidrSize;
-            else cidrSizeToUse = guestCidrSize;
+            if (cidrSize < guestCidrSize)
+                cidrSizeToUse = cidrSize;
+            else
+                cidrSizeToUse = guestCidrSize;
 
             String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
             String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
@@ -111,21 +124,25 @@ public class PodZoneConfig {
                 if (podName.equals("newPod")) {
                     return "The subnet of the pod you are adding conflicts with the subnet of the Guest IP Network. Please specify a different CIDR.";
                 } else {
-                    return "Warning: The subnet of pod " + podName + " in zone " + zoneName + " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.";
+                    return "Warning: The subnet of pod " + podName + " in zone " + zoneName +
+                        " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.";
                 }
             }
 
             // Iterate through the rest of the pods
             for (Long otherPodId : currentPodCidrSubnets.keySet()) {
-                if (podId.equals(otherPodId)) continue;
+                if (podId.equals(otherPodId))
+                    continue;
 
                 // Check that cidrSubnet does not equal otherCidrSubnet
                 Vector<Object> otherCidrPair = currentPodCidrSubnets.get(otherPodId);
-                String otherCidrAddress = (String) otherCidrPair.get(0);
-                long otherCidrSize = ((Long) otherCidrPair.get(1)).longValue();
+                String otherCidrAddress = (String)otherCidrPair.get(0);
+                long otherCidrSize = ((Long)otherCidrPair.get(1)).longValue();
 
-                if (cidrSize < otherCidrSize) cidrSizeToUse = cidrSize;
-                else cidrSizeToUse = otherCidrSize;
+                if (cidrSize < otherCidrSize)
+                    cidrSizeToUse = cidrSize;
+                else
+                    cidrSizeToUse = otherCidrSize;
 
                 cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
                 String otherCidrSubnet = NetUtils.getCidrSubNet(otherCidrAddress, cidrSizeToUse);
@@ -133,9 +150,11 @@ public class PodZoneConfig {
                 if (cidrSubnet.equals(otherCidrSubnet)) {
                     String otherPodName = PodZoneConfig.getPodName(otherPodId.longValue(), dcId);
                     if (podName.equals("newPod")) {
-                        return "The subnet of the pod you are adding conflicts with the subnet of pod " + otherPodName + " in zone " + zoneName + ". Please specify a different CIDR.";
+                        return "The subnet of the pod you are adding conflicts with the subnet of pod " + otherPodName + " in zone " + zoneName +
+                            ". Please specify a different CIDR.";
                     } else {
-                        return "Warning: The pods " + podName + " and " + otherPodName + " in zone " + zoneName + " have conflicting CIDR subnets. Please change the CIDR of one of these pods.";
+                        return "Warning: The pods " + podName + " and " + otherPodName + " in zone " + zoneName +
+                            " have conflicting CIDR subnets. Please change the CIDR of one of these pods.";
                     }
                 }
             }
@@ -180,10 +199,11 @@ public class PodZoneConfig {
         long zoneId = getZoneId(zone);
 
         return DatabaseConfig.getDatabaseValueLong("SELECT * FROM `cloud`.`vlan` WHERE data_center_id=\"" + zoneId + "\" AND vlan_id =\"" + vlanId + "\"", "id",
-                "Unable to start DB connection to read vlan DB id. Please contact Cloud Support.");
+            "Unable to start DB connection to read vlan DB id. Please contact Cloud Support.");
     }
 
-    public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange, long networkId, long physicalNetworkId) {
+    public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange,
+        long networkId, long physicalNetworkId) {
         // Check if the zone is valid
         long zoneId = getZoneId(zone);
         if (zoneId == -1)
@@ -194,8 +214,7 @@ public class PodZoneConfig {
         if (physicalNetworkId == -1)
             return genReturnList("false", "Please specify a valid physical network.");
 
-
-        Long podId = pod!=null?getPodId(pod, zone):null;
+        Long podId = pod != null ? getPodId(pod, zone) : null;
         if (podId != null && podId == -1)
             return genReturnList("false", "Please specify a valid pod.");
 
@@ -214,21 +233,21 @@ public class PodZoneConfig {
                 return genReturnList("false", "A VLAN with the specified VLAN ID already exists in zone " + zone + ".");
 
             /*
-    		// Check if another vlan in the same zone has the same subnet
-    		String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
-    		List<VlanVO> vlans = _vlanDao.findByZone(zoneId);
-    		for (VlanVO vlan : vlans) {
-    			String currentVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
-    			if (newVlanSubnet.equals(currentVlanSubnet))
-    				return genReturnList("false", "The VLAN with ID " + vlan.getVlanId() + " in zone " + zone + " has the same subnet. Please specify a different gateway/netmask.");
-    		}
+            // Check if another vlan in the same zone has the same subnet
+            String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
+            List<VlanVO> vlans = _vlanDao.findByZone(zoneId);
+            for (VlanVO vlan : vlans) {
+                String currentVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                if (newVlanSubnet.equals(currentVlanSubnet))
+                    return genReturnList("false", "The VLAN with ID " + vlan.getVlanId() + " in zone " + zone + " has the same subnet. Please specify a different gateway/netmask.");
+            }
              */
 
             // Everything was fine, so persist the VLAN
             saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange, networkId, physicalNetworkDbId);
             if (podId != null) {
                 long vlanDbId = getVlanDbId(zone, vlanId);
-                String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES ('" + podId + "','" + vlanDbId  + "')";
+                String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES ('" + podId + "','" + vlanDbId + "')";
                 DatabaseConfig.saveSQL(sql, "Failed to save pod_vlan_map due to exception vlanDbId=" + vlanDbId + ", podId=" + podId + ". Please contact Cloud Support.");
             }
 
@@ -239,30 +258,31 @@ public class PodZoneConfig {
         }
 
         /*
-    	else {
+        else {
 
-    		// Check if a VLAN actually exists in the specified zone
-    		long vlanDbId = getVlanDbId(zone, vlanId);
-    		if (vlanDbId == -1)
-    			return genReturnList("false", "A VLAN with ID " + vlanId + " does not exist in zone " + zone);
+            // Check if a VLAN actually exists in the specified zone
+            long vlanDbId = getVlanDbId(zone, vlanId);
+            if (vlanDbId == -1)
+                return genReturnList("false", "A VLAN with ID " + vlanId + " does not exist in zone " + zone);
 
-    		// Check if there are any public IPs that are in the specified vlan.
-    		List<IPAddressVO> ips = _publicIpAddressDao.listByVlanDbId(vlanDbId);
-    		if (ips.size() != 0)
-    			return genReturnList("false", "Please delete all IP addresses that are in VLAN " + vlanId + " before deleting the VLAN.");
+            // Check if there are any public IPs that are in the specified vlan.
+            List<IPAddressVO> ips = _publicIpAddressDao.listByVlanDbId(vlanDbId);
+            if (ips.size() != 0)
+                return genReturnList("false", "Please delete all IP addresses that are in VLAN " + vlanId + " before deleting the VLAN.");
 
-    		// Delete the vlan
-    		_vlanDao.delete(vlanDbId);
+            // Delete the vlan
+            _vlanDao.delete(vlanDbId);
 
-    		return genReturnList("true", "Successfully deleted VLAN.");
-    	}
+            return genReturnList("true", "Successfully deleted VLAN.");
+        }
          */
     }
 
     @DB
     public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, String guestNetworkCidr, String networkType) {
 
-        if (printOutput) System.out.println("Saving zone, please wait...");
+        if (printOutput)
+            System.out.println("Saving zone, please wait...");
 
         String columns = null;
         String values = null;
@@ -295,12 +315,12 @@ public class PodZoneConfig {
             values += ",'" + dns4 + "'";
         }
 
-        if(guestNetworkCidr != null) {
+        if (guestNetworkCidr != null) {
             columns += ", guest_network_cidr";
             values += ",'" + guestNetworkCidr + "'";
         }
 
-        if(networkType != null) {
+        if (networkType != null) {
             columns += ", networktype";
             values += ",'" + networkType + "'";
         }
@@ -311,17 +331,19 @@ public class PodZoneConfig {
         columns += ")";
         values += ")";
 
-        String sql = "INSERT INTO `cloud`.`data_center` " + columns +  " VALUES " + values;
+        String sql = "INSERT INTO `cloud`.`data_center` " + columns + " VALUES " + values;
 
         DatabaseConfig.saveSQL(sql, "Failed to save zone due to exception. Please contact Cloud Support.");
 
-        if (printOutput) System.out.println("Successfully saved zone.");
+        if (printOutput)
+            System.out.println("Successfully saved zone.");
     }
 
     @DB
     public void savePhysicalNetwork(boolean printOutput, long id, long dcId, int vnetStart, int vnetEnd) {
 
-        if (printOutput) System.out.println("Saving physical network, please wait...");
+        if (printOutput)
+            System.out.println("Saving physical network, please wait...");
 
         String columns = null;
         String values = null;
@@ -348,7 +370,7 @@ public class PodZoneConfig {
         columns += ")";
         values += ")";
 
-        String sql = "INSERT INTO `cloud`.`physical_network` " + columns +  " VALUES " + values;
+        String sql = "INSERT INTO `cloud`.`physical_network` " + columns + " VALUES " + values;
 
         DatabaseConfig.saveSQL(sql, "Failed to save physical network due to exception. Please contact Cloud Support.");
 
@@ -386,25 +408,23 @@ public class PodZoneConfig {
         String defaultXenStorageNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Storage);
         String defaultXenGuestNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Guest);
 
-        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " +
-                "(physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " + "(physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
 
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
             for (TrafficType traffic : TrafficType.values()) {
-                if(traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn) ||
-                        traffic.equals(TrafficType.None)){
+                if (traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn) || traffic.equals(TrafficType.None)) {
                     continue;
                 }
                 stmt.setLong(1, id);
                 stmt.setString(2, traffic.toString());
-                if(traffic.equals(TrafficType.Public)){
+                if (traffic.equals(TrafficType.Public)) {
                     stmt.setString(3, defaultXenPublicNetworkLabel);
-                }else if(traffic.equals(TrafficType.Management)){
+                } else if (traffic.equals(TrafficType.Management)) {
                     stmt.setString(3, defaultXenPrivateNetworkLabel);
-                }else if(traffic.equals(TrafficType.Storage)){
+                } else if (traffic.equals(TrafficType.Storage)) {
                     stmt.setString(3, defaultXenStorageNetworkLabel);
-                }else if(traffic.equals(TrafficType.Guest)){
+                } else if (traffic.equals(TrafficType.Guest)) {
                     stmt.setString(3, defaultXenGuestNetworkLabel);
                 }
 
@@ -415,33 +435,37 @@ public class PodZoneConfig {
             printError("Error adding default traffic types for the physical network. Please contact Cloud Support.");
         }
 
-        if (printOutput) System.out.println("Successfully saved physical network.");
+        if (printOutput)
+            System.out.println("Successfully saved physical network.");
     }
 
-    private String getDefaultXenNetworkLabel(TrafficType trafficType){
+    private String getDefaultXenNetworkLabel(TrafficType trafficType) {
         String xenLabel = null;
         String configName = null;
-        switch(trafficType){
-        case Public: configName = "xen.public.network.device";
-        break;
-        case Guest: configName = "xen.guest.network.device";
-        break;
-        case Storage: configName = "xen.storage.network.device1";
-        break;
-        case Management: configName = "xen.private.network.device";
-        break;
+        switch (trafficType) {
+            case Public:
+                configName = "xen.public.network.device";
+                break;
+            case Guest:
+                configName = "xen.guest.network.device";
+                break;
+            case Storage:
+                configName = "xen.storage.network.device1";
+                break;
+            case Management:
+                configName = "xen.private.network.device";
+                break;
         }
 
-        if(configName != null){
+        if (configName != null) {
             xenLabel = getConfiguredValue(configName);
         }
         return xenLabel;
     }
 
-    public static String getConfiguredValue(String configName)
-    {
-        return DatabaseConfig.getDatabaseValueString("SELECT value FROM `cloud`.`configuration` where name = \"" + configName + "\"","value",
-                "Unable to start DB connection to read configuration. Please contact Cloud Support.");
+    public static String getConfiguredValue(String configName) {
+        return DatabaseConfig.getDatabaseValueString("SELECT value FROM `cloud`.`configuration` where name = \"" + configName + "\"", "value",
+            "Unable to start DB connection to read configuration. Please contact Cloud Support.");
     }
 
     public void deleteZone(String name) {
@@ -449,8 +473,12 @@ public class PodZoneConfig {
         DatabaseConfig.saveSQL(sql, "Failed to delete zone due to exception. Please contact Cloud Support.");
     }
 
-    public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId, long physicalNetworkId) {
-        String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" + vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange +  "','" + networkId +  "','" + physicalNetworkId + "')";
+    public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId,
+        long physicalNetworkId) {
+        String sql =
+            "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" +
+                vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange + "','" + networkId + "','" + physicalNetworkId +
+                "')";
         DatabaseConfig.saveSQL(sql, "Failed to save vlan due to exception. Please contact Cloud Support.");
     }
 
@@ -477,7 +505,7 @@ public class PodZoneConfig {
         String selectSql = "SELECT * FROM `cloud`.`physical_network` WHERE id = \"" + physicalNetworkId + "\"";
         String errorMsg = "Could not read physicalNetwork ID from database. Please contact Cloud Support.";
         return DatabaseConfig.getDatabaseValueLong(selectSql, "id", errorMsg);
-    }	
+    }
 
     @DB
     public Vector<Long> getAllZoneIDs() {
@@ -501,7 +529,6 @@ public class PodZoneConfig {
         return allZoneIDs;
     }
 
-
     public static boolean validPod(String pod, String zone) {
         return (getPodId(pod, zone) != -1);
     }
@@ -512,12 +539,12 @@ public class PodZoneConfig {
 
     public static String getPodName(long podId, long dcId) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`host_pod_ref` WHERE id=" + podId + " AND data_center_id=" + dcId, "name",
-                "Unable to start DB connection to read pod name. Please contact Cloud Support.");
+            "Unable to start DB connection to read pod name. Please contact Cloud Support.");
     }
 
     public static String getZoneName(long dcId) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE id=" + dcId, "name",
-                "Unable to start DB connection to read zone name. Please contact Cloud Support.");
+            "Unable to start DB connection to read zone name. Please contact Cloud Support.");
     }
 
     private static void printError(String message) {

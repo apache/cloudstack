@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import java.util.Date;
@@ -69,7 +68,7 @@ public class Types
         String[] result = new String[objArray.length];
         for (int i = 0; i < objArray.length; i++)
         {
-            result[i] = (String) objArray[i];
+            result[i] = (String)objArray[i];
         }
         return result;
     }
@@ -119,6 +118,7 @@ public class Types
             return sb.toString();
         }
     }
+
     /**
      * Thrown if the response from the server contains an invalid status.
      */
@@ -126,7 +126,7 @@ public class Types
     {
         public BadServerResponse(Map response)
         {
-            super(ObjectArrayToStringArray((Object[]) response.get("ErrorDescription")));
+            super(ObjectArrayToStringArray((Object[])response.get("ErrorDescription")));
         }
     }
 
@@ -172,10 +172,11 @@ public class Types
 
         return matcher.group(1);
     }
-      /**
-     * Checks the provided server response was successful. If the call failed, throws a XenAPIException. If the server
-     * returned an invalid response, throws a BadServerResponse. Otherwise, returns the server response as passed in.
-     */
+
+    /**
+    * Checks the provided server response was successful. If the call failed, throws a XenAPIException. If the server
+    * returned an invalid response, throws a BadServerResponse. Otherwise, returns the server response as passed in.
+    */
     static Map checkResponse(Map response) throws XenAPIException, BadServerResponse
     {
         if (response.get("Status").equals("Success"))
@@ -185,7 +186,7 @@ public class Types
 
         if (response.get("Status").equals("Failure"))
         {
-            String[] ErrorDescription = ObjectArrayToStringArray((Object[]) response.get("ErrorDescription"));
+            String[] ErrorDescription = ObjectArrayToStringArray((Object[])response.get("ErrorDescription"));
 
             if (ErrorDescription[0].equals("RESTORE_TARGET_MISSING_DEVICE"))
             {
@@ -1278,6 +1279,17 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.CrlNameInvalid(p1);
             }
+            if (ErrorDescription[0].equals("VDI_NOT_SPARSE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VdiNotSparse(p1);
+            }
+            if (ErrorDescription[0].equals("VDI_TOO_SMALL"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VdiTooSmall(p1, p2);
+            }
             if (ErrorDescription[0].equals("HOST_POWER_ON_MODE_DISABLED"))
             {
                 throw new Types.HostPowerOnModeDisabled();
@@ -1993,21 +2005,34 @@ public class Types
          */
         BLOCKED;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SCAN) return "scan";
-            if (this == CLONE) return "clone";
-            if (this == COPY) return "copy";
-            if (this == RESIZE) return "resize";
-            if (this == RESIZE_ONLINE) return "resize_online";
-            if (this == SNAPSHOT) return "snapshot";
-            if (this == DESTROY) return "destroy";
-            if (this == FORGET) return "forget";
-            if (this == UPDATE) return "update";
-            if (this == FORCE_UNLOCK) return "force_unlock";
-            if (this == GENERATE_CONFIG) return "generate_config";
-            if (this == BLOCKED) return "blocked";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SCAN)
+                return "scan";
+            if (this == CLONE)
+                return "clone";
+            if (this == COPY)
+                return "copy";
+            if (this == RESIZE)
+                return "resize";
+            if (this == RESIZE_ONLINE)
+                return "resize_online";
+            if (this == SNAPSHOT)
+                return "snapshot";
+            if (this == DESTROY)
+                return "destroy";
+            if (this == FORGET)
+                return "forget";
+            if (this == UPDATE)
+                return "update";
+            if (this == FORCE_UNLOCK)
+                return "force_unlock";
+            if (this == GENERATE_CONFIG)
+                return "generate_config";
+            if (this == BLOCKED)
+                return "blocked";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2038,14 +2063,20 @@ public class Types
          */
         VMPP;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == VM) return "VM";
-            if (this == HOST) return "Host";
-            if (this == SR) return "SR";
-            if (this == POOL) return "Pool";
-            if (this == VMPP) return "VMPP";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == VM)
+                return "VM";
+            if (this == HOST)
+                return "Host";
+            if (this == SR)
+                return "SR";
+            if (this == POOL)
+                return "Pool";
+            if (this == VMPP)
+                return "VMPP";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2088,17 +2119,26 @@ public class Types
          */
         REDO_LOG;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SYSTEM) return "system";
-            if (this == USER) return "user";
-            if (this == EPHEMERAL) return "ephemeral";
-            if (this == SUSPEND) return "suspend";
-            if (this == CRASHDUMP) return "crashdump";
-            if (this == HA_STATEFILE) return "ha_statefile";
-            if (this == METADATA) return "metadata";
-            if (this == REDO_LOG) return "redo_log";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SYSTEM)
+                return "system";
+            if (this == USER)
+                return "user";
+            if (this == EPHEMERAL)
+                return "ephemeral";
+            if (this == SUSPEND)
+                return "suspend";
+            if (this == CRASHDUMP)
+                return "crashdump";
+            if (this == HA_STATEFILE)
+                return "ha_statefile";
+            if (this == METADATA)
+                return "metadata";
+            if (this == REDO_LOG)
+                return "redo_log";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2125,13 +2165,18 @@ public class Types
          */
         RESTARTXAPI;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == RESTARTHVM) return "restartHVM";
-            if (this == RESTARTPV) return "restartPV";
-            if (this == RESTARTHOST) return "restartHost";
-            if (this == RESTARTXAPI) return "restartXAPI";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == RESTARTHVM)
+                return "restartHVM";
+            if (this == RESTARTPV)
+                return "restartPV";
+            if (this == RESTARTHOST)
+                return "restartHost";
+            if (this == RESTARTXAPI)
+                return "restartXAPI";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2154,12 +2199,16 @@ public class Types
          */
         MOD;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == ADD) return "add";
-            if (this == DEL) return "del";
-            if (this == MOD) return "mod";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == ADD)
+                return "add";
+            if (this == DEL)
+                return "del";
+            if (this == MOD)
+                return "mod";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2178,11 +2227,14 @@ public class Types
          */
         IPV6;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == IPV4) return "IPv4";
-            if (this == IPV6) return "IPv6";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == IPV4)
+                return "IPv4";
+            if (this == IPV6)
+                return "IPv6";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2197,10 +2249,12 @@ public class Types
          */
         CANCEL;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == CANCEL) return "cancel";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == CANCEL)
+                return "cancel";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2231,14 +2285,20 @@ public class Types
          */
         CANCELLED;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == PENDING) return "pending";
-            if (this == SUCCESS) return "success";
-            if (this == FAILURE) return "failure";
-            if (this == CANCELLING) return "cancelling";
-            if (this == CANCELLED) return "cancelled";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == PENDING)
+                return "pending";
+            if (this == SUCCESS)
+                return "success";
+            if (this == FAILURE)
+                return "failure";
+            if (this == CANCELLING)
+                return "cancelling";
+            if (this == CANCELLED)
+                return "cancelled";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2253,10 +2313,12 @@ public class Types
          */
         ATTACHING;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == ATTACHING) return "attaching";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == ATTACHING)
+                return "attaching";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2279,12 +2341,16 @@ public class Types
          */
         RDP;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == VT100) return "vt100";
-            if (this == RFB) return "rfb";
-            if (this == RDP) return "rdp";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == VT100)
+                return "vt100";
+            if (this == RFB)
+                return "rfb";
+            if (this == RDP)
+                return "rdp";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2319,15 +2385,22 @@ public class Types
          */
         RENAME_RESTART;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == DESTROY) return "destroy";
-            if (this == COREDUMP_AND_DESTROY) return "coredump_and_destroy";
-            if (this == RESTART) return "restart";
-            if (this == COREDUMP_AND_RESTART) return "coredump_and_restart";
-            if (this == PRESERVE) return "preserve";
-            if (this == RENAME_RESTART) return "rename_restart";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == DESTROY)
+                return "destroy";
+            if (this == COREDUMP_AND_DESTROY)
+                return "coredump_and_destroy";
+            if (this == RESTART)
+                return "restart";
+            if (this == COREDUMP_AND_RESTART)
+                return "coredump_and_restart";
+            if (this == PRESERVE)
+                return "preserve";
+            if (this == RENAME_RESTART)
+                return "rename_restart";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2346,11 +2419,14 @@ public class Types
          */
         CHECKPOINT;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SNAPSHOT) return "snapshot";
-            if (this == CHECKPOINT) return "checkpoint";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SNAPSHOT)
+                return "snapshot";
+            if (this == CHECKPOINT)
+                return "checkpoint";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2369,11 +2445,14 @@ public class Types
          */
         RESTART;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == DESTROY) return "destroy";
-            if (this == RESTART) return "restart";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == DESTROY)
+                return "destroy";
+            if (this == RESTART)
+                return "restart";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2396,12 +2475,16 @@ public class Types
          */
         UNPLUG;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == ATTACH) return "attach";
-            if (this == PLUG) return "plug";
-            if (this == UNPLUG) return "unplug";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == ATTACH)
+                return "attach";
+            if (this == PLUG)
+                return "plug";
+            if (this == UNPLUG)
+                return "unplug";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2592,54 +2675,100 @@ public class Types
          */
         VGPU;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SESSION) return "session";
-            if (this == AUTH) return "auth";
-            if (this == SUBJECT) return "subject";
-            if (this == ROLE) return "role";
-            if (this == TASK) return "task";
-            if (this == EVENT) return "event";
-            if (this == POOL) return "pool";
-            if (this == POOL_PATCH) return "pool_patch";
-            if (this == VM) return "VM";
-            if (this == VM_METRICS) return "VM_metrics";
-            if (this == VM_GUEST_METRICS) return "VM_guest_metrics";
-            if (this == VMPP) return "VMPP";
-            if (this == VM_APPLIANCE) return "VM_appliance";
-            if (this == DR_TASK) return "DR_task";
-            if (this == HOST) return "host";
-            if (this == HOST_CRASHDUMP) return "host_crashdump";
-            if (this == HOST_PATCH) return "host_patch";
-            if (this == HOST_METRICS) return "host_metrics";
-            if (this == HOST_CPU) return "host_cpu";
-            if (this == NETWORK) return "network";
-            if (this == VIF) return "VIF";
-            if (this == VIF_METRICS) return "VIF_metrics";
-            if (this == PIF) return "PIF";
-            if (this == PIF_METRICS) return "PIF_metrics";
-            if (this == BOND) return "Bond";
-            if (this == VLAN) return "VLAN";
-            if (this == SM) return "SM";
-            if (this == SR) return "SR";
-            if (this == VDI) return "VDI";
-            if (this == VBD) return "VBD";
-            if (this == VBD_METRICS) return "VBD_metrics";
-            if (this == PBD) return "PBD";
-            if (this == CRASHDUMP) return "crashdump";
-            if (this == VTPM) return "VTPM";
-            if (this == CONSOLE) return "console";
-            if (this == USER) return "user";
-            if (this == DATA_SOURCE) return "data_source";
-            if (this == BLOB) return "blob";
-            if (this == MESSAGE) return "message";
-            if (this == SECRET) return "secret";
-            if (this == TUNNEL) return "tunnel";
-            if (this == PCI) return "PCI";
-            if (this == PGPU) return "PGPU";
-            if (this == GPU_GROUP) return "GPU_group";
-            if (this == VGPU) return "VGPU";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SESSION)
+                return "session";
+            if (this == AUTH)
+                return "auth";
+            if (this == SUBJECT)
+                return "subject";
+            if (this == ROLE)
+                return "role";
+            if (this == TASK)
+                return "task";
+            if (this == EVENT)
+                return "event";
+            if (this == POOL)
+                return "pool";
+            if (this == POOL_PATCH)
+                return "pool_patch";
+            if (this == VM)
+                return "VM";
+            if (this == VM_METRICS)
+                return "VM_metrics";
+            if (this == VM_GUEST_METRICS)
+                return "VM_guest_metrics";
+            if (this == VMPP)
+                return "VMPP";
+            if (this == VM_APPLIANCE)
+                return "VM_appliance";
+            if (this == DR_TASK)
+                return "DR_task";
+            if (this == HOST)
+                return "host";
+            if (this == HOST_CRASHDUMP)
+                return "host_crashdump";
+            if (this == HOST_PATCH)
+                return "host_patch";
+            if (this == HOST_METRICS)
+                return "host_metrics";
+            if (this == HOST_CPU)
+                return "host_cpu";
+            if (this == NETWORK)
+                return "network";
+            if (this == VIF)
+                return "VIF";
+            if (this == VIF_METRICS)
+                return "VIF_metrics";
+            if (this == PIF)
+                return "PIF";
+            if (this == PIF_METRICS)
+                return "PIF_metrics";
+            if (this == BOND)
+                return "Bond";
+            if (this == VLAN)
+                return "VLAN";
+            if (this == SM)
+                return "SM";
+            if (this == SR)
+                return "SR";
+            if (this == VDI)
+                return "VDI";
+            if (this == VBD)
+                return "VBD";
+            if (this == VBD_METRICS)
+                return "VBD_metrics";
+            if (this == PBD)
+                return "PBD";
+            if (this == CRASHDUMP)
+                return "crashdump";
+            if (this == VTPM)
+                return "VTPM";
+            if (this == CONSOLE)
+                return "console";
+            if (this == USER)
+                return "user";
+            if (this == DATA_SOURCE)
+                return "data_source";
+            if (this == BLOB)
+                return "blob";
+            if (this == MESSAGE)
+                return "message";
+            if (this == SECRET)
+                return "secret";
+            if (this == TUNNEL)
+                return "tunnel";
+            if (this == PCI)
+                return "PCI";
+            if (this == PGPU)
+                return "PGPU";
+            if (this == GPU_GROUP)
+                return "GPU_group";
+            if (this == VGPU)
+                return "VGPU";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2682,17 +2811,26 @@ public class Types
          */
         VM_MIGRATE;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == PROVISION) return "provision";
-            if (this == EVACUATE) return "evacuate";
-            if (this == SHUTDOWN) return "shutdown";
-            if (this == REBOOT) return "reboot";
-            if (this == POWER_ON) return "power_on";
-            if (this == VM_START) return "vm_start";
-            if (this == VM_RESUME) return "vm_resume";
-            if (this == VM_MIGRATE) return "vm_migrate";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == PROVISION)
+                return "provision";
+            if (this == EVACUATE)
+                return "evacuate";
+            if (this == SHUTDOWN)
+                return "shutdown";
+            if (this == REBOOT)
+                return "reboot";
+            if (this == POWER_ON)
+                return "power_on";
+            if (this == VM_START)
+                return "vm_start";
+            if (this == VM_RESUME)
+                return "vm_resume";
+            if (this == VM_MIGRATE)
+                return "vm_migrate";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2719,13 +2857,18 @@ public class Types
          */
         WEEKLY;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == NEVER) return "never";
-            if (this == ALWAYS_AFTER_BACKUP) return "always_after_backup";
-            if (this == DAILY) return "daily";
-            if (this == WEEKLY) return "weekly";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == NEVER)
+                return "never";
+            if (this == ALWAYS_AFTER_BACKUP)
+                return "always_after_backup";
+            if (this == DAILY)
+                return "daily";
+            if (this == WEEKLY)
+                return "weekly";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2748,12 +2891,16 @@ public class Types
          */
         NFS;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == NONE) return "none";
-            if (this == CIFS) return "cifs";
-            if (this == NFS) return "nfs";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == NONE)
+                return "none";
+            if (this == CIFS)
+                return "cifs";
+            if (this == NFS)
+                return "nfs";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2772,11 +2919,14 @@ public class Types
          */
         RW;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == RO) return "RO";
-            if (this == RW) return "RW";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == RO)
+                return "RO";
+            if (this == RW)
+                return "RW";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2803,13 +2953,18 @@ public class Types
          */
         AUTOCONF;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == NONE) return "None";
-            if (this == DHCP) return "DHCP";
-            if (this == STATIC) return "Static";
-            if (this == AUTOCONF) return "Autoconf";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == NONE)
+                return "None";
+            if (this == DHCP)
+                return "DHCP";
+            if (this == STATIC)
+                return "Static";
+            if (this == AUTOCONF)
+                return "Autoconf";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2828,11 +2983,14 @@ public class Types
          */
         DISK;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == CD) return "CD";
-            if (this == DISK) return "Disk";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == CD)
+                return "CD";
+            if (this == DISK)
+                return "Disk";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2851,11 +3009,14 @@ public class Types
          */
         PERSIST;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == RESET) return "reset";
-            if (this == PERSIST) return "persist";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == RESET)
+                return "reset";
+            if (this == PERSIST)
+                return "persist";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2882,13 +3043,18 @@ public class Types
          */
         SHUTDOWN;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == START) return "start";
-            if (this == CLEAN_SHUTDOWN) return "clean_shutdown";
-            if (this == HARD_SHUTDOWN) return "hard_shutdown";
-            if (this == SHUTDOWN) return "shutdown";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == START)
+                return "start";
+            if (this == CLEAN_SHUTDOWN)
+                return "clean_shutdown";
+            if (this == HARD_SHUTDOWN)
+                return "hard_shutdown";
+            if (this == SHUTDOWN)
+                return "shutdown";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2931,17 +3097,26 @@ public class Types
          */
         UNPAUSE;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == ATTACH) return "attach";
-            if (this == EJECT) return "eject";
-            if (this == INSERT) return "insert";
-            if (this == PLUG) return "plug";
-            if (this == UNPLUG) return "unplug";
-            if (this == UNPLUG_FORCE) return "unplug_force";
-            if (this == PAUSE) return "pause";
-            if (this == UNPAUSE) return "unpause";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == ATTACH)
+                return "attach";
+            if (this == EJECT)
+                return "eject";
+            if (this == INSERT)
+                return "insert";
+            if (this == PLUG)
+                return "plug";
+            if (this == UNPLUG)
+                return "unplug";
+            if (this == UNPLUG_FORCE)
+                return "unplug_force";
+            if (this == PAUSE)
+                return "pause";
+            if (this == UNPAUSE)
+                return "unpause";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2964,12 +3139,16 @@ public class Types
          */
         WEEKLY;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == HOURLY) return "hourly";
-            if (this == DAILY) return "daily";
-            if (this == WEEKLY) return "weekly";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == HOURLY)
+                return "hourly";
+            if (this == DAILY)
+                return "daily";
+            if (this == WEEKLY)
+                return "weekly";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -2988,11 +3167,14 @@ public class Types
          */
         DISABLED;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == UNLOCKED) return "unlocked";
-            if (this == DISABLED) return "disabled";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == UNLOCKED)
+                return "unlocked";
+            if (this == DISABLED)
+                return "disabled";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3019,13 +3201,18 @@ public class Types
          */
         SUSPENDED;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == HALTED) return "Halted";
-            if (this == PAUSED) return "Paused";
-            if (this == RUNNING) return "Running";
-            if (this == SUSPENDED) return "Suspended";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == HALTED)
+                return "Halted";
+            if (this == PAUSED)
+                return "Paused";
+            if (this == RUNNING)
+                return "Running";
+            if (this == SUSPENDED)
+                return "Suspended";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3216,54 +3403,100 @@ public class Types
          */
         DESTROY;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SNAPSHOT) return "snapshot";
-            if (this == CLONE) return "clone";
-            if (this == COPY) return "copy";
-            if (this == CREATE_TEMPLATE) return "create_template";
-            if (this == REVERT) return "revert";
-            if (this == CHECKPOINT) return "checkpoint";
-            if (this == SNAPSHOT_WITH_QUIESCE) return "snapshot_with_quiesce";
-            if (this == PROVISION) return "provision";
-            if (this == START) return "start";
-            if (this == START_ON) return "start_on";
-            if (this == PAUSE) return "pause";
-            if (this == UNPAUSE) return "unpause";
-            if (this == CLEAN_SHUTDOWN) return "clean_shutdown";
-            if (this == CLEAN_REBOOT) return "clean_reboot";
-            if (this == HARD_SHUTDOWN) return "hard_shutdown";
-            if (this == POWER_STATE_RESET) return "power_state_reset";
-            if (this == HARD_REBOOT) return "hard_reboot";
-            if (this == SUSPEND) return "suspend";
-            if (this == CSVM) return "csvm";
-            if (this == RESUME) return "resume";
-            if (this == RESUME_ON) return "resume_on";
-            if (this == POOL_MIGRATE) return "pool_migrate";
-            if (this == MIGRATE_SEND) return "migrate_send";
-            if (this == GET_BOOT_RECORD) return "get_boot_record";
-            if (this == SEND_SYSRQ) return "send_sysrq";
-            if (this == SEND_TRIGGER) return "send_trigger";
-            if (this == QUERY_SERVICES) return "query_services";
-            if (this == CHANGING_MEMORY_LIVE) return "changing_memory_live";
-            if (this == AWAITING_MEMORY_LIVE) return "awaiting_memory_live";
-            if (this == CHANGING_DYNAMIC_RANGE) return "changing_dynamic_range";
-            if (this == CHANGING_STATIC_RANGE) return "changing_static_range";
-            if (this == CHANGING_MEMORY_LIMITS) return "changing_memory_limits";
-            if (this == CHANGING_SHADOW_MEMORY) return "changing_shadow_memory";
-            if (this == CHANGING_SHADOW_MEMORY_LIVE) return "changing_shadow_memory_live";
-            if (this == CHANGING_VCPUS) return "changing_VCPUs";
-            if (this == CHANGING_VCPUS_LIVE) return "changing_VCPUs_live";
-            if (this == ASSERT_OPERATION_VALID) return "assert_operation_valid";
-            if (this == DATA_SOURCE_OP) return "data_source_op";
-            if (this == UPDATE_ALLOWED_OPERATIONS) return "update_allowed_operations";
-            if (this == MAKE_INTO_TEMPLATE) return "make_into_template";
-            if (this == IMPORT) return "import";
-            if (this == EXPORT) return "export";
-            if (this == METADATA_EXPORT) return "metadata_export";
-            if (this == REVERTING) return "reverting";
-            if (this == DESTROY) return "destroy";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SNAPSHOT)
+                return "snapshot";
+            if (this == CLONE)
+                return "clone";
+            if (this == COPY)
+                return "copy";
+            if (this == CREATE_TEMPLATE)
+                return "create_template";
+            if (this == REVERT)
+                return "revert";
+            if (this == CHECKPOINT)
+                return "checkpoint";
+            if (this == SNAPSHOT_WITH_QUIESCE)
+                return "snapshot_with_quiesce";
+            if (this == PROVISION)
+                return "provision";
+            if (this == START)
+                return "start";
+            if (this == START_ON)
+                return "start_on";
+            if (this == PAUSE)
+                return "pause";
+            if (this == UNPAUSE)
+                return "unpause";
+            if (this == CLEAN_SHUTDOWN)
+                return "clean_shutdown";
+            if (this == CLEAN_REBOOT)
+                return "clean_reboot";
+            if (this == HARD_SHUTDOWN)
+                return "hard_shutdown";
+            if (this == POWER_STATE_RESET)
+                return "power_state_reset";
+            if (this == HARD_REBOOT)
+                return "hard_reboot";
+            if (this == SUSPEND)
+                return "suspend";
+            if (this == CSVM)
+                return "csvm";
+            if (this == RESUME)
+                return "resume";
+            if (this == RESUME_ON)
+                return "resume_on";
+            if (this == POOL_MIGRATE)
+                return "pool_migrate";
+            if (this == MIGRATE_SEND)
+                return "migrate_send";
+            if (this == GET_BOOT_RECORD)
+                return "get_boot_record";
+            if (this == SEND_SYSRQ)
+                return "send_sysrq";
+            if (this == SEND_TRIGGER)
+                return "send_trigger";
+            if (this == QUERY_SERVICES)
+                return "query_services";
+            if (this == CHANGING_MEMORY_LIVE)
+                return "changing_memory_live";
+            if (this == AWAITING_MEMORY_LIVE)
+                return "awaiting_memory_live";
+            if (this == CHANGING_DYNAMIC_RANGE)
+                return "changing_dynamic_range";
+            if (this == CHANGING_STATIC_RANGE)
+                return "changing_static_range";
+            if (this == CHANGING_MEMORY_LIMITS)
+                return "changing_memory_limits";
+            if (this == CHANGING_SHADOW_MEMORY)
+                return "changing_shadow_memory";
+            if (this == CHANGING_SHADOW_MEMORY_LIVE)
+                return "changing_shadow_memory_live";
+            if (this == CHANGING_VCPUS)
+                return "changing_VCPUs";
+            if (this == CHANGING_VCPUS_LIVE)
+                return "changing_VCPUs_live";
+            if (this == ASSERT_OPERATION_VALID)
+                return "assert_operation_valid";
+            if (this == DATA_SOURCE_OP)
+                return "data_source_op";
+            if (this == UPDATE_ALLOWED_OPERATIONS)
+                return "update_allowed_operations";
+            if (this == MAKE_INTO_TEMPLATE)
+                return "make_into_template";
+            if (this == IMPORT)
+                return "import";
+            if (this == EXPORT)
+                return "export";
+            if (this == METADATA_EXPORT)
+                return "metadata_export";
+            if (this == REVERTING)
+                return "reverting";
+            if (this == DESTROY)
+                return "destroy";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3286,12 +3519,16 @@ public class Types
          */
         LACP;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == BALANCE_SLB) return "balance-slb";
-            if (this == ACTIVE_BACKUP) return "active-backup";
-            if (this == LACP) return "lacp";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == BALANCE_SLB)
+                return "balance-slb";
+            if (this == ACTIVE_BACKUP)
+                return "active-backup";
+            if (this == LACP)
+                return "lacp";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3314,12 +3551,16 @@ public class Types
          */
         STATIC;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == NONE) return "None";
-            if (this == DHCP) return "DHCP";
-            if (this == STATIC) return "Static";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == NONE)
+                return "None";
+            if (this == DHCP)
+                return "DHCP";
+            if (this == STATIC)
+                return "Static";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3386,23 +3627,38 @@ public class Types
          */
         PBD_DESTROY;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == SCAN) return "scan";
-            if (this == DESTROY) return "destroy";
-            if (this == FORGET) return "forget";
-            if (this == PLUG) return "plug";
-            if (this == UNPLUG) return "unplug";
-            if (this == UPDATE) return "update";
-            if (this == VDI_CREATE) return "vdi_create";
-            if (this == VDI_INTRODUCE) return "vdi_introduce";
-            if (this == VDI_DESTROY) return "vdi_destroy";
-            if (this == VDI_RESIZE) return "vdi_resize";
-            if (this == VDI_CLONE) return "vdi_clone";
-            if (this == VDI_SNAPSHOT) return "vdi_snapshot";
-            if (this == PBD_CREATE) return "pbd_create";
-            if (this == PBD_DESTROY) return "pbd_destroy";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == SCAN)
+                return "scan";
+            if (this == DESTROY)
+                return "destroy";
+            if (this == FORGET)
+                return "forget";
+            if (this == PLUG)
+                return "plug";
+            if (this == UNPLUG)
+                return "unplug";
+            if (this == UPDATE)
+                return "update";
+            if (this == VDI_CREATE)
+                return "vdi_create";
+            if (this == VDI_INTRODUCE)
+                return "vdi_introduce";
+            if (this == VDI_DESTROY)
+                return "vdi_destroy";
+            if (this == VDI_RESIZE)
+                return "vdi_resize";
+            if (this == VDI_CLONE)
+                return "vdi_clone";
+            if (this == VDI_SNAPSHOT)
+                return "vdi_snapshot";
+            if (this == PBD_CREATE)
+                return "pbd_create";
+            if (this == PBD_DESTROY)
+                return "pbd_destroy";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
@@ -3429,17 +3685,21 @@ public class Types
          */
         DISABLED;
         public String toString() {
-            if (this == UNRECOGNIZED) return "UNRECOGNIZED";
-            if (this == NETWORK_DEFAULT) return "network_default";
-            if (this == LOCKED) return "locked";
-            if (this == UNLOCKED) return "unlocked";
-            if (this == DISABLED) return "disabled";
-        /* This can never be reached */
-        return "illegal enum";
+            if (this == UNRECOGNIZED)
+                return "UNRECOGNIZED";
+            if (this == NETWORK_DEFAULT)
+                return "network_default";
+            if (this == LOCKED)
+                return "locked";
+            if (this == UNLOCKED)
+                return "unlocked";
+            if (this == DISABLED)
+                return "disabled";
+            /* This can never be reached */
+            return "illegal enum";
         }
 
     };
-
 
     /**
      * The restore could not be performed because a network interface is missing
@@ -7574,6 +7834,45 @@ public class Types
     }
 
     /**
+     * The VDI is too small. Please resize it to at least the minimum size.
+     */
+    public static class VdiTooSmall extends XenAPIException {
+        public final String vdi;
+        public final String minimumSize;
+
+        /**
+         * Create a new VdiTooSmall
+         *
+         * @param vdi
+         * @param minimumSize
+         */
+        public VdiTooSmall(String vdi, String minimumSize) {
+            super("The VDI is too small. Please resize it to at least the minimum size.");
+            this.vdi = vdi;
+            this.minimumSize = minimumSize;
+        }
+
+    }
+
+    /**
+     * The VDI is not stored using a sparse format. It is not possible to query and manipulate only the changed blocks (or 'block differences' or 'disk deltas') between two VDIs. Please select a VDI which uses a sparse-aware technology such as VHD.
+     */
+    public static class VdiNotSparse extends XenAPIException {
+        public final String vdi;
+
+        /**
+         * Create a new VdiNotSparse
+         *
+         * @param vdi
+         */
+        public VdiNotSparse(String vdi) {
+            super("The VDI is not stored using a sparse format. It is not possible to query and manipulate only the changed blocks (or 'block differences' or 'disk deltas') between two VDIs. Please select a VDI which uses a sparse-aware technology such as VHD.");
+            this.vdi = vdi;
+        }
+
+    }
+
+    /**
      * The hosts in this pool are not homogeneous.
      */
     public static class HostsNotHomogeneous extends XenAPIException {
@@ -9614,33 +9913,32 @@ public class Types
 
     }
 
-
     public static String toString(Object object) {
         if (object == null) {
             return null;
         }
-        return (String) object;
+        return (String)object;
     }
 
     public static Long toLong(Object object) {
         if (object == null) {
             return null;
         }
-        return Long.valueOf((String) object);
+        return Long.valueOf((String)object);
     }
 
     public static Double toDouble(Object object) {
         if (object == null) {
             return null;
         }
-        return (Double) object;
+        return (Double)object;
     }
 
     public static Boolean toBoolean(Object object) {
         if (object == null) {
             return null;
         }
-        return (Boolean) object;
+        return (Boolean)object;
     }
 
     public static Date toDate(Object object) {
@@ -9648,11 +9946,11 @@ public class Types
             return null;
         }
         try {
-            return (Date) object;
-        } catch (ClassCastException e){
+            return (Date)object;
+        } catch (ClassCastException e) {
             //Occasionally the date comes back as an ocaml float rather than
             //in the xmlrpc format! Catch this and convert.
-            return (new Date((long) (1000*Double.parseDouble((String) object))));
+            return (new Date((long)(1000 * Double.parseDouble((String)object))));
         }
     }
 
@@ -9661,7 +9959,7 @@ public class Types
             return null;
         }
         try {
-            return XenAPIObjects.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return XenAPIObjects.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return XenAPIObjects.UNRECOGNIZED;
         }
@@ -9672,7 +9970,7 @@ public class Types
             return null;
         }
         try {
-            return AfterApplyGuidance.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return AfterApplyGuidance.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return AfterApplyGuidance.UNRECOGNIZED;
         }
@@ -9683,7 +9981,7 @@ public class Types
             return null;
         }
         try {
-            return BondMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return BondMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return BondMode.UNRECOGNIZED;
         }
@@ -9694,7 +9992,7 @@ public class Types
             return null;
         }
         try {
-            return Cls.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return Cls.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return Cls.UNRECOGNIZED;
         }
@@ -9705,7 +10003,7 @@ public class Types
             return null;
         }
         try {
-            return ConsoleProtocol.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return ConsoleProtocol.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return ConsoleProtocol.UNRECOGNIZED;
         }
@@ -9716,7 +10014,7 @@ public class Types
             return null;
         }
         try {
-            return EventOperation.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return EventOperation.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return EventOperation.UNRECOGNIZED;
         }
@@ -9727,7 +10025,7 @@ public class Types
             return null;
         }
         try {
-            return HostAllowedOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return HostAllowedOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return HostAllowedOperations.UNRECOGNIZED;
         }
@@ -9738,7 +10036,7 @@ public class Types
             return null;
         }
         try {
-            return IpConfigurationMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return IpConfigurationMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return IpConfigurationMode.UNRECOGNIZED;
         }
@@ -9749,7 +10047,7 @@ public class Types
             return null;
         }
         try {
-            return Ipv6ConfigurationMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return Ipv6ConfigurationMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return Ipv6ConfigurationMode.UNRECOGNIZED;
         }
@@ -9760,7 +10058,7 @@ public class Types
             return null;
         }
         try {
-            return NetworkDefaultLockingMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return NetworkDefaultLockingMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return NetworkDefaultLockingMode.UNRECOGNIZED;
         }
@@ -9771,7 +10069,7 @@ public class Types
             return null;
         }
         try {
-            return NetworkOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return NetworkOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return NetworkOperations.UNRECOGNIZED;
         }
@@ -9782,7 +10080,7 @@ public class Types
             return null;
         }
         try {
-            return OnBoot.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return OnBoot.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return OnBoot.UNRECOGNIZED;
         }
@@ -9793,7 +10091,7 @@ public class Types
             return null;
         }
         try {
-            return OnCrashBehaviour.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return OnCrashBehaviour.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return OnCrashBehaviour.UNRECOGNIZED;
         }
@@ -9804,7 +10102,7 @@ public class Types
             return null;
         }
         try {
-            return OnNormalExit.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return OnNormalExit.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return OnNormalExit.UNRECOGNIZED;
         }
@@ -9815,7 +10113,7 @@ public class Types
             return null;
         }
         try {
-            return PrimaryAddressType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return PrimaryAddressType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return PrimaryAddressType.UNRECOGNIZED;
         }
@@ -9826,7 +10124,7 @@ public class Types
             return null;
         }
         try {
-            return StorageOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return StorageOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return StorageOperations.UNRECOGNIZED;
         }
@@ -9837,7 +10135,7 @@ public class Types
             return null;
         }
         try {
-            return TaskAllowedOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return TaskAllowedOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return TaskAllowedOperations.UNRECOGNIZED;
         }
@@ -9848,7 +10146,7 @@ public class Types
             return null;
         }
         try {
-            return TaskStatusType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return TaskStatusType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return TaskStatusType.UNRECOGNIZED;
         }
@@ -9859,7 +10157,7 @@ public class Types
             return null;
         }
         try {
-            return VbdMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VbdMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VbdMode.UNRECOGNIZED;
         }
@@ -9870,7 +10168,7 @@ public class Types
             return null;
         }
         try {
-            return VbdOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VbdOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VbdOperations.UNRECOGNIZED;
         }
@@ -9881,7 +10179,7 @@ public class Types
             return null;
         }
         try {
-            return VbdType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VbdType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VbdType.UNRECOGNIZED;
         }
@@ -9892,7 +10190,7 @@ public class Types
             return null;
         }
         try {
-            return VdiOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VdiOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VdiOperations.UNRECOGNIZED;
         }
@@ -9903,7 +10201,7 @@ public class Types
             return null;
         }
         try {
-            return VdiType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VdiType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VdiType.UNRECOGNIZED;
         }
@@ -9914,7 +10212,7 @@ public class Types
             return null;
         }
         try {
-            return VifLockingMode.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VifLockingMode.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VifLockingMode.UNRECOGNIZED;
         }
@@ -9925,7 +10223,7 @@ public class Types
             return null;
         }
         try {
-            return VifOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VifOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VifOperations.UNRECOGNIZED;
         }
@@ -9936,7 +10234,7 @@ public class Types
             return null;
         }
         try {
-            return VmApplianceOperation.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmApplianceOperation.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmApplianceOperation.UNRECOGNIZED;
         }
@@ -9947,7 +10245,7 @@ public class Types
             return null;
         }
         try {
-            return VmOperations.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmOperations.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmOperations.UNRECOGNIZED;
         }
@@ -9958,7 +10256,7 @@ public class Types
             return null;
         }
         try {
-            return VmPowerState.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmPowerState.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmPowerState.UNRECOGNIZED;
         }
@@ -9969,7 +10267,7 @@ public class Types
             return null;
         }
         try {
-            return VmppArchiveFrequency.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmppArchiveFrequency.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmppArchiveFrequency.UNRECOGNIZED;
         }
@@ -9980,7 +10278,7 @@ public class Types
             return null;
         }
         try {
-            return VmppArchiveTargetType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmppArchiveTargetType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmppArchiveTargetType.UNRECOGNIZED;
         }
@@ -9991,7 +10289,7 @@ public class Types
             return null;
         }
         try {
-            return VmppBackupFrequency.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmppBackupFrequency.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmppBackupFrequency.UNRECOGNIZED;
         }
@@ -10002,7 +10300,7 @@ public class Types
             return null;
         }
         try {
-            return VmppBackupType.valueOf(((String) object).toUpperCase().replace('-','_'));
+            return VmppBackupType.valueOf(((String)object).toUpperCase().replace('-', '_'));
         } catch (IllegalArgumentException ex) {
             return VmppBackupType.UNRECOGNIZED;
         }
@@ -10012,9 +10310,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<String> result = new LinkedHashSet<String>();
-        for(Object item: items) {
+        for (Object item : items) {
             String typed = toString(item);
             result.add(typed);
         }
@@ -10025,9 +10323,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.AfterApplyGuidance> result = new LinkedHashSet<Types.AfterApplyGuidance>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.AfterApplyGuidance typed = toAfterApplyGuidance(item);
             result.add(typed);
         }
@@ -10038,9 +10336,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.HostAllowedOperations> result = new LinkedHashSet<Types.HostAllowedOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.HostAllowedOperations typed = toHostAllowedOperations(item);
             result.add(typed);
         }
@@ -10051,9 +10349,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.NetworkOperations> result = new LinkedHashSet<Types.NetworkOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.NetworkOperations typed = toNetworkOperations(item);
             result.add(typed);
         }
@@ -10064,9 +10362,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.StorageOperations> result = new LinkedHashSet<Types.StorageOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.StorageOperations typed = toStorageOperations(item);
             result.add(typed);
         }
@@ -10077,9 +10375,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.TaskAllowedOperations> result = new LinkedHashSet<Types.TaskAllowedOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.TaskAllowedOperations typed = toTaskAllowedOperations(item);
             result.add(typed);
         }
@@ -10090,9 +10388,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.VbdOperations> result = new LinkedHashSet<Types.VbdOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.VbdOperations typed = toVbdOperations(item);
             result.add(typed);
         }
@@ -10103,9 +10401,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.VdiOperations> result = new LinkedHashSet<Types.VdiOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.VdiOperations typed = toVdiOperations(item);
             result.add(typed);
         }
@@ -10116,9 +10414,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.VifOperations> result = new LinkedHashSet<Types.VifOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.VifOperations typed = toVifOperations(item);
             result.add(typed);
         }
@@ -10129,9 +10427,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.VmApplianceOperation> result = new LinkedHashSet<Types.VmApplianceOperation>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.VmApplianceOperation typed = toVmApplianceOperation(item);
             result.add(typed);
         }
@@ -10142,9 +10440,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Types.VmOperations> result = new LinkedHashSet<Types.VmOperations>();
-        for(Object item: items) {
+        for (Object item : items) {
             Types.VmOperations typed = toVmOperations(item);
             result.add(typed);
         }
@@ -10155,9 +10453,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Bond> result = new LinkedHashSet<Bond>();
-        for(Object item: items) {
+        for (Object item : items) {
             Bond typed = toBond(item);
             result.add(typed);
         }
@@ -10168,9 +10466,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<DRTask> result = new LinkedHashSet<DRTask>();
-        for(Object item: items) {
+        for (Object item : items) {
             DRTask typed = toDRTask(item);
             result.add(typed);
         }
@@ -10181,9 +10479,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<GPUGroup> result = new LinkedHashSet<GPUGroup>();
-        for(Object item: items) {
+        for (Object item : items) {
             GPUGroup typed = toGPUGroup(item);
             result.add(typed);
         }
@@ -10194,9 +10492,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PBD> result = new LinkedHashSet<PBD>();
-        for(Object item: items) {
+        for (Object item : items) {
             PBD typed = toPBD(item);
             result.add(typed);
         }
@@ -10207,9 +10505,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PCI> result = new LinkedHashSet<PCI>();
-        for(Object item: items) {
+        for (Object item : items) {
             PCI typed = toPCI(item);
             result.add(typed);
         }
@@ -10220,9 +10518,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PGPU> result = new LinkedHashSet<PGPU>();
-        for(Object item: items) {
+        for (Object item : items) {
             PGPU typed = toPGPU(item);
             result.add(typed);
         }
@@ -10233,9 +10531,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PIF> result = new LinkedHashSet<PIF>();
-        for(Object item: items) {
+        for (Object item : items) {
             PIF typed = toPIF(item);
             result.add(typed);
         }
@@ -10246,9 +10544,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PIFMetrics> result = new LinkedHashSet<PIFMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             PIFMetrics typed = toPIFMetrics(item);
             result.add(typed);
         }
@@ -10259,9 +10557,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<SM> result = new LinkedHashSet<SM>();
-        for(Object item: items) {
+        for (Object item : items) {
             SM typed = toSM(item);
             result.add(typed);
         }
@@ -10272,9 +10570,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<SR> result = new LinkedHashSet<SR>();
-        for(Object item: items) {
+        for (Object item : items) {
             SR typed = toSR(item);
             result.add(typed);
         }
@@ -10285,9 +10583,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VBD> result = new LinkedHashSet<VBD>();
-        for(Object item: items) {
+        for (Object item : items) {
             VBD typed = toVBD(item);
             result.add(typed);
         }
@@ -10298,9 +10596,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VBDMetrics> result = new LinkedHashSet<VBDMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             VBDMetrics typed = toVBDMetrics(item);
             result.add(typed);
         }
@@ -10311,9 +10609,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VDI> result = new LinkedHashSet<VDI>();
-        for(Object item: items) {
+        for (Object item : items) {
             VDI typed = toVDI(item);
             result.add(typed);
         }
@@ -10324,9 +10622,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VGPU> result = new LinkedHashSet<VGPU>();
-        for(Object item: items) {
+        for (Object item : items) {
             VGPU typed = toVGPU(item);
             result.add(typed);
         }
@@ -10337,9 +10635,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VIF> result = new LinkedHashSet<VIF>();
-        for(Object item: items) {
+        for (Object item : items) {
             VIF typed = toVIF(item);
             result.add(typed);
         }
@@ -10350,9 +10648,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VIFMetrics> result = new LinkedHashSet<VIFMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             VIFMetrics typed = toVIFMetrics(item);
             result.add(typed);
         }
@@ -10363,9 +10661,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VLAN> result = new LinkedHashSet<VLAN>();
-        for(Object item: items) {
+        for (Object item : items) {
             VLAN typed = toVLAN(item);
             result.add(typed);
         }
@@ -10376,9 +10674,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VM> result = new LinkedHashSet<VM>();
-        for(Object item: items) {
+        for (Object item : items) {
             VM typed = toVM(item);
             result.add(typed);
         }
@@ -10389,9 +10687,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VMPP> result = new LinkedHashSet<VMPP>();
-        for(Object item: items) {
+        for (Object item : items) {
             VMPP typed = toVMPP(item);
             result.add(typed);
         }
@@ -10402,9 +10700,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VMAppliance> result = new LinkedHashSet<VMAppliance>();
-        for(Object item: items) {
+        for (Object item : items) {
             VMAppliance typed = toVMAppliance(item);
             result.add(typed);
         }
@@ -10415,9 +10713,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VMGuestMetrics> result = new LinkedHashSet<VMGuestMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             VMGuestMetrics typed = toVMGuestMetrics(item);
             result.add(typed);
         }
@@ -10428,9 +10726,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VMMetrics> result = new LinkedHashSet<VMMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             VMMetrics typed = toVMMetrics(item);
             result.add(typed);
         }
@@ -10441,9 +10739,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<VTPM> result = new LinkedHashSet<VTPM>();
-        for(Object item: items) {
+        for (Object item : items) {
             VTPM typed = toVTPM(item);
             result.add(typed);
         }
@@ -10454,9 +10752,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Blob> result = new LinkedHashSet<Blob>();
-        for(Object item: items) {
+        for (Object item : items) {
             Blob typed = toBlob(item);
             result.add(typed);
         }
@@ -10467,9 +10765,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Console> result = new LinkedHashSet<Console>();
-        for(Object item: items) {
+        for (Object item : items) {
             Console typed = toConsole(item);
             result.add(typed);
         }
@@ -10480,9 +10778,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Crashdump> result = new LinkedHashSet<Crashdump>();
-        for(Object item: items) {
+        for (Object item : items) {
             Crashdump typed = toCrashdump(item);
             result.add(typed);
         }
@@ -10493,9 +10791,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Host> result = new LinkedHashSet<Host>();
-        for(Object item: items) {
+        for (Object item : items) {
             Host typed = toHost(item);
             result.add(typed);
         }
@@ -10506,9 +10804,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<HostCpu> result = new LinkedHashSet<HostCpu>();
-        for(Object item: items) {
+        for (Object item : items) {
             HostCpu typed = toHostCpu(item);
             result.add(typed);
         }
@@ -10519,9 +10817,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<HostCrashdump> result = new LinkedHashSet<HostCrashdump>();
-        for(Object item: items) {
+        for (Object item : items) {
             HostCrashdump typed = toHostCrashdump(item);
             result.add(typed);
         }
@@ -10532,9 +10830,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<HostMetrics> result = new LinkedHashSet<HostMetrics>();
-        for(Object item: items) {
+        for (Object item : items) {
             HostMetrics typed = toHostMetrics(item);
             result.add(typed);
         }
@@ -10545,9 +10843,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<HostPatch> result = new LinkedHashSet<HostPatch>();
-        for(Object item: items) {
+        for (Object item : items) {
             HostPatch typed = toHostPatch(item);
             result.add(typed);
         }
@@ -10558,9 +10856,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Message> result = new LinkedHashSet<Message>();
-        for(Object item: items) {
+        for (Object item : items) {
             Message typed = toMessage(item);
             result.add(typed);
         }
@@ -10571,9 +10869,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Network> result = new LinkedHashSet<Network>();
-        for(Object item: items) {
+        for (Object item : items) {
             Network typed = toNetwork(item);
             result.add(typed);
         }
@@ -10584,9 +10882,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Pool> result = new LinkedHashSet<Pool>();
-        for(Object item: items) {
+        for (Object item : items) {
             Pool typed = toPool(item);
             result.add(typed);
         }
@@ -10597,9 +10895,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<PoolPatch> result = new LinkedHashSet<PoolPatch>();
-        for(Object item: items) {
+        for (Object item : items) {
             PoolPatch typed = toPoolPatch(item);
             result.add(typed);
         }
@@ -10610,9 +10908,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Role> result = new LinkedHashSet<Role>();
-        for(Object item: items) {
+        for (Object item : items) {
             Role typed = toRole(item);
             result.add(typed);
         }
@@ -10623,9 +10921,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Secret> result = new LinkedHashSet<Secret>();
-        for(Object item: items) {
+        for (Object item : items) {
             Secret typed = toSecret(item);
             result.add(typed);
         }
@@ -10636,9 +10934,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Subject> result = new LinkedHashSet<Subject>();
-        for(Object item: items) {
+        for (Object item : items) {
             Subject typed = toSubject(item);
             result.add(typed);
         }
@@ -10649,9 +10947,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Task> result = new LinkedHashSet<Task>();
-        for(Object item: items) {
+        for (Object item : items) {
             Task typed = toTask(item);
             result.add(typed);
         }
@@ -10662,9 +10960,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Tunnel> result = new LinkedHashSet<Tunnel>();
-        for(Object item: items) {
+        for (Object item : items) {
             Tunnel typed = toTunnel(item);
             result.add(typed);
         }
@@ -10675,9 +10973,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<DataSource.Record> result = new LinkedHashSet<DataSource.Record>();
-        for(Object item: items) {
+        for (Object item : items) {
             DataSource.Record typed = toDataSourceRecord(item);
             result.add(typed);
         }
@@ -10688,9 +10986,9 @@ public class Types
         if (object == null) {
             return null;
         }
-        Object[] items = (Object[]) object;
+        Object[] items = (Object[])object;
         Set<Event.Record> result = new LinkedHashSet<Event.Record>();
-        for(Object item: items) {
+        for (Object item : items) {
             Event.Record typed = toEventRecord(item);
             result.add(typed);
         }
@@ -10701,10 +10999,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,String> result = new HashMap<String,String>();
+        Map map = (Map)object;
+        Map<String, String> result = new HashMap<String, String>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             String value = toString(entry.getValue());
             result.put(key, value);
@@ -10716,10 +11014,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.HostAllowedOperations> result = new HashMap<String,Types.HostAllowedOperations>();
+        Map map = (Map)object;
+        Map<String, Types.HostAllowedOperations> result = new HashMap<String, Types.HostAllowedOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.HostAllowedOperations value = toHostAllowedOperations(entry.getValue());
             result.put(key, value);
@@ -10731,10 +11029,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.NetworkOperations> result = new HashMap<String,Types.NetworkOperations>();
+        Map map = (Map)object;
+        Map<String, Types.NetworkOperations> result = new HashMap<String, Types.NetworkOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.NetworkOperations value = toNetworkOperations(entry.getValue());
             result.put(key, value);
@@ -10746,10 +11044,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.StorageOperations> result = new HashMap<String,Types.StorageOperations>();
+        Map map = (Map)object;
+        Map<String, Types.StorageOperations> result = new HashMap<String, Types.StorageOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.StorageOperations value = toStorageOperations(entry.getValue());
             result.put(key, value);
@@ -10761,10 +11059,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.TaskAllowedOperations> result = new HashMap<String,Types.TaskAllowedOperations>();
+        Map map = (Map)object;
+        Map<String, Types.TaskAllowedOperations> result = new HashMap<String, Types.TaskAllowedOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.TaskAllowedOperations value = toTaskAllowedOperations(entry.getValue());
             result.put(key, value);
@@ -10776,10 +11074,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.VbdOperations> result = new HashMap<String,Types.VbdOperations>();
+        Map map = (Map)object;
+        Map<String, Types.VbdOperations> result = new HashMap<String, Types.VbdOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.VbdOperations value = toVbdOperations(entry.getValue());
             result.put(key, value);
@@ -10791,10 +11089,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.VdiOperations> result = new HashMap<String,Types.VdiOperations>();
+        Map map = (Map)object;
+        Map<String, Types.VdiOperations> result = new HashMap<String, Types.VdiOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.VdiOperations value = toVdiOperations(entry.getValue());
             result.put(key, value);
@@ -10806,10 +11104,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.VifOperations> result = new HashMap<String,Types.VifOperations>();
+        Map map = (Map)object;
+        Map<String, Types.VifOperations> result = new HashMap<String, Types.VifOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.VifOperations value = toVifOperations(entry.getValue());
             result.put(key, value);
@@ -10821,10 +11119,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.VmApplianceOperation> result = new HashMap<String,Types.VmApplianceOperation>();
+        Map map = (Map)object;
+        Map<String, Types.VmApplianceOperation> result = new HashMap<String, Types.VmApplianceOperation>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.VmApplianceOperation value = toVmApplianceOperation(entry.getValue());
             result.put(key, value);
@@ -10836,10 +11134,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Types.VmOperations> result = new HashMap<String,Types.VmOperations>();
+        Map map = (Map)object;
+        Map<String, Types.VmOperations> result = new HashMap<String, Types.VmOperations>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Types.VmOperations value = toVmOperations(entry.getValue());
             result.put(key, value);
@@ -10851,10 +11149,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<String,Blob> result = new HashMap<String,Blob>();
+        Map map = (Map)object;
+        Map<String, Blob> result = new HashMap<String, Blob>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             String key = toString(entry.getKey());
             Blob value = toBlob(entry.getValue());
             result.put(key, value);
@@ -10866,10 +11164,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Long,Long> result = new HashMap<Long,Long>();
+        Map map = (Map)object;
+        Map<Long, Long> result = new HashMap<Long, Long>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Long key = toLong(entry.getKey());
             Long value = toLong(entry.getValue());
             result.put(key, value);
@@ -10881,10 +11179,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Long,Double> result = new HashMap<Long,Double>();
+        Map map = (Map)object;
+        Map<Long, Double> result = new HashMap<Long, Double>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Long key = toLong(entry.getKey());
             Double value = toDouble(entry.getValue());
             result.put(key, value);
@@ -10896,10 +11194,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Long,Set<String>> result = new HashMap<Long,Set<String>>();
+        Map map = (Map)object;
+        Map<Long, Set<String>> result = new HashMap<Long, Set<String>>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Long key = toLong(entry.getKey());
             Set<String> value = toSetOfString(entry.getValue());
             result.put(key, value);
@@ -10911,10 +11209,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Types.VmOperations,String> result = new HashMap<Types.VmOperations,String>();
+        Map map = (Map)object;
+        Map<Types.VmOperations, String> result = new HashMap<Types.VmOperations, String>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Types.VmOperations key = toVmOperations(entry.getKey());
             String value = toString(entry.getValue());
             result.put(key, value);
@@ -10926,10 +11224,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Bond,Bond.Record> result = new HashMap<Bond,Bond.Record>();
+        Map map = (Map)object;
+        Map<Bond, Bond.Record> result = new HashMap<Bond, Bond.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Bond key = toBond(entry.getKey());
             Bond.Record value = toBondRecord(entry.getValue());
             result.put(key, value);
@@ -10941,10 +11239,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<DRTask,DRTask.Record> result = new HashMap<DRTask,DRTask.Record>();
+        Map map = (Map)object;
+        Map<DRTask, DRTask.Record> result = new HashMap<DRTask, DRTask.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             DRTask key = toDRTask(entry.getKey());
             DRTask.Record value = toDRTaskRecord(entry.getValue());
             result.put(key, value);
@@ -10956,10 +11254,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<GPUGroup,GPUGroup.Record> result = new HashMap<GPUGroup,GPUGroup.Record>();
+        Map map = (Map)object;
+        Map<GPUGroup, GPUGroup.Record> result = new HashMap<GPUGroup, GPUGroup.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             GPUGroup key = toGPUGroup(entry.getKey());
             GPUGroup.Record value = toGPUGroupRecord(entry.getValue());
             result.put(key, value);
@@ -10971,10 +11269,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PBD,PBD.Record> result = new HashMap<PBD,PBD.Record>();
+        Map map = (Map)object;
+        Map<PBD, PBD.Record> result = new HashMap<PBD, PBD.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PBD key = toPBD(entry.getKey());
             PBD.Record value = toPBDRecord(entry.getValue());
             result.put(key, value);
@@ -10986,10 +11284,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PCI,PCI.Record> result = new HashMap<PCI,PCI.Record>();
+        Map map = (Map)object;
+        Map<PCI, PCI.Record> result = new HashMap<PCI, PCI.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PCI key = toPCI(entry.getKey());
             PCI.Record value = toPCIRecord(entry.getValue());
             result.put(key, value);
@@ -11001,10 +11299,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PGPU,PGPU.Record> result = new HashMap<PGPU,PGPU.Record>();
+        Map map = (Map)object;
+        Map<PGPU, PGPU.Record> result = new HashMap<PGPU, PGPU.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PGPU key = toPGPU(entry.getKey());
             PGPU.Record value = toPGPURecord(entry.getValue());
             result.put(key, value);
@@ -11016,10 +11314,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PIF,PIF.Record> result = new HashMap<PIF,PIF.Record>();
+        Map map = (Map)object;
+        Map<PIF, PIF.Record> result = new HashMap<PIF, PIF.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PIF key = toPIF(entry.getKey());
             PIF.Record value = toPIFRecord(entry.getValue());
             result.put(key, value);
@@ -11031,10 +11329,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PIFMetrics,PIFMetrics.Record> result = new HashMap<PIFMetrics,PIFMetrics.Record>();
+        Map map = (Map)object;
+        Map<PIFMetrics, PIFMetrics.Record> result = new HashMap<PIFMetrics, PIFMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PIFMetrics key = toPIFMetrics(entry.getKey());
             PIFMetrics.Record value = toPIFMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11046,10 +11344,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<SM,SM.Record> result = new HashMap<SM,SM.Record>();
+        Map map = (Map)object;
+        Map<SM, SM.Record> result = new HashMap<SM, SM.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             SM key = toSM(entry.getKey());
             SM.Record value = toSMRecord(entry.getValue());
             result.put(key, value);
@@ -11061,10 +11359,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<SR,SR.Record> result = new HashMap<SR,SR.Record>();
+        Map map = (Map)object;
+        Map<SR, SR.Record> result = new HashMap<SR, SR.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             SR key = toSR(entry.getKey());
             SR.Record value = toSRRecord(entry.getValue());
             result.put(key, value);
@@ -11076,10 +11374,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VBD,VBD.Record> result = new HashMap<VBD,VBD.Record>();
+        Map map = (Map)object;
+        Map<VBD, VBD.Record> result = new HashMap<VBD, VBD.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VBD key = toVBD(entry.getKey());
             VBD.Record value = toVBDRecord(entry.getValue());
             result.put(key, value);
@@ -11091,10 +11389,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VBDMetrics,VBDMetrics.Record> result = new HashMap<VBDMetrics,VBDMetrics.Record>();
+        Map map = (Map)object;
+        Map<VBDMetrics, VBDMetrics.Record> result = new HashMap<VBDMetrics, VBDMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VBDMetrics key = toVBDMetrics(entry.getKey());
             VBDMetrics.Record value = toVBDMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11106,10 +11404,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VDI,SR> result = new HashMap<VDI,SR>();
+        Map map = (Map)object;
+        Map<VDI, SR> result = new HashMap<VDI, SR>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VDI key = toVDI(entry.getKey());
             SR value = toSR(entry.getValue());
             result.put(key, value);
@@ -11121,10 +11419,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VDI,VDI.Record> result = new HashMap<VDI,VDI.Record>();
+        Map map = (Map)object;
+        Map<VDI, VDI.Record> result = new HashMap<VDI, VDI.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VDI key = toVDI(entry.getKey());
             VDI.Record value = toVDIRecord(entry.getValue());
             result.put(key, value);
@@ -11136,10 +11434,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VGPU,VGPU.Record> result = new HashMap<VGPU,VGPU.Record>();
+        Map map = (Map)object;
+        Map<VGPU, VGPU.Record> result = new HashMap<VGPU, VGPU.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VGPU key = toVGPU(entry.getKey());
             VGPU.Record value = toVGPURecord(entry.getValue());
             result.put(key, value);
@@ -11151,10 +11449,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VIF,Network> result = new HashMap<VIF,Network>();
+        Map map = (Map)object;
+        Map<VIF, Network> result = new HashMap<VIF, Network>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VIF key = toVIF(entry.getKey());
             Network value = toNetwork(entry.getValue());
             result.put(key, value);
@@ -11166,10 +11464,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VIF,VIF.Record> result = new HashMap<VIF,VIF.Record>();
+        Map map = (Map)object;
+        Map<VIF, VIF.Record> result = new HashMap<VIF, VIF.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VIF key = toVIF(entry.getKey());
             VIF.Record value = toVIFRecord(entry.getValue());
             result.put(key, value);
@@ -11181,10 +11479,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VIFMetrics,VIFMetrics.Record> result = new HashMap<VIFMetrics,VIFMetrics.Record>();
+        Map map = (Map)object;
+        Map<VIFMetrics, VIFMetrics.Record> result = new HashMap<VIFMetrics, VIFMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VIFMetrics key = toVIFMetrics(entry.getKey());
             VIFMetrics.Record value = toVIFMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11196,10 +11494,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VLAN,VLAN.Record> result = new HashMap<VLAN,VLAN.Record>();
+        Map map = (Map)object;
+        Map<VLAN, VLAN.Record> result = new HashMap<VLAN, VLAN.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VLAN key = toVLAN(entry.getKey());
             VLAN.Record value = toVLANRecord(entry.getValue());
             result.put(key, value);
@@ -11211,10 +11509,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VM,String> result = new HashMap<VM,String>();
+        Map map = (Map)object;
+        Map<VM, String> result = new HashMap<VM, String>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VM key = toVM(entry.getKey());
             String value = toString(entry.getValue());
             result.put(key, value);
@@ -11226,10 +11524,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VM,Set<String>> result = new HashMap<VM,Set<String>>();
+        Map map = (Map)object;
+        Map<VM, Set<String>> result = new HashMap<VM, Set<String>>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VM key = toVM(entry.getKey());
             Set<String> value = toSetOfString(entry.getValue());
             result.put(key, value);
@@ -11241,10 +11539,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VM,Map<String, String>> result = new HashMap<VM,Map<String, String>>();
+        Map map = (Map)object;
+        Map<VM, Map<String, String>> result = new HashMap<VM, Map<String, String>>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VM key = toVM(entry.getKey());
             Map<String, String> value = toMapOfStringString(entry.getValue());
             result.put(key, value);
@@ -11256,10 +11554,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VM,VM.Record> result = new HashMap<VM,VM.Record>();
+        Map map = (Map)object;
+        Map<VM, VM.Record> result = new HashMap<VM, VM.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VM key = toVM(entry.getKey());
             VM.Record value = toVMRecord(entry.getValue());
             result.put(key, value);
@@ -11271,10 +11569,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VMPP,VMPP.Record> result = new HashMap<VMPP,VMPP.Record>();
+        Map map = (Map)object;
+        Map<VMPP, VMPP.Record> result = new HashMap<VMPP, VMPP.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VMPP key = toVMPP(entry.getKey());
             VMPP.Record value = toVMPPRecord(entry.getValue());
             result.put(key, value);
@@ -11286,10 +11584,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VMAppliance,VMAppliance.Record> result = new HashMap<VMAppliance,VMAppliance.Record>();
+        Map map = (Map)object;
+        Map<VMAppliance, VMAppliance.Record> result = new HashMap<VMAppliance, VMAppliance.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VMAppliance key = toVMAppliance(entry.getKey());
             VMAppliance.Record value = toVMApplianceRecord(entry.getValue());
             result.put(key, value);
@@ -11301,10 +11599,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VMGuestMetrics,VMGuestMetrics.Record> result = new HashMap<VMGuestMetrics,VMGuestMetrics.Record>();
+        Map map = (Map)object;
+        Map<VMGuestMetrics, VMGuestMetrics.Record> result = new HashMap<VMGuestMetrics, VMGuestMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VMGuestMetrics key = toVMGuestMetrics(entry.getKey());
             VMGuestMetrics.Record value = toVMGuestMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11316,10 +11614,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<VMMetrics,VMMetrics.Record> result = new HashMap<VMMetrics,VMMetrics.Record>();
+        Map map = (Map)object;
+        Map<VMMetrics, VMMetrics.Record> result = new HashMap<VMMetrics, VMMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             VMMetrics key = toVMMetrics(entry.getKey());
             VMMetrics.Record value = toVMMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11331,10 +11629,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Blob,Blob.Record> result = new HashMap<Blob,Blob.Record>();
+        Map map = (Map)object;
+        Map<Blob, Blob.Record> result = new HashMap<Blob, Blob.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Blob key = toBlob(entry.getKey());
             Blob.Record value = toBlobRecord(entry.getValue());
             result.put(key, value);
@@ -11346,10 +11644,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Console,Console.Record> result = new HashMap<Console,Console.Record>();
+        Map map = (Map)object;
+        Map<Console, Console.Record> result = new HashMap<Console, Console.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Console key = toConsole(entry.getKey());
             Console.Record value = toConsoleRecord(entry.getValue());
             result.put(key, value);
@@ -11361,10 +11659,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Crashdump,Crashdump.Record> result = new HashMap<Crashdump,Crashdump.Record>();
+        Map map = (Map)object;
+        Map<Crashdump, Crashdump.Record> result = new HashMap<Crashdump, Crashdump.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Crashdump key = toCrashdump(entry.getKey());
             Crashdump.Record value = toCrashdumpRecord(entry.getValue());
             result.put(key, value);
@@ -11376,10 +11674,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Host,Set<String>> result = new HashMap<Host,Set<String>>();
+        Map map = (Map)object;
+        Map<Host, Set<String>> result = new HashMap<Host, Set<String>>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Host key = toHost(entry.getKey());
             Set<String> value = toSetOfString(entry.getValue());
             result.put(key, value);
@@ -11391,10 +11689,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Host,Host.Record> result = new HashMap<Host,Host.Record>();
+        Map map = (Map)object;
+        Map<Host, Host.Record> result = new HashMap<Host, Host.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Host key = toHost(entry.getKey());
             Host.Record value = toHostRecord(entry.getValue());
             result.put(key, value);
@@ -11406,10 +11704,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<HostCpu,HostCpu.Record> result = new HashMap<HostCpu,HostCpu.Record>();
+        Map map = (Map)object;
+        Map<HostCpu, HostCpu.Record> result = new HashMap<HostCpu, HostCpu.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             HostCpu key = toHostCpu(entry.getKey());
             HostCpu.Record value = toHostCpuRecord(entry.getValue());
             result.put(key, value);
@@ -11421,10 +11719,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<HostCrashdump,HostCrashdump.Record> result = new HashMap<HostCrashdump,HostCrashdump.Record>();
+        Map map = (Map)object;
+        Map<HostCrashdump, HostCrashdump.Record> result = new HashMap<HostCrashdump, HostCrashdump.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             HostCrashdump key = toHostCrashdump(entry.getKey());
             HostCrashdump.Record value = toHostCrashdumpRecord(entry.getValue());
             result.put(key, value);
@@ -11436,10 +11734,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<HostMetrics,HostMetrics.Record> result = new HashMap<HostMetrics,HostMetrics.Record>();
+        Map map = (Map)object;
+        Map<HostMetrics, HostMetrics.Record> result = new HashMap<HostMetrics, HostMetrics.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             HostMetrics key = toHostMetrics(entry.getKey());
             HostMetrics.Record value = toHostMetricsRecord(entry.getValue());
             result.put(key, value);
@@ -11451,10 +11749,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<HostPatch,HostPatch.Record> result = new HashMap<HostPatch,HostPatch.Record>();
+        Map map = (Map)object;
+        Map<HostPatch, HostPatch.Record> result = new HashMap<HostPatch, HostPatch.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             HostPatch key = toHostPatch(entry.getKey());
             HostPatch.Record value = toHostPatchRecord(entry.getValue());
             result.put(key, value);
@@ -11466,10 +11764,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Message,Message.Record> result = new HashMap<Message,Message.Record>();
+        Map map = (Map)object;
+        Map<Message, Message.Record> result = new HashMap<Message, Message.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Message key = toMessage(entry.getKey());
             Message.Record value = toMessageRecord(entry.getValue());
             result.put(key, value);
@@ -11481,10 +11779,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Network,Network.Record> result = new HashMap<Network,Network.Record>();
+        Map map = (Map)object;
+        Map<Network, Network.Record> result = new HashMap<Network, Network.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Network key = toNetwork(entry.getKey());
             Network.Record value = toNetworkRecord(entry.getValue());
             result.put(key, value);
@@ -11496,10 +11794,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Pool,Pool.Record> result = new HashMap<Pool,Pool.Record>();
+        Map map = (Map)object;
+        Map<Pool, Pool.Record> result = new HashMap<Pool, Pool.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Pool key = toPool(entry.getKey());
             Pool.Record value = toPoolRecord(entry.getValue());
             result.put(key, value);
@@ -11511,10 +11809,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<PoolPatch,PoolPatch.Record> result = new HashMap<PoolPatch,PoolPatch.Record>();
+        Map map = (Map)object;
+        Map<PoolPatch, PoolPatch.Record> result = new HashMap<PoolPatch, PoolPatch.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             PoolPatch key = toPoolPatch(entry.getKey());
             PoolPatch.Record value = toPoolPatchRecord(entry.getValue());
             result.put(key, value);
@@ -11526,10 +11824,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Role,Role.Record> result = new HashMap<Role,Role.Record>();
+        Map map = (Map)object;
+        Map<Role, Role.Record> result = new HashMap<Role, Role.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Role key = toRole(entry.getKey());
             Role.Record value = toRoleRecord(entry.getValue());
             result.put(key, value);
@@ -11541,10 +11839,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Secret,Secret.Record> result = new HashMap<Secret,Secret.Record>();
+        Map map = (Map)object;
+        Map<Secret, Secret.Record> result = new HashMap<Secret, Secret.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Secret key = toSecret(entry.getKey());
             Secret.Record value = toSecretRecord(entry.getValue());
             result.put(key, value);
@@ -11556,10 +11854,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Subject,Subject.Record> result = new HashMap<Subject,Subject.Record>();
+        Map map = (Map)object;
+        Map<Subject, Subject.Record> result = new HashMap<Subject, Subject.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Subject key = toSubject(entry.getKey());
             Subject.Record value = toSubjectRecord(entry.getValue());
             result.put(key, value);
@@ -11571,10 +11869,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Task,Task.Record> result = new HashMap<Task,Task.Record>();
+        Map map = (Map)object;
+        Map<Task, Task.Record> result = new HashMap<Task, Task.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Task key = toTask(entry.getKey());
             Task.Record value = toTaskRecord(entry.getValue());
             result.put(key, value);
@@ -11586,10 +11884,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map map = (Map) object;
-        Map<Tunnel,Tunnel.Record> result = new HashMap<Tunnel,Tunnel.Record>();
+        Map map = (Map)object;
+        Map<Tunnel, Tunnel.Record> result = new HashMap<Tunnel, Tunnel.Record>();
         Set<Map.Entry> entries = map.entrySet();
-        for(Map.Entry entry: entries) {
+        for (Map.Entry entry : entries) {
             Tunnel key = toTunnel(entry.getKey());
             Tunnel.Record value = toTunnelRecord(entry.getValue());
             result.put(key, value);
@@ -11601,310 +11899,310 @@ public class Types
         if (object == null) {
             return null;
         }
-        return new Bond((String) object);
+        return new Bond((String)object);
     }
 
     public static DRTask toDRTask(Object object) {
         if (object == null) {
             return null;
         }
-        return new DRTask((String) object);
+        return new DRTask((String)object);
     }
 
     public static GPUGroup toGPUGroup(Object object) {
         if (object == null) {
             return null;
         }
-        return new GPUGroup((String) object);
+        return new GPUGroup((String)object);
     }
 
     public static PBD toPBD(Object object) {
         if (object == null) {
             return null;
         }
-        return new PBD((String) object);
+        return new PBD((String)object);
     }
 
     public static PCI toPCI(Object object) {
         if (object == null) {
             return null;
         }
-        return new PCI((String) object);
+        return new PCI((String)object);
     }
 
     public static PGPU toPGPU(Object object) {
         if (object == null) {
             return null;
         }
-        return new PGPU((String) object);
+        return new PGPU((String)object);
     }
 
     public static PIF toPIF(Object object) {
         if (object == null) {
             return null;
         }
-        return new PIF((String) object);
+        return new PIF((String)object);
     }
 
     public static PIFMetrics toPIFMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new PIFMetrics((String) object);
+        return new PIFMetrics((String)object);
     }
 
     public static SM toSM(Object object) {
         if (object == null) {
             return null;
         }
-        return new SM((String) object);
+        return new SM((String)object);
     }
 
     public static SR toSR(Object object) {
         if (object == null) {
             return null;
         }
-        return new SR((String) object);
+        return new SR((String)object);
     }
 
     public static VBD toVBD(Object object) {
         if (object == null) {
             return null;
         }
-        return new VBD((String) object);
+        return new VBD((String)object);
     }
 
     public static VBDMetrics toVBDMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new VBDMetrics((String) object);
+        return new VBDMetrics((String)object);
     }
 
     public static VDI toVDI(Object object) {
         if (object == null) {
             return null;
         }
-        return new VDI((String) object);
+        return new VDI((String)object);
     }
 
     public static VGPU toVGPU(Object object) {
         if (object == null) {
             return null;
         }
-        return new VGPU((String) object);
+        return new VGPU((String)object);
     }
 
     public static VIF toVIF(Object object) {
         if (object == null) {
             return null;
         }
-        return new VIF((String) object);
+        return new VIF((String)object);
     }
 
     public static VIFMetrics toVIFMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new VIFMetrics((String) object);
+        return new VIFMetrics((String)object);
     }
 
     public static VLAN toVLAN(Object object) {
         if (object == null) {
             return null;
         }
-        return new VLAN((String) object);
+        return new VLAN((String)object);
     }
 
     public static VM toVM(Object object) {
         if (object == null) {
             return null;
         }
-        return new VM((String) object);
+        return new VM((String)object);
     }
 
     public static VMPP toVMPP(Object object) {
         if (object == null) {
             return null;
         }
-        return new VMPP((String) object);
+        return new VMPP((String)object);
     }
 
     public static VMAppliance toVMAppliance(Object object) {
         if (object == null) {
             return null;
         }
-        return new VMAppliance((String) object);
+        return new VMAppliance((String)object);
     }
 
     public static VMGuestMetrics toVMGuestMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new VMGuestMetrics((String) object);
+        return new VMGuestMetrics((String)object);
     }
 
     public static VMMetrics toVMMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new VMMetrics((String) object);
+        return new VMMetrics((String)object);
     }
 
     public static VTPM toVTPM(Object object) {
         if (object == null) {
             return null;
         }
-        return new VTPM((String) object);
+        return new VTPM((String)object);
     }
 
     public static Blob toBlob(Object object) {
         if (object == null) {
             return null;
         }
-        return new Blob((String) object);
+        return new Blob((String)object);
     }
 
     public static Console toConsole(Object object) {
         if (object == null) {
             return null;
         }
-        return new Console((String) object);
+        return new Console((String)object);
     }
 
     public static Crashdump toCrashdump(Object object) {
         if (object == null) {
             return null;
         }
-        return new Crashdump((String) object);
+        return new Crashdump((String)object);
     }
 
     public static Host toHost(Object object) {
         if (object == null) {
             return null;
         }
-        return new Host((String) object);
+        return new Host((String)object);
     }
 
     public static HostCpu toHostCpu(Object object) {
         if (object == null) {
             return null;
         }
-        return new HostCpu((String) object);
+        return new HostCpu((String)object);
     }
 
     public static HostCrashdump toHostCrashdump(Object object) {
         if (object == null) {
             return null;
         }
-        return new HostCrashdump((String) object);
+        return new HostCrashdump((String)object);
     }
 
     public static HostMetrics toHostMetrics(Object object) {
         if (object == null) {
             return null;
         }
-        return new HostMetrics((String) object);
+        return new HostMetrics((String)object);
     }
 
     public static HostPatch toHostPatch(Object object) {
         if (object == null) {
             return null;
         }
-        return new HostPatch((String) object);
+        return new HostPatch((String)object);
     }
 
     public static Message toMessage(Object object) {
         if (object == null) {
             return null;
         }
-        return new Message((String) object);
+        return new Message((String)object);
     }
 
     public static Network toNetwork(Object object) {
         if (object == null) {
             return null;
         }
-        return new Network((String) object);
+        return new Network((String)object);
     }
 
     public static Pool toPool(Object object) {
         if (object == null) {
             return null;
         }
-        return new Pool((String) object);
+        return new Pool((String)object);
     }
 
     public static PoolPatch toPoolPatch(Object object) {
         if (object == null) {
             return null;
         }
-        return new PoolPatch((String) object);
+        return new PoolPatch((String)object);
     }
 
     public static Role toRole(Object object) {
         if (object == null) {
             return null;
         }
-        return new Role((String) object);
+        return new Role((String)object);
     }
 
     public static Secret toSecret(Object object) {
         if (object == null) {
             return null;
         }
-        return new Secret((String) object);
+        return new Secret((String)object);
     }
 
     public static Session toSession(Object object) {
         if (object == null) {
             return null;
         }
-        return new Session((String) object);
+        return new Session((String)object);
     }
 
     public static Subject toSubject(Object object) {
         if (object == null) {
             return null;
         }
-        return new Subject((String) object);
+        return new Subject((String)object);
     }
 
     public static Task toTask(Object object) {
         if (object == null) {
             return null;
         }
-        return new Task((String) object);
+        return new Task((String)object);
     }
 
     public static Tunnel toTunnel(Object object) {
         if (object == null) {
             return null;
         }
-        return new Tunnel((String) object);
+        return new Tunnel((String)object);
     }
 
     public static User toUser(Object object) {
         if (object == null) {
             return null;
         }
-        return new User((String) object);
+        return new User((String)object);
     }
 
     public static Bond.Record toBondRecord(Object object) {
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Bond.Record record = new Bond.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.master = toPIF(map.get("master"));
-            record.slaves = toSetOfPIF(map.get("slaves"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.primarySlave = toPIF(map.get("primary_slave"));
-            record.mode = toBondMode(map.get("mode"));
-            record.properties = toMapOfStringString(map.get("properties"));
-            record.linksUp = toLong(map.get("links_up"));
+        record.uuid = toString(map.get("uuid"));
+        record.master = toPIF(map.get("master"));
+        record.slaves = toSetOfPIF(map.get("slaves"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.primarySlave = toPIF(map.get("primary_slave"));
+        record.mode = toBondMode(map.get("mode"));
+        record.properties = toMapOfStringString(map.get("properties"));
+        record.linksUp = toLong(map.get("links_up"));
         return record;
     }
 
@@ -11912,10 +12210,10 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         DRTask.Record record = new DRTask.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.introducedSRs = toSetOfSR(map.get("introduced_SRs"));
+        record.uuid = toString(map.get("uuid"));
+        record.introducedSRs = toSetOfSR(map.get("introduced_SRs"));
         return record;
     }
 
@@ -11923,15 +12221,15 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         GPUGroup.Record record = new GPUGroup.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
-            record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
-            record.GPUTypes = toSetOfString(map.get("GPU_types"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
+        record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
+        record.GPUTypes = toSetOfString(map.get("GPU_types"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -11939,14 +12237,14 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PBD.Record record = new PBD.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.host = toHost(map.get("host"));
-            record.SR = toSR(map.get("SR"));
-            record.deviceConfig = toMapOfStringString(map.get("device_config"));
-            record.currentlyAttached = toBoolean(map.get("currently_attached"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.host = toHost(map.get("host"));
+        record.SR = toSR(map.get("SR"));
+        record.deviceConfig = toMapOfStringString(map.get("device_config"));
+        record.currentlyAttached = toBoolean(map.get("currently_attached"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -11954,16 +12252,16 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PCI.Record record = new PCI.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.clazzName = toString(map.get("class_name"));
-            record.vendorName = toString(map.get("vendor_name"));
-            record.deviceName = toString(map.get("device_name"));
-            record.host = toHost(map.get("host"));
-            record.pciId = toString(map.get("pci_id"));
-            record.dependencies = toSetOfPCI(map.get("dependencies"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.clazzName = toString(map.get("class_name"));
+        record.vendorName = toString(map.get("vendor_name"));
+        record.deviceName = toString(map.get("device_name"));
+        record.host = toHost(map.get("host"));
+        record.pciId = toString(map.get("pci_id"));
+        record.dependencies = toSetOfPCI(map.get("dependencies"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -11971,13 +12269,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PGPU.Record record = new PGPU.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.PCI = toPCI(map.get("PCI"));
-            record.GPUGroup = toGPUGroup(map.get("GPU_group"));
-            record.host = toHost(map.get("host"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.PCI = toPCI(map.get("PCI"));
+        record.GPUGroup = toGPUGroup(map.get("GPU_group"));
+        record.host = toHost(map.get("host"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -11985,36 +12283,36 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PIF.Record record = new PIF.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.device = toString(map.get("device"));
-            record.network = toNetwork(map.get("network"));
-            record.host = toHost(map.get("host"));
-            record.MAC = toString(map.get("MAC"));
-            record.MTU = toLong(map.get("MTU"));
-            record.VLAN = toLong(map.get("VLAN"));
-            record.metrics = toPIFMetrics(map.get("metrics"));
-            record.physical = toBoolean(map.get("physical"));
-            record.currentlyAttached = toBoolean(map.get("currently_attached"));
-            record.ipConfigurationMode = toIpConfigurationMode(map.get("ip_configuration_mode"));
-            record.IP = toString(map.get("IP"));
-            record.netmask = toString(map.get("netmask"));
-            record.gateway = toString(map.get("gateway"));
-            record.DNS = toString(map.get("DNS"));
-            record.bondSlaveOf = toBond(map.get("bond_slave_of"));
-            record.bondMasterOf = toSetOfBond(map.get("bond_master_of"));
-            record.VLANMasterOf = toVLAN(map.get("VLAN_master_of"));
-            record.VLANSlaveOf = toSetOfVLAN(map.get("VLAN_slave_of"));
-            record.management = toBoolean(map.get("management"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.disallowUnplug = toBoolean(map.get("disallow_unplug"));
-            record.tunnelAccessPIFOf = toSetOfTunnel(map.get("tunnel_access_PIF_of"));
-            record.tunnelTransportPIFOf = toSetOfTunnel(map.get("tunnel_transport_PIF_of"));
-            record.ipv6ConfigurationMode = toIpv6ConfigurationMode(map.get("ipv6_configuration_mode"));
-            record.IPv6 = toSetOfString(map.get("IPv6"));
-            record.ipv6Gateway = toString(map.get("ipv6_gateway"));
-            record.primaryAddressType = toPrimaryAddressType(map.get("primary_address_type"));
+        record.uuid = toString(map.get("uuid"));
+        record.device = toString(map.get("device"));
+        record.network = toNetwork(map.get("network"));
+        record.host = toHost(map.get("host"));
+        record.MAC = toString(map.get("MAC"));
+        record.MTU = toLong(map.get("MTU"));
+        record.VLAN = toLong(map.get("VLAN"));
+        record.metrics = toPIFMetrics(map.get("metrics"));
+        record.physical = toBoolean(map.get("physical"));
+        record.currentlyAttached = toBoolean(map.get("currently_attached"));
+        record.ipConfigurationMode = toIpConfigurationMode(map.get("ip_configuration_mode"));
+        record.IP = toString(map.get("IP"));
+        record.netmask = toString(map.get("netmask"));
+        record.gateway = toString(map.get("gateway"));
+        record.DNS = toString(map.get("DNS"));
+        record.bondSlaveOf = toBond(map.get("bond_slave_of"));
+        record.bondMasterOf = toSetOfBond(map.get("bond_master_of"));
+        record.VLANMasterOf = toVLAN(map.get("VLAN_master_of"));
+        record.VLANSlaveOf = toSetOfVLAN(map.get("VLAN_slave_of"));
+        record.management = toBoolean(map.get("management"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.disallowUnplug = toBoolean(map.get("disallow_unplug"));
+        record.tunnelAccessPIFOf = toSetOfTunnel(map.get("tunnel_access_PIF_of"));
+        record.tunnelTransportPIFOf = toSetOfTunnel(map.get("tunnel_transport_PIF_of"));
+        record.ipv6ConfigurationMode = toIpv6ConfigurationMode(map.get("ipv6_configuration_mode"));
+        record.IPv6 = toSetOfString(map.get("IPv6"));
+        record.ipv6Gateway = toString(map.get("ipv6_gateway"));
+        record.primaryAddressType = toPrimaryAddressType(map.get("primary_address_type"));
         return record;
     }
 
@@ -12022,21 +12320,21 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PIFMetrics.Record record = new PIFMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.ioReadKbs = toDouble(map.get("io_read_kbs"));
-            record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
-            record.carrier = toBoolean(map.get("carrier"));
-            record.vendorId = toString(map.get("vendor_id"));
-            record.vendorName = toString(map.get("vendor_name"));
-            record.deviceId = toString(map.get("device_id"));
-            record.deviceName = toString(map.get("device_name"));
-            record.speed = toLong(map.get("speed"));
-            record.duplex = toBoolean(map.get("duplex"));
-            record.pciBusPath = toString(map.get("pci_bus_path"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.ioReadKbs = toDouble(map.get("io_read_kbs"));
+        record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
+        record.carrier = toBoolean(map.get("carrier"));
+        record.vendorId = toString(map.get("vendor_id"));
+        record.vendorName = toString(map.get("vendor_name"));
+        record.deviceId = toString(map.get("device_id"));
+        record.deviceName = toString(map.get("device_name"));
+        record.speed = toLong(map.get("speed"));
+        record.duplex = toBoolean(map.get("duplex"));
+        record.pciBusPath = toString(map.get("pci_bus_path"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12044,20 +12342,20 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         SM.Record record = new SM.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.type = toString(map.get("type"));
-            record.vendor = toString(map.get("vendor"));
-            record.copyright = toString(map.get("copyright"));
-            record.version = toString(map.get("version"));
-            record.requiredApiVersion = toString(map.get("required_api_version"));
-            record.configuration = toMapOfStringString(map.get("configuration"));
-            record.capabilities = toSetOfString(map.get("capabilities"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.driverFilename = toString(map.get("driver_filename"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.type = toString(map.get("type"));
+        record.vendor = toString(map.get("vendor"));
+        record.copyright = toString(map.get("copyright"));
+        record.version = toString(map.get("version"));
+        record.requiredApiVersion = toString(map.get("required_api_version"));
+        record.configuration = toMapOfStringString(map.get("configuration"));
+        record.capabilities = toSetOfString(map.get("capabilities"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.driverFilename = toString(map.get("driver_filename"));
         return record;
     }
 
@@ -12065,27 +12363,27 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         SR.Record record = new SR.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.allowedOperations = toSetOfStorageOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringStorageOperations(map.get("current_operations"));
-            record.VDIs = toSetOfVDI(map.get("VDIs"));
-            record.PBDs = toSetOfPBD(map.get("PBDs"));
-            record.virtualAllocation = toLong(map.get("virtual_allocation"));
-            record.physicalUtilisation = toLong(map.get("physical_utilisation"));
-            record.physicalSize = toLong(map.get("physical_size"));
-            record.type = toString(map.get("type"));
-            record.contentType = toString(map.get("content_type"));
-            record.shared = toBoolean(map.get("shared"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.smConfig = toMapOfStringString(map.get("sm_config"));
-            record.blobs = toMapOfStringBlob(map.get("blobs"));
-            record.localCacheEnabled = toBoolean(map.get("local_cache_enabled"));
-            record.introducedBy = toDRTask(map.get("introduced_by"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.allowedOperations = toSetOfStorageOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringStorageOperations(map.get("current_operations"));
+        record.VDIs = toSetOfVDI(map.get("VDIs"));
+        record.PBDs = toSetOfPBD(map.get("PBDs"));
+        record.virtualAllocation = toLong(map.get("virtual_allocation"));
+        record.physicalUtilisation = toLong(map.get("physical_utilisation"));
+        record.physicalSize = toLong(map.get("physical_size"));
+        record.type = toString(map.get("type"));
+        record.contentType = toString(map.get("content_type"));
+        record.shared = toBoolean(map.get("shared"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.smConfig = toMapOfStringString(map.get("sm_config"));
+        record.blobs = toMapOfStringBlob(map.get("blobs"));
+        record.localCacheEnabled = toBoolean(map.get("local_cache_enabled"));
+        record.introducedBy = toDRTask(map.get("introduced_by"));
         return record;
     }
 
@@ -12093,30 +12391,30 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VBD.Record record = new VBD.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.allowedOperations = toSetOfVbdOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringVbdOperations(map.get("current_operations"));
-            record.VM = toVM(map.get("VM"));
-            record.VDI = toVDI(map.get("VDI"));
-            record.device = toString(map.get("device"));
-            record.userdevice = toString(map.get("userdevice"));
-            record.bootable = toBoolean(map.get("bootable"));
-            record.mode = toVbdMode(map.get("mode"));
-            record.type = toVbdType(map.get("type"));
-            record.unpluggable = toBoolean(map.get("unpluggable"));
-            record.storageLock = toBoolean(map.get("storage_lock"));
-            record.empty = toBoolean(map.get("empty"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.currentlyAttached = toBoolean(map.get("currently_attached"));
-            record.statusCode = toLong(map.get("status_code"));
-            record.statusDetail = toString(map.get("status_detail"));
-            record.runtimeProperties = toMapOfStringString(map.get("runtime_properties"));
-            record.qosAlgorithmType = toString(map.get("qos_algorithm_type"));
-            record.qosAlgorithmParams = toMapOfStringString(map.get("qos_algorithm_params"));
-            record.qosSupportedAlgorithms = toSetOfString(map.get("qos_supported_algorithms"));
-            record.metrics = toVBDMetrics(map.get("metrics"));
+        record.uuid = toString(map.get("uuid"));
+        record.allowedOperations = toSetOfVbdOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringVbdOperations(map.get("current_operations"));
+        record.VM = toVM(map.get("VM"));
+        record.VDI = toVDI(map.get("VDI"));
+        record.device = toString(map.get("device"));
+        record.userdevice = toString(map.get("userdevice"));
+        record.bootable = toBoolean(map.get("bootable"));
+        record.mode = toVbdMode(map.get("mode"));
+        record.type = toVbdType(map.get("type"));
+        record.unpluggable = toBoolean(map.get("unpluggable"));
+        record.storageLock = toBoolean(map.get("storage_lock"));
+        record.empty = toBoolean(map.get("empty"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.currentlyAttached = toBoolean(map.get("currently_attached"));
+        record.statusCode = toLong(map.get("status_code"));
+        record.statusDetail = toString(map.get("status_detail"));
+        record.runtimeProperties = toMapOfStringString(map.get("runtime_properties"));
+        record.qosAlgorithmType = toString(map.get("qos_algorithm_type"));
+        record.qosAlgorithmParams = toMapOfStringString(map.get("qos_algorithm_params"));
+        record.qosSupportedAlgorithms = toSetOfString(map.get("qos_supported_algorithms"));
+        record.metrics = toVBDMetrics(map.get("metrics"));
         return record;
     }
 
@@ -12124,13 +12422,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VBDMetrics.Record record = new VBDMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.ioReadKbs = toDouble(map.get("io_read_kbs"));
-            record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.ioReadKbs = toDouble(map.get("io_read_kbs"));
+        record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12138,38 +12436,38 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VDI.Record record = new VDI.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.allowedOperations = toSetOfVdiOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringVdiOperations(map.get("current_operations"));
-            record.SR = toSR(map.get("SR"));
-            record.VBDs = toSetOfVBD(map.get("VBDs"));
-            record.crashDumps = toSetOfCrashdump(map.get("crash_dumps"));
-            record.virtualSize = toLong(map.get("virtual_size"));
-            record.physicalUtilisation = toLong(map.get("physical_utilisation"));
-            record.type = toVdiType(map.get("type"));
-            record.sharable = toBoolean(map.get("sharable"));
-            record.readOnly = toBoolean(map.get("read_only"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.storageLock = toBoolean(map.get("storage_lock"));
-            record.location = toString(map.get("location"));
-            record.managed = toBoolean(map.get("managed"));
-            record.missing = toBoolean(map.get("missing"));
-            record.parent = toVDI(map.get("parent"));
-            record.xenstoreData = toMapOfStringString(map.get("xenstore_data"));
-            record.smConfig = toMapOfStringString(map.get("sm_config"));
-            record.isASnapshot = toBoolean(map.get("is_a_snapshot"));
-            record.snapshotOf = toVDI(map.get("snapshot_of"));
-            record.snapshots = toSetOfVDI(map.get("snapshots"));
-            record.snapshotTime = toDate(map.get("snapshot_time"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.allowCaching = toBoolean(map.get("allow_caching"));
-            record.onBoot = toOnBoot(map.get("on_boot"));
-            record.metadataOfPool = toPool(map.get("metadata_of_pool"));
-            record.metadataLatest = toBoolean(map.get("metadata_latest"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.allowedOperations = toSetOfVdiOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringVdiOperations(map.get("current_operations"));
+        record.SR = toSR(map.get("SR"));
+        record.VBDs = toSetOfVBD(map.get("VBDs"));
+        record.crashDumps = toSetOfCrashdump(map.get("crash_dumps"));
+        record.virtualSize = toLong(map.get("virtual_size"));
+        record.physicalUtilisation = toLong(map.get("physical_utilisation"));
+        record.type = toVdiType(map.get("type"));
+        record.sharable = toBoolean(map.get("sharable"));
+        record.readOnly = toBoolean(map.get("read_only"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.storageLock = toBoolean(map.get("storage_lock"));
+        record.location = toString(map.get("location"));
+        record.managed = toBoolean(map.get("managed"));
+        record.missing = toBoolean(map.get("missing"));
+        record.parent = toVDI(map.get("parent"));
+        record.xenstoreData = toMapOfStringString(map.get("xenstore_data"));
+        record.smConfig = toMapOfStringString(map.get("sm_config"));
+        record.isASnapshot = toBoolean(map.get("is_a_snapshot"));
+        record.snapshotOf = toVDI(map.get("snapshot_of"));
+        record.snapshots = toSetOfVDI(map.get("snapshots"));
+        record.snapshotTime = toDate(map.get("snapshot_time"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.allowCaching = toBoolean(map.get("allow_caching"));
+        record.onBoot = toOnBoot(map.get("on_boot"));
+        record.metadataOfPool = toPool(map.get("metadata_of_pool"));
+        record.metadataLatest = toBoolean(map.get("metadata_latest"));
         return record;
     }
 
@@ -12177,14 +12475,14 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VGPU.Record record = new VGPU.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.VM = toVM(map.get("VM"));
-            record.GPUGroup = toGPUGroup(map.get("GPU_group"));
-            record.device = toString(map.get("device"));
-            record.currentlyAttached = toBoolean(map.get("currently_attached"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.VM = toVM(map.get("VM"));
+        record.GPUGroup = toGPUGroup(map.get("GPU_group"));
+        record.device = toString(map.get("device"));
+        record.currentlyAttached = toBoolean(map.get("currently_attached"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12192,29 +12490,29 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VIF.Record record = new VIF.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.allowedOperations = toSetOfVifOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringVifOperations(map.get("current_operations"));
-            record.device = toString(map.get("device"));
-            record.network = toNetwork(map.get("network"));
-            record.VM = toVM(map.get("VM"));
-            record.MAC = toString(map.get("MAC"));
-            record.MTU = toLong(map.get("MTU"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.currentlyAttached = toBoolean(map.get("currently_attached"));
-            record.statusCode = toLong(map.get("status_code"));
-            record.statusDetail = toString(map.get("status_detail"));
-            record.runtimeProperties = toMapOfStringString(map.get("runtime_properties"));
-            record.qosAlgorithmType = toString(map.get("qos_algorithm_type"));
-            record.qosAlgorithmParams = toMapOfStringString(map.get("qos_algorithm_params"));
-            record.qosSupportedAlgorithms = toSetOfString(map.get("qos_supported_algorithms"));
-            record.metrics = toVIFMetrics(map.get("metrics"));
-            record.MACAutogenerated = toBoolean(map.get("MAC_autogenerated"));
-            record.lockingMode = toVifLockingMode(map.get("locking_mode"));
-            record.ipv4Allowed = toSetOfString(map.get("ipv4_allowed"));
-            record.ipv6Allowed = toSetOfString(map.get("ipv6_allowed"));
+        record.uuid = toString(map.get("uuid"));
+        record.allowedOperations = toSetOfVifOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringVifOperations(map.get("current_operations"));
+        record.device = toString(map.get("device"));
+        record.network = toNetwork(map.get("network"));
+        record.VM = toVM(map.get("VM"));
+        record.MAC = toString(map.get("MAC"));
+        record.MTU = toLong(map.get("MTU"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.currentlyAttached = toBoolean(map.get("currently_attached"));
+        record.statusCode = toLong(map.get("status_code"));
+        record.statusDetail = toString(map.get("status_detail"));
+        record.runtimeProperties = toMapOfStringString(map.get("runtime_properties"));
+        record.qosAlgorithmType = toString(map.get("qos_algorithm_type"));
+        record.qosAlgorithmParams = toMapOfStringString(map.get("qos_algorithm_params"));
+        record.qosSupportedAlgorithms = toSetOfString(map.get("qos_supported_algorithms"));
+        record.metrics = toVIFMetrics(map.get("metrics"));
+        record.MACAutogenerated = toBoolean(map.get("MAC_autogenerated"));
+        record.lockingMode = toVifLockingMode(map.get("locking_mode"));
+        record.ipv4Allowed = toSetOfString(map.get("ipv4_allowed"));
+        record.ipv6Allowed = toSetOfString(map.get("ipv6_allowed"));
         return record;
     }
 
@@ -12222,13 +12520,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VIFMetrics.Record record = new VIFMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.ioReadKbs = toDouble(map.get("io_read_kbs"));
-            record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.ioReadKbs = toDouble(map.get("io_read_kbs"));
+        record.ioWriteKbs = toDouble(map.get("io_write_kbs"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12236,13 +12534,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VLAN.Record record = new VLAN.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.taggedPIF = toPIF(map.get("tagged_PIF"));
-            record.untaggedPIF = toPIF(map.get("untagged_PIF"));
-            record.tag = toLong(map.get("tag"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.taggedPIF = toPIF(map.get("tagged_PIF"));
+        record.untaggedPIF = toPIF(map.get("untagged_PIF"));
+        record.tag = toLong(map.get("tag"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12250,82 +12548,82 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VM.Record record = new VM.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.allowedOperations = toSetOfVmOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringVmOperations(map.get("current_operations"));
-            record.powerState = toVmPowerState(map.get("power_state"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.userVersion = toLong(map.get("user_version"));
-            record.isATemplate = toBoolean(map.get("is_a_template"));
-            record.suspendVDI = toVDI(map.get("suspend_VDI"));
-            record.residentOn = toHost(map.get("resident_on"));
-            record.affinity = toHost(map.get("affinity"));
-            record.memoryOverhead = toLong(map.get("memory_overhead"));
-            record.memoryTarget = toLong(map.get("memory_target"));
-            record.memoryStaticMax = toLong(map.get("memory_static_max"));
-            record.memoryDynamicMax = toLong(map.get("memory_dynamic_max"));
-            record.memoryDynamicMin = toLong(map.get("memory_dynamic_min"));
-            record.memoryStaticMin = toLong(map.get("memory_static_min"));
-            record.VCPUsParams = toMapOfStringString(map.get("VCPUs_params"));
-            record.VCPUsMax = toLong(map.get("VCPUs_max"));
-            record.VCPUsAtStartup = toLong(map.get("VCPUs_at_startup"));
-            record.actionsAfterShutdown = toOnNormalExit(map.get("actions_after_shutdown"));
-            record.actionsAfterReboot = toOnNormalExit(map.get("actions_after_reboot"));
-            record.actionsAfterCrash = toOnCrashBehaviour(map.get("actions_after_crash"));
-            record.consoles = toSetOfConsole(map.get("consoles"));
-            record.VIFs = toSetOfVIF(map.get("VIFs"));
-            record.VBDs = toSetOfVBD(map.get("VBDs"));
-            record.crashDumps = toSetOfCrashdump(map.get("crash_dumps"));
-            record.VTPMs = toSetOfVTPM(map.get("VTPMs"));
-            record.PVBootloader = toString(map.get("PV_bootloader"));
-            record.PVKernel = toString(map.get("PV_kernel"));
-            record.PVRamdisk = toString(map.get("PV_ramdisk"));
-            record.PVArgs = toString(map.get("PV_args"));
-            record.PVBootloaderArgs = toString(map.get("PV_bootloader_args"));
-            record.PVLegacyArgs = toString(map.get("PV_legacy_args"));
-            record.HVMBootPolicy = toString(map.get("HVM_boot_policy"));
-            record.HVMBootParams = toMapOfStringString(map.get("HVM_boot_params"));
-            record.HVMShadowMultiplier = toDouble(map.get("HVM_shadow_multiplier"));
-            record.platform = toMapOfStringString(map.get("platform"));
-            record.PCIBus = toString(map.get("PCI_bus"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.domid = toLong(map.get("domid"));
-            record.domarch = toString(map.get("domarch"));
-            record.lastBootCPUFlags = toMapOfStringString(map.get("last_boot_CPU_flags"));
-            record.isControlDomain = toBoolean(map.get("is_control_domain"));
-            record.metrics = toVMMetrics(map.get("metrics"));
-            record.guestMetrics = toVMGuestMetrics(map.get("guest_metrics"));
-            record.lastBootedRecord = toString(map.get("last_booted_record"));
-            record.recommendations = toString(map.get("recommendations"));
-            record.xenstoreData = toMapOfStringString(map.get("xenstore_data"));
-            record.haAlwaysRun = toBoolean(map.get("ha_always_run"));
-            record.haRestartPriority = toString(map.get("ha_restart_priority"));
-            record.isASnapshot = toBoolean(map.get("is_a_snapshot"));
-            record.snapshotOf = toVM(map.get("snapshot_of"));
-            record.snapshots = toSetOfVM(map.get("snapshots"));
-            record.snapshotTime = toDate(map.get("snapshot_time"));
-            record.transportableSnapshotId = toString(map.get("transportable_snapshot_id"));
-            record.blobs = toMapOfStringBlob(map.get("blobs"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.blockedOperations = toMapOfVmOperationsString(map.get("blocked_operations"));
-            record.snapshotInfo = toMapOfStringString(map.get("snapshot_info"));
-            record.snapshotMetadata = toString(map.get("snapshot_metadata"));
-            record.parent = toVM(map.get("parent"));
-            record.children = toSetOfVM(map.get("children"));
-            record.biosStrings = toMapOfStringString(map.get("bios_strings"));
-            record.protectionPolicy = toVMPP(map.get("protection_policy"));
-            record.isSnapshotFromVmpp = toBoolean(map.get("is_snapshot_from_vmpp"));
-            record.appliance = toVMAppliance(map.get("appliance"));
-            record.startDelay = toLong(map.get("start_delay"));
-            record.shutdownDelay = toLong(map.get("shutdown_delay"));
-            record.order = toLong(map.get("order"));
-            record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
-            record.attachedPCIs = toSetOfPCI(map.get("attached_PCIs"));
-            record.suspendSR = toSR(map.get("suspend_SR"));
-            record.version = toLong(map.get("version"));
+        record.uuid = toString(map.get("uuid"));
+        record.allowedOperations = toSetOfVmOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringVmOperations(map.get("current_operations"));
+        record.powerState = toVmPowerState(map.get("power_state"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.userVersion = toLong(map.get("user_version"));
+        record.isATemplate = toBoolean(map.get("is_a_template"));
+        record.suspendVDI = toVDI(map.get("suspend_VDI"));
+        record.residentOn = toHost(map.get("resident_on"));
+        record.affinity = toHost(map.get("affinity"));
+        record.memoryOverhead = toLong(map.get("memory_overhead"));
+        record.memoryTarget = toLong(map.get("memory_target"));
+        record.memoryStaticMax = toLong(map.get("memory_static_max"));
+        record.memoryDynamicMax = toLong(map.get("memory_dynamic_max"));
+        record.memoryDynamicMin = toLong(map.get("memory_dynamic_min"));
+        record.memoryStaticMin = toLong(map.get("memory_static_min"));
+        record.VCPUsParams = toMapOfStringString(map.get("VCPUs_params"));
+        record.VCPUsMax = toLong(map.get("VCPUs_max"));
+        record.VCPUsAtStartup = toLong(map.get("VCPUs_at_startup"));
+        record.actionsAfterShutdown = toOnNormalExit(map.get("actions_after_shutdown"));
+        record.actionsAfterReboot = toOnNormalExit(map.get("actions_after_reboot"));
+        record.actionsAfterCrash = toOnCrashBehaviour(map.get("actions_after_crash"));
+        record.consoles = toSetOfConsole(map.get("consoles"));
+        record.VIFs = toSetOfVIF(map.get("VIFs"));
+        record.VBDs = toSetOfVBD(map.get("VBDs"));
+        record.crashDumps = toSetOfCrashdump(map.get("crash_dumps"));
+        record.VTPMs = toSetOfVTPM(map.get("VTPMs"));
+        record.PVBootloader = toString(map.get("PV_bootloader"));
+        record.PVKernel = toString(map.get("PV_kernel"));
+        record.PVRamdisk = toString(map.get("PV_ramdisk"));
+        record.PVArgs = toString(map.get("PV_args"));
+        record.PVBootloaderArgs = toString(map.get("PV_bootloader_args"));
+        record.PVLegacyArgs = toString(map.get("PV_legacy_args"));
+        record.HVMBootPolicy = toString(map.get("HVM_boot_policy"));
+        record.HVMBootParams = toMapOfStringString(map.get("HVM_boot_params"));
+        record.HVMShadowMultiplier = toDouble(map.get("HVM_shadow_multiplier"));
+        record.platform = toMapOfStringString(map.get("platform"));
+        record.PCIBus = toString(map.get("PCI_bus"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.domid = toLong(map.get("domid"));
+        record.domarch = toString(map.get("domarch"));
+        record.lastBootCPUFlags = toMapOfStringString(map.get("last_boot_CPU_flags"));
+        record.isControlDomain = toBoolean(map.get("is_control_domain"));
+        record.metrics = toVMMetrics(map.get("metrics"));
+        record.guestMetrics = toVMGuestMetrics(map.get("guest_metrics"));
+        record.lastBootedRecord = toString(map.get("last_booted_record"));
+        record.recommendations = toString(map.get("recommendations"));
+        record.xenstoreData = toMapOfStringString(map.get("xenstore_data"));
+        record.haAlwaysRun = toBoolean(map.get("ha_always_run"));
+        record.haRestartPriority = toString(map.get("ha_restart_priority"));
+        record.isASnapshot = toBoolean(map.get("is_a_snapshot"));
+        record.snapshotOf = toVM(map.get("snapshot_of"));
+        record.snapshots = toSetOfVM(map.get("snapshots"));
+        record.snapshotTime = toDate(map.get("snapshot_time"));
+        record.transportableSnapshotId = toString(map.get("transportable_snapshot_id"));
+        record.blobs = toMapOfStringBlob(map.get("blobs"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.blockedOperations = toMapOfVmOperationsString(map.get("blocked_operations"));
+        record.snapshotInfo = toMapOfStringString(map.get("snapshot_info"));
+        record.snapshotMetadata = toString(map.get("snapshot_metadata"));
+        record.parent = toVM(map.get("parent"));
+        record.children = toSetOfVM(map.get("children"));
+        record.biosStrings = toMapOfStringString(map.get("bios_strings"));
+        record.protectionPolicy = toVMPP(map.get("protection_policy"));
+        record.isSnapshotFromVmpp = toBoolean(map.get("is_snapshot_from_vmpp"));
+        record.appliance = toVMAppliance(map.get("appliance"));
+        record.startDelay = toLong(map.get("start_delay"));
+        record.shutdownDelay = toLong(map.get("shutdown_delay"));
+        record.order = toLong(map.get("order"));
+        record.VGPUs = toSetOfVGPU(map.get("VGPUs"));
+        record.attachedPCIs = toSetOfPCI(map.get("attached_PCIs"));
+        record.suspendSR = toSR(map.get("suspend_SR"));
+        record.version = toLong(map.get("version"));
         return record;
     }
 
@@ -12333,28 +12631,28 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VMPP.Record record = new VMPP.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.isPolicyEnabled = toBoolean(map.get("is_policy_enabled"));
-            record.backupType = toVmppBackupType(map.get("backup_type"));
-            record.backupRetentionValue = toLong(map.get("backup_retention_value"));
-            record.backupFrequency = toVmppBackupFrequency(map.get("backup_frequency"));
-            record.backupSchedule = toMapOfStringString(map.get("backup_schedule"));
-            record.isBackupRunning = toBoolean(map.get("is_backup_running"));
-            record.backupLastRunTime = toDate(map.get("backup_last_run_time"));
-            record.archiveTargetType = toVmppArchiveTargetType(map.get("archive_target_type"));
-            record.archiveTargetConfig = toMapOfStringString(map.get("archive_target_config"));
-            record.archiveFrequency = toVmppArchiveFrequency(map.get("archive_frequency"));
-            record.archiveSchedule = toMapOfStringString(map.get("archive_schedule"));
-            record.isArchiveRunning = toBoolean(map.get("is_archive_running"));
-            record.archiveLastRunTime = toDate(map.get("archive_last_run_time"));
-            record.VMs = toSetOfVM(map.get("VMs"));
-            record.isAlarmEnabled = toBoolean(map.get("is_alarm_enabled"));
-            record.alarmConfig = toMapOfStringString(map.get("alarm_config"));
-            record.recentAlerts = toSetOfString(map.get("recent_alerts"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.isPolicyEnabled = toBoolean(map.get("is_policy_enabled"));
+        record.backupType = toVmppBackupType(map.get("backup_type"));
+        record.backupRetentionValue = toLong(map.get("backup_retention_value"));
+        record.backupFrequency = toVmppBackupFrequency(map.get("backup_frequency"));
+        record.backupSchedule = toMapOfStringString(map.get("backup_schedule"));
+        record.isBackupRunning = toBoolean(map.get("is_backup_running"));
+        record.backupLastRunTime = toDate(map.get("backup_last_run_time"));
+        record.archiveTargetType = toVmppArchiveTargetType(map.get("archive_target_type"));
+        record.archiveTargetConfig = toMapOfStringString(map.get("archive_target_config"));
+        record.archiveFrequency = toVmppArchiveFrequency(map.get("archive_frequency"));
+        record.archiveSchedule = toMapOfStringString(map.get("archive_schedule"));
+        record.isArchiveRunning = toBoolean(map.get("is_archive_running"));
+        record.archiveLastRunTime = toDate(map.get("archive_last_run_time"));
+        record.VMs = toSetOfVM(map.get("VMs"));
+        record.isAlarmEnabled = toBoolean(map.get("is_alarm_enabled"));
+        record.alarmConfig = toMapOfStringString(map.get("alarm_config"));
+        record.recentAlerts = toSetOfString(map.get("recent_alerts"));
         return record;
     }
 
@@ -12362,14 +12660,14 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VMAppliance.Record record = new VMAppliance.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.allowedOperations = toSetOfVmApplianceOperation(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringVmApplianceOperation(map.get("current_operations"));
-            record.VMs = toSetOfVM(map.get("VMs"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.allowedOperations = toSetOfVmApplianceOperation(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringVmApplianceOperation(map.get("current_operations"));
+        record.VMs = toSetOfVM(map.get("VMs"));
         return record;
     }
 
@@ -12377,19 +12675,19 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VMGuestMetrics.Record record = new VMGuestMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.osVersion = toMapOfStringString(map.get("os_version"));
-            record.PVDriversVersion = toMapOfStringString(map.get("PV_drivers_version"));
-            record.PVDriversUpToDate = toBoolean(map.get("PV_drivers_up_to_date"));
-            record.memory = toMapOfStringString(map.get("memory"));
-            record.disks = toMapOfStringString(map.get("disks"));
-            record.networks = toMapOfStringString(map.get("networks"));
-            record.other = toMapOfStringString(map.get("other"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.live = toBoolean(map.get("live"));
+        record.uuid = toString(map.get("uuid"));
+        record.osVersion = toMapOfStringString(map.get("os_version"));
+        record.PVDriversVersion = toMapOfStringString(map.get("PV_drivers_version"));
+        record.PVDriversUpToDate = toBoolean(map.get("PV_drivers_up_to_date"));
+        record.memory = toMapOfStringString(map.get("memory"));
+        record.disks = toMapOfStringString(map.get("disks"));
+        record.networks = toMapOfStringString(map.get("networks"));
+        record.other = toMapOfStringString(map.get("other"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.live = toBoolean(map.get("live"));
         return record;
     }
 
@@ -12397,20 +12695,20 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VMMetrics.Record record = new VMMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.memoryActual = toLong(map.get("memory_actual"));
-            record.VCPUsNumber = toLong(map.get("VCPUs_number"));
-            record.VCPUsUtilisation = toMapOfLongDouble(map.get("VCPUs_utilisation"));
-            record.VCPUsCPU = toMapOfLongLong(map.get("VCPUs_CPU"));
-            record.VCPUsParams = toMapOfStringString(map.get("VCPUs_params"));
-            record.VCPUsFlags = toMapOfLongSetOfString(map.get("VCPUs_flags"));
-            record.state = toSetOfString(map.get("state"));
-            record.startTime = toDate(map.get("start_time"));
-            record.installTime = toDate(map.get("install_time"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.memoryActual = toLong(map.get("memory_actual"));
+        record.VCPUsNumber = toLong(map.get("VCPUs_number"));
+        record.VCPUsUtilisation = toMapOfLongDouble(map.get("VCPUs_utilisation"));
+        record.VCPUsCPU = toMapOfLongLong(map.get("VCPUs_CPU"));
+        record.VCPUsParams = toMapOfStringString(map.get("VCPUs_params"));
+        record.VCPUsFlags = toMapOfLongSetOfString(map.get("VCPUs_flags"));
+        record.state = toSetOfString(map.get("state"));
+        record.startTime = toDate(map.get("start_time"));
+        record.installTime = toDate(map.get("install_time"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12418,11 +12716,11 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         VTPM.Record record = new VTPM.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.VM = toVM(map.get("VM"));
-            record.backend = toVM(map.get("backend"));
+        record.uuid = toString(map.get("uuid"));
+        record.VM = toVM(map.get("VM"));
+        record.backend = toVM(map.get("backend"));
         return record;
     }
 
@@ -12430,15 +12728,15 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Blob.Record record = new Blob.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.size = toLong(map.get("size"));
-            record._public = toBoolean(map.get("public"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.mimeType = toString(map.get("mime_type"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.size = toLong(map.get("size"));
+        record._public = toBoolean(map.get("public"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.mimeType = toString(map.get("mime_type"));
         return record;
     }
 
@@ -12446,13 +12744,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Console.Record record = new Console.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.protocol = toConsoleProtocol(map.get("protocol"));
-            record.location = toString(map.get("location"));
-            record.VM = toVM(map.get("VM"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.protocol = toConsoleProtocol(map.get("protocol"));
+        record.location = toString(map.get("location"));
+        record.VM = toVM(map.get("VM"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12460,12 +12758,12 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Crashdump.Record record = new Crashdump.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.VM = toVM(map.get("VM"));
-            record.VDI = toVDI(map.get("VDI"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.VM = toVM(map.get("VM"));
+        record.VDI = toVDI(map.get("VDI"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12473,16 +12771,16 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         DataSource.Record record = new DataSource.Record();
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.enabled = toBoolean(map.get("enabled"));
-            record.standard = toBoolean(map.get("standard"));
-            record.units = toString(map.get("units"));
-            record.min = toDouble(map.get("min"));
-            record.max = toDouble(map.get("max"));
-            record.value = toDouble(map.get("value"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.enabled = toBoolean(map.get("enabled"));
+        record.standard = toBoolean(map.get("standard"));
+        record.units = toString(map.get("units"));
+        record.min = toDouble(map.get("min"));
+        record.max = toDouble(map.get("max"));
+        record.value = toDouble(map.get("value"));
         return record;
     }
 
@@ -12490,65 +12788,153 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Event.Record record = new Event.Record();
-            record.id = toLong(map.get("id"));
-            record.timestamp = toDate(map.get("timestamp"));
-            record.clazz = toString(map.get("class"));
-            record.operation = toEventOperation(map.get("operation"));
-            record.ref = toString(map.get("ref"));
-            record.objUuid = toString(map.get("obj_uuid"));
+        record.id = toLong(map.get("id"));
+        record.timestamp = toDate(map.get("timestamp"));
+        record.clazz = toString(map.get("class"));
+        record.operation = toEventOperation(map.get("operation"));
+        record.ref = toString(map.get("ref"));
+        record.objUuid = toString(map.get("obj_uuid"));
 
-
-        Object a,b;
-        a=map.get("snapshot");
-        switch(toXenAPIObjects(record.clazz))
+        Object a, b;
+        a = map.get("snapshot");
+        switch (toXenAPIObjects(record.clazz))
         {
-                case           SESSION: b =           toSessionRecord(a); break;
-                case           SUBJECT: b =           toSubjectRecord(a); break;
-                case              ROLE: b =              toRoleRecord(a); break;
-                case              TASK: b =              toTaskRecord(a); break;
-                case             EVENT: b =             toEventRecord(a); break;
-                case              POOL: b =              toPoolRecord(a); break;
-                case        POOL_PATCH: b =         toPoolPatchRecord(a); break;
-                case                VM: b =                toVMRecord(a); break;
-                case        VM_METRICS: b =         toVMMetricsRecord(a); break;
-                case  VM_GUEST_METRICS: b =    toVMGuestMetricsRecord(a); break;
-                case              VMPP: b =              toVMPPRecord(a); break;
-                case      VM_APPLIANCE: b =       toVMApplianceRecord(a); break;
-                case           DR_TASK: b =            toDRTaskRecord(a); break;
-                case              HOST: b =              toHostRecord(a); break;
-                case    HOST_CRASHDUMP: b =     toHostCrashdumpRecord(a); break;
-                case        HOST_PATCH: b =         toHostPatchRecord(a); break;
-                case      HOST_METRICS: b =       toHostMetricsRecord(a); break;
-                case          HOST_CPU: b =           toHostCpuRecord(a); break;
-                case           NETWORK: b =           toNetworkRecord(a); break;
-                case               VIF: b =               toVIFRecord(a); break;
-                case       VIF_METRICS: b =        toVIFMetricsRecord(a); break;
-                case               PIF: b =               toPIFRecord(a); break;
-                case       PIF_METRICS: b =        toPIFMetricsRecord(a); break;
-                case              BOND: b =              toBondRecord(a); break;
-                case              VLAN: b =              toVLANRecord(a); break;
-                case                SM: b =                toSMRecord(a); break;
-                case                SR: b =                toSRRecord(a); break;
-                case               VDI: b =               toVDIRecord(a); break;
-                case               VBD: b =               toVBDRecord(a); break;
-                case       VBD_METRICS: b =        toVBDMetricsRecord(a); break;
-                case               PBD: b =               toPBDRecord(a); break;
-                case         CRASHDUMP: b =         toCrashdumpRecord(a); break;
-                case              VTPM: b =              toVTPMRecord(a); break;
-                case           CONSOLE: b =           toConsoleRecord(a); break;
-                case              USER: b =              toUserRecord(a); break;
-                case       DATA_SOURCE: b =        toDataSourceRecord(a); break;
-                case              BLOB: b =              toBlobRecord(a); break;
-                case           MESSAGE: b =           toMessageRecord(a); break;
-                case            SECRET: b =            toSecretRecord(a); break;
-                case            TUNNEL: b =            toTunnelRecord(a); break;
-                case               PCI: b =               toPCIRecord(a); break;
-                case              PGPU: b =              toPGPURecord(a); break;
-                case         GPU_GROUP: b =          toGPUGroupRecord(a); break;
-                case              VGPU: b =              toVGPURecord(a); break;
-                default: throw new RuntimeException("Internal error in auto-generated code whilst unmarshalling event snapshot");
+            case SESSION:
+                b = toSessionRecord(a);
+                break;
+            case SUBJECT:
+                b = toSubjectRecord(a);
+                break;
+            case ROLE:
+                b = toRoleRecord(a);
+                break;
+            case TASK:
+                b = toTaskRecord(a);
+                break;
+            case EVENT:
+                b = toEventRecord(a);
+                break;
+            case POOL:
+                b = toPoolRecord(a);
+                break;
+            case POOL_PATCH:
+                b = toPoolPatchRecord(a);
+                break;
+            case VM:
+                b = toVMRecord(a);
+                break;
+            case VM_METRICS:
+                b = toVMMetricsRecord(a);
+                break;
+            case VM_GUEST_METRICS:
+                b = toVMGuestMetricsRecord(a);
+                break;
+            case VMPP:
+                b = toVMPPRecord(a);
+                break;
+            case VM_APPLIANCE:
+                b = toVMApplianceRecord(a);
+                break;
+            case DR_TASK:
+                b = toDRTaskRecord(a);
+                break;
+            case HOST:
+                b = toHostRecord(a);
+                break;
+            case HOST_CRASHDUMP:
+                b = toHostCrashdumpRecord(a);
+                break;
+            case HOST_PATCH:
+                b = toHostPatchRecord(a);
+                break;
+            case HOST_METRICS:
+                b = toHostMetricsRecord(a);
+                break;
+            case HOST_CPU:
+                b = toHostCpuRecord(a);
+                break;
+            case NETWORK:
+                b = toNetworkRecord(a);
+                break;
+            case VIF:
+                b = toVIFRecord(a);
+                break;
+            case VIF_METRICS:
+                b = toVIFMetricsRecord(a);
+                break;
+            case PIF:
+                b = toPIFRecord(a);
+                break;
+            case PIF_METRICS:
+                b = toPIFMetricsRecord(a);
+                break;
+            case BOND:
+                b = toBondRecord(a);
+                break;
+            case VLAN:
+                b = toVLANRecord(a);
+                break;
+            case SM:
+                b = toSMRecord(a);
+                break;
+            case SR:
+                b = toSRRecord(a);
+                break;
+            case VDI:
+                b = toVDIRecord(a);
+                break;
+            case VBD:
+                b = toVBDRecord(a);
+                break;
+            case VBD_METRICS:
+                b = toVBDMetricsRecord(a);
+                break;
+            case PBD:
+                b = toPBDRecord(a);
+                break;
+            case CRASHDUMP:
+                b = toCrashdumpRecord(a);
+                break;
+            case VTPM:
+                b = toVTPMRecord(a);
+                break;
+            case CONSOLE:
+                b = toConsoleRecord(a);
+                break;
+            case USER:
+                b = toUserRecord(a);
+                break;
+            case DATA_SOURCE:
+                b = toDataSourceRecord(a);
+                break;
+            case BLOB:
+                b = toBlobRecord(a);
+                break;
+            case MESSAGE:
+                b = toMessageRecord(a);
+                break;
+            case SECRET:
+                b = toSecretRecord(a);
+                break;
+            case TUNNEL:
+                b = toTunnelRecord(a);
+                break;
+            case PCI:
+                b = toPCIRecord(a);
+                break;
+            case PGPU:
+                b = toPGPURecord(a);
+                break;
+            case GPU_GROUP:
+                b = toGPUGroupRecord(a);
+                break;
+            case VGPU:
+                b = toVGPURecord(a);
+                break;
+            default:
+                throw new RuntimeException("Internal error in auto-generated code whilst unmarshalling event snapshot");
         }
         record.snapshot = b;
         return record;
@@ -12558,55 +12944,55 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Host.Record record = new Host.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.memoryOverhead = toLong(map.get("memory_overhead"));
-            record.allowedOperations = toSetOfHostAllowedOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringHostAllowedOperations(map.get("current_operations"));
-            record.APIVersionMajor = toLong(map.get("API_version_major"));
-            record.APIVersionMinor = toLong(map.get("API_version_minor"));
-            record.APIVersionVendor = toString(map.get("API_version_vendor"));
-            record.APIVersionVendorImplementation = toMapOfStringString(map.get("API_version_vendor_implementation"));
-            record.enabled = toBoolean(map.get("enabled"));
-            record.softwareVersion = toMapOfStringString(map.get("software_version"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.capabilities = toSetOfString(map.get("capabilities"));
-            record.cpuConfiguration = toMapOfStringString(map.get("cpu_configuration"));
-            record.schedPolicy = toString(map.get("sched_policy"));
-            record.supportedBootloaders = toSetOfString(map.get("supported_bootloaders"));
-            record.residentVMs = toSetOfVM(map.get("resident_VMs"));
-            record.logging = toMapOfStringString(map.get("logging"));
-            record.PIFs = toSetOfPIF(map.get("PIFs"));
-            record.suspendImageSr = toSR(map.get("suspend_image_sr"));
-            record.crashDumpSr = toSR(map.get("crash_dump_sr"));
-            record.crashdumps = toSetOfHostCrashdump(map.get("crashdumps"));
-            record.patches = toSetOfHostPatch(map.get("patches"));
-            record.PBDs = toSetOfPBD(map.get("PBDs"));
-            record.hostCPUs = toSetOfHostCpu(map.get("host_CPUs"));
-            record.cpuInfo = toMapOfStringString(map.get("cpu_info"));
-            record.hostname = toString(map.get("hostname"));
-            record.address = toString(map.get("address"));
-            record.metrics = toHostMetrics(map.get("metrics"));
-            record.licenseParams = toMapOfStringString(map.get("license_params"));
-            record.haStatefiles = toSetOfString(map.get("ha_statefiles"));
-            record.haNetworkPeers = toSetOfString(map.get("ha_network_peers"));
-            record.blobs = toMapOfStringBlob(map.get("blobs"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.externalAuthType = toString(map.get("external_auth_type"));
-            record.externalAuthServiceName = toString(map.get("external_auth_service_name"));
-            record.externalAuthConfiguration = toMapOfStringString(map.get("external_auth_configuration"));
-            record.edition = toString(map.get("edition"));
-            record.licenseServer = toMapOfStringString(map.get("license_server"));
-            record.biosStrings = toMapOfStringString(map.get("bios_strings"));
-            record.powerOnMode = toString(map.get("power_on_mode"));
-            record.powerOnConfig = toMapOfStringString(map.get("power_on_config"));
-            record.localCacheSr = toSR(map.get("local_cache_sr"));
-            record.chipsetInfo = toMapOfStringString(map.get("chipset_info"));
-            record.PCIs = toSetOfPCI(map.get("PCIs"));
-            record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.memoryOverhead = toLong(map.get("memory_overhead"));
+        record.allowedOperations = toSetOfHostAllowedOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringHostAllowedOperations(map.get("current_operations"));
+        record.APIVersionMajor = toLong(map.get("API_version_major"));
+        record.APIVersionMinor = toLong(map.get("API_version_minor"));
+        record.APIVersionVendor = toString(map.get("API_version_vendor"));
+        record.APIVersionVendorImplementation = toMapOfStringString(map.get("API_version_vendor_implementation"));
+        record.enabled = toBoolean(map.get("enabled"));
+        record.softwareVersion = toMapOfStringString(map.get("software_version"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.capabilities = toSetOfString(map.get("capabilities"));
+        record.cpuConfiguration = toMapOfStringString(map.get("cpu_configuration"));
+        record.schedPolicy = toString(map.get("sched_policy"));
+        record.supportedBootloaders = toSetOfString(map.get("supported_bootloaders"));
+        record.residentVMs = toSetOfVM(map.get("resident_VMs"));
+        record.logging = toMapOfStringString(map.get("logging"));
+        record.PIFs = toSetOfPIF(map.get("PIFs"));
+        record.suspendImageSr = toSR(map.get("suspend_image_sr"));
+        record.crashDumpSr = toSR(map.get("crash_dump_sr"));
+        record.crashdumps = toSetOfHostCrashdump(map.get("crashdumps"));
+        record.patches = toSetOfHostPatch(map.get("patches"));
+        record.PBDs = toSetOfPBD(map.get("PBDs"));
+        record.hostCPUs = toSetOfHostCpu(map.get("host_CPUs"));
+        record.cpuInfo = toMapOfStringString(map.get("cpu_info"));
+        record.hostname = toString(map.get("hostname"));
+        record.address = toString(map.get("address"));
+        record.metrics = toHostMetrics(map.get("metrics"));
+        record.licenseParams = toMapOfStringString(map.get("license_params"));
+        record.haStatefiles = toSetOfString(map.get("ha_statefiles"));
+        record.haNetworkPeers = toSetOfString(map.get("ha_network_peers"));
+        record.blobs = toMapOfStringBlob(map.get("blobs"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.externalAuthType = toString(map.get("external_auth_type"));
+        record.externalAuthServiceName = toString(map.get("external_auth_service_name"));
+        record.externalAuthConfiguration = toMapOfStringString(map.get("external_auth_configuration"));
+        record.edition = toString(map.get("edition"));
+        record.licenseServer = toMapOfStringString(map.get("license_server"));
+        record.biosStrings = toMapOfStringString(map.get("bios_strings"));
+        record.powerOnMode = toString(map.get("power_on_mode"));
+        record.powerOnConfig = toMapOfStringString(map.get("power_on_config"));
+        record.localCacheSr = toSR(map.get("local_cache_sr"));
+        record.chipsetInfo = toMapOfStringString(map.get("chipset_info"));
+        record.PCIs = toSetOfPCI(map.get("PCIs"));
+        record.PGPUs = toSetOfPGPU(map.get("PGPUs"));
         return record;
     }
 
@@ -12614,21 +13000,21 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         HostCpu.Record record = new HostCpu.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.host = toHost(map.get("host"));
-            record.number = toLong(map.get("number"));
-            record.vendor = toString(map.get("vendor"));
-            record.speed = toLong(map.get("speed"));
-            record.modelname = toString(map.get("modelname"));
-            record.family = toLong(map.get("family"));
-            record.model = toLong(map.get("model"));
-            record.stepping = toString(map.get("stepping"));
-            record.flags = toString(map.get("flags"));
-            record.features = toString(map.get("features"));
-            record.utilisation = toDouble(map.get("utilisation"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.host = toHost(map.get("host"));
+        record.number = toLong(map.get("number"));
+        record.vendor = toString(map.get("vendor"));
+        record.speed = toLong(map.get("speed"));
+        record.modelname = toString(map.get("modelname"));
+        record.family = toLong(map.get("family"));
+        record.model = toLong(map.get("model"));
+        record.stepping = toString(map.get("stepping"));
+        record.flags = toString(map.get("flags"));
+        record.features = toString(map.get("features"));
+        record.utilisation = toDouble(map.get("utilisation"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12636,13 +13022,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         HostCrashdump.Record record = new HostCrashdump.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.host = toHost(map.get("host"));
-            record.timestamp = toDate(map.get("timestamp"));
-            record.size = toLong(map.get("size"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.host = toHost(map.get("host"));
+        record.timestamp = toDate(map.get("timestamp"));
+        record.size = toLong(map.get("size"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12650,14 +13036,14 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         HostMetrics.Record record = new HostMetrics.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.memoryTotal = toLong(map.get("memory_total"));
-            record.memoryFree = toLong(map.get("memory_free"));
-            record.live = toBoolean(map.get("live"));
-            record.lastUpdated = toDate(map.get("last_updated"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.memoryTotal = toLong(map.get("memory_total"));
+        record.memoryFree = toLong(map.get("memory_free"));
+        record.live = toBoolean(map.get("live"));
+        record.lastUpdated = toDate(map.get("last_updated"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12665,18 +13051,18 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         HostPatch.Record record = new HostPatch.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.version = toString(map.get("version"));
-            record.host = toHost(map.get("host"));
-            record.applied = toBoolean(map.get("applied"));
-            record.timestampApplied = toDate(map.get("timestamp_applied"));
-            record.size = toLong(map.get("size"));
-            record.poolPatch = toPoolPatch(map.get("pool_patch"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.version = toString(map.get("version"));
+        record.host = toHost(map.get("host"));
+        record.applied = toBoolean(map.get("applied"));
+        record.timestampApplied = toDate(map.get("timestamp_applied"));
+        record.size = toLong(map.get("size"));
+        record.poolPatch = toPoolPatch(map.get("pool_patch"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12684,15 +13070,15 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Message.Record record = new Message.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.name = toString(map.get("name"));
-            record.priority = toLong(map.get("priority"));
-            record.cls = toCls(map.get("cls"));
-            record.objUuid = toString(map.get("obj_uuid"));
-            record.timestamp = toDate(map.get("timestamp"));
-            record.body = toString(map.get("body"));
+        record.uuid = toString(map.get("uuid"));
+        record.name = toString(map.get("name"));
+        record.priority = toLong(map.get("priority"));
+        record.cls = toCls(map.get("cls"));
+        record.objUuid = toString(map.get("obj_uuid"));
+        record.timestamp = toDate(map.get("timestamp"));
+        record.body = toString(map.get("body"));
         return record;
     }
 
@@ -12700,21 +13086,21 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Network.Record record = new Network.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.allowedOperations = toSetOfNetworkOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringNetworkOperations(map.get("current_operations"));
-            record.VIFs = toSetOfVIF(map.get("VIFs"));
-            record.PIFs = toSetOfPIF(map.get("PIFs"));
-            record.MTU = toLong(map.get("MTU"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.bridge = toString(map.get("bridge"));
-            record.blobs = toMapOfStringBlob(map.get("blobs"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.defaultLockingMode = toNetworkDefaultLockingMode(map.get("default_locking_mode"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.allowedOperations = toSetOfNetworkOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringNetworkOperations(map.get("current_operations"));
+        record.VIFs = toSetOfVIF(map.get("VIFs"));
+        record.PIFs = toSetOfPIF(map.get("PIFs"));
+        record.MTU = toLong(map.get("MTU"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.bridge = toString(map.get("bridge"));
+        record.blobs = toMapOfStringBlob(map.get("blobs"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.defaultLockingMode = toNetworkDefaultLockingMode(map.get("default_locking_mode"));
         return record;
     }
 
@@ -12722,35 +13108,35 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Pool.Record record = new Pool.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.master = toHost(map.get("master"));
-            record.defaultSR = toSR(map.get("default_SR"));
-            record.suspendImageSR = toSR(map.get("suspend_image_SR"));
-            record.crashDumpSR = toSR(map.get("crash_dump_SR"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.haEnabled = toBoolean(map.get("ha_enabled"));
-            record.haConfiguration = toMapOfStringString(map.get("ha_configuration"));
-            record.haStatefiles = toSetOfString(map.get("ha_statefiles"));
-            record.haHostFailuresToTolerate = toLong(map.get("ha_host_failures_to_tolerate"));
-            record.haPlanExistsFor = toLong(map.get("ha_plan_exists_for"));
-            record.haAllowOvercommit = toBoolean(map.get("ha_allow_overcommit"));
-            record.haOvercommitted = toBoolean(map.get("ha_overcommitted"));
-            record.blobs = toMapOfStringBlob(map.get("blobs"));
-            record.tags = toSetOfString(map.get("tags"));
-            record.guiConfig = toMapOfStringString(map.get("gui_config"));
-            record.wlbUrl = toString(map.get("wlb_url"));
-            record.wlbUsername = toString(map.get("wlb_username"));
-            record.wlbEnabled = toBoolean(map.get("wlb_enabled"));
-            record.wlbVerifyCert = toBoolean(map.get("wlb_verify_cert"));
-            record.redoLogEnabled = toBoolean(map.get("redo_log_enabled"));
-            record.redoLogVdi = toVDI(map.get("redo_log_vdi"));
-            record.vswitchController = toString(map.get("vswitch_controller"));
-            record.restrictions = toMapOfStringString(map.get("restrictions"));
-            record.metadataVDIs = toSetOfVDI(map.get("metadata_VDIs"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.master = toHost(map.get("master"));
+        record.defaultSR = toSR(map.get("default_SR"));
+        record.suspendImageSR = toSR(map.get("suspend_image_SR"));
+        record.crashDumpSR = toSR(map.get("crash_dump_SR"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.haEnabled = toBoolean(map.get("ha_enabled"));
+        record.haConfiguration = toMapOfStringString(map.get("ha_configuration"));
+        record.haStatefiles = toSetOfString(map.get("ha_statefiles"));
+        record.haHostFailuresToTolerate = toLong(map.get("ha_host_failures_to_tolerate"));
+        record.haPlanExistsFor = toLong(map.get("ha_plan_exists_for"));
+        record.haAllowOvercommit = toBoolean(map.get("ha_allow_overcommit"));
+        record.haOvercommitted = toBoolean(map.get("ha_overcommitted"));
+        record.blobs = toMapOfStringBlob(map.get("blobs"));
+        record.tags = toSetOfString(map.get("tags"));
+        record.guiConfig = toMapOfStringString(map.get("gui_config"));
+        record.wlbUrl = toString(map.get("wlb_url"));
+        record.wlbUsername = toString(map.get("wlb_username"));
+        record.wlbEnabled = toBoolean(map.get("wlb_enabled"));
+        record.wlbVerifyCert = toBoolean(map.get("wlb_verify_cert"));
+        record.redoLogEnabled = toBoolean(map.get("redo_log_enabled"));
+        record.redoLogVdi = toVDI(map.get("redo_log_vdi"));
+        record.vswitchController = toString(map.get("vswitch_controller"));
+        record.restrictions = toMapOfStringString(map.get("restrictions"));
+        record.metadataVDIs = toSetOfVDI(map.get("metadata_VDIs"));
         return record;
     }
 
@@ -12758,17 +13144,17 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         PoolPatch.Record record = new PoolPatch.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.version = toString(map.get("version"));
-            record.size = toLong(map.get("size"));
-            record.poolApplied = toBoolean(map.get("pool_applied"));
-            record.hostPatches = toSetOfHostPatch(map.get("host_patches"));
-            record.afterApplyGuidance = toSetOfAfterApplyGuidance(map.get("after_apply_guidance"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.version = toString(map.get("version"));
+        record.size = toLong(map.get("size"));
+        record.poolApplied = toBoolean(map.get("pool_applied"));
+        record.hostPatches = toSetOfHostPatch(map.get("host_patches"));
+        record.afterApplyGuidance = toSetOfAfterApplyGuidance(map.get("after_apply_guidance"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12776,12 +13162,12 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Role.Record record = new Role.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.subroles = toSetOfRole(map.get("subroles"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.subroles = toSetOfRole(map.get("subroles"));
         return record;
     }
 
@@ -12789,11 +13175,11 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Secret.Record record = new Secret.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.value = toString(map.get("value"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.value = toString(map.get("value"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12801,22 +13187,22 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Session.Record record = new Session.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.thisHost = toHost(map.get("this_host"));
-            record.thisUser = toUser(map.get("this_user"));
-            record.lastActive = toDate(map.get("last_active"));
-            record.pool = toBoolean(map.get("pool"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.isLocalSuperuser = toBoolean(map.get("is_local_superuser"));
-            record.subject = toSubject(map.get("subject"));
-            record.validationTime = toDate(map.get("validation_time"));
-            record.authUserSid = toString(map.get("auth_user_sid"));
-            record.authUserName = toString(map.get("auth_user_name"));
-            record.rbacPermissions = toSetOfString(map.get("rbac_permissions"));
-            record.tasks = toSetOfTask(map.get("tasks"));
-            record.parent = toSession(map.get("parent"));
+        record.uuid = toString(map.get("uuid"));
+        record.thisHost = toHost(map.get("this_host"));
+        record.thisUser = toUser(map.get("this_user"));
+        record.lastActive = toDate(map.get("last_active"));
+        record.pool = toBoolean(map.get("pool"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.isLocalSuperuser = toBoolean(map.get("is_local_superuser"));
+        record.subject = toSubject(map.get("subject"));
+        record.validationTime = toDate(map.get("validation_time"));
+        record.authUserSid = toString(map.get("auth_user_sid"));
+        record.authUserName = toString(map.get("auth_user_name"));
+        record.rbacPermissions = toSetOfString(map.get("rbac_permissions"));
+        record.tasks = toSetOfTask(map.get("tasks"));
+        record.parent = toSession(map.get("parent"));
         return record;
     }
 
@@ -12824,12 +13210,12 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Subject.Record record = new Subject.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.subjectIdentifier = toString(map.get("subject_identifier"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.roles = toSetOfRole(map.get("roles"));
+        record.uuid = toString(map.get("uuid"));
+        record.subjectIdentifier = toString(map.get("subject_identifier"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.roles = toSetOfRole(map.get("roles"));
         return record;
     }
 
@@ -12837,24 +13223,24 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Task.Record record = new Task.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.nameLabel = toString(map.get("name_label"));
-            record.nameDescription = toString(map.get("name_description"));
-            record.allowedOperations = toSetOfTaskAllowedOperations(map.get("allowed_operations"));
-            record.currentOperations = toMapOfStringTaskAllowedOperations(map.get("current_operations"));
-            record.created = toDate(map.get("created"));
-            record.finished = toDate(map.get("finished"));
-            record.status = toTaskStatusType(map.get("status"));
-            record.residentOn = toHost(map.get("resident_on"));
-            record.progress = toDouble(map.get("progress"));
-            record.type = toString(map.get("type"));
-            record.result = toString(map.get("result"));
-            record.errorInfo = toSetOfString(map.get("error_info"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
-            record.subtaskOf = toTask(map.get("subtask_of"));
-            record.subtasks = toSetOfTask(map.get("subtasks"));
+        record.uuid = toString(map.get("uuid"));
+        record.nameLabel = toString(map.get("name_label"));
+        record.nameDescription = toString(map.get("name_description"));
+        record.allowedOperations = toSetOfTaskAllowedOperations(map.get("allowed_operations"));
+        record.currentOperations = toMapOfStringTaskAllowedOperations(map.get("current_operations"));
+        record.created = toDate(map.get("created"));
+        record.finished = toDate(map.get("finished"));
+        record.status = toTaskStatusType(map.get("status"));
+        record.residentOn = toHost(map.get("resident_on"));
+        record.progress = toDouble(map.get("progress"));
+        record.type = toString(map.get("type"));
+        record.result = toString(map.get("result"));
+        record.errorInfo = toSetOfString(map.get("error_info"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.subtaskOf = toTask(map.get("subtask_of"));
+        record.subtasks = toSetOfTask(map.get("subtasks"));
         return record;
     }
 
@@ -12862,13 +13248,13 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         Tunnel.Record record = new Tunnel.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.accessPIF = toPIF(map.get("access_PIF"));
-            record.transportPIF = toPIF(map.get("transport_PIF"));
-            record.status = toMapOfStringString(map.get("status"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.accessPIF = toPIF(map.get("access_PIF"));
+        record.transportPIF = toPIF(map.get("transport_PIF"));
+        record.status = toMapOfStringString(map.get("status"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -12876,182 +13262,181 @@ public class Types
         if (object == null) {
             return null;
         }
-        Map<String,Object> map = (Map<String,Object>) object;
+        Map<String, Object> map = (Map<String, Object>)object;
         User.Record record = new User.Record();
-            record.uuid = toString(map.get("uuid"));
-            record.shortName = toString(map.get("short_name"));
-            record.fullname = toString(map.get("fullname"));
-            record.otherConfig = toMapOfStringString(map.get("other_config"));
+        record.uuid = toString(map.get("uuid"));
+        record.shortName = toString(map.get("short_name"));
+        record.fullname = toString(map.get("fullname"));
+        record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
-
-   public static Bond toBond(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toBond(parseResult(task.getResult(connection)));
+    public static Bond toBond(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toBond(parseResult(task.getResult(connection)));
     }
 
-   public static DRTask toDRTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toDRTask(parseResult(task.getResult(connection)));
+    public static DRTask toDRTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toDRTask(parseResult(task.getResult(connection)));
     }
 
-   public static GPUGroup toGPUGroup(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toGPUGroup(parseResult(task.getResult(connection)));
+    public static GPUGroup toGPUGroup(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toGPUGroup(parseResult(task.getResult(connection)));
     }
 
-   public static PBD toPBD(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPBD(parseResult(task.getResult(connection)));
+    public static PBD toPBD(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPBD(parseResult(task.getResult(connection)));
     }
 
-   public static PCI toPCI(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPCI(parseResult(task.getResult(connection)));
+    public static PCI toPCI(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPCI(parseResult(task.getResult(connection)));
     }
 
-   public static PGPU toPGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPGPU(parseResult(task.getResult(connection)));
+    public static PGPU toPGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPGPU(parseResult(task.getResult(connection)));
     }
 
-   public static PIF toPIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPIF(parseResult(task.getResult(connection)));
+    public static PIF toPIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPIF(parseResult(task.getResult(connection)));
     }
 
-   public static PIFMetrics toPIFMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPIFMetrics(parseResult(task.getResult(connection)));
+    public static PIFMetrics toPIFMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPIFMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static SM toSM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toSM(parseResult(task.getResult(connection)));
+    public static SM toSM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toSM(parseResult(task.getResult(connection)));
     }
 
-   public static SR toSR(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toSR(parseResult(task.getResult(connection)));
+    public static SR toSR(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toSR(parseResult(task.getResult(connection)));
     }
 
-   public static VBD toVBD(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVBD(parseResult(task.getResult(connection)));
+    public static VBD toVBD(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVBD(parseResult(task.getResult(connection)));
     }
 
-   public static VBDMetrics toVBDMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVBDMetrics(parseResult(task.getResult(connection)));
+    public static VBDMetrics toVBDMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVBDMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static VDI toVDI(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVDI(parseResult(task.getResult(connection)));
+    public static VDI toVDI(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVDI(parseResult(task.getResult(connection)));
     }
 
-   public static VGPU toVGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVGPU(parseResult(task.getResult(connection)));
+    public static VGPU toVGPU(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVGPU(parseResult(task.getResult(connection)));
     }
 
-   public static VIF toVIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVIF(parseResult(task.getResult(connection)));
+    public static VIF toVIF(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVIF(parseResult(task.getResult(connection)));
     }
 
-   public static VIFMetrics toVIFMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVIFMetrics(parseResult(task.getResult(connection)));
+    public static VIFMetrics toVIFMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVIFMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static VLAN toVLAN(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVLAN(parseResult(task.getResult(connection)));
+    public static VLAN toVLAN(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVLAN(parseResult(task.getResult(connection)));
     }
 
-   public static VM toVM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVM(parseResult(task.getResult(connection)));
+    public static VM toVM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVM(parseResult(task.getResult(connection)));
     }
 
-   public static VMPP toVMPP(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVMPP(parseResult(task.getResult(connection)));
+    public static VMPP toVMPP(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVMPP(parseResult(task.getResult(connection)));
     }
 
-   public static VMAppliance toVMAppliance(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVMAppliance(parseResult(task.getResult(connection)));
+    public static VMAppliance toVMAppliance(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVMAppliance(parseResult(task.getResult(connection)));
     }
 
-   public static VMGuestMetrics toVMGuestMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVMGuestMetrics(parseResult(task.getResult(connection)));
+    public static VMGuestMetrics toVMGuestMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVMGuestMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static VMMetrics toVMMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVMMetrics(parseResult(task.getResult(connection)));
+    public static VMMetrics toVMMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVMMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static VTPM toVTPM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toVTPM(parseResult(task.getResult(connection)));
+    public static VTPM toVTPM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toVTPM(parseResult(task.getResult(connection)));
     }
 
-   public static Blob toBlob(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toBlob(parseResult(task.getResult(connection)));
+    public static Blob toBlob(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toBlob(parseResult(task.getResult(connection)));
     }
 
-   public static Console toConsole(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toConsole(parseResult(task.getResult(connection)));
+    public static Console toConsole(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toConsole(parseResult(task.getResult(connection)));
     }
 
-   public static Crashdump toCrashdump(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toCrashdump(parseResult(task.getResult(connection)));
+    public static Crashdump toCrashdump(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toCrashdump(parseResult(task.getResult(connection)));
     }
 
-   public static Host toHost(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toHost(parseResult(task.getResult(connection)));
+    public static Host toHost(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toHost(parseResult(task.getResult(connection)));
     }
 
-   public static HostCpu toHostCpu(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toHostCpu(parseResult(task.getResult(connection)));
+    public static HostCpu toHostCpu(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toHostCpu(parseResult(task.getResult(connection)));
     }
 
-   public static HostCrashdump toHostCrashdump(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toHostCrashdump(parseResult(task.getResult(connection)));
+    public static HostCrashdump toHostCrashdump(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toHostCrashdump(parseResult(task.getResult(connection)));
     }
 
-   public static HostMetrics toHostMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toHostMetrics(parseResult(task.getResult(connection)));
+    public static HostMetrics toHostMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toHostMetrics(parseResult(task.getResult(connection)));
     }
 
-   public static HostPatch toHostPatch(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toHostPatch(parseResult(task.getResult(connection)));
+    public static HostPatch toHostPatch(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toHostPatch(parseResult(task.getResult(connection)));
     }
 
-   public static Message toMessage(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toMessage(parseResult(task.getResult(connection)));
+    public static Message toMessage(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toMessage(parseResult(task.getResult(connection)));
     }
 
-   public static Network toNetwork(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toNetwork(parseResult(task.getResult(connection)));
+    public static Network toNetwork(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toNetwork(parseResult(task.getResult(connection)));
     }
 
-   public static Pool toPool(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPool(parseResult(task.getResult(connection)));
+    public static Pool toPool(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPool(parseResult(task.getResult(connection)));
     }
 
-   public static PoolPatch toPoolPatch(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toPoolPatch(parseResult(task.getResult(connection)));
+    public static PoolPatch toPoolPatch(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toPoolPatch(parseResult(task.getResult(connection)));
     }
 
-   public static Role toRole(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toRole(parseResult(task.getResult(connection)));
+    public static Role toRole(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toRole(parseResult(task.getResult(connection)));
     }
 
-   public static Secret toSecret(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toSecret(parseResult(task.getResult(connection)));
+    public static Secret toSecret(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toSecret(parseResult(task.getResult(connection)));
     }
 
-   public static Session toSession(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toSession(parseResult(task.getResult(connection)));
+    public static Session toSession(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toSession(parseResult(task.getResult(connection)));
     }
 
-   public static Subject toSubject(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toSubject(parseResult(task.getResult(connection)));
+    public static Subject toSubject(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toSubject(parseResult(task.getResult(connection)));
     }
 
-   public static Task toTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toTask(parseResult(task.getResult(connection)));
+    public static Task toTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toTask(parseResult(task.getResult(connection)));
     }
 
-   public static Tunnel toTunnel(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toTunnel(parseResult(task.getResult(connection)));
+    public static Tunnel toTunnel(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toTunnel(parseResult(task.getResult(connection)));
     }
 
-   public static User toUser(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
-               return Types.toUser(parseResult(task.getResult(connection)));
+    public static User toUser(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult {
+        return Types.toUser(parseResult(task.getResult(connection)));
     }
 
 }

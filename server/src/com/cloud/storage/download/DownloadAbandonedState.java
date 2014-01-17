@@ -23,26 +23,25 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadAbandonedState extends DownloadInactiveState {
 
-	public DownloadAbandonedState(DownloadListener dl) {
-		super(dl);
-	}
+    public DownloadAbandonedState(DownloadListener dl) {
+        super(dl);
+    }
 
-	@Override
-	public String getName() {
-		return Status.ABANDONED.toString();
-	}
+    @Override
+    public String getName() {
+        return Status.ABANDONED.toString();
+    }
 
-	@Override
-	public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
-		super.onEntry(prevState, event, evtObj);
-		if (!prevState.equalsIgnoreCase(getName())){
-			DownloadAnswer answer = new DownloadAnswer("Download canceled", Status.ABANDONED);
-			getDownloadListener().callback(answer);
-			getDownloadListener().cancelStatusTask();
-			getDownloadListener().cancelTimeoutTask();
-			getDownloadListener().sendCommand(RequestType.ABORT);
-		}
-	}
-
+    @Override
+    public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
+        if (!prevState.equalsIgnoreCase(getName())) {
+            DownloadAnswer answer = new DownloadAnswer("Download canceled", Status.ABANDONED);
+            getDownloadListener().callback(answer);
+            getDownloadListener().cancelStatusTask();
+            getDownloadListener().cancelTimeoutTask();
+            getDownloadListener().sendCommand(RequestType.ABORT);
+        }
+    }
 
 }

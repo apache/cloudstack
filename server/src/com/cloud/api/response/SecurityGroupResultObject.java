@@ -23,12 +23,13 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.api.ApiDBUtils;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class SecurityGroupResultObject implements ControlledEntity, InternalIdentity {
     @Param(name = "id")
@@ -55,16 +56,18 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
     public SecurityGroupResultObject() {
     }
 
-    public SecurityGroupResultObject(Long id, String name, String description, long domainId, long accountId, String accountName, List<SecurityGroupRuleResultObject> ingressRules) {
+    public SecurityGroupResultObject(Long id, String name, String description, long domainId, long accountId, String accountName,
+            List<SecurityGroupRuleResultObject> ingressRules) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
         this.accountName = accountName;
-        this.securityGroupRules = ingressRules;
+        securityGroupRules = ingressRules;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -89,6 +92,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
         this.description = description;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -97,6 +101,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
         this.domainId = domainId;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -189,7 +194,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
 
                         securityGroupRuleData.setAllowedSecGroupAcct(allowedAccount.getAccountName());
                     } else if (netGroupRule.getAllowedSourceIpCidr() != null) {
-                    	securityGroupRuleData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
+                        securityGroupRuleData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
                     }
                     securityGroupRuleDataList.add(securityGroupRuleData);
                 }

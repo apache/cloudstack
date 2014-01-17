@@ -16,44 +16,17 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.utils.StringUtils.join;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-
-import java.io.File;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.configuration.Config;
 import com.cloud.storage.JavaStorageLayer;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-
-import com.cloud.utils.S3Utils;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -64,18 +37,19 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
 
     public LocalNfsSecondaryStorageResource() {
         this._dlMgr = new DownloadManagerImpl();
-        ((DownloadManagerImpl) _dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
+        ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
     }
 
+    @Override
     public void setParentPath(String path) {
         this._parent = path;
     }
 
     @Override
     public Answer executeRequest(Command cmd) {
-         return super.executeRequest(cmd);
+        return super.executeRequest(cmd);
     }
 
     @Override
@@ -94,7 +68,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     @Override
     protected void mount(String localRootPath, String remoteDevice, URI uri) {
         ensureLocalRootPathExists(localRootPath, uri);
-        
+
         if (mountExists(localRootPath, uri)) {
             return;
         }

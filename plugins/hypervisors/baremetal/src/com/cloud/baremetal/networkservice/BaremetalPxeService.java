@@ -36,29 +36,29 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeService extends Adapter {
-	
+
     public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
 
     public boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
-    
+
     BaremetalPxeVO addPxeServer(AddBaremetalPxeCmd cmd);
-	
+
     BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo);
-	
-	List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
-	
-	String getPxeServiceType();
-	
-	public static final String PXE_PARAM_TYPE = "type";
-	public static final String PXE_PARAM_ZONE = "zone";
-	public static final String PXE_PARAM_POD = "pod";
-	public static final String PXE_PARAM_IP = "ip";
-	public static final String PXE_PARAM_GUID = "guid";
-	public static final String PXE_PARAM_TFTP_DIR = "tftpDir";
-	public static final String PXE_PARAM_USERNAME = "username";
-	public static final String PXE_PARAM_PASSWORD = "password";
-	public static final String PXE_PARAM_PING_STORAGE_SERVER_IP = "pingStorageServerIp";
-	public static final String PXE_PARAM_PING_ROOT_DIR = "pingDir";
-	public static final String PXE_PARAM_PING_STORAGE_SERVER_USERNAME = "pingStorageServerUserName";
-	public static final String PXE_PARAM_PING_STORAGE_SERVER_PASSWORD = "pingStorageServerPassword";
+
+    List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
+
+    String getPxeServiceType();
+
+    public static final String PXE_PARAM_TYPE = "type";
+    public static final String PXE_PARAM_ZONE = "zone";
+    public static final String PXE_PARAM_POD = "pod";
+    public static final String PXE_PARAM_IP = "ip";
+    public static final String PXE_PARAM_GUID = "guid";
+    public static final String PXE_PARAM_TFTP_DIR = "tftpDir";
+    public static final String PXE_PARAM_USERNAME = "username";
+    public static final String PXE_PARAM_PASSWORD = "password";
+    public static final String PXE_PARAM_PING_STORAGE_SERVER_IP = "pingStorageServerIp";
+    public static final String PXE_PARAM_PING_ROOT_DIR = "pingDir";
+    public static final String PXE_PARAM_PING_STORAGE_SERVER_USERNAME = "pingStorageServerUserName";
+    public static final String PXE_PARAM_PING_STORAGE_SERVER_PASSWORD = "pingStorageServerPassword";
 }

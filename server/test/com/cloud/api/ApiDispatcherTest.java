@@ -19,12 +19,7 @@
 package com.cloud.api;
 
 import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +28,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -48,23 +48,21 @@ public class ApiDispatcherTest {
 
     @Mock
     AccountManager accountManager;
-    
+
     public static class TestCmd extends BaseCmd {
 
         @Parameter(name = "strparam1")
         String strparam1;
-        
-        @Parameter(name="intparam1", type=CommandType.INTEGER)
+
+        @Parameter(name = "intparam1", type = CommandType.INTEGER)
         int intparam1;
 
-        @Parameter(name="boolparam1", type=CommandType.BOOLEAN)
+        @Parameter(name = "boolparam1", type = CommandType.BOOLEAN)
         boolean boolparam1;
 
         @Override
-        public void execute() throws ResourceUnavailableException,
-                InsufficientCapacityException, ServerApiException,
-                ConcurrentOperationException, ResourceAllocationException,
-                NetworkRuleConflictException {
+        public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+            ResourceAllocationException, NetworkRuleConflictException {
             // well documented nothing
         }
 
@@ -86,7 +84,7 @@ public class ApiDispatcherTest {
         new ApiDispatcher().init();
         ApiDispatcher.getInstance()._accountMgr = accountManager;
     }
-    
+
     @After
     public void cleanup() {
         CallContext.unregister();

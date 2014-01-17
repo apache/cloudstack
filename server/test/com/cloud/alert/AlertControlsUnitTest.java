@@ -43,9 +43,13 @@ import com.cloud.user.AccountManager;
 public class AlertControlsUnitTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(AlertControlsUnitTest.class);
 
-    @Spy ManagementServerImpl _mgmtServer = new ManagementServerImpl();
-    @Mock AccountManager _accountMgr;
-    @Mock AlertDao _alertDao;
+    @Spy
+    ManagementServerImpl _mgmtServer = new ManagementServerImpl();
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    AlertDao _alertDao;
+
     @Override
     @Before
     @SuppressWarnings("unchecked")
@@ -74,12 +78,12 @@ public class AlertControlsUnitTest extends TestCase {
     protected void archiveAlerts() {
         // archive alerts
         String msg = "Archive Alerts: TEST FAILED";
-        assertNotNull(msg, _mgmtServer._alertDao.archiveAlert(null, "system alert",null, null, 2L));
+        assertNotNull(msg, _mgmtServer._alertDao.archiveAlert(null, "system alert", null, null, 2L));
     }
 
     protected void deleteAlerts() {
         // delete alerts
         String msg = "Delete Alerts: TEST FAILED";
-        assertNotNull(msg, _mgmtServer._alertDao.deleteAlert(null, "system alert",null, null, 2L));
+        assertNotNull(msg, _mgmtServer._alertDao.deleteAlert(null, "system alert", null, null, 2L));
     }
 }

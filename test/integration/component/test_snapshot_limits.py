@@ -21,7 +21,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import is_snapshot_on_nfs
 import os
 

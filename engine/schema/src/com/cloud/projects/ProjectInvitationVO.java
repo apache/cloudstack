@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -65,16 +66,16 @@ public class ProjectInvitationVO implements ProjectInvitation {
     private String uuid;
 
     protected ProjectInvitationVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public ProjectInvitationVO(long projectId, Long accountId, Long domainId, String email, String token) {
-        this.forAccountId = accountId;
-        this.inDomainId = domainId;
+        forAccountId = accountId;
+        inDomainId = domainId;
         this.projectId = projectId;
         this.email = email;
         this.token = token;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -130,7 +131,7 @@ public class ProjectInvitationVO implements ProjectInvitation {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {

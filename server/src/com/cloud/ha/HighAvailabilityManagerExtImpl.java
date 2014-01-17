@@ -29,42 +29,39 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value={HighAvailabilityManager.class})
+@Local(value = {HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
-	
-    @Inject
-	UsageJobDao _usageJobDao;
-    
-    @Inject ConfigurationDao configDao;
-    
-	@Override
-	public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
-		super.configure(name, xmlParams);
-        return true;
-	}
 
-	@Override
-    public boolean start() 
-	{
-		super.start();
-		
-	        
-        boolean enableUsage = new Boolean(configDao.getValue("enable.usage.server"));
-        
-        //By default, usage is enabled for production
-        //Devs might override this value to disable usage in their setup
-        if(enableUsage)
-        {
-        	_executor.scheduleAtFixedRate(new UsageServerMonitorTask(), 60*60, 10*60, TimeUnit.SECONDS); // schedule starting in one hour to execute every 10 minutes
-        }
-        
+    @Inject
+    UsageJobDao _usageJobDao;
+
+    @Inject
+    ConfigurationDao configDao;
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
+        super.configure(name, xmlParams);
         return true;
     }
-	
-	protected class UsageServerMonitorTask  extends ManagedContextRunnable{
+
+    @Override
+    public boolean start() {
+        super.start();
+
+        boolean enableUsage = new Boolean(configDao.getValue("enable.usage.server"));
+
+        //By default, usage is enabled for production
+        //Devs might override this value to disable usage in their setup
+        if (enableUsage) {
+            _executor.scheduleAtFixedRate(new UsageServerMonitorTask(), 60 * 60, 10 * 60, TimeUnit.SECONDS); // schedule starting in one hour to execute every 10 minutes
+        }
+
+        return true;
+    }
+
+    protected class UsageServerMonitorTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             if (s_logger.isInfoEnabled()) {
@@ -95,9 +92,10 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
                 }
 
                 if (!isRunning) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SERVER, 0, new Long(0), "No usage server process running", "No usage server process has been detected, some attention is required");
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER, 0, new Long(0), "No usage server process running",
+                        "No usage server process has been detected, some attention is required");
                 } else {
-                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_USAGE_SERVER, 0, 0);
+                    _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER, 0, 0);
                 }
             } catch (Exception ex) {
                 s_logger.warn("Error while monitoring usage job", ex);

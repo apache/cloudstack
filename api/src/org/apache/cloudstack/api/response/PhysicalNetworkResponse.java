@@ -18,48 +18,58 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=PhysicalNetwork.class)
+@EntityReference(value = PhysicalNetwork.class)
 @SuppressWarnings("unused")
 public class PhysicalNetworkResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the uuid of the physical network")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the uuid of the physical network")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="name of the physical network")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the physical network")
     private String name;
 
-    @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE) @Param(description="Broadcast domain range of the physical network")
+    @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE)
+    @Param(description = "Broadcast domain range of the physical network")
     private String broadcastDomainRange;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the physical network")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id of the physical network")
     private String zoneId;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the physical network")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the physical network")
     private String state;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the physical network")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the vlan of the physical network")
     private String vlan;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the physical network owner")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the physical network owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "comma separated tag")
     private String tags;
 
-    @SerializedName(ApiConstants.ISOLATION_METHODS) @Param(description="isolation methods")
+    @SerializedName(ApiConstants.ISOLATION_METHODS)
+    @Param(description = "isolation methods")
     private String isolationMethods;
 
-    @SerializedName(ApiConstants.NETWORK_SPEED) @Param(description="the speed of the physical network")
+    @SerializedName(ApiConstants.NETWORK_SPEED)
+    @Param(description = "the speed of the physical network")
     private String networkSpeed;
-
 
     @Override
     public String getObjectId() {
@@ -79,7 +89,6 @@ public class PhysicalNetworkResponse extends BaseResponse {
         this.state = state;
     }
 
-
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
@@ -87,7 +96,6 @@ public class PhysicalNetworkResponse extends BaseResponse {
     public void setVlan(String vlan) {
         this.vlan = vlan;
     }
-
 
     public void setTags(List<String> tags) {
         if (tags == null || tags.size() == 0) {
@@ -99,7 +107,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
             buf.append(tag).append(",");
         }
 
-        this.tags = buf.delete(buf.length()-1, buf.length()).toString();
+        this.tags = buf.delete(buf.length() - 1, buf.length()).toString();
     }
 
     public void setBroadcastDomainRange(String broadcastDomainRange) {
@@ -120,7 +128,7 @@ public class PhysicalNetworkResponse extends BaseResponse {
             buf.append(isolationMethod).append(",");
         }
 
-        this.isolationMethods = buf.delete(buf.length()-1, buf.length()).toString();
+        this.isolationMethods = buf.delete(buf.length() - 1, buf.length()).toString();
     }
 
     public void setName(String name) {

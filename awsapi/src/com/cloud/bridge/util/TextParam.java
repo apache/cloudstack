@@ -17,13 +17,13 @@
 package com.cloud.bridge.util;
 
 public class TextParam {
-	private String textValue;
-	
-	public TextParam(String textValue) {
-		this.textValue = textValue;
-	}
-	
-	public String textValue() {
-		return textValue;
-	}
+    private String textValue;
+
+    public TextParam(String textValue) {
+        this.textValue = textValue;
+    }
+
+    public String textValue() {
+        return textValue;
+    }
 }

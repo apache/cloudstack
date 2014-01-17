@@ -28,49 +28,49 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.server.ResourceTag;
 
 
 @Entity
-@Table(name="resource_tags")
+@Table(name = "resource_tags")
 public class ResourceTagVO implements ResourceTag {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="key")
+    @Column(name = "key")
     private String key;
 
-    @Column(name="value")
+    @Column(name = "value")
     String value;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     long domainId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     long accountId;
 
-    @Column(name="resource_id")
+    @Column(name = "resource_id")
     long resourceId;
 
-    @Column(name="resource_uuid")
+    @Column(name = "resource_uuid")
     private String resourceUuid;
 
-    @Column(name="resource_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "resource_type")
+    @Enumerated(value = EnumType.STRING)
     private ResourceObjectType resourceType;
 
-    @Column(name="customer")
+    @Column(name = "customer")
     String customer;
 
-
-    protected ResourceTagVO(){
-        this.uuid = UUID.randomUUID().toString();
+    protected ResourceTagVO() {
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -83,8 +83,7 @@ public class ResourceTagVO implements ResourceTag {
      * @param customer TODO
      * @param resourceUuid TODO
      */
-    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId,
-            ResourceObjectType resourceType, String customer, String resourceUuid) {
+    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, ResourceObjectType resourceType, String customer, String resourceUuid) {
         super();
         this.key = key;
         this.value = value;
@@ -92,18 +91,27 @@ public class ResourceTagVO implements ResourceTag {
         this.accountId = accountId;
         this.resourceId = resourceId;
         this.resourceType = resourceType;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.customer = customer;
         this.resourceUuid = resourceUuid;
     }
 
-
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("Tag[");
-        buf.append(id).append("|key=").append(key).append("|value=").append(domainId).append("|value=").
-        append("|resourceType=").append(resourceType).append("|resourceId=").append(resourceId)
-        .append("|accountId=").append(accountId).append("]");
+        buf.append(id)
+            .append("|key=")
+            .append(key)
+            .append("|value=")
+            .append(domainId)
+            .append("|value=")
+            .append("|resourceType=")
+            .append(resourceType)
+            .append("|resourceId=")
+            .append(resourceId)
+            .append("|accountId=")
+            .append(accountId)
+            .append("]");
         return buf.toString();
     }
 

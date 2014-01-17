@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -28,24 +30,24 @@ import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since="3.0.0")
+@APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0")
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(ListLBStickinessPoliciesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
 
     private static final String s_name = "listlbstickinesspoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
     // ///////////////////////////////////////////////////

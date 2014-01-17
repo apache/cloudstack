@@ -16,7 +16,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-tools</artifactId>
-    <version>4.3.0-SNAPSHOT</version>
+    <version>4.4.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <build>
@@ -193,15 +193,11 @@
                   <workingDirectory>${basedir}/marvin</workingDirectory>
                   <executable>python</executable>
                   <arguments>
-                    <argument>deployAndRun.py</argument>
-                    <argument>-c</argument>
-                    <argument>${resolved.userdir}/${marvin.config}</argument>
-                    <argument>-t</argument>
-                    <argument>/tmp/t.log</argument>
-                    <argument>-r</argument>
-                    <argument>/tmp/r.log</argument>
-                    <argument>-f</argument>
-                    <argument>${resolved.basedir}/marvin/testSetupSuccess.py</argument>
+                   <argument>deployAndRun.py</argument>
+                   <argument>-c</argument>
+                   <argument>${resolved.userdir}/${marvin.config}</argument>
+                   <argument>-d</argument>
+                   <argument>${resolved.basedir}/marvin/testSetupSuccess.py</argument>
                   </arguments>
                 </configuration>
               </execution>

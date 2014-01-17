@@ -17,7 +17,6 @@
 package com.cloud.utils.component;
 
 import java.util.List;
-import java.util.Map;
 
 // This interface defines methods for pluggable code within the Cloud Stack.
 public interface PluggableService {

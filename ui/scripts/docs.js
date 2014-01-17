@@ -326,6 +326,13 @@ cloudStack.docs = {
         desc: 'Appears only if Custom IOPS is not selected. Define the maximum volume IOPS.',
         externalLink: ''
     },
+    helpDiskOfferingHypervisorSnapshotReserve: {
+        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+    },
+    helpDiskOfferingCacheMode: {
+        desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
+        externalLink: ''
+    },
     helpDiskOfferingStorageTags: {
         desc: 'Comma-separated list of attributes that should be associated with the primary storage for this disk. For example "ssd,blue".',
         externalLink: ''
@@ -591,7 +598,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPodNetmask: {
-        desc: 'The network prefix that defines the pod\'s subnet. Use CIDR notation.',
+        desc: 'The network prefix that defines the pod\'s subnet.',
         externalLink: ''
     },
     helpPodStartIP: {
@@ -767,6 +774,75 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpSRXCapacity: {
+        desc: 'Number of guest networks/accounts that will share this device',
+        externalLink: ''
+    },
+    // Add Palo Alto
+    helpPaloAltoIPAddress: {
+        desc: 'The IP address of the device',
+        externalLink: ''
+    },
+    helpPaloAltoUsername: {
+        desc: 'A user ID with valid authentication credentials that provide to access the device',
+        externalLink: ''
+    },
+    helpPaloAltoPassword: {
+        desc: 'The password for the user ID provided in Username',
+        externalLink: ''
+    },
+    helpPaloAltoType: {
+        desc: 'The type of device that is being added',
+        externalLink: ''
+    },
+    helpPaloAltoPublicInterface: {
+        desc: 'Interface of device that is configured to be part of the public network. For example, ge-0/0/2',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateInterface: {
+        desc: 'Interface of device that is configured to be part of the private network. For example, ge-0/0/1',
+        externalLink: ''
+    },
+    helpPaloAltoUsageInterface: {
+        desc: 'Interface used to meter traffic. If you don\'t want to use the public interface, specify a different interface name here.',
+        externalLink: ''
+    },
+    helpPaloAltoRetries: {
+        desc: 'Number of times to attempt a command on the device before considering the operation failed. Default is 2.',
+        externalLink: ''
+    },
+    helpPaloAltoTimeout: {
+        desc: 'The time to wait for a command on the Palo Alto before considering it failed. Default is 300 seconds.',
+        externalLink: ''
+    },
+    helpPaloAltoMode: {
+        desc: 'Side by side mode is supported for the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoPublicNetwork: {
+        desc: 'The name of the public network on the Palo Alto. For example, trust.',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateNetwork: {
+        desc: 'The name of the private network on the Palo Alto. For example, untrust.',
+        externalLink: ''
+    },
+    helpPaloAltoVirtualRouter: {
+        desc: 'The name of the virtual router on the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoThreatProfile: {
+        desc: 'The threat profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoLogProfile: {
+        desc: 'The log profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoDedicated: {
+        desc: 'Check this box to dedicate the device to a single account. The value in the Capacity field will be ignored.',
+        externalLink: ''
+    },
+    helpPaloAltoCapacity: {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
@@ -1091,6 +1167,10 @@ cloudStack.docs = {
         desc: 'Whether the template is extractable or not',
         externalLink: ''
     },
+    helpRegisterTemplateDynamicallyScalable: {
+        desc: 'Check this if the template contains XS/VMWare tools to support dynamic scaling of VM cpu/memory.',
+        externalLink: ''
+    },
     helpRegisterTemplatePasswordEnabled: {
         desc: 'Check this if the template has the password change script installed.',
         externalLink: ''
@@ -1101,6 +1181,10 @@ cloudStack.docs = {
     },
     helpRegisterTemplateFeatured: {
         desc: 'Check this to make the template more prominent for users. The template will appear in the Featured Templates list.',
+        externalLink: ''
+    },
+    helpRegisterTemplateRouting: {
+        desc: 'Check this if the template is used for deploying router.',
         externalLink: ''
     },
     // Upload volume
@@ -1122,6 +1206,10 @@ cloudStack.docs = {
     },
     helpUploadVolumeChecksum: {
         desc: 'Use the hash that you created at the start of the volume upload procedure',
+        externalLink: ''
+    },
+    helpLdapGroupName: {
+        desc: 'The group name from which you want to import LDAP users',
         externalLink: ''
     }
 };

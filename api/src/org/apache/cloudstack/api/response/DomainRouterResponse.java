@@ -17,9 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -28,139 +29,183 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VirtualMachine.class)
+@EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
-public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
+public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the router")
     private String id;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID for the router")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone ID for the router")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the router")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name for the router")
     private String zoneName;
 
-    @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the router")
+    @SerializedName(ApiConstants.DNS1)
+    @Param(description = "the first DNS for the router")
     private String dns1;
 
-    @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the router")
+    @SerializedName(ApiConstants.DNS2)
+    @Param(description = "the second DNS for the router")
     private String dns2;
 
-    @SerializedName(ApiConstants.IP6_DNS1) @Param(description="the first IPv6 DNS for the router")
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "the first IPv6 DNS for the router")
     private String ip6Dns1;
 
-    @SerializedName(ApiConstants.IP6_DNS2) @Param(description="the second IPv6 DNS for the router")
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "the second IPv6 DNS for the router")
     private String ip6Dns2;
 
-    @SerializedName("networkdomain") @Param(description="the network domain for the router")
+    @SerializedName("networkdomain")
+    @Param(description = "the network domain for the router")
     private String networkDomain;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway for the router")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway for the router")
     private String gateway;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the router")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the router")
     private String name;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID for the router")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "the Pod ID for the router")
     private String podId;
 
-    @SerializedName(ApiConstants.HOST_ID) @Param(description="the host ID for the router")
+    @SerializedName(ApiConstants.HOST_ID)
+    @Param(description = "the host ID for the router")
     private String hostId;
 
-    @SerializedName("hostname") @Param(description="the hostname for the router")
+    @SerializedName("hostname")
+    @Param(description = "the hostname for the router")
     private String hostName;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_IP) @Param(description="the link local IP address for the router")
+    @SerializedName(ApiConstants.LINK_LOCAL_IP)
+    @Param(description = "the link local IP address for the router")
     private String linkLocalIp;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS) @Param(description="the link local MAC address for the router")
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS)
+    @Param(description = "the link local MAC address for the router")
     private String linkLocalMacAddress;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK) @Param(description="the link local netmask for the router")
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK)
+    @Param(description = "the link local netmask for the router")
     private String linkLocalNetmask;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID) @Param(description="the ID of the corresponding link local network")
+    @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID)
+    @Param(description = "the ID of the corresponding link local network")
     private String linkLocalNetworkId;
 
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address for the router")
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    @Param(description = "the public IP address for the router")
     private String publicIp;
 
-    @SerializedName("publicmacaddress") @Param(description="the public MAC address for the router")
+    @SerializedName("publicmacaddress")
+    @Param(description = "the public MAC address for the router")
     private String publicMacAddress;
 
-    @SerializedName("publicnetmask") @Param(description="the public netmask for the router")
+    @SerializedName("publicnetmask")
+    @Param(description = "the public netmask for the router")
     private String publicNetmask;
 
-    @SerializedName("publicnetworkid") @Param(description="the ID of the corresponding public network")
+    @SerializedName("publicnetworkid")
+    @Param(description = "the ID of the corresponding public network")
     private String publicNetworkId;
 
-    @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
+    @SerializedName("guestipaddress")
+    @Param(description = "the guest IP address for the router")
     private String guestIpAddress;
 
-    @SerializedName("guestmacaddress") @Param(description="the guest MAC address for the router")
+    @SerializedName("guestmacaddress")
+    @Param(description = "the guest MAC address for the router")
     private String guestMacAddress;
 
-    @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
+    @SerializedName("guestnetmask")
+    @Param(description = "the guest netmask for the router")
     private String guestNetmask;
 
-    @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
+    @SerializedName("guestnetworkid")
+    @Param(description = "the ID of the corresponding guest network")
     private String guestNetworkId;
 
-    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the template ID for the router")
+    @SerializedName(ApiConstants.TEMPLATE_ID)
+    @Param(description = "the template ID for the router")
     private String templateId;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the router was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date and time the router was created")
     private Date created;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the router")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the router")
     private State state;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the router")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the router")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the ipaddress")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the address")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID associated with the router")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID associated with the router")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain associated with the router")
     private String domainName;
 
-    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering of the virtual machine")
     private String serviceOfferingId;
 
-    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
+    @SerializedName("serviceofferingname")
+    @Param(description = "the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
-    @SerializedName("isredundantrouter") @Param(description="if this router is an redundant virtual router")
+    @SerializedName("isredundantrouter")
+    @Param(description = "if this router is an redundant virtual router")
     private boolean isRedundantRouter;
 
-    @SerializedName("redundantstate") @Param(description="the state of redundant virtual router")
+    @SerializedName("redundantstate")
+    @Param(description = "the state of redundant virtual router")
     private String redundantState;
 
-    @SerializedName("templateversion") @Param(description="the version of template")
-    private String templateVersion;
+    @SerializedName("version")
+    @Param(description = "the version of template")
+    private String version;
 
-    @SerializedName("scriptsversion") @Param(description="the version of scripts")
+    @SerializedName("scriptsversion")
+    @Param(description = "the version of scripts")
     private String scriptsVersion;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the router belongs to")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "VPC the router belongs to")
     private String vpcId;
-    
-    @SerializedName(ApiConstants.ROLE) @Param(description="role of the domain router")
+
+    @SerializedName(ApiConstants.ROLE)
+    @Param(description = "role of the domain router")
     private String role;
 
-    @SerializedName("nic")  @Param(description="the list of nics associated with the router",
-            responseObject = NicResponse.class, since="4.0")
+    @SerializedName("nic")
+    @Param(description = "the list of nics associated with the router", responseObject = NicResponse.class, since = "4.0")
     private Set<NicResponse> nics;
 
-    public DomainRouterResponse(){
+    @SerializedName("requiresupgrade")
+    @Param(description = "true if the router template requires upgrader")
+    private boolean requiresUpgrade;
+
+    public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
 
@@ -308,12 +353,12 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.isRedundantRouter = isRedundantRouter;
     }
 
-    public String getTemplateVersion() {
-        return this.templateVersion;
+    public String getVersion() {
+        return this.version;
     }
 
-    public void setTemplateVersion(String templateVersion) {
-        this.templateVersion = templateVersion;
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public String getScriptsVersion() {
@@ -323,6 +368,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
     }
+
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
@@ -345,23 +391,31 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.nics.add(nic);
     }
 
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
 
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
-	
-	public void setRole(String role) {
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
+    }
+
+    public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean requiresUpgrade() {
+        return requiresUpgrade;
+    }
+
+    public void setRequiresUpgrade(boolean requiresUpgrade) {
+        this.requiresUpgrade = requiresUpgrade;
     }
 }

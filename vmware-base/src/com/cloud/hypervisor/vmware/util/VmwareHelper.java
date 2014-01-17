@@ -72,78 +72,78 @@ import com.cloud.utils.exception.ExceptionUtil;
 
 public class VmwareHelper {
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
-    
-	public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
-		return deviceNumber == 7;
-	}
 
-	public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType,
-		String portGroupName, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+    public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
+        return deviceNumber == 7;
+    }
 
-		VirtualEthernetCard nic;
-		switch(deviceType) {
-		case E1000 :
-			nic = new VirtualE1000();
-			break;
-
-		case PCNet32 :
-			nic = new VirtualPCNet32();
-			break;
-
-		case Vmxnet2 :
-			nic = new VirtualVmxnet2();
-			break;
-
-		case Vmxnet3 :
-			nic = new VirtualVmxnet3();
-			break;
-
-		default :
-			assert(false);
-			nic = new VirtualE1000();
-		}
-
-		VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
-		nicBacking.setDeviceName(portGroupName);
-		nicBacking.setNetwork(morNetwork);
-		nic.setBacking(nicBacking);
-
-		VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-		connectInfo.setAllowGuestControl(true);
-		connectInfo.setConnected(conntected);
-		connectInfo.setStartConnected(connectOnStart);
-		nic.setAddressType("Manual");
-		nic.setConnectable(connectInfo);
-		nic.setMacAddress(macAddress);
-		nic.setUnitNumber(deviceNumber);
-		nic.setKey(-contextNumber);
-		return nic;
-	}
-
-    public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType,
-            String dvPortGroupName, String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+    public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String portGroupName,
+        String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
 
         VirtualEthernetCard nic;
         switch (deviceType) {
-        case E1000:
-            nic = new VirtualE1000();
-            break;
+            case E1000:
+                nic = new VirtualE1000();
+                break;
 
-        case PCNet32:
-            nic = new VirtualPCNet32();
-            break;
+            case PCNet32:
+                nic = new VirtualPCNet32();
+                break;
 
-        case Vmxnet2:
-            nic = new VirtualVmxnet2();
-            break;
+            case Vmxnet2:
+                nic = new VirtualVmxnet2();
+                break;
 
-        case Vmxnet3:
-            nic = new VirtualVmxnet3();
-            break;
+            case Vmxnet3:
+                nic = new VirtualVmxnet3();
+                break;
 
-        default:
-            assert (false);
-            nic = new VirtualE1000();
+            default:
+                assert (false);
+                nic = new VirtualE1000();
+        }
+
+        VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
+        nicBacking.setDeviceName(portGroupName);
+        nicBacking.setNetwork(morNetwork);
+        nic.setBacking(nicBacking);
+
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setAllowGuestControl(true);
+        connectInfo.setConnected(conntected);
+        connectInfo.setStartConnected(connectOnStart);
+        nic.setAddressType("Manual");
+        nic.setConnectable(connectInfo);
+        nic.setMacAddress(macAddress);
+        nic.setUnitNumber(deviceNumber);
+        nic.setKey(-contextNumber);
+        return nic;
+    }
+
+    public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String dvPortGroupName,
+        String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+
+        VirtualEthernetCard nic;
+        switch (deviceType) {
+            case E1000:
+                nic = new VirtualE1000();
+                break;
+
+            case PCNet32:
+                nic = new VirtualPCNet32();
+                break;
+
+            case Vmxnet2:
+                nic = new VirtualVmxnet2();
+                break;
+
+            case Vmxnet3:
+                nic = new VirtualVmxnet3();
+                break;
+
+            default:
+                assert (false);
+                nic = new VirtualE1000();
         }
 
         final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
@@ -168,392 +168,388 @@ public class VmwareHelper {
         return nic;
     }
 
-	// vmdkDatastorePath: [datastore name] vmdkFilePath
-	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath,
-		int sizeInMb, ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
+    // vmdkDatastorePath: [datastore name] vmdkFilePath
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
+        int deviceNumber, int contextNumber) throws Exception {
 
-		VirtualDisk disk = new VirtualDisk();
+        VirtualDisk disk = new VirtualDisk();
 
-		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
+        VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
         backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-    	backingInfo.setThinProvisioned(true);
-    	backingInfo.setEagerlyScrub(false);
+        backingInfo.setThinProvisioned(true);
+        backingInfo.setEagerlyScrub(false);
         backingInfo.setDatastore(morDs);
         backingInfo.setFileName(vmdkDatastorePath);
         disk.setBacking(backingInfo);
 
         int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-		if(controllerKey < 0)
-			controllerKey = ideControllerKey;
-        if(deviceNumber < 0) {
-        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
-        		deviceNumber++;
+        if (controllerKey < 0)
+            controllerKey = ideControllerKey;
+        if (deviceNumber < 0) {
+            deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+            if (controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+                deviceNumber++;
         }
         disk.setControllerKey(controllerKey);
 
-	    disk.setKey(-contextNumber);
-	    disk.setUnitNumber(deviceNumber);
-	    disk.setCapacityInKB(sizeInMb*1024);
+        disk.setKey(-contextNumber);
+        disk.setUnitNumber(deviceNumber);
+        disk.setCapacityInKB(sizeInMb * 1024);
 
-	    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-	    connectInfo.setConnected(true);
-	    connectInfo.setStartConnected(true);
-	    disk.setConnectable(connectInfo);
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setConnected(true);
+        connectInfo.setStartConnected(true);
+        disk.setConnectable(connectInfo);
 
-	    return disk;
-	}
+        return disk;
+    }
 
-	// vmdkDatastorePath: [datastore name] vmdkFilePath, create delta disk based on disk from template
-	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath,
-		int sizeInMb, ManagedObjectReference morDs, VirtualDisk templateDisk, int deviceNumber, int contextNumber) throws Exception {
+    // vmdkDatastorePath: [datastore name] vmdkFilePath, create delta disk based on disk from template
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
+        VirtualDisk templateDisk, int deviceNumber, int contextNumber) throws Exception {
 
-		assert(templateDisk != null);
-		VirtualDeviceBackingInfo parentBacking = templateDisk.getBacking();
-		assert(parentBacking != null);
+        assert (templateDisk != null);
+        VirtualDeviceBackingInfo parentBacking = templateDisk.getBacking();
+        assert (parentBacking != null);
 
-		// TODO Not sure if we need to check if the disk in template and the new disk needs to share the
-		// same datastore
-		VirtualDisk disk = new VirtualDisk();
-		if(parentBacking instanceof VirtualDiskFlatVer1BackingInfo) {
-			VirtualDiskFlatVer1BackingInfo backingInfo = new VirtualDiskFlatVer1BackingInfo();
-	        backingInfo.setDiskMode(((VirtualDiskFlatVer1BackingInfo)parentBacking).getDiskMode());
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setFileName(vmdkDatastorePath);
-	        backingInfo.setParent((VirtualDiskFlatVer1BackingInfo)parentBacking);
-	        disk.setBacking(backingInfo);
-		} else if(parentBacking instanceof VirtualDiskFlatVer2BackingInfo) {
-			VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-	        backingInfo.setDiskMode(((VirtualDiskFlatVer2BackingInfo)parentBacking).getDiskMode());
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setFileName(vmdkDatastorePath);
-	        backingInfo.setParent((VirtualDiskFlatVer2BackingInfo)parentBacking);
-	        disk.setBacking(backingInfo);
-		} else if(parentBacking instanceof VirtualDiskRawDiskMappingVer1BackingInfo) {
-			VirtualDiskRawDiskMappingVer1BackingInfo backingInfo = new VirtualDiskRawDiskMappingVer1BackingInfo();
-	        backingInfo.setDiskMode(((VirtualDiskRawDiskMappingVer1BackingInfo)parentBacking).getDiskMode());
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setFileName(vmdkDatastorePath);
-	        backingInfo.setParent((VirtualDiskRawDiskMappingVer1BackingInfo)parentBacking);
-	        disk.setBacking(backingInfo);
-		} else if(parentBacking instanceof VirtualDiskSparseVer1BackingInfo) {
-			VirtualDiskSparseVer1BackingInfo backingInfo = new VirtualDiskSparseVer1BackingInfo();
-	        backingInfo.setDiskMode(((VirtualDiskSparseVer1BackingInfo)parentBacking).getDiskMode());
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setFileName(vmdkDatastorePath);
-	        backingInfo.setParent((VirtualDiskSparseVer1BackingInfo)parentBacking);
-	        disk.setBacking(backingInfo);
-		} else if(parentBacking instanceof VirtualDiskSparseVer2BackingInfo) {
-			VirtualDiskSparseVer2BackingInfo backingInfo = new VirtualDiskSparseVer2BackingInfo();
-	        backingInfo.setDiskMode(((VirtualDiskSparseVer2BackingInfo)parentBacking).getDiskMode());
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setFileName(vmdkDatastorePath);
-	        backingInfo.setParent((VirtualDiskSparseVer2BackingInfo)parentBacking);
-	        disk.setBacking(backingInfo);
-		} else {
-			throw new Exception("Unsupported disk backing: " + parentBacking.getClass().getCanonicalName());
-		}
-
-		int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-		if(controllerKey < 0)
-			controllerKey = ideControllerKey;
-		disk.setControllerKey(controllerKey);
-		if(deviceNumber < 0) {
-			deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-			if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
-				deviceNumber++;
-		}
-		
-	    disk.setKey(-contextNumber);
-	    disk.setUnitNumber(deviceNumber);
-	    disk.setCapacityInKB(sizeInMb*1024);
-
-	    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-	    connectInfo.setConnected(true);
-	    connectInfo.setStartConnected(true);
-	    disk.setConnectable(connectInfo);
-	    return disk;
-	}
-
-	// vmdkDatastorePath: [datastore name] vmdkFilePath
-	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
-		ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
-
-		assert(vmdkDatastorePathChain != null);
-		assert(vmdkDatastorePathChain.length >= 1);
-
-		VirtualDisk disk;
-		VirtualDiskFlatVer2BackingInfo backingInfo;
-		if(device != null) {
-			disk = device;
-			backingInfo = (VirtualDiskFlatVer2BackingInfo)disk.getBacking();
-		} else {
-			disk = new VirtualDisk();
-			backingInfo = new VirtualDiskFlatVer2BackingInfo();
-	        backingInfo.setDatastore(morDs);
-	        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-			disk.setBacking(backingInfo);
-			
-			int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-			if(controllerKey < 0)
-				controllerKey = ideControllerKey;
-	        if(deviceNumber < 0) {
-	        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-	        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
-	        		deviceNumber++;
-	        }
-	        
-			disk.setControllerKey(controllerKey);
-		    disk.setKey(-contextNumber);
-		    disk.setUnitNumber(deviceNumber);
-
-		    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-		    connectInfo.setConnected(true);
-		    connectInfo.setStartConnected(true);
-		    disk.setConnectable(connectInfo);
-		}
-		
-        backingInfo.setFileName(vmdkDatastorePathChain[0]);
-        if(vmdkDatastorePathChain.length > 1) {
-        	String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
-        	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
-        		parentDisks[i] = vmdkDatastorePathChain[i + 1];
-
-        	setParentBackingInfo(backingInfo, morDs, parentDisks);
+        // TODO Not sure if we need to check if the disk in template and the new disk needs to share the
+        // same datastore
+        VirtualDisk disk = new VirtualDisk();
+        if (parentBacking instanceof VirtualDiskFlatVer1BackingInfo) {
+            VirtualDiskFlatVer1BackingInfo backingInfo = new VirtualDiskFlatVer1BackingInfo();
+            backingInfo.setDiskMode(((VirtualDiskFlatVer1BackingInfo)parentBacking).getDiskMode());
+            backingInfo.setDatastore(morDs);
+            backingInfo.setFileName(vmdkDatastorePath);
+            backingInfo.setParent((VirtualDiskFlatVer1BackingInfo)parentBacking);
+            disk.setBacking(backingInfo);
+        } else if (parentBacking instanceof VirtualDiskFlatVer2BackingInfo) {
+            VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
+            backingInfo.setDiskMode(((VirtualDiskFlatVer2BackingInfo)parentBacking).getDiskMode());
+            backingInfo.setDatastore(morDs);
+            backingInfo.setFileName(vmdkDatastorePath);
+            backingInfo.setParent((VirtualDiskFlatVer2BackingInfo)parentBacking);
+            disk.setBacking(backingInfo);
+        } else if (parentBacking instanceof VirtualDiskRawDiskMappingVer1BackingInfo) {
+            VirtualDiskRawDiskMappingVer1BackingInfo backingInfo = new VirtualDiskRawDiskMappingVer1BackingInfo();
+            backingInfo.setDiskMode(((VirtualDiskRawDiskMappingVer1BackingInfo)parentBacking).getDiskMode());
+            backingInfo.setDatastore(morDs);
+            backingInfo.setFileName(vmdkDatastorePath);
+            backingInfo.setParent((VirtualDiskRawDiskMappingVer1BackingInfo)parentBacking);
+            disk.setBacking(backingInfo);
+        } else if (parentBacking instanceof VirtualDiskSparseVer1BackingInfo) {
+            VirtualDiskSparseVer1BackingInfo backingInfo = new VirtualDiskSparseVer1BackingInfo();
+            backingInfo.setDiskMode(((VirtualDiskSparseVer1BackingInfo)parentBacking).getDiskMode());
+            backingInfo.setDatastore(morDs);
+            backingInfo.setFileName(vmdkDatastorePath);
+            backingInfo.setParent((VirtualDiskSparseVer1BackingInfo)parentBacking);
+            disk.setBacking(backingInfo);
+        } else if (parentBacking instanceof VirtualDiskSparseVer2BackingInfo) {
+            VirtualDiskSparseVer2BackingInfo backingInfo = new VirtualDiskSparseVer2BackingInfo();
+            backingInfo.setDiskMode(((VirtualDiskSparseVer2BackingInfo)parentBacking).getDiskMode());
+            backingInfo.setDatastore(morDs);
+            backingInfo.setFileName(vmdkDatastorePath);
+            backingInfo.setParent((VirtualDiskSparseVer2BackingInfo)parentBacking);
+            disk.setBacking(backingInfo);
+        } else {
+            throw new Exception("Unsupported disk backing: " + parentBacking.getClass().getCanonicalName());
         }
 
-	    return disk;
-	}
+        int ideControllerKey = vmMo.getIDEDeviceControllerKey();
+        if (controllerKey < 0)
+            controllerKey = ideControllerKey;
+        disk.setControllerKey(controllerKey);
+        if (deviceNumber < 0) {
+            deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+            if (controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+                deviceNumber++;
+        }
 
-	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey,
-		Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain,
-		int deviceNumber, int contextNumber) throws Exception {
+        disk.setKey(-contextNumber);
+        disk.setUnitNumber(deviceNumber);
+        disk.setCapacityInKB(sizeInMb * 1024);
 
-		assert(vmdkDatastorePathChain != null);
-		assert(vmdkDatastorePathChain.length >= 1);
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setConnected(true);
+        connectInfo.setStartConnected(true);
+        disk.setConnectable(connectInfo);
+        return disk;
+    }
 
-		VirtualDisk disk = new VirtualDisk();
+    // vmdkDatastorePath: [datastore name] vmdkFilePath
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
+        ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
 
-		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
+        assert (vmdkDatastorePathChain != null);
+        assert (vmdkDatastorePathChain.length >= 1);
+
+        VirtualDisk disk;
+        VirtualDiskFlatVer2BackingInfo backingInfo;
+        if (device != null) {
+            disk = device;
+            backingInfo = (VirtualDiskFlatVer2BackingInfo)disk.getBacking();
+        } else {
+            disk = new VirtualDisk();
+            backingInfo = new VirtualDiskFlatVer2BackingInfo();
+            backingInfo.setDatastore(morDs);
+            backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+            disk.setBacking(backingInfo);
+
+            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
+            if (controllerKey < 0)
+                controllerKey = ideControllerKey;
+            if (deviceNumber < 0) {
+                deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+                if (controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+                    deviceNumber++;
+            }
+
+            disk.setControllerKey(controllerKey);
+            disk.setKey(-contextNumber);
+            disk.setUnitNumber(deviceNumber);
+
+            VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+            connectInfo.setConnected(true);
+            connectInfo.setStartConnected(true);
+            disk.setConnectable(connectInfo);
+        }
+
+        backingInfo.setFileName(vmdkDatastorePathChain[0]);
+        if (vmdkDatastorePathChain.length > 1) {
+            String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
+            for (int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
+                parentDisks[i] = vmdkDatastorePathChain[i + 1];
+
+            setParentBackingInfo(backingInfo, morDs, parentDisks);
+        }
+
+        return disk;
+    }
+
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain,
+        int deviceNumber, int contextNumber) throws Exception {
+
+        assert (vmdkDatastorePathChain != null);
+        assert (vmdkDatastorePathChain.length >= 1);
+
+        VirtualDisk disk = new VirtualDisk();
+
+        VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
         backingInfo.setDatastore(vmdkDatastorePathChain[0].second());
         backingInfo.setFileName(vmdkDatastorePathChain[0].first());
         backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
-        if(vmdkDatastorePathChain.length > 1) {
-        	Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
-        	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
-        		parentDisks[i] = vmdkDatastorePathChain[i + 1];
+        if (vmdkDatastorePathChain.length > 1) {
+            Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
+            for (int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
+                parentDisks[i] = vmdkDatastorePathChain[i + 1];
 
-        	setParentBackingInfo(backingInfo, parentDisks);
+            setParentBackingInfo(backingInfo, parentDisks);
         }
 
         disk.setBacking(backingInfo);
 
         int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-		if(controllerKey < 0)
-			controllerKey = ideControllerKey;
-        if(deviceNumber < 0) {
-        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
-        		deviceNumber++;
+        if (controllerKey < 0)
+            controllerKey = ideControllerKey;
+        if (deviceNumber < 0) {
+            deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+            if (controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+                deviceNumber++;
         }
-        
-		disk.setControllerKey(controllerKey);
-	    disk.setKey(-contextNumber);
-	    disk.setUnitNumber(deviceNumber);
 
-	    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-	    connectInfo.setConnected(true);
-	    connectInfo.setStartConnected(true);
-	    disk.setConnectable(connectInfo);
+        disk.setControllerKey(controllerKey);
+        disk.setKey(-contextNumber);
+        disk.setUnitNumber(deviceNumber);
 
-	    return disk;
-	}
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setConnected(true);
+        connectInfo.setStartConnected(true);
+        disk.setConnectable(connectInfo);
 
-	private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo,
-		ManagedObjectReference morDs, String[] parentDatastorePathList) {
+        return disk;
+    }
 
-		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
-		parentBacking.setDatastore(morDs);
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+    private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo, ManagedObjectReference morDs, String[] parentDatastorePathList) {
 
-		if(parentDatastorePathList.length > 1) {
-			String[] nextDatastorePathList = new String[parentDatastorePathList.length -1];
-			for(int i = 0; i < parentDatastorePathList.length -1; i++)
-				nextDatastorePathList[i] = parentDatastorePathList[i + 1];
-			setParentBackingInfo(parentBacking, morDs, nextDatastorePathList);
-		}
-		parentBacking.setFileName(parentDatastorePathList[0]);
+        VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
+        parentBacking.setDatastore(morDs);
+        parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
 
-		backingInfo.setParent(parentBacking);
-	}
+        if (parentDatastorePathList.length > 1) {
+            String[] nextDatastorePathList = new String[parentDatastorePathList.length - 1];
+            for (int i = 0; i < parentDatastorePathList.length - 1; i++)
+                nextDatastorePathList[i] = parentDatastorePathList[i + 1];
+            setParentBackingInfo(parentBacking, morDs, nextDatastorePathList);
+        }
+        parentBacking.setFileName(parentDatastorePathList[0]);
 
-	private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo,
-		Pair<String, ManagedObjectReference>[] parentDatastorePathList) {
+        backingInfo.setParent(parentBacking);
+    }
 
-		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
-		parentBacking.setDatastore(parentDatastorePathList[0].second());
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+    private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo, Pair<String, ManagedObjectReference>[] parentDatastorePathList) {
 
-		if(parentDatastorePathList.length > 1) {
-			Pair<String, ManagedObjectReference>[] nextDatastorePathList = new Pair[parentDatastorePathList.length -1];
-			for(int i = 0; i < parentDatastorePathList.length -1; i++)
-				nextDatastorePathList[i] = parentDatastorePathList[i + 1];
-			setParentBackingInfo(parentBacking, nextDatastorePathList);
-		}
-		parentBacking.setFileName(parentDatastorePathList[0].first());
+        VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
+        parentBacking.setDatastore(parentDatastorePathList[0].second());
+        parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
 
-		backingInfo.setParent(parentBacking);
-	}
+        if (parentDatastorePathList.length > 1) {
+            Pair<String, ManagedObjectReference>[] nextDatastorePathList = new Pair[parentDatastorePathList.length - 1];
+            for (int i = 0; i < parentDatastorePathList.length - 1; i++)
+                nextDatastorePathList[i] = parentDatastorePathList[i + 1];
+            setParentBackingInfo(parentBacking, nextDatastorePathList);
+        }
+        parentBacking.setFileName(parentDatastorePathList[0].first());
 
-	public static Pair<VirtualDevice, Boolean> prepareIsoDevice(VirtualMachineMO vmMo, String isoDatastorePath, ManagedObjectReference morDs,
-		boolean connect, boolean connectAtBoot, int deviceNumber, int contextNumber) throws Exception {
+        backingInfo.setParent(parentBacking);
+    }
 
-		boolean newCdRom = false;
-		VirtualCdrom cdRom = (VirtualCdrom )vmMo.getIsoDevice();
-		if(cdRom == null) {
-			newCdRom = true;
-			cdRom = new VirtualCdrom();
+    public static Pair<VirtualDevice, Boolean> prepareIsoDevice(VirtualMachineMO vmMo, String isoDatastorePath, ManagedObjectReference morDs, boolean connect,
+        boolean connectAtBoot, int deviceNumber, int contextNumber) throws Exception {
 
-			assert(vmMo.getIDEDeviceControllerKey() >= 0);
-			cdRom.setControllerKey(vmMo.getIDEDeviceControllerKey());
-			if(deviceNumber < 0)
-				deviceNumber = vmMo.getNextIDEDeviceNumber();
+        boolean newCdRom = false;
+        VirtualCdrom cdRom = (VirtualCdrom)vmMo.getIsoDevice();
+        if (cdRom == null) {
+            newCdRom = true;
+            cdRom = new VirtualCdrom();
 
-			cdRom.setUnitNumber(deviceNumber);
-			cdRom.setKey(-contextNumber);
-		}
+            assert (vmMo.getIDEDeviceControllerKey() >= 0);
+            cdRom.setControllerKey(vmMo.getIDEDeviceControllerKey());
+            if (deviceNumber < 0)
+                deviceNumber = vmMo.getNextIDEDeviceNumber();
 
-	    VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
-	    cInfo.setConnected(connect);
-	    cInfo.setStartConnected(connectAtBoot);
-	    cdRom.setConnectable(cInfo);
+            cdRom.setUnitNumber(deviceNumber);
+            cdRom.setKey(-contextNumber);
+        }
 
-        if(isoDatastorePath != null) {
+        VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
+        cInfo.setConnected(connect);
+        cInfo.setStartConnected(connectAtBoot);
+        cdRom.setConnectable(cInfo);
+
+        if (isoDatastorePath != null) {
             VirtualCdromIsoBackingInfo backingInfo = new VirtualCdromIsoBackingInfo();
-	        backingInfo.setFileName(isoDatastorePath);
-	        backingInfo.setDatastore(morDs);
-	        cdRom.setBacking(backingInfo);
+            backingInfo.setFileName(isoDatastorePath);
+            backingInfo.setDatastore(morDs);
+            cdRom.setBacking(backingInfo);
         } else {
-    		VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
-    		backingInfo.setDeviceName("");
-    		cdRom.setBacking(backingInfo);
+            VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
+            backingInfo.setDeviceName("");
+            cdRom.setBacking(backingInfo);
         }
 
-		return new Pair<VirtualDevice, Boolean>(cdRom, newCdRom);
-	}
+        return new Pair<VirtualDevice, Boolean>(cdRom, newCdRom);
+    }
 
-	public static VirtualDisk getRootDisk(VirtualDisk[] disks) {
-		if(disks.length == 1)
-			return disks[0];
+    public static VirtualDisk getRootDisk(VirtualDisk[] disks) {
+        if (disks.length == 1)
+            return disks[0];
 
-		// TODO : for now, always return the first disk as root disk
-		return disks[0];
-	}
+        // TODO : for now, always return the first disk as root disk
+        return disks[0];
+    }
 
-	public static ManagedObjectReference findSnapshotInTree(List<VirtualMachineSnapshotTree> snapTree, String findName) {
-		assert(findName != null);
+    public static ManagedObjectReference findSnapshotInTree(List<VirtualMachineSnapshotTree> snapTree, String findName) {
+        assert (findName != null);
 
-		ManagedObjectReference snapMor = null;
-		if (snapTree == null)
-			return snapMor;
+        ManagedObjectReference snapMor = null;
+        if (snapTree == null)
+            return snapMor;
 
-		for (int i = 0; i < snapTree.size() && snapMor == null; i++) {
-			VirtualMachineSnapshotTree node = snapTree.get(i);
+        for (int i = 0; i < snapTree.size() && snapMor == null; i++) {
+            VirtualMachineSnapshotTree node = snapTree.get(i);
 
-			if (node.getName().equals(findName)) {
-				snapMor = node.getSnapshot();
-			} else {
-				List<VirtualMachineSnapshotTree> childTree = node.getChildSnapshotList();
-				snapMor = findSnapshotInTree(childTree, findName);
-			}
-		}
-		return snapMor;
-	}
+            if (node.getName().equals(findName)) {
+                snapMor = node.getSnapshot();
+            } else {
+                List<VirtualMachineSnapshotTree> childTree = node.getChildSnapshotList();
+                snapMor = findSnapshotInTree(childTree, findName);
+            }
+        }
+        return snapMor;
+    }
 
-	public static byte[] composeDiskInfo(List<Ternary<String, String, String>> diskInfo, int disksInChain, boolean includeBase) throws IOException {
+    public static byte[] composeDiskInfo(List<Ternary<String, String, String>> diskInfo, int disksInChain, boolean includeBase) throws IOException {
 
-		BufferedWriter out = null;
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        BufferedWriter out = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-		try {
-			out = new BufferedWriter(new OutputStreamWriter(bos));
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(bos));
 
-			out.write("disksInChain=" + disksInChain);
-			out.newLine();
+            out.write("disksInChain=" + disksInChain);
+            out.newLine();
 
-			out.write("disksInBackup=" + diskInfo.size());
-			out.newLine();
+            out.write("disksInBackup=" + diskInfo.size());
+            out.newLine();
 
-			out.write("baseDiskIncluded=" + includeBase);
-			out.newLine();
+            out.write("baseDiskIncluded=" + includeBase);
+            out.newLine();
 
-			int seq = disksInChain - 1;
-			for(Ternary<String, String, String> item : diskInfo) {
-				out.write(String.format("disk%d.fileName=%s", seq, item.first()));
-				out.newLine();
+            int seq = disksInChain - 1;
+            for (Ternary<String, String, String> item : diskInfo) {
+                out.write(String.format("disk%d.fileName=%s", seq, item.first()));
+                out.newLine();
 
-				out.write(String.format("disk%d.baseFileName=%s", seq, item.second()));
-				out.newLine();
+                out.write(String.format("disk%d.baseFileName=%s", seq, item.second()));
+                out.newLine();
 
-				if(item.third() != null) {
-					out.write(String.format("disk%d.parentFileName=%s", seq, item.third()));
-					out.newLine();
-				}
-				seq--;
-			}
+                if (item.third() != null) {
+                    out.write(String.format("disk%d.parentFileName=%s", seq, item.third()));
+                    out.newLine();
+                }
+                seq--;
+            }
 
-			out.newLine();
-		} finally {
-			if(out != null)
-				out.close();
-		}
+            out.newLine();
+        } finally {
+            if (out != null)
+                out.close();
+        }
 
-		return bos.toByteArray();
-	}
+        return bos.toByteArray();
+    }
 
-	public static OptionValue[] composeVncOptions(OptionValue[] optionsToMerge,
-		boolean enableVnc, String vncPassword, int vncPort, String keyboardLayout) {
+    public static OptionValue[] composeVncOptions(OptionValue[] optionsToMerge, boolean enableVnc, String vncPassword, int vncPort, String keyboardLayout) {
 
-		int numOptions = 3;
-		boolean needKeyboardSetup = false;
-		if(keyboardLayout != null && !keyboardLayout.isEmpty()) {
-			numOptions++;
-			needKeyboardSetup = true;
-		}
+        int numOptions = 3;
+        boolean needKeyboardSetup = false;
+        if (keyboardLayout != null && !keyboardLayout.isEmpty()) {
+            numOptions++;
+            needKeyboardSetup = true;
+        }
 
-		if(optionsToMerge != null)
-			numOptions += optionsToMerge.length;
+        if (optionsToMerge != null)
+            numOptions += optionsToMerge.length;
 
-		OptionValue[] options = new OptionValue[numOptions];
-		int i = 0;
-		if(optionsToMerge != null) {
-			for(int j = 0; j < optionsToMerge.length; j++)
-				options[i++] = optionsToMerge[j];
-		}
+        OptionValue[] options = new OptionValue[numOptions];
+        int i = 0;
+        if (optionsToMerge != null) {
+            for (int j = 0; j < optionsToMerge.length; j++)
+                options[i++] = optionsToMerge[j];
+        }
 
-		options[i] = new OptionValue();
-		options[i].setKey("RemoteDisplay.vnc.enabled");
-		options[i++].setValue(enableVnc ? "true" : "false");
+        options[i] = new OptionValue();
+        options[i].setKey("RemoteDisplay.vnc.enabled");
+        options[i++].setValue(enableVnc ? "true" : "false");
 
-		options[i] = new OptionValue();
-		options[i].setKey("RemoteDisplay.vnc.password");
-		options[i++].setValue(vncPassword);
+        options[i] = new OptionValue();
+        options[i].setKey("RemoteDisplay.vnc.password");
+        options[i++].setValue(vncPassword);
 
-		options[i] = new OptionValue();
-		options[i].setKey("RemoteDisplay.vnc.port");
-		options[i++].setValue("" + vncPort);
+        options[i] = new OptionValue();
+        options[i].setKey("RemoteDisplay.vnc.port");
+        options[i++].setValue("" + vncPort);
 
-		if(needKeyboardSetup) {
-			options[i] = new OptionValue();
-			options[i].setKey("RemoteDisplay.vnc.keymap");
-			options[i++].setValue(keyboardLayout);
-		}
+        if (needKeyboardSetup) {
+            options[i] = new OptionValue();
+            options[i].setKey("RemoteDisplay.vnc.keymap");
+            options[i++].setValue(keyboardLayout);
+        }
 
-		return options;
-	}
+        return options;
+    }
 
-    public static void setVmScaleUpConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
-                                          int memoryMB, int memoryReserveMB, boolean limitCpuUse) {
+    public static void setVmScaleUpConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
+        boolean limitCpuUse) {
 
         // VM config for scaling up
         vmConfig.setMemoryMB((long)memoryMB);
@@ -576,119 +572,118 @@ public class VmwareHelper {
 
     }
 
-    public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
-		int memoryMB, int memoryReserveMB, String guestOsIdentifier, boolean limitCpuUse) {
+    public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz, int memoryMB, int memoryReserveMB,
+        String guestOsIdentifier, boolean limitCpuUse) {
 
-		// VM config basics
-		vmConfig.setMemoryMB((long)memoryMB);
-		vmConfig.setNumCPUs(cpuCount);
+        // VM config basics
+        vmConfig.setMemoryMB((long)memoryMB);
+        vmConfig.setNumCPUs(cpuCount);
 
-		ResourceAllocationInfo cpuInfo = new ResourceAllocationInfo();
-		if (limitCpuUse) {
-			cpuInfo.setLimit((long)(cpuSpeedMHz * cpuCount));
-		} else {
-			cpuInfo.setLimit(-1L);
-		}
+        ResourceAllocationInfo cpuInfo = new ResourceAllocationInfo();
+        if (limitCpuUse) {
+            cpuInfo.setLimit((long)(cpuSpeedMHz * cpuCount));
+        } else {
+            cpuInfo.setLimit(-1L);
+        }
 
-		cpuInfo.setReservation((long)cpuReservedMhz);
-		vmConfig.setCpuAllocation(cpuInfo);
-		 if (cpuSpeedMHz != cpuReservedMhz){
-             vmConfig.setCpuHotAddEnabled(true);
-         }
-        if (memoryMB != memoryReserveMB){
+        cpuInfo.setReservation((long)cpuReservedMhz);
+        vmConfig.setCpuAllocation(cpuInfo);
+        if (cpuSpeedMHz != cpuReservedMhz) {
+            vmConfig.setCpuHotAddEnabled(true);
+        }
+        if (memoryMB != memoryReserveMB) {
             vmConfig.setMemoryHotAddEnabled(true);
         }
-		ResourceAllocationInfo memInfo = new ResourceAllocationInfo();
-		memInfo.setLimit((long)memoryMB);
-		memInfo.setReservation((long)memoryReserveMB);
-		vmConfig.setMemoryAllocation(memInfo);
+        ResourceAllocationInfo memInfo = new ResourceAllocationInfo();
+        memInfo.setLimit((long)memoryMB);
+        memInfo.setReservation((long)memoryReserveMB);
+        vmConfig.setMemoryAllocation(memInfo);
 
-		vmConfig.setGuestId(guestOsIdentifier);
-	}
+        vmConfig.setGuestId(guestOsIdentifier);
+    }
 
-	public static ManagedObjectReference getDiskDeviceDatastore(VirtualDisk diskDevice) throws Exception {
-		VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
-		assert(backingInfo instanceof VirtualDiskFlatVer2BackingInfo);
-		return ((VirtualDiskFlatVer2BackingInfo)backingInfo).getDatastore();
-	}
+    public static ManagedObjectReference getDiskDeviceDatastore(VirtualDisk diskDevice) throws Exception {
+        VirtualDeviceBackingInfo backingInfo = diskDevice.getBacking();
+        assert (backingInfo instanceof VirtualDiskFlatVer2BackingInfo);
+        return ((VirtualDiskFlatVer2BackingInfo)backingInfo).getDatastore();
+    }
 
-	public static Object getPropValue(ObjectContent oc, String name) {
-		List<DynamicProperty> props = oc.getPropSet();
+    public static Object getPropValue(ObjectContent oc, String name) {
+        List<DynamicProperty> props = oc.getPropSet();
 
-		for(DynamicProperty prop : props) {
-			if(prop.getName().equalsIgnoreCase(name))
-				return prop.getVal();
-		}
+        for (DynamicProperty prop : props) {
+            if (prop.getName().equalsIgnoreCase(name))
+                return prop.getVal();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public static String getFileExtension(String fileName, String defaultExtension) {
-		int pos = fileName.lastIndexOf('.');
-		if(pos < 0)
-			return defaultExtension;
+    public static String getFileExtension(String fileName, String defaultExtension) {
+        int pos = fileName.lastIndexOf('.');
+        if (pos < 0)
+            return defaultExtension;
 
-		return fileName.substring(pos);
-	}
+        return fileName.substring(pos);
+    }
 
-	public static boolean isSameHost(String ipAddress, String destName) {
-		// TODO : may need to do DNS lookup to compare IP address exactly
-		return ipAddress.equals(destName);
-	}
+    public static boolean isSameHost(String ipAddress, String destName) {
+        // TODO : may need to do DNS lookup to compare IP address exactly
+        return ipAddress.equals(destName);
+    }
 
-	public static String getExceptionMessage(Throwable e) {
-		return getExceptionMessage(e, false);
-	}
+    public static String getExceptionMessage(Throwable e) {
+        return getExceptionMessage(e, false);
+    }
 
-	public static String getExceptionMessage(Throwable e, boolean printStack) {
-	    //TODO: in vim 5.1, exceptions do not have a base exception class, MethodFault becomes a FaultInfo that we can only get
-	    // from individual exception through getFaultInfo, so we have to use reflection here to get MethodFault information.
-	    try{
-	        Class cls = e.getClass();
-	        Method mth = cls.getDeclaredMethod("getFaultInfo", null);
-	        if ( mth != null ){
-	            Object fault = mth.invoke(e, null);
-	            if (fault instanceof MethodFault) {
-	                final StringWriter writer = new StringWriter();
-	                writer.append("Exception: " + fault.getClass().getName() + "\n");
-	                writer.append("message: " + ((MethodFault)fault).getFaultMessage() + "\n");
+    public static String getExceptionMessage(Throwable e, boolean printStack) {
+        //TODO: in vim 5.1, exceptions do not have a base exception class, MethodFault becomes a FaultInfo that we can only get
+        // from individual exception through getFaultInfo, so we have to use reflection here to get MethodFault information.
+        try {
+            Class cls = e.getClass();
+            Method mth = cls.getDeclaredMethod("getFaultInfo", null);
+            if (mth != null) {
+                Object fault = mth.invoke(e, null);
+                if (fault instanceof MethodFault) {
+                    final StringWriter writer = new StringWriter();
+                    writer.append("Exception: " + fault.getClass().getName() + "\n");
+                    writer.append("message: " + ((MethodFault)fault).getFaultMessage() + "\n");
 
-	                if(printStack) {
-	                    writer.append("stack: ");
-	                    e.printStackTrace(new PrintWriter(writer));
-	                }
-	                return writer.toString();
-	            }
-	        }
-	    }
-	    catch (Exception ex){
+                    if (printStack) {
+                        writer.append("stack: ");
+                        e.printStackTrace(new PrintWriter(writer));
+                    }
+                    return writer.toString();
+                }
+            }
+        } catch (Exception ex) {
 
-	    }
+        }
 
-		return ExceptionUtil.toString(e, printStack);
-	}
+        return ExceptionUtil.toString(e, printStack);
+    }
 
-	public static VirtualMachineMO pickOneVmOnRunningHost(List<VirtualMachineMO> vmList, boolean bFirstFit) throws Exception {
-		List<VirtualMachineMO> candidates = new ArrayList<VirtualMachineMO>();
+    public static VirtualMachineMO pickOneVmOnRunningHost(List<VirtualMachineMO> vmList, boolean bFirstFit) throws Exception {
+        List<VirtualMachineMO> candidates = new ArrayList<VirtualMachineMO>();
 
-    	for(VirtualMachineMO vmMo : vmList) {
-    		HostMO hostMo = vmMo.getRunningHost();
-    		if(hostMo.isHyperHostConnected())
-    			candidates.add(vmMo);
-    	}
+        for (VirtualMachineMO vmMo : vmList) {
+            HostMO hostMo = vmMo.getRunningHost();
+            if (hostMo.isHyperHostConnected())
+                candidates.add(vmMo);
+        }
 
-    	if(candidates.size() == 0)
-    		return null;
+        if (candidates.size() == 0)
+            return null;
 
-    	if(bFirstFit)
-    		return candidates.get(0);
+        if (bFirstFit)
+            return candidates.get(0);
 
-    	Random random = new Random();
-    	return candidates.get(random.nextInt(candidates.size()));
-	}
+        Random random = new Random();
+        return candidates.get(random.nextInt(candidates.size()));
+    }
 
     public static boolean isDvPortGroup(ManagedObjectReference networkMor) {
-         return "DistributedVirtualPortgroup".equalsIgnoreCase(networkMor.getType());
+        return "DistributedVirtualPortgroup".equalsIgnoreCase(networkMor.getType());
     }
 
     public static boolean isFeatureLicensed(VmwareHypervisorHost hyperHost, String featureKey) throws Exception {
@@ -708,9 +703,9 @@ public class VmwareHelper {
 
         return hotplugSupportedByLicense;
     }
-    
+
     public static String getVCenterSafeUuid() {
-    	// Object name that is greater than 32 is not safe in vCenter
-    	return UUID.randomUUID().toString().replaceAll("-", "");
+        // Object name that is greater than 32 is not safe in vCenter
+        return UUID.randomUUID().toString().replaceAll("-", "");
     }
 }

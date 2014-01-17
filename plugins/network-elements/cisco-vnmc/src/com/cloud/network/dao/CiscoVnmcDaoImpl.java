@@ -29,10 +29,9 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=CiscoVnmcDao.class)
-public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcControllerVO, Long>
-        implements CiscoVnmcDao {
-    
+@Local(value = CiscoVnmcDao.class)
+public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcControllerVO, Long> implements CiscoVnmcDao {
+
     protected final SearchBuilder<CiscoVnmcControllerVO> physicalNetworkIdSearch;
 
     public CiscoVnmcDaoImpl() {

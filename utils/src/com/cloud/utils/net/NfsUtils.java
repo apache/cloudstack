@@ -41,7 +41,7 @@ public class NfsUtils {
         return safe;
     }
 
-    public static String getHostPart(String nfsPath)  {
+    public static String getHostPart(String nfsPath) {
         String toks[] = nfsPath.split(":");
         if (toks != null && toks.length == 2) {
             return toks[0];

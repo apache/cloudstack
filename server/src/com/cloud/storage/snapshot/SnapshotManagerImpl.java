@@ -134,7 +134,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
-@Local(value = { SnapshotManager.class, SnapshotApiService.class })
+@Local(value = {SnapshotManager.class, SnapshotApiService.class})
 public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager, SnapshotApiService {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
@@ -186,17 +186,24 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject
     private VMSnapshotDao _vmSnapshotDao;
     String _name;
-    @Inject TemplateManager templateMgr;
-    @Inject VolumeOrchestrationService volumeMgr;
-    @Inject DataStoreManager dataStoreMgr;
-    @Inject SnapshotService snapshotSrv;
-    @Inject VolumeDataFactory volFactory;
-    @Inject SnapshotDataFactory snapshotFactory;
-    @Inject EndPointSelector _epSelector;
-	@Inject
-	private ResourceManager _resourceMgr;
-    @Inject StorageStrategyFactory _storageStrategyFactory;
-
+    @Inject
+    TemplateManager templateMgr;
+    @Inject
+    VolumeOrchestrationService volumeMgr;
+    @Inject
+    DataStoreManager dataStoreMgr;
+    @Inject
+    SnapshotService snapshotSrv;
+    @Inject
+    VolumeDataFactory volFactory;
+    @Inject
+    SnapshotDataFactory snapshotFactory;
+    @Inject
+    EndPointSelector _epSelector;
+    @Inject
+    private ResourceManager _resourceMgr;
+    @Inject
+    StorageStrategyFactory _storageStrategyFactory;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -214,7 +221,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Long vmHostId = getHostIdForSnapshotOperation(vol);
 
         if (vmHostId != null) {
-            hostIdsToTryFirst = new long[] { vmHostId };
+            hostIdsToTryFirst = new long[] {vmHostId};
         }
 
         List<Long> hostIdsToAvoid = new ArrayList<Long>();
@@ -250,9 +257,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public Long getHostIdForSnapshotOperation(Volume vol) {
         VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
         if (vm != null) {
-            if(vm.getHostId() != null) {
+            if (vm.getHostId() != null) {
                 return vm.getHostId();
-            } else if(vm.getLastHostId() != null) {
+            } else if (vm.getLastHostId() != null) {
                 return vm.getLastHostId();
             }
         }
@@ -281,7 +288,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
 
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshotId+"'");
+            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
             return false;
         }
 
@@ -294,13 +301,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner) {
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
-        	throw new InvalidParameterValueException("No such volume exist");
+            throw new InvalidParameterValueException("No such volume exist");
         }
 
         if (volume.getState() != Volume.State.Ready) {
-        	throw new InvalidParameterValueException("Volume is not in ready state");
+            throw new InvalidParameterValueException("Volume is not in ready state");
         }
-
 
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
@@ -309,26 +315,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
         try {
-        	postCreateSnapshot(volumeId, snapshot.getId(), policyId);
-        	//Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
-        	SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
-        	if ((freshSnapshot != null) && backedUp) {
-        		UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
-        				snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-        				volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
-        	}
-
-        	_resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
-
-        } catch(Exception e) {
-            s_logger.debug("Failed to create snapshot", e);
-            if (backup) {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage,
-                        new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage,
-                        new Long(volume.getSize()));
+            postCreateSnapshot(volumeId, snapshot.getId(), policyId);
+            //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
+            SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
+            if ((freshSnapshot != null) && backedUp) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
+                    null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
             }
+            _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+
+        } catch (Exception e) {
+            s_logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
 
@@ -337,17 +334,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     public Snapshot backupSnapshot(Long snapshotId) {
-    	 SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-    	 if (snapshot != null) {
-    		 throw new CloudRuntimeException("Already in the backup snapshot:" + snapshotId);
-    	 }
+        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        if (snapshot != null) {
+            throw new CloudRuntimeException("Already in the backup snapshot:" + snapshotId);
+        }
 
          return snapshotSrv.backupSnapshot(snapshot);
     }
 
     @Override
     public SnapshotVO getParentSnapshot(VolumeInfo volume) {
-    	 long preId = _snapshotDao.getLastSnapshot(volume.getId(), DataStoreRole.Primary);
+        long preId = _snapshotDao.getLastSnapshot(volume.getId(), DataStoreRole.Primary);
 
          SnapshotVO preSnapshotVO = null;
          if (preId != 0 && !(volume.getLastPoolId() != null && !volume.getLastPoolId().equals(volume.getPoolId()))) {
@@ -397,9 +394,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             if (policy != null) {
             s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             }
-            if(deleteSnapshot(oldSnapId)){
-            	//log Snapshot delete event
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
+            if (deleteSnapshot(oldSnapId)) {
+                //log Snapshot delete event
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE,
+                    "Successfully deleted oldest snapshot: " + oldSnapId, 0);
             }
             snaps.remove(oldestSnapshot);
         }
@@ -420,35 +418,36 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshotId+"'");
+            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
             return false;
         }
+        SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
 
         try {
-        	boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
-        	if (result) {
+            boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
+            if (result) {
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-        			UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(),
-        					snapshotCheck.getDataCenterId(), snapshotId, snapshotCheck.getName(), null, null, 0L,
-        					snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
-        		}
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
+                        snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
+                }
+                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed)
                 _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
-                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage,
-                        new Long(snapshotCheck.getSize()));
-        	}
-        	return result;
+                if (snapshotCheck.getState() == Snapshot.State.BackedUp)
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
+            }
+            return result;
         } catch (Exception e) {
-        	s_logger.debug("Failed to delete snapshot: " + snapshotCheck.getId() + ":" + e.toString());
-        	throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
+            s_logger.debug("Failed to delete snapshot: " + snapshotCheck.getId() + ":" + e.toString());
+            throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
         }
     }
 
     @Override
     public String getSecondaryStorageURL(SnapshotVO snapshot) {
         SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
-        if (snapshotStore != null){
+        if (snapshotStore != null) {
             DataStore store = dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
-            if ( store != null ){
+            if (store != null) {
                 return store.getUri();
             }
         }
@@ -496,10 +495,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        
+
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < tags.size(); count++) {
+            for (int count = 0; count < tags.size(); count++) {
                 tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
                 tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
                 tagSearch.cp();
@@ -531,7 +530,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        
+
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
@@ -618,21 +617,20 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             for (SnapshotVO snapshot : snapshots) {
                 SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
                 if (snapshotStrategy == null) {
-                    s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshot.getId()+"'");
+                    s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshot.getId() + "'");
                     continue;
                 }
+                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
                 if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
                     if (snapshot.getRecurringType() == Type.MANUAL) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
-                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage,
-                                new Long(snapshot.getSize()));
+                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
                     }
 
                     // Log event after successful deletion
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(),
-                            volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null,
-                            volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(),
+                        snapshot.getName(), null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
                 }
             }
         }
@@ -653,12 +651,13 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
+                ". Cannot take snapshot.");
         }
 
-        if (volume.getTemplateId() != null ) {
+        if (volume.getTemplateId() != null) {
             VMTemplateVO  template = _templateDao.findById(volume.getTemplateId());
-            if( template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM ) {
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }
@@ -703,10 +702,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (!_accountMgr.isRootAdmin(owner.getId())&& ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
-        	String message = "domain/account";
-        	if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        		message = "domain/project";
-        	}
+            String message = "domain/account";
+            if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                message = "domain/project";
+            }
 
             throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
         }
@@ -721,7 +720,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
                 policy.setSchedule(cmd.getSchedule());
                 policy.setTimezone(timezoneId);
-                policy.setInterval((short) intvType.ordinal());
+                policy.setInterval((short)intvType.ordinal());
                 policy.setMaxSnaps(cmd.getMaxSnaps());
                 policy.setActive(true);
                 _snapshotPolicyDao.update(policy.getId(), policy);
@@ -752,7 +751,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId);
         return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
     }
-
 
     private List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId) {
         return _snapshotPolicyDao.listByVolumeId(volumeId);
@@ -843,37 +841,37 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     private boolean hostSupportSnapsthotForVolume(HostVO host, VolumeInfo volume) {
-		if (host.getHypervisorType() != HypervisorType.KVM) {
-			return true;
-		}
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            return true;
+        }
 
         //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
-		//unless it is set in the global flag
-		Long vmId = volume.getInstanceId();
-		if (vmId != null) {
-		    VMInstanceVO vm = _vmDao.findById(vmId);
-		    if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
-		        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
-	            if (!snapshotEnabled) {
-	                 s_logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
-	                 return false;
-	            }
-		    }
-		}
-        
-		// Determine host capabilities
-		String caps = host.getCapabilities();
+        //unless it is set in the global flag
+        Long vmId = volume.getInstanceId();
+        if (vmId != null) {
+            VMInstanceVO vm = _vmDao.findById(vmId);
+            if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
+                boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+                if (!snapshotEnabled) {
+                    s_logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
+                    return false;
+                }
+            }
+        }
 
-		if (caps != null) {
-			String[] tokens = caps.split(",");
-			for (String token : tokens) {
-				if (token.contains("snapshot")) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+        // Determine host capabilities
+        String caps = host.getCapabilities();
+
+        if (caps != null) {
+            String[] tokens = caps.split(",");
+            for (String token : tokens) {
+                if (token.contains("snapshot")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     private boolean supportedByHypervisor(VolumeInfo volume) {
         HypervisorType hypervisorType;
@@ -891,10 +889,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if (hypervisorType.equals(HypervisorType.KVM)) {
             List<HostVO> hosts = null;
-            if(scope.equals(ScopeType.CLUSTER)){
+            if (scope.equals(ScopeType.CLUSTER)) {
                 ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
                 hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
-            } else if (scope.equals(ScopeType.ZONE)){
+            } else if (scope.equals(ScopeType.ZONE)) {
                 hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, volume.getDataCenterId());
             }
             if (hosts != null && !hosts.isEmpty()) {
@@ -905,37 +903,34 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
         }
 
-		// if volume is attached to a vm in destroyed or expunging state; disallow
-		if (volume.getInstanceId() != null) {
-			UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
-			if (userVm != null) {
+        // if volume is attached to a vm in destroyed or expunging state; disallow
+        if (volume.getInstanceId() != null) {
+            UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
+            if (userVm != null) {
                 if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
-                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volume.getId()
-                            + " is associated with vm:" + userVm.getInstanceName() + " is in "
-                            + userVm.getState().toString() + " state");
+                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volume.getId() + " is associated with vm:" + userVm.getInstanceName() +
+                        " is in " + userVm.getState().toString() + " state");
                 }
 
-                if (userVm.getHypervisorType() == HypervisorType.VMware
-                        || userVm.getHypervisorType() == HypervisorType.KVM) {
-                    List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(),
-                            Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
-                    if (activeSnapshots.size() > 1) {
-                        throw new CloudRuntimeException(
-                                "There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                if (userVm.getHypervisorType() == HypervisorType.VMware || userVm.getHypervisorType() == HypervisorType.KVM) {
+                    List<SnapshotVO> activeSnapshots =
+                        _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
+                    if (activeSnapshots.size() > 0) {
+                        throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
                 }
 
-                List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
-                        VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+                List<VMSnapshotVO> activeVMSnapshots =
+                    _vmSnapshotDao.listByInstanceId(userVm.getId(), VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
                 if (activeVMSnapshots.size() > 0) {
-                    throw new CloudRuntimeException(
-                            "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                    throw new CloudRuntimeException("There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
                 }
-			}
-		}
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
+
     @Override
     @DB
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
@@ -943,7 +938,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Long snapshotId = payload.getSnapshotId();
         Account snapshotOwner = payload.getAccount();
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
-
+        snapshot.addPayload(payload);
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
 
@@ -956,22 +951,18 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             try {
             postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
-                    snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                    volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
-            _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
+                    null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+                // Correct the resource count of snapshot in case of delta snapshots.
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getSize()));
             } catch (Exception e) {
                 s_logger.debug("post process snapshot failed", e);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             s_logger.debug("Failed to create snapshot", e);
-            if (backup) {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage,
-                        new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage,
-                        new Long(volume.getSize()));
-            }
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
@@ -1056,12 +1047,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     public boolean canOperateOnVolume(Volume volume) {
-        List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating,
-                Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
-    	if (snapshots.size() > 0) {
-    		return false;
-    	}
-    	return true;
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
+        if (snapshots.size() > 0) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -1075,19 +1065,16 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
 
-        try{
+        try {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-            if (backup) {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long(volume.getSize()));
-            }
         } catch (ResourceAllocationException e) {
-            if (snapshotType != Type.MANUAL){
+            if (snapshotType != Type.MANUAL) {
                 String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
                 s_logger.warn(msg);
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg,
-                        "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg,
+                    "Snapshot resource limit exceeded for account id : " + owner.getId() +
+                        ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
             }
             throw e;
         }
@@ -1111,20 +1098,16 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             hypervisorType = volume.getHypervisorType();
         }
 
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
+        SnapshotVO snapshotVO =
+            new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
+                (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
 
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
         }
-        if (backup) {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
-                    new Long(volume.getSize()));
-        } else {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize()));
-        }
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
     }
 

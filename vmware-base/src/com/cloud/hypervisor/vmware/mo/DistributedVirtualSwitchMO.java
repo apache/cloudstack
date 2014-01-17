@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -31,6 +30,8 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VMwareDVSConfigInfo;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(DistributedVirtualSwitchMO.class);
@@ -60,7 +61,7 @@ public class DistributedVirtualSwitchMO extends BaseMO {
 
     public TaskInfo updateVMWareDVSwitchGetTask(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
         ManagedObjectReference task = _context.getService().reconfigureDvsTask(dvSwitchMor, dvsSpec);
-        TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
+        TaskInfo info = (TaskInfo)(_context.getVimClient().getDynamicProperty(task, "info"));
         boolean waitvalue = _context.getVimClient().waitForTask(task);
         return info;
     }

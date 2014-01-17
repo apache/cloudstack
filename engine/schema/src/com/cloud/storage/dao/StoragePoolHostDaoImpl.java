@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { StoragePoolHostDao.class })
+@Local(value = {StoragePoolHostDao.class})
 public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Long> implements StoragePoolHostDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolHostDaoImpl.class.getName());
 
@@ -46,16 +46,13 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
 
-    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
-            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
-            + " GROUP by p.data_center_id";
+    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
+        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
 
-    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
-            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
-            + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
+    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
+        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
 
-    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref "
-            + "WHERE host_id = ?";
+    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref " + "WHERE host_id = ?";
 
     public StoragePoolHostDaoImpl() {
         PoolSearch = createSearchBuilder();
@@ -161,7 +158,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     /**
      * This method deletes the primary records from the host
-     * 
+     *
      * @param hostId
      *            -- id of the host
      */

@@ -213,6 +213,17 @@
                                 });
                             }
 
+                            if (args.data.networkLimit != null) {
+                                $.ajax({
+                                    url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=6&max=" + args.data.networkLimit),
+                                    dataType: "json",
+                                    async: false,
+                                    success: function(json) {
+                                        domainObj["networkLimit"] = args.data.networkLimit;
+                                    }
+                                });
+                            }
+
                             if (args.data.primaryStorageLimit != null) {
                                 $.ajax({
                                     url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=10&max=" + args.data.primaryStorageLimit),
@@ -432,6 +443,15 @@
                                         return true;
                                 }
                             },
+                            networkLimit: {
+                                label: 'label.network.limits',
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
+                                        return false;
+                                    else
+                                        return true;
+                                }
+                            },
                             primaryStorageLimit: {
                                 label: 'label.primary.storage.limits',
                                 isEditable: function(args) {
@@ -559,6 +579,9 @@
                                                     break;
                                                 case "4":
                                                     domainObj["templateLimit"] = limit.max;
+                                                    break;
+                                                case "6":
+                                                    domainObj["networkLimit"] = limit.max;
                                                     break;
                                                 case "7":
                                                     domainObj["vpcLimit"] = limit.max;

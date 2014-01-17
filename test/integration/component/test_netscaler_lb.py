@@ -25,7 +25,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 import datetime
 
 
@@ -149,6 +149,7 @@ class TestLbSourceNat(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbSourceNat,
                                cls
@@ -164,9 +165,7 @@ class TestLbSourceNat(cloudstackTestCase):
                            )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -359,6 +358,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbOnIpWithPf,
                                cls
@@ -374,9 +374,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -573,6 +571,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestPfOnIpWithLb,
                                cls
@@ -588,9 +587,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -788,6 +785,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbOnNonSourceNat,
                                cls
@@ -803,9 +801,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1006,6 +1002,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestAddMultipleVmsLb,
                                cls
@@ -1021,9 +1018,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1228,7 +1223,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -1286,6 +1281,7 @@ class TestMultipleLbRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestMultipleLbRules,
                                cls
@@ -1301,9 +1297,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1606,6 +1600,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestMultipleLbRulesSameIp,
                                cls
@@ -1619,11 +1614,10 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -2104,7 +2098,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2430,7 +2424,7 @@ class TestVmWithLb(cloudstackTestCase):
                 )
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2523,7 +2517,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2596,7 +2590,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2709,7 +2703,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2797,7 +2791,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2880,7 +2874,7 @@ class TestVmWithLb(cloudstackTestCase):
         time.sleep(int(delay[0].value) + int(wait[0].value))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2936,7 +2930,7 @@ class TestVmWithLb(cloudstackTestCase):
                 )
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],

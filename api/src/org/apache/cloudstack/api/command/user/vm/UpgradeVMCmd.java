@@ -16,6 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
@@ -58,6 +63,9 @@ public class UpgradeVMCmd extends BaseCmd {
             required=true, description="the service offering ID to apply to the virtual machine")
     protected Long serviceOfferingId;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +76,21 @@ public class UpgradeVMCmd extends BaseCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> customparameterMap = new HashMap<String, String>();
+        if (details != null && details.size() != 0) {
+            Collection parameterCollection = details.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (String key : value.keySet()) {
+                    customparameterMap.put(key, value.get(key));
+                }
+            }
+        }
+        return customparameterMap;
     }
 
     /////////////////////////////////////////////////////
@@ -94,8 +117,8 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceAllocationException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
@@ -103,6 +126,7 @@ public class UpgradeVMCmd extends BaseCmd {
         }
 
         UserVm result = _userVmService.upgradeVirtualMachine(this);
+
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());

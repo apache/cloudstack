@@ -24,7 +24,6 @@ import static com.cloud.utils.StringUtils.join;
 import static java.io.File.createTempFile;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -48,7 +47,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
@@ -82,19 +80,16 @@ public final class S3Utils {
 
     public static AmazonS3 acquireClient(final ClientOptions clientOptions) {
 
-        final AWSCredentials credentials = new BasicAWSCredentials(
-                clientOptions.getAccessKey(), clientOptions.getSecretKey());
+        final AWSCredentials credentials = new BasicAWSCredentials(clientOptions.getAccessKey(), clientOptions.getSecretKey());
 
         final ClientConfiguration configuration = new ClientConfiguration();
 
         if (clientOptions.isHttps() != null) {
-            configuration.setProtocol(clientOptions.isHttps() == true ? HTTPS
-                    : HTTP);
+            configuration.setProtocol(clientOptions.isHttps() == true ? HTTPS : HTTP);
         }
 
         if (clientOptions.getConnectionTimeout() != null) {
-            configuration.setConnectionTimeout(clientOptions
-                    .getConnectionTimeout());
+            configuration.setConnectionTimeout(clientOptions.getConnectionTimeout());
         }
 
         if (clientOptions.getMaxErrorRetry() != null) {
@@ -106,23 +101,15 @@ public final class S3Utils {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format(
-                    "Creating S3 client with configuration: [protocol: %1$s, connectionTimeOut: "
-                            + "%2$s, maxErrorRetry: %3$s, socketTimeout: %4$s]",
-                    configuration.getProtocol(),
-                    configuration.getConnectionTimeout(),
-                    configuration.getMaxErrorRetry(),
-                    configuration.getSocketTimeout()));
+            LOGGER.debug(format("Creating S3 client with configuration: [protocol: %1$s, connectionTimeOut: " + "%2$s, maxErrorRetry: %3$s, socketTimeout: %4$s]",
+                configuration.getProtocol(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout()));
         }
 
-        final AmazonS3Client client = new AmazonS3Client(credentials,
-                configuration);
+        final AmazonS3Client client = new AmazonS3Client(credentials, configuration);
 
         if (isNotBlank(clientOptions.getEndPoint())) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(format(
-                        "Setting the end point for S3 client %1$s to %2$s.",
-                        client, clientOptions.getEndPoint()));
+                LOGGER.debug(format("Setting the end point for S3 client %1$s to %2$s.", client, clientOptions.getEndPoint()));
             }
             client.setEndpoint(clientOptions.getEndPoint());
         }
@@ -131,8 +118,7 @@ public final class S3Utils {
 
     }
 
-    public static void putFile(final ClientOptions clientOptions,
-            final File sourceFile, final String bucketName, final String key) {
+    public static void putFile(final ClientOptions clientOptions, final File sourceFile, final String bucketName, final String key) {
 
         assert clientOptions != null;
         assert sourceFile != null;
@@ -140,16 +126,14 @@ public final class S3Utils {
         assert !isBlank(key);
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Sending file %1$s as S3 object %2$s in "
-                    + "bucket %3$s", sourceFile.getName(), key, bucketName));
+            LOGGER.debug(format("Sending file %1$s as S3 object %2$s in " + "bucket %3$s", sourceFile.getName(), key, bucketName));
         }
 
         acquireClient(clientOptions).putObject(bucketName, key, sourceFile);
 
     }
 
-    public static void putObject(final ClientOptions clientOptions,
-            final InputStream sourceStream, final String bucketName, final String key) {
+    public static void putObject(final ClientOptions clientOptions, final InputStream sourceStream, final String bucketName, final String key) {
 
         assert clientOptions != null;
         assert sourceStream != null;
@@ -157,16 +141,14 @@ public final class S3Utils {
         assert !isBlank(key);
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Sending stream as S3 object %1$s in "
-                    + "bucket %2$s", key, bucketName));
+            LOGGER.debug(format("Sending stream as S3 object %1$s in " + "bucket %2$s", key, bucketName));
         }
 
         acquireClient(clientOptions).putObject(bucketName, key, sourceStream, null);
 
     }
 
-    public static void putObject(final ClientOptions clientOptions,
-            final PutObjectRequest req) {
+    public static void putObject(final ClientOptions clientOptions, final PutObjectRequest req) {
 
         assert clientOptions != null;
         assert req != null;
@@ -174,14 +156,13 @@ public final class S3Utils {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(format("Sending stream as S3 object using PutObjectRequest"));
         }
-        
+
         acquireClient(clientOptions).putObject(req);
 
     }
 
     // multi-part upload file
-    public static void mputFile(final ClientOptions clientOptions,
-            final File sourceFile, final String bucketName, final String key) throws InterruptedException {
+    public static void mputFile(final ClientOptions clientOptions, final File sourceFile, final String bucketName, final String key) throws InterruptedException {
 
         assert clientOptions != null;
         assert sourceFile != null;
@@ -189,8 +170,7 @@ public final class S3Utils {
         assert !isBlank(key);
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Multipart sending file %1$s as S3 object %2$s in "
-                    + "bucket %3$s", sourceFile.getName(), key, bucketName));
+            LOGGER.debug(format("Multipart sending file %1$s as S3 object %2$s in " + "bucket %3$s", sourceFile.getName(), key, bucketName));
         }
         TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
         Upload upload = tm.upload(bucketName, key, sourceFile);
@@ -198,8 +178,8 @@ public final class S3Utils {
     }
 
     // multi-part upload object
-    public static void mputObject(final ClientOptions clientOptions,
-            final InputStream sourceStream, final String bucketName, final String key) throws InterruptedException {
+    public static void mputObject(final ClientOptions clientOptions, final InputStream sourceStream, final String bucketName, final String key)
+        throws InterruptedException {
 
         assert clientOptions != null;
         assert sourceStream != null;
@@ -207,8 +187,7 @@ public final class S3Utils {
         assert !isBlank(key);
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Multipart sending stream as S3 object %1$s in "
-                    + "bucket %2$s", key, bucketName));
+            LOGGER.debug(format("Multipart sending stream as S3 object %1$s in " + "bucket %2$s", key, bucketName));
         }
         TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
         Upload upload = tm.upload(bucketName, key, sourceStream, null);
@@ -216,23 +195,21 @@ public final class S3Utils {
     }
 
     // multi-part upload object
-    public static void mputObject(final ClientOptions clientOptions,
-            final PutObjectRequest req) throws InterruptedException {
+    public static void mputObject(final ClientOptions clientOptions, final PutObjectRequest req) throws InterruptedException {
 
         assert clientOptions != null;
         assert req != null;
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Multipart sending object to S3 using PutObjectRequest");
-        }       
+        }
         TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
         Upload upload = tm.upload(req);
         upload.waitForCompletion();
 
     }
-    
-    public static void setObjectAcl(final ClientOptions clientOptions, final String bucketName, final String key,
-            final CannedAccessControlList acl) {
+
+    public static void setObjectAcl(final ClientOptions clientOptions, final String bucketName, final String key, final CannedAccessControlList acl) {
 
         assert clientOptions != null;
         assert acl != null;
@@ -241,8 +218,7 @@ public final class S3Utils {
 
     }
 
-    public static URL generatePresignedUrl(final ClientOptions clientOptions, final String bucketName, final String key,
-            final Date expiration) {
+    public static URL generatePresignedUrl(final ClientOptions clientOptions, final String bucketName, final String key, final Date expiration) {
 
         assert clientOptions != null;
         assert !isBlank(bucketName);
@@ -253,16 +229,14 @@ public final class S3Utils {
     }
 
     // Note that whenever S3Object is returned, client code needs to close the internal stream to avoid resource leak.
-    public static S3Object getObject(final ClientOptions clientOptions,
-            final String bucketName, final String key) {
+    public static S3Object getObject(final ClientOptions clientOptions, final String bucketName, final String key) {
 
         assert clientOptions != null;
         assert !isBlank(bucketName);
         assert !isBlank(key);
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Get S3 object %1$s in "
-                    + "bucket %2$s", key, bucketName));
+            LOGGER.debug(format("Get S3 object %1$s in " + "bucket %2$s", key, bucketName));
         }
 
         return acquireClient(clientOptions).getObject(bucketName, key);
@@ -270,9 +244,8 @@ public final class S3Utils {
     }
 
     @SuppressWarnings("unchecked")
-    public static File getFile(final ClientOptions clientOptions,
-            final String bucketName, final String key,
-            final File targetDirectory, final FileNamingStrategy namingStrategy) {
+    public static File getFile(final ClientOptions clientOptions, final String bucketName, final String key, final File targetDirectory,
+        final FileNamingStrategy namingStrategy) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -285,15 +258,11 @@ public final class S3Utils {
         File tempFile = null;
         try {
 
-            tempFile = createTempFile(
-                    join("-", targetDirectory.getName(), currentTimeMillis(),
-                            "part"), "tmp", targetDirectory);
+            tempFile = createTempFile(join("-", targetDirectory.getName(), currentTimeMillis(), "part"), "tmp", targetDirectory);
             tempFile.deleteOnExit();
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(format(
-                        "Downloading object %1$s from bucket %2$s to temp file %3$s",
-                        key, bucketName, tempFile.getName()));
+                LOGGER.debug(format("Downloading object %1$s from bucket %2$s to temp file %3$s", key, bucketName, tempFile.getName()));
             }
 
             try {
@@ -301,33 +270,27 @@ public final class S3Utils {
             } catch (AmazonClientException ex) {
                 // hack to handle different ETAG format generated from RiakCS for multi-part uploaded object
                 String msg = ex.getMessage();
-                if (!msg.contains("verify integrity")){
+                if (!msg.contains("verify integrity")) {
                     throw ex;
                 }
             }
 
-            final File targetFile = new File(targetDirectory,
-                    namingStrategy.determineFileName(key));
+            final File targetFile = new File(targetDirectory, namingStrategy.determineFileName(key));
             tempFile.renameTo(targetFile);
 
             return targetFile;
 
         } catch (FileNotFoundException e) {
 
-            throw new CloudRuntimeException(
-                    format("Failed open file %1$s in order to get object %2$s from bucket %3$s.",
-                            targetDirectory.getAbsoluteFile(), bucketName, key),
-                    e);
+            throw new CloudRuntimeException(format("Failed open file %1$s in order to get object %2$s from bucket %3$s.", targetDirectory.getAbsoluteFile(), bucketName,
+                key), e);
 
         } catch (IOException e) {
 
-            throw new CloudRuntimeException(
-                    format("Unable to allocate temporary file in directory %1$s to download %2$s:%3$s from S3",
-                            targetDirectory.getAbsolutePath(), bucketName, key),
-                    e);
+            throw new CloudRuntimeException(format("Unable to allocate temporary file in directory %1$s to download %2$s:%3$s from S3",
+                targetDirectory.getAbsolutePath(), bucketName, key), e);
 
-        }
-        finally {
+        } finally {
 
             if (tempFile != null) {
                 tempFile.delete();
@@ -337,9 +300,8 @@ public final class S3Utils {
 
     }
 
-    public static List<File> getDirectory(final ClientOptions clientOptions,
-            final String bucketName, final String sourcePath,
-            final File targetDirectory, final FileNamingStrategy namingStrategy) {
+    public static List<File> getDirectory(final ClientOptions clientOptions, final String bucketName, final String sourcePath, final File targetDirectory,
+        final FileNamingStrategy namingStrategy) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -349,14 +311,12 @@ public final class S3Utils {
         final AmazonS3 connection = acquireClient(clientOptions);
 
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = listDirectory(bucketName,
-                sourcePath, connection);
+        final List<S3ObjectSummary> objectSummaries = listDirectory(bucketName, sourcePath, connection);
         final List<File> files = new ArrayList<File>();
 
         for (final S3ObjectSummary objectSummary : objectSummaries) {
 
-            files.add(getFile(clientOptions, bucketName,
-                    objectSummary.getKey(), targetDirectory, namingStrategy));
+            files.add(getFile(clientOptions, bucketName, objectSummary.getKey(), targetDirectory, namingStrategy));
 
         }
 
@@ -364,8 +324,7 @@ public final class S3Utils {
 
     }
 
-    public static List<S3ObjectSummary> getDirectory(final ClientOptions clientOptions,
-            final String bucketName, final String sourcePath){
+    public static List<S3ObjectSummary> getDirectory(final ClientOptions clientOptions, final String bucketName, final String sourcePath) {
         assert clientOptions != null;
         assert isNotBlank(bucketName);
         assert isNotBlank(sourcePath);
@@ -376,11 +335,9 @@ public final class S3Utils {
         return listDirectory(bucketName, sourcePath, connection);
     }
 
-    private static List<S3ObjectSummary> listDirectory(final String bucketName,
-            final String directory, final AmazonS3 client) {
+    private static List<S3ObjectSummary> listDirectory(final String bucketName, final String directory, final AmazonS3 client) {
 
-        final List<S3ObjectSummary> objects = client.listObjects(bucketName,
-                directory + SEPARATOR).getObjectSummaries();
+        final List<S3ObjectSummary> objects = client.listObjects(bucketName, directory + SEPARATOR).getObjectSummaries();
 
         if (objects == null) {
             return emptyList();
@@ -390,11 +347,8 @@ public final class S3Utils {
 
     }
 
-
-    public static void putDirectory(final ClientOptions clientOptions,
-            final String bucketName, final File directory,
-            final FilenameFilter fileNameFilter,
-            final ObjectNamingStrategy namingStrategy) {
+    public static void putDirectory(final ClientOptions clientOptions, final String bucketName, final File directory, final FilenameFilter fileNameFilter,
+        final ObjectNamingStrategy namingStrategy) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -403,16 +357,14 @@ public final class S3Utils {
         assert namingStrategy != null;
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Putting directory %1$s in S3 bucket %2$s.",
-                    directory.getAbsolutePath(), bucketName));
+            LOGGER.debug(format("Putting directory %1$s in S3 bucket %2$s.", directory.getAbsolutePath(), bucketName));
         }
 
         // Determine the list of files to be sent using the passed filter ...
         final File[] files = directory.listFiles(fileNameFilter);
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(format("Putting files (%1$s) in S3 bucket %2$s.",
-                    ArrayUtils.toString(files, "no files found"), bucketName));
+            LOGGER.trace(format("Putting files (%1$s) in S3 bucket %2$s.", ArrayUtils.toString(files, "no files found"), bucketName));
         }
 
         // Skip spinning up an S3 connection when no files will be sent ...
@@ -427,19 +379,14 @@ public final class S3Utils {
         for (final File file : files) {
             final String key = namingStrategy.determineKey(file);
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(format(
-                        "Putting file %1$s into bucket %2$s with key %3$s.",
-                        file.getAbsolutePath(), bucketName, key));
+                LOGGER.debug(format("Putting file %1$s into bucket %2$s with key %3$s.", file.getAbsolutePath(), bucketName, key));
             }
             client.putObject(bucketName, key, file);
         }
 
     }
 
-
-
-    public static void deleteObject(final ClientOptions clientOptions,
-            final String bucketName, final String key) {
+    public static void deleteObject(final ClientOptions clientOptions, final String bucketName, final String key) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -451,8 +398,7 @@ public final class S3Utils {
 
     }
 
-    public static void deleteDirectory(final ClientOptions clientOptions,
-            final String bucketName, final String directoryName) {
+    public static void deleteDirectory(final ClientOptions clientOptions, final String bucketName, final String directoryName) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -460,8 +406,7 @@ public final class S3Utils {
 
         final AmazonS3 client = acquireClient(clientOptions);
 
-        final List<S3ObjectSummary> objects = listDirectory(bucketName,
-                directoryName, client);
+        final List<S3ObjectSummary> objects = listDirectory(bucketName, directoryName, client);
 
         for (final S3ObjectSummary object : objects) {
 
@@ -482,24 +427,21 @@ public final class S3Utils {
 
         } catch (AmazonClientException e) {
 
-            LOGGER.warn("Ignored Exception while checking connection options",
-                    e);
+            LOGGER.warn("Ignored Exception while checking connection options", e);
             return false;
 
         }
 
     }
 
-    public static boolean doesBucketExist(final ClientOptions clientOptions,
-            final String bucketName) {
+    public static boolean doesBucketExist(final ClientOptions clientOptions, final String bucketName) {
 
         assert clientOptions != null;
         assert !isBlank(bucketName);
 
         try {
 
-            final List<Bucket> buckets = acquireClient(clientOptions)
-                    .listBuckets();
+            final List<Bucket> buckets = acquireClient(clientOptions).listBuckets();
 
             for (Bucket bucket : buckets) {
                 if (bucket.getName().equals(bucketName)) {
@@ -518,8 +460,7 @@ public final class S3Utils {
 
     }
 
-    public static boolean canReadWriteBucket(final ClientOptions clientOptions,
-            final String bucketName) {
+    public static boolean canReadWriteBucket(final ClientOptions clientOptions, final String bucketName) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -529,8 +470,7 @@ public final class S3Utils {
             final AmazonS3 client = acquireClient(clientOptions);
 
             final String fileContent = "testing put and delete";
-            final InputStream inputStream = new ByteArrayInputStream(
-                    fileContent.getBytes());
+            final InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
             final String key = UUID.randomUUID().toString() + ".txt";
 
             final ObjectMetadata metadata = new ObjectMetadata();
@@ -555,24 +495,18 @@ public final class S3Utils {
 
         List<String> errorMessages = new ArrayList<String>();
 
-        errorMessages.addAll(checkRequiredField("access key",
-                clientOptions.getAccessKey()));
-        errorMessages.addAll(checkRequiredField("secret key",
-                clientOptions.getSecretKey()));
+        errorMessages.addAll(checkRequiredField("access key", clientOptions.getAccessKey()));
+        errorMessages.addAll(checkRequiredField("secret key", clientOptions.getSecretKey()));
 
-        errorMessages.addAll(checkOptionalField("connection timeout",
-                clientOptions.getConnectionTimeout()));
-        errorMessages.addAll(checkOptionalField("socket timeout",
-                clientOptions.getSocketTimeout()));
-        errorMessages.addAll(checkOptionalField("max error retries",
-                clientOptions.getMaxErrorRetry()));
+        errorMessages.addAll(checkOptionalField("connection timeout", clientOptions.getConnectionTimeout()));
+        errorMessages.addAll(checkOptionalField("socket timeout", clientOptions.getSocketTimeout()));
+        errorMessages.addAll(checkOptionalField("max error retries", clientOptions.getMaxErrorRetry()));
 
         return unmodifiableList(errorMessages);
 
     }
 
-    public static List<String> checkBucketName(final String bucketLabel,
-            final String bucket) {
+    public static List<String> checkBucketName(final String bucketLabel, final String bucket) {
 
         assert isNotBlank(bucketLabel);
         assert isNotBlank(bucket);
@@ -580,36 +514,27 @@ public final class S3Utils {
         final List<String> errorMessages = new ArrayList<String>();
 
         if (bucket.length() < MIN_BUCKET_NAME_LENGTH) {
-            errorMessages
-                    .add(format(
-                            "The length of %1$s "
-                                    + "for the %2$s must have a length of at least %3$s "
-                                    + "characters", bucket, bucketLabel,
-                            MIN_BUCKET_NAME_LENGTH));
+            errorMessages.add(format("The length of %1$s " + "for the %2$s must have a length of at least %3$s " + "characters", bucket, bucketLabel,
+                MIN_BUCKET_NAME_LENGTH));
         }
 
         if (bucket.length() > MAX_BUCKET_NAME_LENGTH) {
-            errorMessages.add(format("The length of %1$s "
-                    + "for the %2$s must not have a length of at greater"
-                    + " than %3$s characters", bucket, bucketLabel,
-                    MAX_BUCKET_NAME_LENGTH));
+            errorMessages.add(format("The length of %1$s " + "for the %2$s must not have a length of at greater" + " than %3$s characters", bucket, bucketLabel,
+                MAX_BUCKET_NAME_LENGTH));
         }
 
         return unmodifiableList(errorMessages);
 
     }
 
-    private static List<String> checkOptionalField(final String fieldName,
-            final Integer fieldValue) {
+    private static List<String> checkOptionalField(final String fieldName, final Integer fieldValue) {
         if (fieldValue != null && fieldValue < 0) {
-            return singletonList(format("The value of %1$s must "
-                    + "be greater than zero.", fieldName));
+            return singletonList(format("The value of %1$s must " + "be greater than zero.", fieldName));
         }
         return emptyList();
     }
 
-    private static List<String> checkRequiredField(String fieldName,
-            String fieldValue) {
+    private static List<String> checkRequiredField(String fieldName, String fieldValue) {
         if (isBlank(fieldValue)) {
             return singletonList(format("A %1$s must be specified.", fieldName));
         }

@@ -117,9 +117,10 @@ public interface QueryService {
     public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
 
     public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
+
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
-            boolean listAll, Long startIndex, Long pageSize);
+            boolean listAll, Long startIndex, Long pageSize, String keyword);
 
     public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
 

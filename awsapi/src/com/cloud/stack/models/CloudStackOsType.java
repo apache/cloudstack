@@ -20,37 +20,37 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackOsType {
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.OS_CATEGORY_ID)
-	private String osCategoryId;
-	@SerializedName(ApiConstants.DESCRIPTION)
-	private String description;
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.OS_CATEGORY_ID)
+    private String osCategoryId;
+    @SerializedName(ApiConstants.DESCRIPTION)
+    private String description;
 
-	/**
-	 *  
-	 */
-	public CloudStackOsType() {
-	}
+    /**
+     *
+     */
+    public CloudStackOsType() {
+    }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the osCategoryId
-	 */
-	public String getOsCategoryId() {
-		return osCategoryId;
-	}
+    /**
+     * @return the osCategoryId
+     */
+    public String getOsCategoryId() {
+        return osCategoryId;
+    }
 
-	/**
-	 * @return the description
-	 */
-	public String getDescription() {
-		return description;
-	}
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
 }

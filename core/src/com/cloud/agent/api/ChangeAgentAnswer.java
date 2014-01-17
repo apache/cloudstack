@@ -17,10 +17,10 @@
 package com.cloud.agent.api;
 
 public class ChangeAgentAnswer extends Answer {
-	protected ChangeAgentAnswer() {
-	}
+    protected ChangeAgentAnswer() {
+    }
 
-	public ChangeAgentAnswer(ChangeAgentCommand cmd, boolean result) {
-		super(cmd, result, null);
-	}
+    public ChangeAgentAnswer(ChangeAgentCommand cmd, boolean result) {
+        super(cmd, result, null);
+    }
 }

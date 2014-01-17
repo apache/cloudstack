@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "vm_reservation")
-public class VMReservationVO implements Identity, InternalIdentity{
+public class VMReservationVO implements Identity, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,30 +45,30 @@ public class VMReservationVO implements Identity, InternalIdentity{
     @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private long clusterId;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private long hostId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     // VolumeId -> poolId
     @Transient
-    Map<Long,Long> volumeReservationMap;
+    Map<Long, Long> volumeReservationMap;
 
     /**
      * There should never be a public constructor for this class. Since it's
@@ -86,7 +86,7 @@ public class VMReservationVO implements Identity, InternalIdentity{
         this.uuid = UUID.randomUUID().toString();
     }
 
-
+    @Override
     public long getId() {
         return id;
     }
@@ -116,11 +116,11 @@ public class VMReservationVO implements Identity, InternalIdentity{
         return hostId;
     }
 
-    public Map<Long,Long> getVolumeReservation(){
+    public Map<Long, Long> getVolumeReservation() {
         return volumeReservationMap;
     }
 
-    public void setVolumeReservation(Map<Long,Long> volumeReservationMap){
+    public void setVolumeReservation(Map<Long, Long> volumeReservationMap) {
         this.volumeReservationMap = volumeReservationMap;
     }
 

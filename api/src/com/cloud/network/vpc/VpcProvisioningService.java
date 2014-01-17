@@ -20,20 +20,21 @@ import java.util.List;
 import java.util.Map;
 
 public interface VpcProvisioningService {
-    
+
     public VpcOffering getVpcOffering(long vpcOfferingId);
-    
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders);
-    
-    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr,
-            Boolean isDefault, String keyword, String state, Long startIndex, Long pageSizeVal);
-    
+
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders,
+        Long serviceOfferingId);
+
+    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+        String state, Long startIndex, Long pageSizeVal);
+
     /**
      * @param offId
      * @return
      */
     public boolean deleteVpcOffering(long offId);
-    
+
     /**
      * @param vpcOffId
      * @param vpcOfferingName

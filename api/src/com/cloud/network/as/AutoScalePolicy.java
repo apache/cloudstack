@@ -17,11 +17,14 @@
 
 package com.cloud.network.as;
 
+import java.util.Date;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
+    @Override
     long getId();
 
     String getUuid();
@@ -29,6 +32,8 @@ public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
     public int getDuration();
 
     public int getQuietTime();
+
+    public Date getLastQuiteTime();
 
     public String getAction();
 

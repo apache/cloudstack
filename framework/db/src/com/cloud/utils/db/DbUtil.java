@@ -45,46 +45,46 @@ import org.apache.log4j.Logger;
 
 public class DbUtil {
     protected final static Logger s_logger = Logger.getLogger(DbUtil.class);
-    
+
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
-    
+
     public static Connection getConnectionForGlobalLocks(String name, boolean forLock) {
-    	synchronized(s_connectionForGlobalLocks) {
-    		if(forLock) {
-    			if(s_connectionForGlobalLocks.get(name) != null) {
-    				s_logger.error("Sanity check failed, global lock name " + name + " is already in use");
-    				assert(false);
-    			}
-    			
-    			Connection connection = TransactionLegacy.getStandaloneConnection();
-    			if(connection != null) {
-    				try {
-						connection.setAutoCommit(true);
-					} catch (SQLException e) {
-						try {
-							connection.close();
-						} catch(SQLException sqlException) {
-						}
-						return null;
-					}
-					s_connectionForGlobalLocks.put(name, connection);
-					return connection;
-    			}
-    	    	return null;
-    		} else {
-    			Connection connection = s_connectionForGlobalLocks.get(name);
-    			s_connectionForGlobalLocks.remove(name);
-    			return connection;
-    		}
-    	}
+        synchronized (s_connectionForGlobalLocks) {
+            if (forLock) {
+                if (s_connectionForGlobalLocks.get(name) != null) {
+                    s_logger.error("Sanity check failed, global lock name " + name + " is already in use");
+                    assert (false);
+                }
+
+                Connection connection = TransactionLegacy.getStandaloneConnection();
+                if (connection != null) {
+                    try {
+                        connection.setAutoCommit(true);
+                    } catch (SQLException e) {
+                        try {
+                            connection.close();
+                        } catch (SQLException sqlException) {
+                        }
+                        return null;
+                    }
+                    s_connectionForGlobalLocks.put(name, connection);
+                    return connection;
+                }
+                return null;
+            } else {
+                Connection connection = s_connectionForGlobalLocks.get(name);
+                s_connectionForGlobalLocks.remove(name);
+                return connection;
+            }
+        }
     }
-    
+
     public static void removeConnectionForGlobalLocks(String name) {
-    	synchronized(s_connectionForGlobalLocks) {
-    		s_connectionForGlobalLocks.remove(name);
-    	}
+        synchronized (s_connectionForGlobalLocks) {
+            s_connectionForGlobalLocks.remove(name);
+        }
     }
-	
+
     public static String getColumnName(Field field, AttributeOverride[] overrides) {
         if (overrides != null) {
             for (AttributeOverride override : overrides) {
@@ -93,37 +93,35 @@ public class DbUtil {
                 }
             }
         }
-        
-        assert(field.getAnnotation(Embedded.class) == null) : "Cannot get column name from embedded field: " + field.getName();
-        
+
+        assert (field.getAnnotation(Embedded.class) == null) : "Cannot get column name from embedded field: " + field.getName();
+
         Column column = field.getAnnotation(Column.class);
         return column != null ? column.name() : field.getName();
     }
-    
+
     public static String getColumnName(Field field) {
         return getColumnName(field, null);
     }
-    
+
     public static String getReferenceColumn(PrimaryKeyJoinColumn pkjc) {
-        return pkjc.referencedColumnName().length() != 0
-            ? pkjc.referencedColumnName()
-            : pkjc.name();
+        return pkjc.referencedColumnName().length() != 0 ? pkjc.referencedColumnName() : pkjc.name();
     }
-    
+
     public static PrimaryKeyJoinColumn[] getPrimaryKeyJoinColumns(Class<?> clazz) {
         PrimaryKeyJoinColumn pkjc = clazz.getAnnotation(PrimaryKeyJoinColumn.class);
         if (pkjc != null) {
-            return new PrimaryKeyJoinColumn[] { pkjc };
+            return new PrimaryKeyJoinColumn[] {pkjc};
         }
-        
+
         PrimaryKeyJoinColumns pkjcs = clazz.getAnnotation(PrimaryKeyJoinColumns.class);
         if (pkjcs != null) {
             return pkjcs.value();
         }
-        
+
         return null;
     }
-    
+
     public static Field findField(Class<?> clazz, String columnName) {
         for (Field field : clazz.getDeclaredFields()) {
             if (field.getAnnotation(Embedded.class) != null || field.getAnnotation(EmbeddedId.class) != null) {
@@ -136,15 +134,15 @@ public class DbUtil {
         }
         return null;
     }
-    
+
     public static final AttributeOverride[] getAttributeOverrides(AnnotatedElement ae) {
         AttributeOverride[] overrides = null;
-        
+
         AttributeOverrides aos = ae.getAnnotation(AttributeOverrides.class);
         if (aos != null) {
             overrides = aos.value();
         }
-        
+
         if (overrides == null || overrides.length == 0) {
             AttributeOverride override = ae.getAnnotation(AttributeOverride.class);
             if (override != null) {
@@ -154,34 +152,32 @@ public class DbUtil {
                 overrides = new AttributeOverride[0];
             }
         }
-        
+
         return overrides;
     }
-    
+
     public static final boolean isPersistable(Field field) {
         if (field.getAnnotation(Transient.class) != null) {
             return false;
         }
-        
+
         int modifiers = field.getModifiers();
-        return !(Modifier.isFinal(modifiers) ||
-                 Modifier.isStatic(modifiers) ||
-                 Modifier.isTransient(modifiers));
+        return !(Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers));
     }
-    
+
     public static final boolean isIdField(Field field) {
         if (field.getAnnotation(Id.class) != null) {
             return true;
         }
-        
+
         if (field.getAnnotation(EmbeddedId.class) != null) {
             assert (field.getClass().getAnnotation(Embeddable.class) != null) : "Class " + field.getClass().getName() + " must be Embeddable to be used as Embedded Id";
             return true;
         }
-        
+
         return false;
     }
-    
+
     public static final SecondaryTable[] getSecondaryTables(AnnotatedElement clazz) {
         SecondaryTable[] sts = null;
         SecondaryTable stAnnotation = clazz.getAnnotation(SecondaryTable.class);
@@ -191,99 +187,90 @@ public class DbUtil {
         } else {
             sts = new SecondaryTable[] {stAnnotation};
         }
-        
+
         return sts;
     }
-    
+
     public static final String getTableName(Class<?> clazz) {
         Table table = clazz.getAnnotation(Table.class);
         return table != null ? table.name() : clazz.getSimpleName();
     }
-    
+
     public static boolean getGlobalLock(String name, int timeoutSeconds) {
         Connection conn = getConnectionForGlobalLocks(name, true);
-        if(conn == null) {
+        if (conn == null) {
             s_logger.error("Unable to acquire DB connection for global lock system");
-        	return false;
+            return false;
         }
-        
+
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
 
             pstmt.setString(1, name);
             pstmt.setInt(2, timeoutSeconds);
-            
-            ResultSet rs = pstmt.executeQuery();
+
+            rs = pstmt.executeQuery();
             if (rs != null && rs.first()) {
-            	 if(rs.getInt(1) > 0) {
-            		 return true;
-            	 } else {
-            		 if(s_logger.isDebugEnabled())
-            			 s_logger.debug("GET_LOCK() timed out on lock : " + name);
-            	 }
+                if (rs.getInt(1) > 0) {
+                    return true;
+                } else {
+                    if (s_logger.isDebugEnabled())
+                        s_logger.debug("GET_LOCK() timed out on lock : " + name);
+                }
             }
         } catch (SQLException e) {
             s_logger.error("GET_LOCK() throws exception ", e);
         } catch (Throwable e) {
             s_logger.error("GET_LOCK() throws exception ", e);
         } finally {
-        	if (pstmt != null) {
-        		try {
-        			pstmt.close();
-        		} catch (Throwable e) {
-        			s_logger.error("What the heck? ", e);
-        		}
-        	}
+            closeStatement(pstmt);
+            closeResultSet(rs);
         }
-        
+
         removeConnectionForGlobalLocks(name);
         try {
-			conn.close();
-		} catch (SQLException e) {
-		}
+            conn.close();
+        } catch (SQLException e) {
+        }
         return false;
     }
-    
-    
+
     public static Class<?> getEntityBeanType(GenericDao<?, Long> dao) {
         return dao.getEntityBeanType();
     }
-    
+
     public static boolean releaseGlobalLock(String name) {
         Connection conn = getConnectionForGlobalLocks(name, false);
-        if(conn == null) {
+        if (conn == null) {
             s_logger.error("Unable to acquire DB connection for global lock system");
-            assert(false);
-        	return false;
+            assert (false);
+            return false;
         }
-        
+
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
             pstmt.setString(1, name);
-            ResultSet rs = pstmt.executeQuery();
-            if(rs != null && rs.first())
-            	return rs.getInt(1) > 0;
+            rs = pstmt.executeQuery();
+            if (rs != null && rs.first())
+                return rs.getInt(1) > 0;
             s_logger.error("RELEASE_LOCK() returns unexpected result : " + rs.getInt(1));
         } catch (SQLException e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
         } catch (Throwable e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
         } finally {
-        	try {
-            	if (pstmt != null) {
-    	        	pstmt.close();
-            	}
-        		conn.close();
-        	} catch(SQLException e) {
-        	}
+            closeResultSet(rs);
+            closeStatement(pstmt);
+            closeConnection(conn);
         }
         return false;
     }
 
-    public static void closeResources(final Connection connection,
-            final Statement statement, final ResultSet resultSet) {
+    public static void closeResources(final Connection connection, final Statement statement, final ResultSet resultSet) {
 
         closeResultSet(resultSet);
         closeStatement(statement);
@@ -296,17 +283,17 @@ public class DbUtil {
         closeResources(null, statement, resultSet);
 
     }
-    
+
     public static void closeResultSet(final ResultSet resultSet) {
 
         try {
-            
+
             if (resultSet != null) {
                 resultSet.close();
             }
 
-        } catch (Exception e) {
-            s_logger.warn("Ignored exception while closing result set.",e);
+        } catch (SQLException e) {
+            s_logger.warn("Ignored exception while closing result set.", e);
         }
 
     }
@@ -319,8 +306,8 @@ public class DbUtil {
                 statement.close();
             }
 
-        } catch (Exception e) {
-            s_logger.warn("Ignored exception while closing statement.",e);
+        } catch (SQLException e) {
+            s_logger.warn("Ignored exception while closing statement.", e);
         }
 
     }
@@ -333,8 +320,8 @@ public class DbUtil {
                 connection.close();
             }
 
-        } catch (Exception e) {
-            s_logger.warn("Ignored exception while close connection.",e);
+        } catch (SQLException e) {
+            s_logger.warn("Ignored exception while close connection.", e);
         }
 
     }

@@ -21,7 +21,7 @@ import marvin
 from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
@@ -460,7 +460,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-            remoteSSHClient(
+            SshClient(
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
@@ -578,7 +578,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-            remoteSSHClient(
+            SshClient(
                                             ip_address.ipaddress.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
@@ -741,7 +741,7 @@ class TestRebootRouter(cloudstackTestCase):
         try:
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
-            remoteSSHClient(
+            SshClient(
                                     self.public_ip.ipaddress.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
@@ -883,7 +883,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         # SSH Attempt though public IP should fail
         with self.assertRaises(Exception):
-            ssh_2 = remoteSSHClient(
+            ssh_2 = SshClient(
                                     self.ip_addr.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.virtual_machine.username,

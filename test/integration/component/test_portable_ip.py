@@ -23,7 +23,7 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from netaddr import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 
 from nose.plugins.attrib import attr
 
@@ -235,8 +235,9 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
 
         self.debug("Trying to create portable ip range with non root-admin api client, should raise exception")
         with self.assertRaises(Exception):
-            PortablePublicIpRange.create(self.api_client_user,
+            portable_ip_range = PortablePublicIpRange.create(self.api_client_user,
                                          portable_ip_range_services)
+            self.cleanup.append(portable_ip_range)
 
         return
 
@@ -258,8 +259,9 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         self.debug("Trying to create portable ip range with wrong region id")
 
         with self.assertRaises(Exception):
-            PortablePublicIpRange.create(self.apiclient,
+            portable_ip_range = PortablePublicIpRange.create(self.apiclient,
                                          portable_ip_range_services)
+            self.cleanup.append(portable_ip_range)
 
         return
 
@@ -687,8 +689,6 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.debug("Associated default public ip address: %s" % publicipaddress.ipaddress.ipaddress)
 
-
-
         self.debug("Associating public ip address with network: %s with isportable=False" % self.network.id)
         publicipaddressnotportable = PublicIPAddress.create(
                                     self.apiclient,
@@ -727,7 +727,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
         self.debug("Trying to associate portable public ip with invalid zone id, this should fail")
 
         with self.assertRaises(Exception):
-            PublicIPAddress.create(
+            publicipaddress = PublicIPAddress.create(
                                    self.apiclient,
                                    accountid=self.account.name,
                                    zoneid = -1,
@@ -735,6 +735,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                    regionid = self.region.id,
                                    isportable=True
                                     )
+            publicipaddress.delete(self.apiclient)
         self.debug("Associating ip address failed")
         return
 
@@ -807,24 +808,23 @@ class TestAssociatePublicIp(cloudstackTestCase):
         try:
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
-
-            remoteSSHClient(
-                        portableip.ipaddress.ipaddress,
-                        self.services['natrule']["publicport"],
-                        self.virtual_machine.username,
-                        self.virtual_machine.password
-                        )
+            SshClient(portableip.ipaddress.ipaddress,
+                      self.services['natrule']["publicport"],
+                      self.virtual_machine.username,
+                      self.virtual_machine.password
+                      )
         except Exception as e:
             self.fail("Exception while SSHing : %s" % e)
 
-        self.debug("Deleting firewall rule")
-        fw_rule.delete(self.apiclient)
+        finally:
+            self.debug("Deleting firewall rule")
+            fw_rule.delete(self.apiclient)
 
-        self.debug("Deleting NAT rule")
-        nat_rule.delete(self.apiclient)
+            self.debug("Deleting NAT rule")
+            nat_rule.delete(self.apiclient)
 
-        self.debug("disassocoating portable ip: %s" % portableip.ipaddress.ipaddress)
-        portableip.delete(self.apiclient)
+            self.debug("disassocoating portable ip: %s" % portableip.ipaddress.ipaddress)
+            portableip.delete(self.apiclient)
         return
 
     @attr(tags=["advanced"])
@@ -860,7 +860,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.debug("Trying to associate portable public ip when no free ips available, this should fail")
         with self.assertRaises(Exception):
-            PublicIPAddress.create(
+            portableipaddress = PublicIPAddress.create(
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
@@ -868,6 +868,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
                                     networkid=self.network.id,
                                     isportable=True
                                    )
+            portableipaddress.delete(self.apiclient)
 
         self.debug("Associating portable ip address failed")
 
@@ -1340,7 +1341,6 @@ class TestDeleteAccount(cloudstackTestCase):
 
         return
 
-
 class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
     """Test Transfer Portable IP Across Networks
     """
@@ -1392,7 +1392,6 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
             cls.services["service_offering"]
         )
 
-        cls.debug("creating networks and virtual machines in each network for portable ip transfer tests: ")
         cls.network1 = Network.create(
                                     cls.api_client,
                                     cls.services["network1"],
@@ -1532,21 +1531,14 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         try:
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
-
-            remoteSSHClient(
-                        portableip.ipaddress.ipaddress,
-                        self.services['natrule']["publicport"],
-                        self.virtual_machine2.username,
-                        self.virtual_machine2.password
-                        )
+            SshClient(portableip.ipaddress.ipaddress,
+                      self.services['natrule']["publicport"],
+                      self.virtual_machine2.username,
+                      self.virtual_machine2.password
+                      )
         except Exception as e:
             self.fail("Exception while SSHing : %s" % e)
 
-        self.debug("disassociating portable ip: %s" % portableip.ipaddress.ipaddress)
-        portableip.delete(self.apiclient)
-
-
-
-
-
-
+        finally:
+            self.debug("disassociating portable ip: %s" % portableip.ipaddress.ipaddress)
+            portableip.delete(self.apiclient)

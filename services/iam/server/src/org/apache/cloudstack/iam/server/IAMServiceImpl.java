@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
@@ -37,7 +36,6 @@ import org.apache.cloudstack.iam.server.dao.AclPolicyDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDao;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -282,7 +280,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 return role;
             }
         });
-                
+
 
         return role;
     }
@@ -507,7 +505,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
             }
         });
-            
+
         return role;
 
     }
@@ -685,7 +683,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         List pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType, action);
         return pp;
     }
-    
+
     @Override
     public AclPolicy getResourceOwnerPolicy() {
         return _aclPolicyDao.findByName("RESOURCE_OWNER");

@@ -18,10 +18,56 @@
 """
 
 #Import Local Modules
-from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
-from utils import *
-from base import *
+from marvin.cloudstackAPI import (listConfigurations,
+                                  listPhysicalNetworks,
+                                  listRegions,
+                                  addNetworkServiceProvider,
+                                  updateNetworkServiceProvider,
+                                  listDomains,
+                                  listZones,
+                                  listPods,
+                                  listOsTypes,
+                                  listTemplates,
+                                  updateResourceLimit,
+                                  listRouters,
+                                  listNetworks,
+                                  listClusters,
+                                  listSystemVms,
+                                  listStoragePools,
+                                  listVirtualMachines,
+                                  listLoadBalancerRuleInstances,
+                                  listFirewallRules,
+                                  listVolumes,
+                                  listIsos,
+                                  listAccounts,
+                                  listSnapshotPolicies,
+                                  listDiskOfferings,
+                                  listVlanIpRanges,
+                                  listUsageRecords,
+                                  listNetworkServiceProviders,
+                                  listHosts,
+                                  listPublicIpAddresses,
+                                  listPortForwardingRules,
+                                  listLoadBalancerRules,
+                                  listSnapshots,
+                                  listUsers,
+                                  listEvents,
+                                  listServiceOfferings,
+                                  listVirtualRouterElements,
+                                  listNetworkOfferings,
+                                  listResourceLimits,
+                                  listVPCOfferings)
+from marvin.integration.lib.base import (Configurations,
+                                         NetScaler,
+                                         Template,
+                                         Resources,
+                                         PhysicalNetwork,
+                                         Host)
+from marvin.integration.lib.utils import (get_process_status,
+                                          xsplit)
+
+from marvin.sshClient import SshClient
+import random
 
 #Import System modules
 import time
@@ -90,7 +136,7 @@ def add_netscaler(apiclient, zoneid, NSservice):
       cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
       cmd.id = netscaler_provider.id
       cmd.state =  'Enabled'
-      response = apiclient.updateNetworkServiceProvider(cmd)
+      apiclient.updateNetworkServiceProvider(cmd)
 
     return netscaler
 
@@ -163,7 +209,9 @@ def get_pod(apiclient, zoneid, services=None):
         raise Exception("Exception: Failed to find specified pod.")
 
 
-def get_template(apiclient, zoneid, ostype, services=None):
+def get_template(apiclient, zoneid, ostype, services=None,
+                 templatefilter='featured',
+                 templatetype='BUILTIN'):
     "Returns a template"
 
     cmd = listOsTypes.listOsTypesCmd()
@@ -177,7 +225,7 @@ def get_template(apiclient, zoneid, ostype, services=None):
             "Failed to find OS type with description: %s" % ostype)
 
     cmd = listTemplates.listTemplatesCmd()
-    cmd.templatefilter = 'featured'
+    cmd.templatefilter = templatefilter
     cmd.zoneid = zoneid
 
     if services:
@@ -189,13 +237,11 @@ def get_template(apiclient, zoneid, ostype, services=None):
     if isinstance(list_templates, list):
         assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
         for template in list_templates:
-            if template.ostypeid == ostypeid:
-                return template
-            elif template.isready:
+            if template.ostypeid == ostypeid and template.isready and template.templatetype == templatetype:
                 return template
 
-    raise Exception("Exception: Failed to find template with OSTypeID: %s" %
-                                                                    ostypeid)
+    raise Exception("Exception: Failed to find template of type %s with OSTypeID and which is in "
+                                "ready state: %s" %(templatetype, ostypeid))
     return
 
 
@@ -204,7 +250,7 @@ def download_systemplates_sec_storage(server, services):
 
     try:
         # Login to management server
-        ssh = remoteSSHClient(
+        ssh = SshClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],
@@ -737,3 +783,127 @@ def get_portable_ip_range_services(config):
         services = None
 
     return services
+
+def get_free_vlan(apiclient, zoneid):
+    """
+    Find an unallocated VLAN outside the range allocated to the physical network.
+
+    @note: This does not guarantee that the VLAN is available for use in
+    the deployment's network gear
+    @return: physical_network, shared_vlan_tag
+    """
+    list_physical_networks_response = PhysicalNetwork.list(
+            apiclient,
+            zoneid=zoneid
+        )
+    assert isinstance(list_physical_networks_response, list)
+    assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+
+    physical_network = list_physical_networks_response[0]
+
+    networks = list_networks(apiclient, zoneid= zoneid, type='Shared')
+    usedVlanIds = []
+
+    if isinstance(networks, list) and len(networks) > 0:
+        usedVlanIds = [int(nw.vlan) for nw in networks if nw.vlan!="untagged"]
+
+    if hasattr(physical_network, "vlan") is False:
+        while True:
+            shared_ntwk_vlan = random.randrange(1,4095)
+            if shared_ntwk_vlan in usedVlanIds:
+                continue
+            else:
+                break
+    else:
+        vlans = xsplit(physical_network.vlan, ['-', ','])
+
+        assert len(vlans) > 0
+        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+
+        retriesCount = 20 #Assuming random function will give different integer each time
+
+        shared_ntwk_vlan = None
+
+        while True:
+
+            if retriesCount == 0:
+                break
+
+            free_vlan = int(vlans[-1]) + random.randrange(1, 20)
+
+            if free_vlan > 4095:
+                free_vlan = int(vlans[0]) - random.randrange(1, 20)
+            if free_vlan < 0 or (free_vlan in usedVlanIds):
+                retriesCount -= 1
+                continue
+            else:
+                shared_ntwk_vlan = free_vlan
+                break
+
+    return physical_network, shared_ntwk_vlan
+
+def setNonContiguousVlanIds(apiclient, zoneid):
+    """
+    Form the non contiguous ranges based on currently assigned range in physical network
+    """
+
+    NonContigVlanIdsAcquired = False
+
+    list_physical_networks_response = PhysicalNetwork.list(
+        apiclient,
+        zoneid=zoneid
+    )
+    assert isinstance(list_physical_networks_response, list)
+    assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+
+    for physical_network in list_physical_networks_response:
+
+        vlans = xsplit(physical_network.vlan, ['-', ','])
+
+        assert len(vlans) > 0
+        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+
+        # Keep some gap between existing vlan and the new vlans which we are going to add
+        # So that they are non contiguous
+
+        non_contig_end_vlan_id = int(vlans[-1]) + 6
+        non_contig_start_vlan_id = int(vlans[0]) - 6
+
+        # Form ranges which are consecutive to existing ranges but not immediately contiguous
+        # There should be gap in between existing range and new non contiguous ranage
+
+        # If you can't add range after existing range, because it's crossing 4095, then
+        # select VLAN ids before the existing range such that they are greater than 0, and
+        # then add this non contiguoud range
+        vlan = { "partial_range": ["",""], "full_range": ""}
+
+        if non_contig_end_vlan_id < 4095:
+            vlan["partial_range"][0] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id - 3)
+            vlan["partial_range"][1] = str(non_contig_end_vlan_id - 1) + '-' + str(non_contig_end_vlan_id)
+            vlan["full_range"] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id)
+            NonContigVlanIdsAcquired = True
+
+        elif non_contig_start_vlan_id > 0:
+            vlan["partial_range"][0] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 1)
+            vlan["partial_range"][1] = str(non_contig_start_vlan_id + 3) + '-' + str(non_contig_start_vlan_id + 4)
+            vlan["full_range"] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 4)
+            NonContigVlanIdsAcquired = True
+
+        else:
+            NonContigVlanIdsAcquired = False
+
+        # If failed to get relevant vlan ids, continue to next physical network
+        # else break from loop as we have hot the non contiguous vlan ids for the test purpose
+
+        if not NonContigVlanIdsAcquired:
+            continue
+        else:
+            break
+
+    # If even through looping from all existing physical networks, failed to get relevant non
+    # contiguous vlan ids, then fail the test case
+
+    if not NonContigVlanIdsAcquired:
+        return None, None
+
+    return physical_network, vlan

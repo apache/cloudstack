@@ -70,51 +70,51 @@ import com.cloud.user.Account;
 import com.cloud.vm.ReservationContext;
 
 public class NiciraNvpGuestNetworkGuruTest {
+    private static final long NETWORK_ID = 42L;
     PhysicalNetworkDao physnetdao = mock(PhysicalNetworkDao.class);
     NiciraNvpDao nvpdao = mock(NiciraNvpDao.class);
     DataCenterDao dcdao = mock(DataCenterDao.class);
     NetworkOfferingServiceMapDao nosd = mock(NetworkOfferingServiceMapDao.class);
-    AgentManager agentmgr = mock (AgentManager.class);
-    NetworkOrchestrationService netmgr = mock (NetworkOrchestrationService.class);
-    NetworkModel netmodel = mock (NetworkModel.class);
+    AgentManager agentmgr = mock(AgentManager.class);
+    NetworkOrchestrationService netmgr = mock(NetworkOrchestrationService.class);
+    NetworkModel netmodel = mock(NetworkModel.class);
 
-    HostDao hostdao = mock (HostDao.class);
+    HostDao hostdao = mock(HostDao.class);
     NetworkDao netdao = mock(NetworkDao.class);
     NiciraNvpGuestNetworkGuru guru;
-
 
     @Before
     public void setUp() {
         guru = new NiciraNvpGuestNetworkGuru();
-        ((GuestNetworkGuru) guru)._physicalNetworkDao = physnetdao;
-        guru._physicalNetworkDao = physnetdao;
-        guru._niciraNvpDao = nvpdao;
+        ((GuestNetworkGuru)guru)._physicalNetworkDao = physnetdao;
+        guru.physicalNetworkDao = physnetdao;
+        guru.niciraNvpDao = nvpdao;
         guru._dcDao = dcdao;
-        guru._ntwkOfferingSrvcDao = nosd;
-        guru._networkModel = netmodel;
-        guru._hostDao = hostdao;
-        guru._agentMgr = agentmgr;
-        guru._networkDao = netdao;
+        guru.ntwkOfferingSrvcDao = nosd;
+        guru.networkModel = netmodel;
+        guru.hostDao = hostdao;
+        guru.agentMgr = agentmgr;
+        guru.networkDao = netdao;
 
         DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.getGuestNetworkCidr()).thenReturn("10.1.1.1/24");
 
-        when(dcdao.findById((Long) any())).thenReturn(dc);
+        when(dcdao.findById((Long)any())).thenReturn(dc);
     }
 
     @Test
     public void testCanHandle() {
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(true);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
         assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
 
@@ -132,7 +132,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         assertFalse(guru.canHandle(offering, NetworkType.Basic, physnet) == true);
 
         // Not supported: IsolationMethod != STT
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "VLAN" }));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
         assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
 
     }
@@ -140,20 +140,20 @@ public class NiciraNvpGuestNetworkGuruTest {
     @Test
     public void testDesign() {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(true);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
         DeploymentPlan plan = mock(DeploymentPlan.class);
         Network network = mock(Network.class);
@@ -167,15 +167,15 @@ public class NiciraNvpGuestNetworkGuruTest {
     @Test
     public void testDesignNoElementOnPhysicalNetwork() {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
@@ -190,15 +190,15 @@ public class NiciraNvpGuestNetworkGuruTest {
     @Test
     public void testDesignNoIsolationMethodSTT() {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "VLAN" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
@@ -213,20 +213,20 @@ public class NiciraNvpGuestNetworkGuruTest {
     @Test
     public void testDesignNoConnectivityInOffering() {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(false);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
         DeploymentPlan plan = mock(DeploymentPlan.class);
         Network network = mock(Network.class);
@@ -239,27 +239,27 @@ public class NiciraNvpGuestNetworkGuruTest {
     @Test
     public void testImplement() throws InsufficientVirtualNetworkCapcityException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(false);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
         mock(DeploymentPlan.class);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
         when(network.getState()).thenReturn(State.Implementing);
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
 
         DeployDestination dest = mock(DeployDestination.class);
 
@@ -270,9 +270,9 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(hostdao.findById(anyLong())).thenReturn(niciraHost);
         when(niciraHost.getDetail("transportzoneuuid")).thenReturn("aaaa");
         when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
-        when(niciraHost.getId()).thenReturn(42L);
+        when(niciraHost.getId()).thenReturn(NETWORK_ID);
 
-        when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+        when(netmodel.findPhysicalNetworkId(anyLong(), (String)any(), (TrafficType)any())).thenReturn(NETWORK_ID);
         Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
         Account acc = mock(Account.class);
@@ -284,30 +284,30 @@ public class NiciraNvpGuestNetworkGuruTest {
         CreateLogicalSwitchAnswer answer = mock(CreateLogicalSwitchAnswer.class);
         when(answer.getResult()).thenReturn(true);
         when(answer.getLogicalSwitchUuid()).thenReturn("aaaaa");
-        when(agentmgr.easySend(eq(42L), (Command)any())).thenReturn(answer);
+        when(agentmgr.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         Network implementednetwork = guru.implement(network, offering, dest, res);
         assertTrue(implementednetwork != null);
-        verify(agentmgr, times(1)).easySend(eq(42L), (Command)any());
+        verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
     }
 
     @Test
     public void testImplementWithCidr() throws InsufficientVirtualNetworkCapcityException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(false);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
         mock(DeploymentPlan.class);
 
@@ -316,7 +316,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(network.getState()).thenReturn(State.Implementing);
         when(network.getGateway()).thenReturn("10.1.1.1");
         when(network.getCidr()).thenReturn("10.1.1.0/24");
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
 
         DeployDestination dest = mock(DeployDestination.class);
 
@@ -327,9 +327,9 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(hostdao.findById(anyLong())).thenReturn(niciraHost);
         when(niciraHost.getDetail("transportzoneuuid")).thenReturn("aaaa");
         when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
-        when(niciraHost.getId()).thenReturn(42L);
+        when(niciraHost.getId()).thenReturn(NETWORK_ID);
 
-        when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+        when(netmodel.findPhysicalNetworkId(anyLong(), (String)any(), (TrafficType)any())).thenReturn(NETWORK_ID);
         Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
         Account acc = mock(Account.class);
@@ -341,39 +341,39 @@ public class NiciraNvpGuestNetworkGuruTest {
         CreateLogicalSwitchAnswer answer = mock(CreateLogicalSwitchAnswer.class);
         when(answer.getResult()).thenReturn(true);
         when(answer.getLogicalSwitchUuid()).thenReturn("aaaaa");
-        when(agentmgr.easySend(eq(42L), (Command)any())).thenReturn(answer);
+        when(agentmgr.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         Network implementednetwork = guru.implement(network, offering, dest, res);
         assertTrue(implementednetwork != null);
         assertTrue(implementednetwork.getCidr().equals("10.1.1.0/24"));
         assertTrue(implementednetwork.getGateway().equals("10.1.1.1"));
-        verify(agentmgr, times(1)).easySend(eq(42L), (Command)any());
+        verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
     }
 
     @Test
     public void testImplementURIException() throws InsufficientVirtualNetworkCapcityException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(false);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
         mock(DeploymentPlan.class);
 
         NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
         when(network.getState()).thenReturn(State.Implementing);
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
 
         DeployDestination dest = mock(DeployDestination.class);
 
@@ -384,9 +384,9 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(hostdao.findById(anyLong())).thenReturn(niciraHost);
         when(niciraHost.getDetail("transportzoneuuid")).thenReturn("aaaa");
         when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
-        when(niciraHost.getId()).thenReturn(42L);
+        when(niciraHost.getId()).thenReturn(NETWORK_ID);
 
-        when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+        when(netmodel.findPhysicalNetworkId(anyLong(), (String)any(), (TrafficType)any())).thenReturn(NETWORK_ID);
         Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
         Account acc = mock(Account.class);
@@ -398,30 +398,30 @@ public class NiciraNvpGuestNetworkGuruTest {
         CreateLogicalSwitchAnswer answer = mock(CreateLogicalSwitchAnswer.class);
         when(answer.getResult()).thenReturn(true);
         //when(answer.getLogicalSwitchUuid()).thenReturn("aaaaa");
-        when(agentmgr.easySend(eq(42L), (Command)any())).thenReturn(answer);
+        when(agentmgr.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         Network implementednetwork = guru.implement(network, offering, dest, res);
         assertTrue(implementednetwork == null);
-        verify(agentmgr, times(1)).easySend(eq(42L), (Command)any());
+        verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
     }
 
     @Test
     public void testShutdown() throws InsufficientVirtualNetworkCapcityException, URISyntaxException {
         PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnetdao.findById((Long) any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] { "STT" }));
-        when(physnet.getId()).thenReturn(42L);
+        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
 
         NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
-        when(nvpdao.listByPhysicalNetwork(42L)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] { device }));
+        when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
         when(device.getId()).thenReturn(1L);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        when(nosd.areServicesSupportedByNetworkOffering(42L, Service.Connectivity)).thenReturn(false);
+        when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
         mock(DeploymentPlan.class);
 
@@ -430,8 +430,8 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(network.getState()).thenReturn(State.Implementing);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
         when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
-        when(netdao.findById(42L)).thenReturn(network);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(netdao.findById(NETWORK_ID)).thenReturn(network);
 
         DeployDestination dest = mock(DeployDestination.class);
 
@@ -442,9 +442,9 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(hostdao.findById(anyLong())).thenReturn(niciraHost);
         when(niciraHost.getDetail("transportzoneuuid")).thenReturn("aaaa");
         when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
-        when(niciraHost.getId()).thenReturn(42L);
+        when(niciraHost.getId()).thenReturn(NETWORK_ID);
 
-        when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+        when(netmodel.findPhysicalNetworkId(anyLong(), (String)any(), (TrafficType)any())).thenReturn(NETWORK_ID);
         Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
         Account acc = mock(Account.class);
@@ -455,15 +455,15 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         DeleteLogicalSwitchAnswer answer = mock(DeleteLogicalSwitchAnswer.class);
         when(answer.getResult()).thenReturn(true);
-        when(agentmgr.easySend(eq(42L), (Command)any())).thenReturn(answer);
+        when(agentmgr.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         NetworkProfile implementednetwork = mock(NetworkProfile.class);
-        when(implementednetwork.getId()).thenReturn(42L);
+        when(implementednetwork.getId()).thenReturn(NETWORK_ID);
         when(implementednetwork.getBroadcastUri()).thenReturn(new URI("lswitch:aaaa"));
         when(offering.getSpecifyVlan()).thenReturn(false);
 
         guru.shutdown(implementednetwork, offering);
-        verify(agentmgr, times(1)).easySend(eq(42L), (Command)any());
+        verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
         verify(implementednetwork, times(1)).setBroadcastUri(null);
     }
 }

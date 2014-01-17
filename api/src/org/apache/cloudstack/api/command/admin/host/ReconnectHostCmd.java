@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,13 +28,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "reconnectHost", description="Reconnects a host.", responseObject=HostResponse.class)
+@APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class)
 public class ReconnectHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
@@ -42,8 +42,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
-            required=true, description="the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -84,22 +83,24 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "reconnecting host: " + getId();
+        return "reconnecting host: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Host;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             Host result = _resourceService.reconnectHost(this);
-            if (result != null){
+            if (result != null) {
                 HostResponse response = _responseGenerator.createHostResponse(result);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);

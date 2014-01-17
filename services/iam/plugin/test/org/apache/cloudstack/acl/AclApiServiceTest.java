@@ -327,7 +327,7 @@ public class AclApiServiceTest {
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
-        
+
         @Bean
         public MessageBus messageBus() {
             return Mockito.mock(MessageBus.class);

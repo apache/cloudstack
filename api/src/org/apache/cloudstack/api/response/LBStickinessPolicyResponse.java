@@ -20,12 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
-import com.google.gson.annotations.SerializedName;
 
 public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("id")
@@ -100,7 +101,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
         if (stickinesspolicy.isRevoke()) {
             this.setState("Revoked");
         }
-        if (stickinesspolicy.getUuid() != null )
+        if (stickinesspolicy.getUuid() != null)
             setId(stickinesspolicy.getUuid());
 
         /* Get the param and values from the database and fill the response object
@@ -109,18 +110,17 @@ public class LBStickinessPolicyResponse extends BaseResponse {
          *    2)  combine all params with name with ":" , currently we have one param called "domain" that can appear multiple times.
          * */
 
-        Map<String, String> tempParamList =  new HashMap<String, String>();
-        for(Pair<String,String> paramKV :paramsList){
+        Map<String, String> tempParamList = new HashMap<String, String>();
+        for (Pair<String, String> paramKV : paramsList) {
             String key = paramKV.first();
             String value = paramKV.second();
             StringBuilder sb = new StringBuilder();
             sb.append(value);
-            if (tempParamList.get(key) != null)
-            {
+            if (tempParamList.get(key) != null) {
                 sb.append(":").append(tempParamList.get(key));
             }
 
-            tempParamList.put(key,sb.toString());
+            tempParamList.put(key, sb.toString());
         }
 
         this.params = tempParamList;

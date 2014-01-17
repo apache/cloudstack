@@ -56,7 +56,7 @@ import com.cloud.utils.script.Script;
  * storage servers and make sure everything it can do is
  * correct.
  */
-@Local(value=Discoverer.class)
+@Local(value = Discoverer.class)
 public class SecondaryStorageDiscoverer extends DiscovererBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageDiscoverer.class);
 
@@ -82,17 +82,15 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
-        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("cifs")
-        		&& !uri.getScheme().equalsIgnoreCase("file") 
-        		&& !uri.getScheme().equalsIgnoreCase("iso") 
-        		&& !uri.getScheme().equalsIgnoreCase("dummy")) {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
+        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("cifs") && !uri.getScheme().equalsIgnoreCase("file") &&
+            !uri.getScheme().equalsIgnoreCase("iso") && !uri.getScheme().equalsIgnoreCase("dummy")) {
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
 
-        if (uri.getScheme().equalsIgnoreCase("nfs")	|| uri.getScheme().equalsIgnoreCase("cifs")
-        		|| uri.getScheme().equalsIgnoreCase("iso")) {
+        if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("cifs") || uri.getScheme().equalsIgnoreCase("iso")) {
             return createNfsSecondaryStorageResource(dcId, podId, uri);
         } else if (uri.getScheme().equalsIgnoreCase("file")) {
             return createLocalSecondaryStorageResource(dcId, podId, uri);
@@ -105,9 +103,9 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 
     protected Map<? extends ServerResource, Map<String, String>> createNfsSecondaryStorageResource(long dcId, Long podId, URI uri) {
 
-    	if (_useServiceVM) {
-    	    return createDummySecondaryStorageResource(dcId, podId, uri);
-    	}
+        if (_useServiceVM) {
+            return createDummySecondaryStorageResource(dcId, podId, uri);
+        }
         String mountStr = NfsUtils.uri2Mount(uri);
 
         Script script = new Script(true, "mount", _timeout, s_logger);
@@ -140,7 +138,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         Map<NfsSecondaryStorageResource, Map<String, String>> srs = new HashMap<NfsSecondaryStorageResource, Map<String, String>>();
 
         NfsSecondaryStorageResource storage;
-        if(_configDao.isPremium()) {
+        if (_configDao.isPremium()) {
             Class<?> impl;
             String name = "com.cloud.storage.resource.PremiumSecondaryStorageResource";
             try {
@@ -149,29 +147,29 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
                 constructor.setAccessible(true);
                 storage = (NfsSecondaryStorageResource)constructor.newInstance();
             } catch (final ClassNotFoundException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
+                return null;
             } catch (final SecurityException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
+                return null;
             } catch (final NoSuchMethodException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
+                return null;
             } catch (final IllegalArgumentException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
+                return null;
             } catch (final InstantiationException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
+                return null;
             } catch (final IllegalAccessException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
+                return null;
             } catch (final InvocationTargetException e) {
-            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
-            	return null;
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
+                return null;
             }
         } else {
-        	storage = new NfsSecondaryStorageResource();
+            storage = new NfsSecondaryStorageResource();
         }
 
         Map<String, String> details = new HashMap<String, String>();
@@ -271,15 +269,15 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         }
 
         String useServiceVM = _params.get("secondary.storage.vm");
-        if ("true".equalsIgnoreCase(useServiceVM)){
-        	_useServiceVM = true;
+        if ("true".equalsIgnoreCase(useServiceVM)) {
+            _useServiceVM = true;
         }
         return true;
     }
 
     @Override
-	public boolean matchHypervisor(String hypervisor) {
-        if( hypervisor.equals("SecondaryStorage")) {
+    public boolean matchHypervisor(String hypervisor) {
+        if (hypervisor.equals("SecondaryStorage")) {
             return true;
         } else {
             return false;
@@ -287,35 +285,35 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     }
 
     @Override
-	public Hypervisor.HypervisorType getHypervisorType() {
-    	return Hypervisor.HypervisorType.None;
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return Hypervisor.HypervisorType.None;
     }
 
-	@Override
-	public void postDiscovery(List<HostVO> hosts, long msId) {
-		if (_useServiceVM) {
-			for (HostVO h: hosts) {
-				_agentMgr.agentStatusTransitTo(h, Event.AgentDisconnected, msId);
-			}
-		}
-		for (HostVO h: hosts) {
-			associateTemplatesToZone(h.getId(), h.getDataCenterId());
-		}
+    @Override
+    public void postDiscovery(List<HostVO> hosts, long msId) {
+        if (_useServiceVM) {
+            for (HostVO h : hosts) {
+                _agentMgr.agentStatusTransitTo(h, Event.AgentDisconnected, msId);
+            }
+        }
+        for (HostVO h : hosts) {
+            associateTemplatesToZone(h.getId(), h.getDataCenterId());
+        }
 
-	}
+    }
 
-    private void associateTemplatesToZone(long hostId, long dcId){
-    	VMTemplateZoneVO tmpltZone;
+    private void associateTemplatesToZone(long hostId, long dcId) {
+        VMTemplateZoneVO tmpltZone;
 
-    	List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
-    	for (VMTemplateVO vt: allTemplates){
-    		if (vt.isCrossZones()) {
-    			tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-    			if (tmpltZone == null) {
-    				VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-    				_vmTemplateZoneDao.persist(vmTemplateZone);
-    			}
-    		}
-    	}
+        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
+        for (VMTemplateVO vt : allTemplates) {
+            if (vt.isCrossZones()) {
+                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
+                if (tmpltZone == null) {
+                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
+                    _vmTemplateZoneDao.persist(vmTemplateZone);
+                }
+            }
+        }
     }
 }

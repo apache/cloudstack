@@ -23,24 +23,24 @@ import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
-
 public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
-	HashMap<String, Pair<Long, Long>> newGroupStates;
+    HashMap<String, Pair<Long, Long>> newGroupStates;
 
-	protected PingRoutingWithNwGroupsCommand() {
-		super();
-	}
+    protected PingRoutingWithNwGroupsCommand() {
+        super();
+    }
 
-	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, State> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
-		super(type, id, states);
-		newGroupStates = nwGrpStates;
-	}
+    public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport,
+            HashMap<String, Pair<Long, Long>> nwGrpStates) {
+        super(type, id, states, hostVmStateReport);
+        newGroupStates = nwGrpStates;
+    }
 
-	public HashMap<String, Pair<Long, Long>> getNewGroupStates() {
-		return newGroupStates;
-	}
+    public HashMap<String, Pair<Long, Long>> getNewGroupStates() {
+        return newGroupStates;
+    }
 
-	public void setNewGroupStates(HashMap<String, Pair<Long, Long>> newGroupStates) {
-		this.newGroupStates = newGroupStates;
-	}
+    public void setNewGroupStates(HashMap<String, Pair<Long, Long>> newGroupStates) {
+        this.newGroupStates = newGroupStates;
+    }
 }

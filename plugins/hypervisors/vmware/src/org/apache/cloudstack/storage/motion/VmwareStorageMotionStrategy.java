@@ -24,6 +24,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -33,8 +36,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -57,11 +58,16 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageMotionStrategy.class);
-    @Inject AgentManager agentMgr;
-    @Inject VolumeDao volDao;
-    @Inject VolumeDataFactory volFactory;
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject VMInstanceDao instanceDao;
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VolumeDao volDao;
+    @Inject
+    VolumeDataFactory volFactory;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    VMInstanceDao instanceDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -78,8 +84,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);
@@ -88,8 +93,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
         try {
@@ -114,8 +118,8 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         return null;
     }
 
-    private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost,
-            Host destHost, Map<VolumeInfo, DataStore> volumeToPool) throws AgentUnavailableException {
+    private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
+        throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -129,18 +133,16 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
 
             // Migration across cluster needs to be done in three phases.
             // 1. Send a migrate command to source resource to initiate migration
-            //	  Run validations against target!!
+            //      Run validations against target!!
             // 2. Complete the process. Update the volume details.
             MigrateWithStorageCommand migrateWithStorageCmd = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getGuid());
-            MigrateWithStorageAnswer migrateWithStorageAnswer = (MigrateWithStorageAnswer) agentMgr.send(
-                    srcHost.getId(), migrateWithStorageCmd);
+            MigrateWithStorageAnswer migrateWithStorageAnswer = (MigrateWithStorageAnswer)agentMgr.send(srcHost.getId(), migrateWithStorageCmd);
             if (migrateWithStorageAnswer == null) {
-                s_logger.error("Migration with storage of vm " + vm+ " to host " + destHost + " failed.");
+                s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!migrateWithStorageAnswer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + migrateWithStorageAnswer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + migrateWithStorageAnswer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + migrateWithStorageAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + migrateWithStorageAnswer.getDetails());
             } else {
                 // Update the volume details after migration.
                 updateVolumesAfterMigration(volumeToPool);
@@ -154,8 +156,8 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost,
-            Host destHost, Map<VolumeInfo, DataStore> volumeToPool) throws AgentUnavailableException {
+    private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
+        throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -168,14 +170,13 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             }
 
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getGuid());
-            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer) agentMgr.send(srcHost.getId(), command);
+            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer)agentMgr.send(srcHost.getId(), command);
             if (answer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + answer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + answer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + answer.getDetails());
             } else {
                 // Update the volume details after migration.
                 updateVolumesAfterMigration(volumeToPool);

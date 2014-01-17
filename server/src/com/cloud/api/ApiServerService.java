@@ -26,12 +26,18 @@ import com.cloud.exception.CloudAuthenticationException;
 
 public interface ApiServerService {
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException;
+
     public Long fetchDomainId(String domainUUID);
-    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
+
+    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress,
+        Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
+
     public void logoutUser(long userId);
+
     public boolean verifyUser(Long userId);
 
     public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType);
+
     public String getSerializedApiError(ServerApiException ex, Map<String, Object[]> apiCommandParams, String responseType);
 
     public String handleRequest(Map params, String responseType, StringBuffer auditTrailSb) throws ServerApiException;

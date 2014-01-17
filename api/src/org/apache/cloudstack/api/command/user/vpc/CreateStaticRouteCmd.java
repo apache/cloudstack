@@ -39,13 +39,16 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 
-@APICommand(name = "createStaticRoute", description="Creates a static route", responseObject=StaticRouteResponse.class)
-public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
+@APICommand(name = "createStaticRoute", description = "Creates a static route", responseObject = StaticRouteResponse.class)
+public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
 
-    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
-            required=true, description="the gateway id we are creating static route for")
+    @Parameter(name = ApiConstants.GATEWAY_ID,
+               type = CommandType.UUID,
+               entityType = PrivateGatewayResponse.class,
+               required = true,
+               description = "the gateway id we are creating static route for")
     private Long gatewayId;
 
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
@@ -78,7 +81,6 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         }
     }
 
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_STATIC_ROUTE_CREATE;
@@ -86,7 +88,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public String getEventDescription() {
-        return  "creating static route";
+        return "creating static route";
     }
 
     @Override
@@ -121,9 +123,9 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     @Override
     public long getEntityOwnerId() {
         VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
-         if (gateway == null) {
-             throw new InvalidParameterValueException("Invalid gateway id is specified");
-         }
+        if (gateway == null) {
+            throw new InvalidParameterValueException("Invalid gateway id is specified");
+        }
         return _entityMgr.findById(Vpc.class, gateway.getVpcId()).getAccountId();
     }
 

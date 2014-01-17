@@ -24,79 +24,74 @@ import javax.servlet.ServletContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.http.HTTPConstants;
 
-
 public class ConfigurationHelper {
-	
-	private static String configPath;
-	
-	public static void preConfigureConfigPathFromServletContext(ServletContext context){
-    	String servletConficPath = context.getRealPath("/");
-    	preSetConfigPath(servletConficPath + File.separator + "WEB-INF" + File.separator + "classes");
-	}
-	
-	public static void preSetConfigPath(String path){
-		configPath=path;
-	}
-	
-	public static File findConfigurationFile(String name) {
 
-	if(configPath!=null){
-    	File file = new File(configPath + File.separator + name);
-        if (file.exists()) {
-        	return file;
+    private static String configPath;
+
+    public static void preConfigureConfigPathFromServletContext(ServletContext context) {
+        String servletConficPath = context.getRealPath("/");
+        preSetConfigPath(servletConficPath + File.separator + "WEB-INF" + File.separator + "classes");
+    }
+
+    public static void preSetConfigPath(String path) {
+        configPath = path;
+    }
+
+    public static File findConfigurationFile(String name) {
+
+        if (configPath != null) {
+            File file = new File(configPath + File.separator + name);
+            if (file.exists()) {
+                return file;
+            }
         }
-	}
-	ServletContext context = getServletContext();
-	if(context!=null){
-		String newPath = context.getRealPath("/");
-        	File file = new File(newPath + File.separator + "WEB-INF" + File.separator + "classes" + File.separator + name);
-	        if (file.exists()) {
-			return file;
-		}
+        ServletContext context = getServletContext();
+        if (context != null) {
+            String newPath = context.getRealPath("/");
+            File file = new File(newPath + File.separator + "WEB-INF" + File.separator + "classes" + File.separator + name);
+            if (file.exists()) {
+                return file;
+            }
 
-	}
-	String newPath = "conf" + (name.startsWith(File.separator) ? "" : "/") + name;
+        }
+        String newPath = "conf" + (name.startsWith(File.separator) ? "" : "/") + name;
         URL url = ClassLoader.getSystemResource(newPath);
         if (url != null) {
             return new File(url.getFile());
         }
-		
+
         // if running under Tomcat
         newPath = System.getenv("CATALINA_BASE");
-        
+
         if (newPath == null) {
-        	newPath = System.getProperty("catalina.base");
+            newPath = System.getProperty("catalina.base");
         }
-        
+
         if (newPath == null) {
-        	newPath = System.getenv("CATALINA_HOME");
+            newPath = System.getenv("CATALINA_HOME");
         }
-        
+
         if (newPath == null) {
             return null;
         }
-        
+
         File file = new File(newPath + File.separator + "conf" + File.separator + name);
         if (file.exists()) {
             return file;
         }
         return file;
-	}
+    }
 
-	public static ServletContext getServletContext()
-	{
-		try{
-			MessageContext mc = MessageContext.getCurrentMessageContext();
-			if(mc!=null){
-				return (ServletContext) mc.getProperty(HTTPConstants.MC_HTTP_SERVLETCONTEXT);
-			}
-		}
-		catch(Exception e){
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-
+    public static ServletContext getServletContext() {
+        try {
+            MessageContext mc = MessageContext.getCurrentMessageContext();
+            if (mc != null) {
+                return (ServletContext)mc.getProperty(HTTPConstants.MC_HTTP_SERVLETCONTEXT);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }

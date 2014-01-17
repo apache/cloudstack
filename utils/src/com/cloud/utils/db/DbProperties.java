@@ -43,7 +43,7 @@ public class DbProperties {
         EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
         checker.check(dbProps);
 
-        if ( EncryptionSecretKeyChecker.useEncryption() ) {
+        if (EncryptionSecretKeyChecker.useEncryption()) {
             return dbProps;
         } else {
             EncryptableProperties encrProps = new EncryptableProperties(EncryptionSecretKeyChecker.getEncryptor());
@@ -53,24 +53,27 @@ public class DbProperties {
     }
 
     public synchronized static Properties getDbProperties() {
-        if ( ! loaded ) {
+        if (!loaded) {
             Properties dbProps = new Properties();
             InputStream is = null;
             try {
                 File props = PropertiesUtil.findConfigFile("db.properties");
-                if ( props != null && props.exists() ) {
+                if (props != null && props.exists()) {
                     is = new FileInputStream(props);
                 }
 
-                if ( is == null ) {
+                if (is == null) {
                     is = PropertiesUtil.openStreamFromURL("db.properties");
                 }
-                if ( is == null ) {
+
+                if (is == null) {
                     System.err.println("Failed to find db.properties");
                     log.error("Failed to find db.properties");
                 }
 
-                dbProps.load(is);
+                if (is != null) {
+                    dbProps.load(is);
+                }
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
                 checker.check(dbProps);
@@ -81,7 +84,7 @@ public class DbProperties {
                     encrDbProps.putAll(dbProps);
                     dbProps = encrDbProps;
                 }
-            } catch ( IOException e ) {
+            } catch (IOException e) {
                 throw new IllegalStateException("Failed to load db.properties", e);
             } finally {
                 IOUtils.closeQuietly(is);
@@ -93,9 +96,9 @@ public class DbProperties {
 
         return properties;
     }
-    
+
     public synchronized static Properties setDbProperties(Properties props) throws IOException {
-        if ( loaded ) {
+        if (loaded) {
             throw new IllegalStateException("DbProperties has already been loaded");
         }
         properties = wrapEncryption(props);

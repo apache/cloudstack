@@ -22,11 +22,11 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -40,12 +40,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={ProjectJoinDao.class})
+@Local(value = {ProjectJoinDao.class})
 public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> implements ProjectJoinDao {
     public static final Logger s_logger = Logger.getLogger(ProjectJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
     @Inject
     private AccountJoinDao _accountJoinDao;
     @Inject
@@ -86,16 +86,16 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         Long tag_id = proj.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if ( vtag != null ){
+            if (vtag != null) {
                 response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
-        
+
         //set resource limit/count information for the project (by getting the info of the project's account)
         Account account = _accountDao.findByIdIncludingRemoved(proj.getProjectAccountId());
         AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
         _accountJoinDao.setResourceLimits(accountJn, false, response);
-        
+
         response.setObjectName("project");
         return response;
     }
@@ -106,7 +106,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         Long tag_id = proj.getTagId();
         if (tag_id != null && tag_id.longValue() > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if ( vtag != null ){
+            if (vtag != null) {
                 rsp.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
@@ -125,15 +125,15 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<ProjectJoinVO> uvList = new ArrayList<ProjectJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( prjIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= prjIds.length ) {
+        if (prjIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= prjIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = prjIds[j];

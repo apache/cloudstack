@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.dao.AccountGuestVlanMapVO;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
-
 import java.util.List;
+
 import javax.ejb.Local;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
@@ -29,7 +28,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AccountGuestVlanMapDao.class})
+@Local(value = {AccountGuestVlanMapDao.class})
 @DB
 public class AccountGuestVlanMapDaoImpl extends GenericDaoBase<AccountGuestVlanMapVO, Long> implements AccountGuestVlanMapDao {
 

@@ -60,13 +60,13 @@ public class AclGroupVO implements AclGroup {
     private Date created;
 
     public AclGroupVO() {
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AclGroupVO(String name, String description) {
         this.name = name;
         this.description = description;
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         path = "/";
     }
 
@@ -105,11 +105,11 @@ public class AclGroupVO implements AclGroup {
 
     @Override
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public Date getRemoved() {

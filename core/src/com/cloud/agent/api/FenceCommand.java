@@ -39,7 +39,7 @@ public class FenceCommand extends Command {
     }
 
     public void setSeq(boolean inseq) {
-    	inSeq = inseq;
+        inSeq = inseq;
     }
 
     public String getVmName() {

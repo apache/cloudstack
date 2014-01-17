@@ -24,7 +24,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={InlineLoadBalancerNicMapDao.class})
+@Local(value = {InlineLoadBalancerNicMapDao.class})
 public class InlineLoadBalancerNicMapDaoImpl extends GenericDaoBase<InlineLoadBalancerNicMapVO, Long> implements InlineLoadBalancerNicMapDao {
 
     @Override
@@ -34,13 +34,13 @@ public class InlineLoadBalancerNicMapDaoImpl extends GenericDaoBase<InlineLoadBa
 
         return findOneBy(sc);
     }
-    
+
     @Override
     public InlineLoadBalancerNicMapVO findByNicId(long nicId) {
-    	SearchCriteria<InlineLoadBalancerNicMapVO> sc = createSearchCriteria();
-    	sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
-    	
-    	return findOneBy(sc);
+        SearchCriteria<InlineLoadBalancerNicMapVO> sc = createSearchCriteria();
+        sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
+
+        return findOneBy(sc);
     }
-    
+
 }

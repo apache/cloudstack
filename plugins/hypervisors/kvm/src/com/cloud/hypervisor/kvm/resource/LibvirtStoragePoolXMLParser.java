@@ -24,13 +24,15 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class LibvirtStoragePoolXMLParser {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtStoragePoolXMLParser.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtStoragePoolXMLParser.class);
 
     public LibvirtStoragePoolDef parseStoragePoolXML(String poolXML) {
         DocumentBuilder builder;
@@ -48,36 +50,30 @@ public class LibvirtStoragePoolXMLParser {
 
             String poolName = getTagValue("name", rootElement);
 
-            Element source = (Element) rootElement.getElementsByTagName(
-                    "source").item(0);
+            Element source = (Element)rootElement.getElementsByTagName("source").item(0);
             String host = getAttrValue("host", "name", source);
 
             if (type.equalsIgnoreCase("rbd")) {
                 int port = Integer.parseInt(getAttrValue("host", "port", source));
                 String pool = getTagValue("name", source);
 
-                Element auth = (Element) source.getElementsByTagName(
-                    "auth").item(0);
+                Element auth = (Element)source.getElementsByTagName("auth").item(0);
 
                 if (auth != null) {
                     String authUsername = auth.getAttribute("username");
                     String authType = auth.getAttribute("type");
-                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
-                        poolName, uuid, host, port, pool, authUsername, LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, authUsername,
+                        LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
                 } else {
-                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
-                        poolName, uuid, host, port, pool, "");
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, "");
                 }
             } else {
                 String path = getAttrValue("dir", "path", source);
 
-                Element target = (Element) rootElement.getElementsByTagName(
-                        "target").item(0);
+                Element target = (Element)rootElement.getElementsByTagName("target").item(0);
                 String targetPath = getTagValue("path", target);
 
-                return new LibvirtStoragePoolDef(
-                        LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
-                        poolName, uuid, host, path, targetPath);
+                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
             }
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
@@ -90,9 +86,8 @@ public class LibvirtStoragePoolXMLParser {
     }
 
     private static String getTagValue(String tag, Element eElement) {
-        NodeList nlList = eElement.getElementsByTagName(tag).item(0)
-                .getChildNodes();
-        Node nValue = (Node) nlList.item(0);
+        NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();
+        Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }
@@ -102,7 +97,7 @@ public class LibvirtStoragePoolXMLParser {
         if (tagNode.getLength() == 0) {
             return null;
         }
-        Element node = (Element) tagNode.item(0);
+        Element node = (Element)tagNode.item(0);
         return node.getAttribute(attr);
     }
 }

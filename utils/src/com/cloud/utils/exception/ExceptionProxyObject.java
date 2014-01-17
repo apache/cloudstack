@@ -16,18 +16,22 @@
 // under the License.
 package com.cloud.utils.exception;
 
+import java.io.Serializable;
 
-public class ExceptionProxyObject {
+
+public class ExceptionProxyObject implements Serializable {
+    private static final long serialVersionUID = -7514266713085362352L;
+
     private String uuid;
     private String description;
-    
+
     public ExceptionProxyObject(){
-        
+
     }
-    
+
     public ExceptionProxyObject(String uuid, String desc){
         this.uuid = uuid;
-        this.description = desc;
+        description = desc;
     }
 
     public String getUuid() {
@@ -45,6 +49,4 @@ public class ExceptionProxyObject {
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    
 }

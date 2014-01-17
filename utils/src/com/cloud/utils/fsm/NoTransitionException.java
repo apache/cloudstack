@@ -24,9 +24,9 @@ import com.cloud.utils.SerialVersionUID;
  *
  */
 public class NoTransitionException extends Exception {
-    
+
     private static final long serialVersionUID = SerialVersionUID.NoTransitionException;
-    
+
     public NoTransitionException(String msg) {
         super(msg);
     }

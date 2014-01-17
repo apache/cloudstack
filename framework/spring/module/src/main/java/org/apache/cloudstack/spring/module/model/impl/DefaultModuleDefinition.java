@@ -27,45 +27,46 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.util.StringUtils;
 
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
+import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
+
 public class DefaultModuleDefinition implements ModuleDefinition {
 
     public static final String NAME = "name";
     public static final String PARENT = "parent";
-        
+
     String name;
     String baseDir;
     String parent;
     Resource moduleProperties;
     ResourcePatternResolver resolver;
     boolean valid;
-    
+
     List<Resource> configLocations;
     List<Resource> contextLocations;
     List<Resource> inheritableContextLocations;
     List<Resource> overrideContextLocations;
     Map<String, ModuleDefinition> children = new TreeMap<String, ModuleDefinition>();
-    
+
     public DefaultModuleDefinition(String baseDir, Resource moduleProperties, ResourcePatternResolver resolver) {
         this.baseDir = baseDir;
         this.resolver = resolver;
         this.moduleProperties = moduleProperties;
     }
-    
+
     public void init() throws IOException {
-        
-        if ( ! moduleProperties.exists() ) {
+
+        if (!moduleProperties.exists()) {
             return;
         }
-        
+
         resolveNameAndParent();
-        
+
         contextLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getContextLocation(baseDir, name)));
         configLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getDefaultsLocation(baseDir, name)));
         inheritableContextLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getInheritableContextLocation(baseDir, name)));
@@ -73,79 +74,84 @@ public class DefaultModuleDefinition implements ModuleDefinition {
 
         valid = true;
     }
-    
+
     protected void resolveNameAndParent() throws IOException {
         InputStream is = null;
-        
+
         try {
             is = moduleProperties.getInputStream();
             Properties props = new Properties();
             props.load(is);
-            
+
             name = props.getProperty(NAME);
             parent = props.getProperty(PARENT);
-            
-            if ( ! StringUtils.hasText(name) ) {
+
+            if (!StringUtils.hasText(name)) {
                 throw new IOException("Missing name property in [" + location() + "]");
             }
-            
-            if ( ! StringUtils.hasText(parent) ) {
+
+            if (!StringUtils.hasText(parent)) {
                 parent = null;
             }
-            
+
             checkNameMatchesSelf();
         } finally {
             IOUtils.closeQuietly(is);
         }
     }
-    
+
     protected void checkNameMatchesSelf() throws IOException {
         String expectedLocation = ModuleLocationUtils.getModuleLocation(baseDir, name);
         Resource self = resolver.getResource(expectedLocation);
-        
-        if ( ! self.exists() ) {
-            throw new IOException("Resource [" + location() + "] is expected to exist at [" +
-                    expectedLocation + "] please ensure the name property is correct");
+
+        if (!self.exists()) {
+            throw new IOException("Resource [" + location() + "] is expected to exist at [" + expectedLocation + "] please ensure the name property is correct");
         }
-        
+
         String moduleUrl = moduleProperties.getURL().toExternalForm();
         String selfUrl = self.getURL().toExternalForm();
-            
-        if ( ! moduleUrl.equals(selfUrl) ) {
-            throw new IOException("Resource [" + location() + "] and [" +
-                    self.getURL() + "] do not appear to be the same resource, " + 
-                    "please ensure the name property is correct");
+
+        if (!moduleUrl.equals(selfUrl)) {
+            throw new IOException("Resource [" + location() + "] and [" + self.getURL() + "] do not appear to be the same resource, " +
+                "please ensure the name property is correct or that the " + "module is not defined twice");
         }
     }
-    
+
     private String location() throws IOException {
         return moduleProperties.getURL().toString();
     }
-    
+
+    @Override
     public void addChild(ModuleDefinition def) {
         children.put(def.getName(), def);
     }
-    
+
+    @Override
     public Collection<ModuleDefinition> getChildren() {
         return children.values();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getParentName() {
         return parent;
     }
 
+    @Override
     public List<Resource> getConfigLocations() {
         return configLocations;
     }
 
+    @Override
     public List<Resource> getContextLocations() {
         return contextLocations;
     }
 
+    @Override
     public List<Resource> getInheritableContextLocations() {
         return inheritableContextLocations;
     }
@@ -155,13 +161,14 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         return overrideContextLocations;
     }
 
+    @Override
     public boolean isValid() {
         return valid;
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return resolver.getClassLoader();
     }
-
 
 }

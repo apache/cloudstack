@@ -27,13 +27,13 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -45,17 +45,16 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={HostJoinDao.class})
+@Local(value = {HostJoinDao.class})
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
     public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
     private final SearchBuilder<HostJoinVO> hostIdSearch;
-
 
     protected HostJoinDaoImpl() {
 
@@ -70,14 +69,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         this._count = "select count(distinct id) from host_view WHERE ";
     }
 
-
-
     @Override
     public HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details) {
         HostResponse hostResponse = new HostResponse();
         hostResponse.setId(host.getUuid());
         hostResponse.setCapabilities(host.getCapabilities());
         hostResponse.setClusterId(host.getClusterUuid());
+        hostResponse.setCpuSockets(host.getCpuSockets());
         hostResponse.setCpuNumber(host.getCpus());
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
@@ -94,14 +92,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setVersion(host.getVersion());
         hostResponse.setCreated(host.getCreated());
 
-        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)
-                || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
+        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 
             hostResponse.setOsCategoryId(host.getOsCategoryUuid());
             hostResponse.setOsCategoryName(host.getOsCategoryName());
             hostResponse.setZoneName(host.getZoneName());
             hostResponse.setPodName(host.getPodName());
-            if ( host.getClusterId() > 0) {
+            if (host.getClusterId() > 0) {
                 hostResponse.setClusterName(host.getClusterName());
                 hostResponse.setClusterType(host.getClusterType().toString());
             }
@@ -112,7 +109,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
                 // set allocated capacities
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
-                Long cpu = host.getCpuReservedCapacity() + host.getCpuReservedCapacity();
+                Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryTotal(host.getTotalMemory());
@@ -133,7 +130,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
                 hostResponse.setCpuAllocated(cpuAlloc);
                 String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
                 hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
@@ -144,7 +141,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 String cpuUsed = null;
                 HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
                 if (hostStats != null) {
-                    float cpuUtil = (float) hostStats.getCpuUtilization();
+                    float cpuUtil = (float)hostStats.getCpuUtilization();
                     cpuUsed = decimalFormat.format(cpuUtil) + "%";
                     hostResponse.setCpuUsed(cpuUsed);
                     hostResponse.setMemoryUsed((new Double(hostStats.getUsedMemory())).longValue());
@@ -193,15 +190,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         return hostResponse;
     }
 
-
     @Override
     public HostResponse setHostResponse(HostResponse response, HostJoinVO host) {
         String tag = host.getTag();
         if (tag != null) {
-            if ( response.getHostTags() != null && response.getHostTags().length() > 0){
+            if (response.getHostTags() != null && response.getHostTags().length() > 0) {
                 response.setHostTags(response.getHostTags() + "," + tag);
-            }
-            else{
+            } else {
                 response.setHostTags(tag);
             }
         }
@@ -230,14 +225,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setVersion(host.getVersion());
         hostResponse.setCreated(host.getCreated());
 
-        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)
-                || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
+        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 
             hostResponse.setOsCategoryId(host.getOsCategoryUuid());
             hostResponse.setOsCategoryName(host.getOsCategoryName());
             hostResponse.setZoneName(host.getZoneName());
             hostResponse.setPodName(host.getPodName());
-            if ( host.getClusterId() > 0) {
+            if (host.getClusterId() > 0) {
                 hostResponse.setClusterName(host.getClusterName());
                 hostResponse.setClusterType(host.getClusterType().toString());
             }
@@ -269,7 +263,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
                 hostResponse.setCpuAllocated(cpuAlloc);
                 String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
                 hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
@@ -280,7 +274,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 String cpuUsed = null;
                 HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
                 if (hostStats != null) {
-                    float cpuUtil = (float) hostStats.getCpuUtilization();
+                    float cpuUtil = (float)hostStats.getCpuUtilization();
                     cpuUsed = decimalFormat.format(cpuUtil) + "%";
                     hostResponse.setCpuUsed(cpuUsed);
                     hostResponse.setMemoryUsed((new Double(hostStats.getUsedMemory())).longValue());
@@ -348,22 +342,20 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
     }
 
-
-
     @Override
     public List<HostJoinVO> searchByIds(Long... hostIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<HostJoinVO> uvList = new ArrayList<HostJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( hostIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= hostIds.length ) {
+        if (hostIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= hostIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = hostIds[j];
@@ -393,8 +385,5 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         }
         return uvList;
     }
-
-
-
 
 }

@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-
 import java.util.List;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -41,6 +39,9 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -76,13 +77,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
             s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(
-                    parentSnapshot.getId(), DataStoreRole.Image);
+            SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
-                DataStore store = dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(),
-                        parentSnapshotOnBackupStore.getRole());
+                DataStore store = dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(), parentSnapshotOnBackupStore.getRole());
 
-                SnapshotInfo snapshotOnImageStore = (SnapshotInfo) store.create(snapshot);
+                SnapshotInfo snapshotOnImageStore = (SnapshotInfo)store.create(snapshot);
                 snapshotOnImageStore.processEvent(Event.CreateOnlyRequested);
 
                 SnapshotObjectTO snapTO = new SnapshotObjectTO();
@@ -91,7 +90,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 CreateObjectAnswer createSnapshotAnswer = new CreateObjectAnswer(snapTO);
 
                 snapshotOnImageStore.processEvent(Event.OperationSuccessed, createSnapshotAnswer);
-                SnapshotObject snapObj = (SnapshotObject) snapshot;
+                SnapshotObject snapObj = (SnapshotObject)snapshot;
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
                 } catch (NoTransitionException e) {
@@ -106,31 +105,31 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         // determine full snapshot backup or not
 
-        boolean fullBackup = false;
 
-        if (parentSnapshot != null) {
+        boolean fullBackup = true;
+        SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
+        HypervisorType hypervisorType = snapshot.getBaseVolume().getHypervisorType();
+        if (parentSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
             int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
                     SnapshotManager.DELTAMAX);
             int deltaSnap = _deltaSnapshotMax;
-
             int i;
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
-            for (i = 1; i < deltaSnap; i++) {
-                parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
-                        DataStoreRole.Image);
-                if (parentSnapshotOnBackupStore == null) {
-                    break;
-                }
-                Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
 
+            for (i = 1; i < deltaSnap; i++) {
+                Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
                 if (prevBackupId == 0) {
                     break;
                 }
-
                 parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
+                if (parentSnapshotOnBackupStore == null) {
+                    break;
+                }
             }
+
             if (i >= deltaSnap) {
                 fullBackup = true;
+            } else {
+                fullBackup = false;
             }
         }
 
@@ -143,8 +142,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         boolean result = false;
         boolean resultIsSet = false;   //need to track, the snapshot itself is deleted or not.
         try {
-            while (snapshot != null && (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState()
-                    == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
+            while (snapshot != null &&
+                (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState() == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
                 SnapshotInfo child = snapshot.getChild();
 
                 if (child != null) {
@@ -205,9 +204,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
-        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState())) {
-            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId
-                    + " due to it is in " + snapshotVO.getState() + " Status");
+        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState())) {
+            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
         // first mark the snapshot as destroyed, so that ui can't see it, but we
@@ -220,7 +218,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
-        SnapshotObject obj = (SnapshotObject) snapshotOnImage;
+        SnapshotObject obj = (SnapshotObject)snapshotOnImage;
         try {
             obj.processEvent(Snapshot.Event.DestroyRequested);
         } catch (NoTransitionException e) {
@@ -260,6 +258,14 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     @DB
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
+        Object payload = snapshot.getPayload();
+        if (payload != null) {
+            CreateSnapshotPayload createSnapshotPayload = (CreateSnapshotPayload)payload;
+            if (createSnapshotPayload.getQuiescevm()) {
+                throw new InvalidParameterValueException("can't handle quiescevm equal true for volume snapshot");
+            }
+        }
+
         SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
         if (snapshotVO == null) {
             throw new CloudRuntimeException("Failed to get lock on snapshot:" + snapshot.getId());
@@ -270,7 +276,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
             SnapshotResult result = null;
             try {
-                result =  snapshotSvr.takeSnapshot(snapshot);
+                result = snapshotSvr.takeSnapshot(snapshot);
                 if (result.isFailed()) {
                     s_logger.debug("Failed to take snapshot: " + result.getResult());
                     throw new CloudRuntimeException(result.getResult());
@@ -293,7 +299,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 if (backupedSnapshot != null && parent != null) {
                     Long parentSnapshotId = parent.getId();
                     while (parentSnapshotId != null && parentSnapshotId != 0L) {
-                        SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(),primaryStore.getId(), parentSnapshotId);
+                        SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
                         if (snapshotDataStoreVO != null) {
                             parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
                             snapshotStoreDao.remove(snapshotDataStoreVO.getId());
@@ -301,8 +307,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                             parentSnapshotId = null;
                         }
                     }
-                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(),
-                            snapshot.getId());
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), snapshot.getId());
                     if (snapshotDataStoreVO != null) {
                         snapshotDataStoreVO.setParentSnapshotId(0L);
                         snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);

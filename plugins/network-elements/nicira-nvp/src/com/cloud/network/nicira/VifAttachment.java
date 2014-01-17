@@ -18,21 +18,21 @@ package com.cloud.network.nicira;
 
 public class VifAttachment extends Attachment {
     private final String type = "VifAttachment";
-    private String vif_uuid;
+    private String vifUuid;
 
     public VifAttachment() {
     }
 
-    public VifAttachment(String vifUuid) {
-        vif_uuid = vifUuid;
+    public VifAttachment(final String vifUuid) {
+        this.vifUuid = vifUuid;
     }
 
-    public String getVif_uuid() {
-        return vif_uuid;
+    public String getVifUuid() {
+        return vifUuid;
     }
 
-    public void setVif_uuid(String vif_uuid) {
-        this.vif_uuid = vif_uuid;
+    public void setVifUuid(String vifUuid) {
+        this.vifUuid = vifUuid;
     }
 
     public String getType() {

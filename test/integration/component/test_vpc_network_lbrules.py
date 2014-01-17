@@ -18,11 +18,8 @@
 """ Component tests for VPC network functionality - Load Balancing Rules
 """
 #Import Local Modules
-#import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-#from marvin.cloudstackAPI import
-#from marvin.integration.lib.utils import
 from marvin.integration.lib.base import (stopRouter,
                                         startRouter,
                                         Account,
@@ -40,8 +37,8 @@ from marvin.integration.lib.base import (stopRouter,
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        cleanup_resources,
                                         list_routers)
+from marvin.integration.lib.utils import cleanup_resources
 import socket
 import time
 

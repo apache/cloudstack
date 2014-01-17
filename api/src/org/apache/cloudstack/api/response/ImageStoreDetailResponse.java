@@ -16,23 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class ImageStoreDetailResponse extends BaseResponse {
-    @SerializedName("name") @Param(description="detail property name of the image store")
+    @SerializedName("name")
+    @Param(description = "detail property name of the image store")
     private String name;
 
-    @SerializedName("value") @Param(description="detail property value of the image store")
+    @SerializedName("value")
+    @Param(description = "detail property value of the image store")
     private String value;
 
-    public ImageStoreDetailResponse(){
+    public ImageStoreDetailResponse() {
         super();
     }
 
-    public ImageStoreDetailResponse(String name, String val){
+    public ImageStoreDetailResponse(String name, String val) {
         super();
         this.name = name;
         this.value = val;
@@ -59,7 +62,7 @@ public class ImageStoreDetailResponse extends BaseResponse {
         final int prime = 31;
         int result = 1;
         String oid = this.getName();
-        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        result = prime * result + ((oid == null) ? 0 : oid.hashCode());
         return result;
     }
 
@@ -71,14 +74,14 @@ public class ImageStoreDetailResponse extends BaseResponse {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        ImageStoreDetailResponse other = (ImageStoreDetailResponse) obj;
+        ImageStoreDetailResponse other = (ImageStoreDetailResponse)obj;
         String oid = this.getName();
         if (oid == null) {
             if (other.getName() != null)
                 return false;
         } else if (!oid.equals(other.getName()))
             return false;
-        else if ( this.getValue().equals(other.getValue()))
+        else if (this.getValue().equals(other.getValue()))
             return false;
         return true;
     }

@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.to.DhcpTO;
-
 import java.util.List;
+
+import com.cloud.agent.api.to.DhcpTO;
 
 public class DnsMasqConfigCommand extends NetworkElementCommand {
     List<DhcpTO> dhcpTOs;

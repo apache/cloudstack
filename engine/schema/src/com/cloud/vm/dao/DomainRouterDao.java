@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -36,7 +36,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return list of DomainRouterVO
      */
     public List<DomainRouterVO> listByDataCenter(long dcId);
-    
+
     /**
      * gets the DomainRouterVO by account id and data center
      * @param account id of the user.
@@ -44,7 +44,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return DomainRouterVO
      */
     public List<DomainRouterVO> findBy(long accountId, long dcId);
-    
+
     /**
      * gets the DomainRouterVO by user id.
      * @param userId id of the user.
@@ -52,7 +52,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return list of DomainRouterVO
      */
     public List<DomainRouterVO> listBy(long userId);
-    
+
     /**
      * list virtual machine routers by host id.  pass in null to get all
      * virtual machine routers.
@@ -60,6 +60,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return list of DomainRouterVO
      */
     public List<DomainRouterVO> listByHostId(Long hostId);
+
     public List<DomainRouterVO> listByLastHostId(Long hostId);
 
     /**
@@ -68,7 +69,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param podId id of the pod.  null if to get all.
      * @return list of DomainRouterVO
      */
-    public List<DomainRouterVO> listByPodId(Long podId);
+    public List<DomainRouterVO> listRunningByPodId(Long podId);
 
     /**
      * list virtual machine routers by pod id.  pass in null to get all
@@ -87,39 +88,39 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return list of DomainRouterVO
      */
     public List<DomainRouterVO> listIsolatedByHostId(Long hostId);
-    
-	/**
-	 * Find the list of domain routers for a domain
-	 * @param id
-	 * @return
-	 */
-	public List<DomainRouterVO> listByDomain(Long id);
 
-	List<DomainRouterVO> findBy(long accountId, long dcId, Role role);
-	
-	List<DomainRouterVO> findByNetwork(long networkId);
+    /**
+     * Find the list of domain routers for a domain
+     * @param id
+     * @return
+     */
+    public List<DomainRouterVO> listRunningByDomain(Long id);
+
+    List<DomainRouterVO> findBy(long accountId, long dcId, Role role);
+
+    List<DomainRouterVO> findByNetwork(long networkId);
 
     List<DomainRouterVO> listActive(long networkId);
 
     /**
      * List domain routers by state and network type which reside on Host managed by the specified management server
      * @return
-     */    
+     */
     List<DomainRouterVO> listByStateAndNetworkType(State state, Network.GuestType type, long mgmtSrvrId);
-    
+
     List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role);
-    
+
     List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role);
-    
+
     List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role);
-    
+
     List<DomainRouterVO> listByElementId(long elementId);
-    
+
     /**
      * Persists the domain router instance + creates the reference to the guest network (if not null)
      * @param guestNetworks TODO
      * @return
-     */    
+     */
     DomainRouterVO persist(DomainRouterVO router, List<Network> guestNetworks);
 
     /**
@@ -145,5 +146,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param guestNetworkId
      */
     void removeRouterFromGuestNetwork(long routerId, long guestNetworkId);
-    
+
+    List<DomainRouterVO> listRunningByClusterId(Long clusterId);
+
+    List<DomainRouterVO> listRunningByAccountId(long accountId);
+
+    List<DomainRouterVO> listRunningByDataCenter(long dcId);
 }

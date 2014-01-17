@@ -18,10 +18,9 @@ package org.apache.cloudstack.region;
 
 import java.util.Date;
 
-import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface PortableIp extends InternalIdentity  {
+public interface PortableIp extends InternalIdentity {
 
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.

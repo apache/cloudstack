@@ -57,8 +57,7 @@ public class AnswerTest {
         assertFalse(b);
 
         String d = usa.getDetails();
-        assertTrue(d.equals("Unsupported command issued:" + acc.toString()
-                + ".  Are you sure you got the right type of server?"));
+        assertTrue(d.equals("Unsupported command issued:" + acc.toString() + ".  Are you sure you got the right type of server?"));
 
         usa = Answer.createUnsupportedVersionAnswer(acc);
         b = usa.executeInSequence();

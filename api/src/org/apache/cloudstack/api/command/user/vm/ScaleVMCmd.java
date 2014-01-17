@@ -16,7 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -27,6 +31,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -51,7 +56,6 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="The ID of the virtual machine")
@@ -60,6 +64,9 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
+
+    @Parameter(name = ApiConstants.DETAILS, type = BaseCmd.CommandType.MAP, description = "name value pairs of custom parameters for cpu,memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,6 +78,24 @@ public class ScaleVMCmd extends BaseAsyncCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    //instead of reading a map directly we are using collections.
+    //it is because details.values() cannot be cast to a map.
+    //it gives a exception
+    public Map<String, String> getDetails() {
+        Map<String, String> customparameterMap = new HashMap<String, String>();
+        if (details != null && details.size() != 0) {
+            Collection parameterCollection = details.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (String key : value.keySet()) {
+                    customparameterMap.put(key, value.get(key));
+                }
+            }
+        }
+        return customparameterMap;
     }
 
     /////////////////////////////////////////////////////
@@ -107,7 +132,7 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         UserVm result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);

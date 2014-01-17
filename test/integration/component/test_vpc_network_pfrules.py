@@ -20,24 +20,23 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.integration.lib.base import (stopRouter,
-                                                    startRouter,
-                                                    Account,
-                                                    VpcOffering,
-                                                    VPC,
-                                                    ServiceOffering,
-                                                    NATRule,
-                                                    NetworkACL,
-                                                    PublicIPAddress,
-                                                    NetworkOffering,
-                                                    Network,
-                                                    VirtualMachine,
-                                                    LoadBalancerRule,
-                                                    StaticNATRule)
+                                         startRouter,
+                                         Account,
+                                         VpcOffering,
+                                         VPC,
+                                         ServiceOffering,
+                                         NATRule,
+                                         NetworkACL,
+                                         PublicIPAddress,
+                                         NetworkOffering,
+                                         Network,
+                                         VirtualMachine,
+                                         LoadBalancerRule)
 from marvin.integration.lib.common import (get_domain,
-                                                        get_zone,
-                                                        get_template,
-                                                        cleanup_resources,
-                                                        list_routers)
+                                           get_zone,
+                                           get_template,
+                                           list_routers)
+from marvin.integration.lib.utils import cleanup_resources
 import socket
 import time
 

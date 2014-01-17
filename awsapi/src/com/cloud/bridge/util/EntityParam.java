@@ -17,13 +17,13 @@
 package com.cloud.bridge.util;
 
 public class EntityParam {
-	private Object entity;
-	
-	public EntityParam(Object entity) {
-		this.entity = entity;
-	}
-	
-	public Object entityValue() {
-		return entity;
-	}
+    private Object entity;
+
+    public EntityParam(Object entity) {
+        this.entity = entity;
+    }
+
+    public Object entityValue() {
+        return entity;
+    }
 }

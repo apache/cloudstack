@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "markDefaultZoneForAccount", description="Marks a default zone for this account", responseObject=AccountResponse.class, since="4.0")
+@APICommand(name = "markDefaultZoneForAccount", description = "Marks a default zone for this account", responseObject = AccountResponse.class, since = "4.0")
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MarkDefaultZoneForAccountCmd.class.getName());
 
@@ -44,16 +44,25 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     ////////////////API parameters //////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, entityType=AccountResponse.class,
-            required=true, description="Name of the account that is to be marked.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               entityType = AccountResponse.class,
+               required = true,
+               description = "Name of the account that is to be marked.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            required=true, description="Marks the account that belongs to the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               required = true,
+               description = "Marks the account that belongs to the specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="The Zone ID with which the account is to be marked.")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "The Zone ID with which the account is to be marked.")
     private Long defaultZoneId;
 
     /////////////////////////////////////////////////////
@@ -102,8 +111,8 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        Account result = _configService.markDefaultZone(getAccountName(),getDomainId(), getDefaultZoneId());
+    public void execute() {
+        Account result = _configService.markDefaultZone(getAccountName(), getDomainId(), getDefaultZoneId());
         if (result != null) {
             AccountResponse response = _responseGenerator.createAccountResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());
@@ -114,4 +123,3 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
         }
     }
 }
-

@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareTemplate", responseObject=TemplateResponse.class, description="load template into primary storage")
+@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "load template into primary storage")
 public class PrepareTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 
@@ -42,14 +42,19 @@ public class PrepareTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="zone ID of the template to be prepared in primary storage(s).")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "zone ID of the template to be prepared in primary storage(s).")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            required=true, description="template ID of the template to be prepared in primary storage(s).")
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+               type = CommandType.UUID,
+               entityType = TemplateResponse.class,
+               required = true,
+               description = "template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -88,4 +93,3 @@ public class PrepareTemplateCmd extends BaseCmd {
         setResponseObject(response);
     }
 }
-

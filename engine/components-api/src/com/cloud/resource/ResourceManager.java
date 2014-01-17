@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -42,7 +43,7 @@ public interface ResourceManager extends ResourceService {
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
-     * 
+     *
      * @param Event type see ResourceListener.java, allow combination of multiple events.
      * @param listener the listener to notify.
      */
@@ -51,7 +52,7 @@ public interface ResourceManager extends ResourceService {
     public void unregisterResourceEvent(ResourceListener listener);
 
     /**
-     * 
+     *
      * @param name of adapter
      * @param adapter
      * @param hates, a list of names which will be eliminated by this adapter. Especially for the case where
@@ -61,8 +62,7 @@ public interface ResourceManager extends ResourceService {
 
     public void unregisterResourceStateAdapter(String name);
 
-    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
-            boolean forRebalance);
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance);
 
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 
@@ -83,6 +83,8 @@ public interface ResourceManager extends ResourceService {
     boolean maintenanceFailed(long hostId);
 
     public boolean maintain(final long hostId) throws AgentUnavailableException;
+
+    public boolean checkAndMaintain(final long hostId);
 
     @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
