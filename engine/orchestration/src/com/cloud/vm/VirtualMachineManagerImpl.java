@@ -561,6 +561,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _executor.scheduleAtFixedRate(new TransitionTask(), 5000, VmJobStateReportInterval.value(), TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new CleanupTask(), VmOpCleanupInterval.value(), VmOpCleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
+
+        // cleanup left over place holder works
+        _workJobDao.expungeLeftoverWorkJobs(ManagementServerNode.getManagementServerId());
         return true;
     }
 
@@ -751,7 +754,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateStart(vmUuid, params, planToDeploy, planner);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateStart(vmUuid, params, planToDeploy, planner);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy);
 
@@ -1275,7 +1288,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateStop(vmUuid, cleanUpEvenIfUnableToStop);
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateStop(vmUuid, cleanUpEvenIfUnableToStop);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VirtualMachine> outcome = stopVmThroughJobQueue(vmUuid, cleanUpEvenIfUnableToStop);
 
@@ -1567,7 +1592,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateStorageMigration(vmUuid, destPool);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateStorageMigration(vmUuid, destPool);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmStorageThroughJobQueue(vmUuid, destPool);
 
@@ -1649,7 +1684,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateMigrate(vmUuid, srcHostId, dest);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateMigrate(vmUuid, srcHostId, dest);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmThroughJobQueue(vmUuid, srcHostId, dest);
 
@@ -1920,7 +1965,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateMigrateWithStorage(vmUuid, srcHostId, destHostId, volumeToPool);
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateMigrateWithStorage(vmUuid, srcHostId, destHostId, volumeToPool);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VirtualMachine> outcome = migrateVmWithStorageThroughJobQueue(vmUuid, srcHostId, destHostId, volumeToPool);
 
@@ -2163,6 +2220,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.trace("VM Operation Thread Running");
             try {
                 _workDao.cleanup(VmOpCleanupWait.value());
+
+                // TODO. hard-coded to one hour after job has been completed
+                Date cutDate = new Date(new Date().getTime() - 3600000);
+                _workJobDao.expungeCompletedWorkJobs(cutDate);
             } catch (Exception e) {
                 s_logger.error("VM Operations failed due to ", e);
             }
@@ -2199,7 +2260,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateReboot(vmUuid, params);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateReboot(vmUuid, params);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
 
@@ -3120,7 +3191,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateAddVmToNetwork(vm, network, requested);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                return orchestrateAddVmToNetwork(vm, network, requested);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = addVmToNetworkThroughJobQueue(vm, network, requested);
 
@@ -3223,7 +3303,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateRemoveNicFromVm(vm, nic);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                return orchestrateRemoveNicFromVm(vm, nic);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VirtualMachine> outcome = removeNicFromVmThroughJobQueue(vm, nic);
 
@@ -3462,7 +3552,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            orchestrateMigrateForScale(vmUuid, srcHostId, dest, oldSvcOfferingId);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                orchestrateMigrateForScale(vmUuid, srcHostId, dest, oldSvcOfferingId);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = migrateVmForScaleThroughJobQueue(vmUuid, srcHostId, dest, oldSvcOfferingId);
 
@@ -3711,7 +3811,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateReConfigureVm(vmUuid, oldServiceOffering, reconfiguringOnExistingHost);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                return orchestrateReConfigureVm(vmUuid, oldServiceOffering, reconfiguringOnExistingHost);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VirtualMachine> outcome = reconfigureVmThroughJobQueue(vmUuid, oldServiceOffering, reconfiguringOnExistingHost);
 
@@ -4187,7 +4297,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     workJob.setAccountId(callingAccount.getId());
                     workJob.setUserId(callingUser.getId());
                     workJob.setStep(VmWorkJobVO.Step.Starting);
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4240,7 +4350,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
                     workJob.setStep(VmWorkJobVO.Step.Prepare);
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4293,7 +4403,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
                     workJob.setStep(VmWorkJobVO.Step.Prepare);
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4343,7 +4453,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4397,7 +4507,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4449,7 +4559,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4501,7 +4611,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4551,7 +4661,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4600,7 +4710,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4649,7 +4759,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4700,7 +4810,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     workJob.setAccountId(account.getId());
                     workJob.setUserId(user.getId());
-                    workJob.setVmType(vm.getType());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
                     workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -4855,5 +4965,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
         return _jobHandlerProxy.handleVmWorkJob(work);
+    }
+
+    private VmWorkJobVO createPlaceHolderWork(long instanceId) {
+        VmWorkJobVO workJob = new VmWorkJobVO("");
+
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
+        workJob.setCmd("");
+        workJob.setCmdInfo("");
+
+        workJob.setAccountId(0);
+        workJob.setUserId(0);
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(instanceId);
+        workJob.setInitMsid(ManagementServerNode.getManagementServerId());
+
+        _workJobDao.persist(workJob);
+
+        return workJob;
     }
 }

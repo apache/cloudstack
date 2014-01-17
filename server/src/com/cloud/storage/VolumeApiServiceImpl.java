@@ -59,6 +59,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
@@ -73,6 +74,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -326,6 +328,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Inject
     protected AsyncJobManager _jobMgr;
+
+    @Inject
+    protected VmWorkJobDao _workJobDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -911,8 +916,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
-                return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
-                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+
+                VmWorkJobVO placeHolder = null;
+                if (VmJobEnabled.value()) {
+                    placeHolder = createPlaceHolderWork(userVm.getId());
+                }
+                try {
+                    return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
+                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+                } finally {
+                    if (VmJobEnabled.value())
+                        _workJobDao.expunge(placeHolder.getId());
+                }
+
             } else {
                 Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize,
                         newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
@@ -1102,7 +1118,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateAttachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(command.getVirtualMachineId());
+            }
+            try {
+                return orchestrateAttachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
 
@@ -1405,7 +1432,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateDetachVolumeFromVM(vmId, volumeId);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmId);
+            }
+            try {
+                return orchestrateDetachVolumeFromVM(vmId, volumeId);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<Volume> outcome = detachVolumeFromVmThroughJobQueue(vmId, volumeId);
 
@@ -1571,7 +1607,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
-                return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
+
+                VmWorkJobVO placeHolder = null;
+                if (VmJobEnabled.value()) {
+                    placeHolder = createPlaceHolderWork(vm.getId());
+                }
+                try {
+                    return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
+                } finally {
+                    if (VmJobEnabled.value())
+                        _workJobDao.expunge(placeHolder.getId());
+                }
+
             } else {
                 Outcome<Volume> outcome = migrateVolumeThroughJobQueue(vm.getId(), vol.getId(), destPool.getId(), liveMigrateVolume);
 
@@ -1662,7 +1709,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
-                return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
+
+                VmWorkJobVO placeHolder = null;
+                if (VmJobEnabled.value()) {
+                    placeHolder = createPlaceHolderWork(vm.getId());
+                }
+                try {
+                    return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
+                } finally {
+                    if (VmJobEnabled.value())
+                        _workJobDao.expunge(placeHolder.getId());
+                }
+
             } else {
                 Outcome<Snapshot> outcome = takeVolumeSnapshotThroughJobQueue(vm.getId(), volumeId, policyId, snapshotId, account.getId(), quiescevm);
 
@@ -2190,7 +2248,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -2237,7 +2295,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -2281,7 +2339,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -2326,7 +2384,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -2371,7 +2429,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -2427,5 +2485,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
         return _jobHandlerProxy.handleVmWorkJob(work);
+    }
+
+    private VmWorkJobVO createPlaceHolderWork(long instanceId) {
+        VmWorkJobVO workJob = new VmWorkJobVO("");
+
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
+        workJob.setCmd("");
+        workJob.setCmdInfo("");
+
+        workJob.setAccountId(0);
+        workJob.setUserId(0);
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(instanceId);
+        workJob.setInitMsid(ManagementServerNode.getManagementServerId());
+
+        _workJobDao.persist(workJob);
+
+        return workJob;
     }
 }

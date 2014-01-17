@@ -41,10 +41,12 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -123,6 +125,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     EntityManager _entityMgr;
     @Inject
     AsyncJobManager _jobMgr;
+
+    @Inject
+    VmWorkJobDao _workJobDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -364,7 +369,17 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmId);
+            }
+            try {
+                return orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VMSnapshot> outcome = createVMSnapshotThroughJobQueue(vmId, vmSnapshotId, quiescevm);
 
@@ -452,7 +467,16 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateDeleteVMSnapshot(vmSnapshotId);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmSnapshot.getVmId());
+            }
+            try {
+                return orchestrateDeleteVMSnapshot(vmSnapshotId);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
         } else {
             Outcome<VMSnapshot> outcome = deleteVMSnapshotThroughJobQueue(vmSnapshot.getVmId(), vmSnapshotId);
 
@@ -558,7 +582,18 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateRevertToVMSnapshot(vmSnapshotId);
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmSnapshotVo.getVmId());
+            }
+            try {
+                return orchestrateRevertToVMSnapshot(vmSnapshotId);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VMSnapshot> outcome = revertToVMSnapshotThroughJobQueue(vmSnapshotVo.getVmId(), vmSnapshotId);
 
@@ -684,7 +719,17 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
-            return orchestrateDeleteAllVMSnapshots(vmId, type);
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                placeHolder = createPlaceHolderWork(vmId);
+            }
+            try {
+                return orchestrateDeleteAllVMSnapshots(vmId, type);
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+
         } else {
             Outcome<VirtualMachine> outcome = deleteAllVMSnapshotsThroughJobQueue(vmId, type);
 
@@ -828,7 +873,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -872,7 +917,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -916,7 +961,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -960,7 +1005,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setAccountId(callingAccount.getId());
                 workJob.setUserId(callingUser.getId());
                 workJob.setStep(VmWorkJobVO.Step.Starting);
-                workJob.setVmType(vm.getType());
+                workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
                 workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
 
@@ -1008,5 +1053,24 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
         return _jobHandlerProxy.handleVmWorkJob(work);
+    }
+
+    private VmWorkJobVO createPlaceHolderWork(long instanceId) {
+        VmWorkJobVO workJob = new VmWorkJobVO("");
+
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
+        workJob.setCmd("");
+        workJob.setCmdInfo("");
+
+        workJob.setAccountId(0);
+        workJob.setUserId(0);
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(instanceId);
+        workJob.setInitMsid(ManagementServerNode.getManagementServerId());
+
+        _workJobDao.persist(workJob);
+
+        return workJob;
     }
 }
