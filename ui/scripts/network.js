@@ -1615,6 +1615,10 @@
                                             'add-vm': {
                                                 label: 'label.add.vms',
                                                 addButton: true
+                                            },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
@@ -3435,6 +3439,11 @@
                                             'add-vm': {
                                                 label: 'label.add.vms',
                                                 addButton: true
+                                            },
+                                            
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
