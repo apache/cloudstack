@@ -2750,7 +2750,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         s_logger.warn(e.getMessage());
                     }
                 }
-            } else if (serverState == State.Stopping) {
+            } else if (serverState == State.Stopped) {
                 s_logger.debug("Scheduling a stop command for " + vm);
                 _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
             } else {
