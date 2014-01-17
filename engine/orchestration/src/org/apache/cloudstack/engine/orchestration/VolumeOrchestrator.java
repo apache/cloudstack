@@ -339,6 +339,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
                     break;
                 }
+                if (pool != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found a suitable pool for create volume: " + pool.getId());
+                    }
+                    break;
+                }
             }
         }
 
@@ -802,7 +808,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 } catch (NoTransitionException e) {
                     s_logger.debug("Unable to destroy existing volume: " + e.toString());
                 }
-                
+
                 return newVolume;
             }
         });
@@ -1262,7 +1268,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         return true;
     }
-    
+
     public static final ConfigKey<Long> MaxVolumeSize = new ConfigKey<Long>(Long.class,
         "storage.max.volume.size",
         "Storage",
@@ -1341,7 +1347,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VolumeVO vol = _volsDao.findById(volumeId);
         return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
     }
-    
+
     @Override
     public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
         VolumeVO vol = _volsDao.findById(volumeId);
@@ -1351,10 +1357,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return;
         if(!vol.getPath().equalsIgnoreCase(path))
             needUpdate = true;
-        
+
         if(chainInfo != null && (vol.getChainInfo() == null || !chainInfo.equalsIgnoreCase(vol.getChainInfo())))
         	needUpdate = true;
-        
+
         if(needUpdate) {
         	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path
         		+ ", " + vol.getChainInfo() + " -> " + chainInfo);
