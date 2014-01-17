@@ -24,10 +24,10 @@
     <xsl:template match="ovf:Item[./rasd:ResourceType/text()=20]">
         <Item>
         <xsl:copy-of select="rasd:Address"/>
-        <xsl:copy-of select="rasd:BusNumber"/>
         <rasd:Caption>scsiController0</rasd:Caption>
         <rasd:Description>SCSI Controller</rasd:Description>
-        <xsl:copy-of select="rasd:InstanceId"/>
+        <rasd:ElementName>scsiController0</rasd:ElementName>
+        <xsl:copy-of select="rasd:InstanceID"/>
         <rasd:ResourceSubType>lsilogic</rasd:ResourceSubType>
         <rasd:ResourceType>6</rasd:ResourceType>
         </Item>
