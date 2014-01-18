@@ -106,7 +106,9 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
         for (RoleType role : RoleType.values()) {
             Long policyId = getDefaultPolicyId(role);
-            _iamSrv.resetAclPolicy(policyId);
+            if (policyId != null) {
+                _iamSrv.resetAclPolicy(policyId);
+            }
          }
 
         for (PluggableService service : _services) {
