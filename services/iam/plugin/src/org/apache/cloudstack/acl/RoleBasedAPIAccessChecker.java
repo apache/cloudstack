@@ -105,7 +105,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // commands.properties.
 
         for (RoleType role : RoleType.values()) {
-            _iamSrv.resetAclPolicy(role.ordinal() + 1);
+            Long policyId = getDefaultPolicyId(role);
+            _iamSrv.resetAclPolicy(policyId);
          }
 
         for (PluggableService service : _services) {
@@ -134,6 +135,29 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
         return super.start();
      }
+
+    private Long getDefaultPolicyId(RoleType role) {
+        Long policyId = null;
+        switch (role) {
+        case User:
+            policyId = new Long(Account.ACCOUNT_TYPE_NORMAL + 1);
+            break;
+
+        case Admin:
+            policyId = new Long(Account.ACCOUNT_TYPE_ADMIN + 1);
+            break;
+
+        case DomainAdmin:
+            policyId = new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1);
+            break;
+
+        case ResourceAdmin:
+            policyId = new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1);
+            break;
+        }
+
+        return policyId;
+    }
 
     private void processMapping(Map<String, String> configMap) {
         for (Map.Entry<String, String> entry : configMap.entrySet()) {
@@ -182,6 +206,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         }
 
         PermissionScope permissionScope = PermissionScope.ACCOUNT;
+        Long policyId = getDefaultPolicyId(role);
         switch (role) {
         case User:
             permissionScope = PermissionScope.ACCOUNT;
@@ -202,11 +227,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
 
         if (entityTypes == null || entityTypes.length == 0) {
-            _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, null, permissionScope.toString(), new Long(-1),
+            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(-1),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
         } else {
             for (AclEntityType entityType : entityTypes) {
-                _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, entityType.toString(), permissionScope.toString(), new Long(-1),
+                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(-1),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
             }
          }
