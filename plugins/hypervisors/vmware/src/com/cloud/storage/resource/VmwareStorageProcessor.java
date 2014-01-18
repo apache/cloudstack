@@ -1184,17 +1184,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (isAttach && isManaged) {
                 Map<String, String> details = disk.getDetails();
 
-                morDs = hostService.getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                            VmwareResource.trimIqn(iScsiName), details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
-                            details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET));
-
-                DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
-
-                String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
-
-                if (!dsMo.fileExists(volumeDatastorePath)) {
-                    hostService.createVmdk(cmd, dsMo, volumeDatastorePath, volumeTO.getSize());
-                }
+                morDs = hostService.prepareManagedStorage(hyperHost, iScsiName, storageHost, storagePort,
+                            details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                            details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
+                            volumeTO.getSize(), cmd);
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
