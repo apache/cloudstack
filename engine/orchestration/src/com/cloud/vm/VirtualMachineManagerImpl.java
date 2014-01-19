@@ -1135,7 +1135,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     // for managed storage on XenServer and VMware, need to update the DB with a path if the VDI/VMDK file was newly created
     private void handlePath(DiskTO[] disks, Map<String, String> iqnToPath) {
-        if (disks != null) {
+        if (disks != null && iqnToPath != null) {
             for (DiskTO disk : disks) {
                 Map<String, String> details = disk.getDetails();
                 boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));

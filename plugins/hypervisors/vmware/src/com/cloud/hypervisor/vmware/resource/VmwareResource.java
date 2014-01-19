@@ -2636,8 +2636,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
+            Map<String, String> iqnToPath = new HashMap<String, String>();
 
-            HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks);
+            HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, iqnToPath, cmd);
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
                 String msg = "Unable to locate datastore details of the volumes to be attached";
                 s_logger.error(msg);
@@ -2695,6 +2696,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
                             DataStoreTO primaryStore = vol.getData().getDataStore();
+                            /** @todo Mike T. update this in 4.4 to support root disks on managed storage */
                             rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
                         }
                     }
@@ -2861,20 +2863,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
                     DataStoreTO primaryStore = volumeTO.getDataStore();
-                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
+                    Map<String, String> details = vol.getDetails();
+                    boolean managed = false;
+                    String iScsiName = null;
+
+                    if (details != null) {
+                        managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                        iScsiName = details.get(DiskTO.IQN);
+                    }
+
+                    // if the storage is managed, iScsiName should not be null
+                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
+                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
+
                     assert (volumeDsDetails != null);
 
-                    String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, vol, matchingExistingDisk, dataStoresDetails);
-                    if (controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+                    String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec,
+                            vol, matchingExistingDisk,
+                            dataStoresDetails);
+                    if(controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
                         scsiUnitNumber++;
-                    VirtualDevice device =
-                        VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(),
+                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey,
+                            diskChain,
+                            volumeDsDetails.first(),
                             (controllerKey == ideControllerKey) ? ideUnitNumber++ : scsiUnitNumber++, i + 1);
 
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-                    if (s_logger.isDebugEnabled())
+                    if(s_logger.isDebugEnabled())
                         s_logger.debug("Prepare volume at new device " + _gson.toJson(device));
 
                     i++;
@@ -2978,7 +2995,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             state = State.Running;
-            return new StartAnswer(cmd);
+
+            StartAnswer startAnswer = new StartAnswer(cmd);
+
+            startAnswer.setIqnToPath(iqnToPath);
+
+            return startAnswer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
@@ -2997,6 +3019,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+    }
+
+    @Override
+    public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
+            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
+        ManagedObjectReference morDs = getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName),
+                storageHost, storagePort, VmwareResource.trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret,
+                chapTargetUsername, chapTargetSecret);
+
+        DatastoreMO dsMo = new DatastoreMO(getServiceContext(null), morDs);
+
+        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
+
+        if (!dsMo.fileExists(volumeDatastorePath)) {
+            createVmdk(cmd, dsMo, volumeDatastorePath, size);
+        }
+
+        return morDs;
     }
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
@@ -3027,11 +3068,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
         DataStoreTO primaryStore = volumeTO.getDataStore();
         Map<String, String> details = vol.getDetails();
-        boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+        boolean isManaged = false;
+        String iScsiName = null;
 
-        Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
+        if (details != null) {
+            isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            iScsiName = details.get(DiskTO.IQN);
+        }
+
+        // if the storage is managed, iScsiName should not be null
+        String datastoreName = isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid();
+        Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
+
         if (volumeDsDetails == null)
+        {
             throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
+        }
+
         DatastoreMO dsMo = volumeDsDetails.second();
 
         // we will honor vCenter's meta if it exists
@@ -3449,51 +3502,103 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context,
-        DiskTO[] disks) throws Exception {
-        HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> poolMors = new HashMap<String, Pair<ManagedObjectReference, DatastoreMO>>();
+            DiskTO[] disks, Map<String, String> iqnToPath, Command cmd) throws Exception {
+        HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> mapIdToMors = new HashMap<String, Pair<ManagedObjectReference, DatastoreMO>>();
 
         assert (hyperHost != null) && (context != null);
+
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
                 DataStoreTO primaryStore = volumeTO.getDataStore();
                 String poolUuid = primaryStore.getUuid();
-                if (poolMors.get(poolUuid) == null) {
+
+                if (mapIdToMors.get(poolUuid) == null) {
                     boolean isManaged = false;
-                    String iScsiName = null;
                     Map<String, String> details = vol.getDetails();
 
                     if (details != null) {
                         isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                        iScsiName = details.get(DiskTO.IQN);
                     }
 
-                    ManagedObjectReference morDataStore =
-                        HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : poolUuid);
-                    if (morDataStore == null) {
-                        String msg = "Failed to get the mounted datastore for the volume's pool " + poolUuid;
-                        s_logger.error(msg);
-                        throw new Exception(msg);
+                    if (isManaged) {
+                        String iScsiName = details.get(DiskTO.IQN); // details should not be null for managed storage (it may or may not be null for non-managed storage)
+                        String datastoreName = VmwareResource.getDatastoreName(iScsiName);
+                        ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreName);
+
+                        // if the datastore is not present, we need to discover the iSCSI device that will support it,
+                        // create the datastore, and create a VMDK file in the datastore
+                        if (morDatastore == null) {
+                            morDatastore = prepareManagedStorage(hyperHost, iScsiName,
+                                details.get(DiskTO.STORAGE_HOST), Integer.parseInt(details.get(DiskTO.STORAGE_PORT)),
+                                details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                                details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
+                                Long.parseLong(details.get(DiskTO.VOLUME_SIZE)), cmd);
+
+                            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+                            String datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+
+                            iqnToPath.put(iScsiName, datastoreVolumePath);
+
+                            volumeTO.setPath(datastoreVolumePath);
+                            vol.setPath(datastoreVolumePath);
+                        }
+
+                        mapIdToMors.put(datastoreName, new Pair<ManagedObjectReference, DatastoreMO>(morDatastore, new DatastoreMO(context, morDatastore)));
                     }
-                    poolMors.put(poolUuid, new Pair<ManagedObjectReference, DatastoreMO>(morDataStore, new DatastoreMO(context, morDataStore)));
+                    else {
+                        ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
+
+                        if (morDatastore == null) {
+                            String msg = "Failed to get the mounted datastore for the volume's pool " + poolUuid;
+
+                            s_logger.error(msg);
+
+                            throw new Exception(msg);
+                        }
+
+                        mapIdToMors.put(poolUuid, new Pair<ManagedObjectReference, DatastoreMO>(morDatastore, new DatastoreMO(context, morDatastore)));
+                    }
                 }
             }
         }
-        return poolMors;
+
+        return mapIdToMors;
     }
 
     private DatastoreMO getDatastoreThatRootDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO disks[]) {
-
         Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
+
         for (DiskTO vol : disks) {
             if (vol.getType() == Volume.Type.ROOT) {
-                DataStoreTO primaryStore = vol.getData().getDataStore();
-                rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+                Map<String, String> details = vol.getDetails();
+                boolean managed = false;
+
+                if (details != null) {
+                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                }
+
+                if (managed) {
+                    String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
+
+                    rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
+
+                    break;
+                }
+                else {
+                    DataStoreTO primaryStore = vol.getData().getDataStore();
+
+                    rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+
+                    break;
+                }
             }
         }
 
-        if (rootDiskDataStoreDetails != null)
+        if (rootDiskDataStoreDetails != null) {
             return rootDiskDataStoreDetails.second();
+        }
+
         return null;
     }
 
@@ -4513,7 +4618,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
-    public static String trimIqn(String iqn) {
+    private static String trimIqn(String iqn) {
         String[] tmp = iqn.split("/");
 
         if (tmp.length != 3) {
@@ -4527,8 +4632,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return tmp[1].trim();
     }
 
-    @Override
-    public void createVmdk(Command cmd, DatastoreMO dsMo, String vmdkDatastorePath, Long volumeSize) throws Exception {
+    private void createVmdk(Command cmd, DatastoreMO dsMo, String vmdkDatastorePath, Long volumeSize) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
@@ -4552,7 +4656,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
+        deleteVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iqn), storageHost, storagePort, VmwareResource.trimIqn(iqn));
     }
 
     protected Answer execute(AttachVolumeCommand cmd) {
@@ -4577,18 +4681,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDs = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                morDs =
-                    getVmfsDatastore(hyperHost, getDatastoreName(cmd.get_iScsiName()), cmd.getStorageHost(), cmd.getStoragePort(), trimIqn(cmd.get_iScsiName()),
-                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
-
-                DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
-
-                String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
-
-                if (!dsMo.fileExists(volumeDatastorePath)) {
-                    createVmdk(cmd, dsMo, volumeDatastorePath, cmd.getVolumeSize());
-                }
-            } else {
+                morDs = prepareManagedStorage(hyperHost, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(),
+                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
+                            cmd.getChapTargetUsername(), cmd.getChapTargetPassword(), cmd.getVolumeSize(), cmd);
+            }
+            else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
             }
 
@@ -4788,9 +4885,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    @Override
-    public ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber, String iqn,
-        String chapName, String chapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
+    private ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber,
+                String iqn, String chapName, String chapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
         VmwareContext context = getServiceContext();
         ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
         ClusterMO cluster = new ClusterMO(context, morCluster);

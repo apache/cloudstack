@@ -42,7 +42,6 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
@@ -357,13 +356,9 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber, String iqn,
-        String initiatorChapName, String initiatorChapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public void createVmdk(Command cmd, DatastoreMO dsMo, String volumeDatastorePath, Long volumeSize) throws Exception {
+    public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
+            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
         throw new OperationNotSupportedException();
     }
 
