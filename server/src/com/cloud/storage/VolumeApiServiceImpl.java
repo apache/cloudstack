@@ -2017,13 +2017,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
 
-        boolean queryForChap = true;
-
         // if we don't have a host, the VM we are attaching the disk to has never been started before
         if (host != null) {
             try {
-                // if connectVolumeToHost returns true, then we do not want to use CHAP because the volume is already connected to the host(s)
-                queryForChap = !volService.connectVolumeToHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                volService.connectVolumeToHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
             }
             catch (Exception e) {
                 volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
@@ -2046,7 +2043,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
-            ChapInfo chapInfo = queryForChap ? volService.getChapInfo(volFactory.getVolume(volumeToAttach.getId()), dataStore) : null;
+            ChapInfo chapInfo = volService.getChapInfo(volFactory.getVolume(volumeToAttach.getId()), dataStore);
 
             Map<String, String> details = new HashMap<String, String>();
 
