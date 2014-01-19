@@ -212,6 +212,12 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
+        return null;
+    }
+
+    /*
+    @Override
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         long accountId = volumeInfo.getAccountId();
 
         AccountDetailVO accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_INITIATOR_USERNAME);
@@ -232,6 +238,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         return new ChapInfoImpl(chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
     }
+    */
 
     // get the VAG associated with volumeInfo's cluster, if any (ListVolumeAccessGroups)
     // if the VAG exists
