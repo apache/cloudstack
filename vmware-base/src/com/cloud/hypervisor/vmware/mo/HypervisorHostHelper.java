@@ -504,11 +504,11 @@ public class HypervisorHostHelper {
             }
             morDvSwitch = dataCenterMo.getDvSwitchMor(dvSwitchName);
             if (morDvSwitch == null) {
-                String msg = "Unable to find distributed vSwitch " + morDvSwitch;
+                String msg = "Unable to find distributed vSwitch " + dvSwitchName;
                 s_logger.error(msg);
                 throw new Exception(msg);
             } else {
-                s_logger.info("Found distributed vSwitch " + morDvSwitch);
+                s_logger.debug("Found distributed vSwitch " + dvSwitchName);
             }
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {

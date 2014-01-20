@@ -170,6 +170,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan;
+import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -222,6 +223,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -3635,24 +3637,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return defaultVlan;
     }
 
-    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType)
-        throws Exception {
-        Pair<String, String> switchName;
-        TrafficType trafficType;
-        VirtualSwitchType switchType;
+    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType) throws Exception {
 
-        switchName = getTargetSwitch(nicTo);
-        trafficType = nicTo.getType();
-        // Get switch type from resource property which is dictated by cluster property
-        // If a virtual switch type is specified while adding cluster that will be used.
-        // Else If virtual switch type is specified in physical traffic label that will be used
-        // Else use standard vSwitch
-        switchType = VirtualSwitchType.StandardVirtualSwitch;
-        if (trafficType == TrafficType.Guest && _guestTrafficInfo != null) {
-            switchType = _guestTrafficInfo.getVirtualSwitchType();
-        } else if (trafficType == TrafficType.Public && _publicTrafficInfo != null) {
-            switchType = _publicTrafficInfo.getVirtualSwitchType();
-        }
+        Ternary<String, String, String> switchDetails = getTargetSwitch(nicTo);
+        nicTo.getType();
+        VirtualSwitchType switchType = VirtualSwitchType.getType(switchDetails.second());
+        String switchName = switchDetails.first();
+        String vlanToken = switchDetails.third();
 
         String namePrefix = getNetworkNamePrefix(nicTo);
         Pair<ManagedObjectReference, String> networkInfo = null;
@@ -3660,13 +3651,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_logger.info("Prepare network on " + switchType + " " + switchName + " with name prefix: " + namePrefix);
 
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
-            synchronized (hostMo.getMor().getValue().intern()) {
-                networkInfo =
-                    HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(),
-                        nicTo.getNetworkRateMulticastMbps(), _opsTimeout, !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
+            synchronized(hostMo.getMor().getValue().intern()) {
+                networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, getVlanInfo(nicTo, vlanToken), nicTo.getNetworkRateMbps(),
+                        nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
+                        !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
             }
-        } else {
-            String vlanId = getVlanInfo(nicTo, switchName.second());
+        }
+        else {
+            String vlanId = getVlanInfo(nicTo, vlanToken);
             String svlanId = null;
             boolean pvlannetwork = (getPvlanInfo(nicTo) == null) ? false : true;
             if (vmType != null && vmType.equals(VirtualMachine.Type.DomainRouter) && pvlannetwork) {
@@ -3676,48 +3668,65 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // plumb this network to the isolated vlan.
                 svlanId = getPvlanInfo(nicTo);
             }
-            networkInfo =
-                HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId, nicTo.getNetworkRateMbps(),
-                    nicTo.getNetworkRateMulticastMbps(), _opsTimeout, switchType, _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus,
-                    nicTo.getBroadcastType());
+            networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, vlanId, svlanId,
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType,
+                    _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 
         return networkInfo;
     }
 
-    // return Pair<switch name, vlan tagging>
-    private Pair<String, String> getTargetSwitch(NicTO nicTo) throws Exception {
-        if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return new Pair<String, String>(_guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
-        } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return new Pair<String, String>(_publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
+    // return Ternary <switch name, switch tyep, vlan tagging>
+    private Ternary<String, String, String> getTargetSwitch(NicTO nicTo) throws CloudException {
+        TrafficType[] supportedTrafficTypes =
+                new TrafficType[] {
+                TrafficType.Guest,
+                TrafficType.Public,
+                TrafficType.Control,
+                TrafficType.Management,
+                TrafficType.Storage
+        };
+
+        TrafficType trafficType = nicTo.getType();
+        if (!Arrays.asList(supportedTrafficTypes).contains(trafficType)) {
+            throw new CloudException("Traffic type " + trafficType.toString() + " for nic " + nicTo.toString() + " is not supported.");
         }
 
-        if (nicTo.getName() != null && !nicTo.getName().isEmpty()) {
+        String switchName = null;
+        VirtualSwitchType switchType = VirtualSwitchType.StandardVirtualSwitch;
+        String vlanToken = Vlan.UNTAGGED;
+
+        // Get switch details from the nicTO object
+        if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
             String[] tokens = nicTo.getName().split(",");
             // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
-            if (tokens.length == 2 || tokens.length == 3) {
-                String vlanToken = tokens[1];
+            switchName = tokens[0];
+            if(tokens.length == 2 || tokens.length == 3) {
+                vlanToken = tokens[1];
                 if (vlanToken.isEmpty()) {
                     vlanToken = Vlan.UNTAGGED;
                 }
-                return new Pair<String, String>(tokens[0], vlanToken);
-            } else {
-                return new Pair<String, String>(nicTo.getName(), Vlan.UNTAGGED);
+                if (tokens.length == 3) {
+                    switchType = VirtualSwitchType.getType(tokens[2]);
+                }
+            }
+        } else {
+            if (trafficType == TrafficType.Guest && _guestTrafficInfo != null) {
+                switchType = _guestTrafficInfo.getVirtualSwitchType();
+                switchName = _guestTrafficInfo.getVirtualSwitchName();
+            } else if (trafficType == TrafficType.Public && _publicTrafficInfo != null) {
+                switchType = _publicTrafficInfo.getVirtualSwitchType();
+                switchName = _publicTrafficInfo.getVirtualSwitchName();
             }
         }
 
-        if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
-            return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
-        } else if (nicTo.getType() == Networks.TrafficType.Storage) {
-            return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
-        } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
-            throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
-        } else {
-            throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
+        if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management || nicTo.getType() == Networks.TrafficType.Storage) {
+            switchName = _privateNetworkVSwitchName;
         }
+
+        return new Ternary<String,String,String>(switchName, switchType.toString(), vlanToken);
     }
 
     private String getNetworkNamePrefix(NicTO nicTo) throws Exception {
