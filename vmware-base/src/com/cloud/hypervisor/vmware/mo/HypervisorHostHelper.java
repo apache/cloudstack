@@ -94,24 +94,24 @@ public class HypervisorHostHelper {
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context,
             ObjectContent[] ocs, String name, String instanceNameCustomField) {
-    	
+
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
                 String vmNameInvCenter = null;
                 String vmInternalCSName = null;
                 List<DynamicProperty> objProps = oc.getPropSet();
-		        if(objProps != null) {
-		            for(DynamicProperty objProp : objProps) {
-		                if(objProp.getName().equals("name")) {
-		                    vmNameInvCenter = (String)objProp.getVal();
-		                } else if(objProp.getName().contains(instanceNameCustomField)) {
-		                	if(objProp.getVal() != null)
-		                		vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
-		                }
-		                
+                if(objProps != null) {
+                    for(DynamicProperty objProp : objProps) {
+                        if(objProp.getName().equals("name")) {
+                            vmNameInvCenter = (String)objProp.getVal();
+                        } else if(objProp.getName().contains(instanceNameCustomField)) {
+                            if(objProp.getVal() != null)
+                                vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
+                        }
+
                         if ( (vmNameInvCenter != null && name.equalsIgnoreCase(vmNameInvCenter))
                                 || (vmInternalCSName != null && name.equalsIgnoreCase(vmInternalCSName)) ) {
-    		                VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
+                            VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
                             return vmMo;
                         }
                     }
@@ -524,11 +524,11 @@ public class HypervisorHostHelper {
             }
             morDvSwitch = dataCenterMo.getDvSwitchMor(dvSwitchName);
             if (morDvSwitch == null) {
-                String msg = "Unable to find distributed vSwitch " + morDvSwitch;
+                String msg = "Unable to find distributed vSwitch " + dvSwitchName;
                 s_logger.error(msg);
                 throw new Exception(msg);
             } else {
-                s_logger.info("Found distributed vSwitch " + morDvSwitch);
+                s_logger.debug("Found distributed vSwitch " + dvSwitchName);
             }
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -690,7 +690,7 @@ public class HypervisorHostHelper {
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
         VMwareDVSPortSetting dvsPortSetting = null;
         DVPortgroupConfigSpec dvPortGroupSpec;
-     
+
         // Next, create the port group. For this, we need to create a VLAN spec.
         // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
         if (vid == null || spvlanid == null) {
@@ -708,7 +708,7 @@ public class HypervisorHostHelper {
             pvlanSpec = createDVPortPvlanIdSpec(spvlanid);
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
         }
-    
+
         dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
 
 
@@ -739,8 +739,8 @@ public class HypervisorHostHelper {
             }
         }
     }
-    
-     public static ManagedObjectReference waitForDvPortGroupReady(
+
+    public static ManagedObjectReference waitForDvPortGroupReady(
             DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
         ManagedObjectReference morDvPortGroup = null;
 
@@ -971,7 +971,7 @@ public class HypervisorHostHelper {
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
                 createNvpPortGroup(hostMo, vSwitch, networkName, shapingPolicy);
-                
+
                 bWaitPortGroupReady = true;
             } else {
                 bWaitPortGroupReady = false;
@@ -988,7 +988,7 @@ public class HypervisorHostHelper {
                 }
             }
         }
-        
+
         ManagedObjectReference morNetwork;
         if(bWaitPortGroupReady)
             morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
@@ -1080,7 +1080,7 @@ public class HypervisorHostHelper {
 
         return true;
     }
-    
+
     private static void createNvpPortGroup(HostMO hostMo, HostVirtualSwitch vSwitch, String networkName, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
         /**
          * No portgroup created yet for this nic
@@ -1089,15 +1089,15 @@ public class HypervisorHostHelper {
          * so no relation to the other vlans in use in CloudStack.
          */
         String vSwitchName = vSwitch.getName();
-        
+
         // Find all vlanids that we have in use
         List<Integer> usedVlans = new ArrayList<Integer>();
         for (HostPortGroup pg : hostMo.getHostNetworkInfo().getPortgroup()) {
-           HostPortGroupSpec hpgs = pg.getSpec();
-           if (vSwitchName.equals(hpgs.getVswitchName()))
-               usedVlans.add(hpgs.getVlanId());
+            HostPortGroupSpec hpgs = pg.getSpec();
+            if (vSwitchName.equals(hpgs.getVswitchName()))
+                usedVlans.add(hpgs.getVlanId());
         }
-        
+
         // Find the first free vlanid
         int nvpVlanId = 0;
         for (nvpVlanId = 1; nvpVlanId < 4095; nvpVlanId++) {
@@ -1108,13 +1108,13 @@ public class HypervisorHostHelper {
         if (nvpVlanId == 4095) {
             throw new InvalidParameterException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
         }
-        
+
         // Strict security policy
         HostNetworkSecurityPolicy secPolicy = new HostNetworkSecurityPolicy();
         secPolicy.setAllowPromiscuous(Boolean.FALSE);
         secPolicy.setForgedTransmits(Boolean.FALSE);
         secPolicy.setMacChanges(Boolean.FALSE);
-        
+
         // Create a portgroup with the uuid of the nic and the vlanid found above
         hostMo.createPortGroup(vSwitch, networkName, nvpVlanId, secPolicy, shapingPolicy);
     }
@@ -1208,14 +1208,14 @@ public class HypervisorHostHelper {
     }
 
     public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost,
-    	DatastoreMO dsMo, String vmName) throws Exception {
-    	
-    	// Allow worker VM to float within cluster so that we will have better chance to
-    	// create it successfully
-    	ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-    	if(morCluster != null)
-    		hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
-    	
+            DatastoreMO dsMo, String vmName) throws Exception {
+
+        // Allow worker VM to float within cluster so that we will have better chance to
+        // create it successfully
+        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+        if(morCluster != null)
+            hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
+
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
@@ -1236,26 +1236,26 @@ public class HypervisorHostHelper {
 
         vmConfig.getDeviceChange().add(scsiControllerSpec);
         if(hyperHost.createVm(vmConfig)) {
-        	// Ugly work-around, it takes time for newly created VM to appear
-        	for(int i = 0; i < 10 && workingVM == null; i++) {
-        		workingVM = hyperHost.findVmOnHyperHost(vmName);
-        		
-        		try {
-        			Thread.sleep(1000);
-        		} catch(InterruptedException e) {
-        		}
-        	}
+            // Ugly work-around, it takes time for newly created VM to appear
+            for(int i = 0; i < 10 && workingVM == null; i++) {
+                workingVM = hyperHost.findVmOnHyperHost(vmName);
+
+                try {
+                    Thread.sleep(1000);
+                } catch(InterruptedException e) {
+                }
+            }
         }
-        
+
         if(workingVM != null) {
-        	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
-        	String workerTag = String.format("%d-%s", System.currentTimeMillis(),
-        		hyperHost.getContext().getStockObject("noderuninfo"));
-           	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
+            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+            String workerTag = String.format("%d-%s", System.currentTimeMillis(),
+                    hyperHost.getContext().getStockObject("noderuninfo"));
+            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
         }
         return workingVM;
     }
-    
+
     public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
         s_logger.info("Resolving host name in url through vCenter, url: " + url);
 
