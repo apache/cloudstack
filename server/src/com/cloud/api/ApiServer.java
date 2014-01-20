@@ -722,10 +722,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try {
                 checkCommandAvailable(user, commandName);
+            } catch (RequestLimitException ex) {
+                s_logger.debug(ex.getMessage());
+                throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
             } catch (PermissionDeniedException ex) {
                 s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName +
-                    " does not exist or it is not available for user with id:" + userId);
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:"
+                        + userId);
             }
 
             // verify secret key exists
