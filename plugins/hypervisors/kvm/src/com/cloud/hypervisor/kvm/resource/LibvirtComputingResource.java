@@ -351,6 +351,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
         //Update IP used to access router
         cmd.setRouterAccessIp(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        assert cmd.getRouterAccessIp() != null;
 
         if (cmd instanceof IpAssocVpcCommand) {
             return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
