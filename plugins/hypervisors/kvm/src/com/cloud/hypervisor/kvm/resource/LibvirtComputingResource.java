@@ -16,73 +16,12 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.DateFormat;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainBlockStats;
-import org.libvirt.DomainInfo;
-import org.libvirt.DomainInterfaceStats;
-import org.libvirt.DomainSnapshot;
-import org.libvirt.LibvirtException;
-import org.libvirt.NodeInfo;
-
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
 import com.ceph.rados.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -155,7 +94,6 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -174,13 +112,9 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -201,6 +135,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
@@ -250,17 +185,77 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainBlockStats;
+import org.libvirt.DomainInfo;
+import org.libvirt.DomainInterfaceStats;
+import org.libvirt.DomainSnapshot;
+import org.libvirt.LibvirtException;
+import org.libvirt.NodeInfo;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -285,7 +280,7 @@ import com.cloud.vm.VirtualMachine.State;
  *         pool | the parent of the storage pool hierarchy * }
  **/
 @Local(value = {ServerResource.class})
-public class LibvirtComputingResource extends ServerResourceBase implements ServerResource {
+public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
     private String _modifyVlanPath;
@@ -321,6 +316,58 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private Map<TrafficType, VifDriver> _trafficTypeVifDrivers;
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script, String args) {
+        final Script command = new Script(_routerProxyPath, _timeout, s_logger);
+        final AllLinesParser parser = new AllLinesParser();
+        command.add(script);
+        command.add(routerIp);
+        if (args != null) {
+            command.add(args);
+        }
+        String details = command.execute(parser);
+        if (details == null) {
+            details = parser.getLines();
+        }
+        return new ExecutionResult(command.getExitValue() == 0, details);
+    }
+
+    @Override
+    public ExecutionResult createFileInVR(String routerIp, String path, String filename, String content) {
+        File permKey = new File("/root/.ssh/id_rsa.cloud");
+        String error = null;
+
+        try {
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
+        } catch (Exception e) {
+            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            error = e.getMessage();
+        }
+        return new ExecutionResult(error == null, error);
+    }
+
+    @Override
+    public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
+        //Update IP used to access router
+        cmd.setRouterAccessIp(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+
+        if (cmd instanceof IpAssocVpcCommand) {
+            return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
+        } else if (cmd instanceof IpAssocCommand) {
+            return prepareNetworkElementCommand((IpAssocCommand)cmd);
+        } else if (cmd instanceof SetupGuestNetworkCommand) {
+            return prepareNetworkElementCommand((SetupGuestNetworkCommand)cmd);
+        } else if (cmd instanceof SetSourceNatCommand) {
+            return prepareNetworkElementCommand((SetSourceNatCommand)cmd);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    @Override
+    public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
+        return new ExecutionResult(true, null);
+    }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
@@ -537,7 +584,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         params.put("domr.scripts.dir", domrScriptsDir);
 
-        _virtRouterResource = new VirtualRoutingResource();
+        _virtRouterResource = new VirtualRoutingResource(this);
         success = _virtRouterResource.configure(name, params);
 
         if (!success) {
@@ -1258,16 +1305,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((PlugNicCommand)cmd);
             } else if (cmd instanceof UnPlugNicCommand) {
                 return execute((UnPlugNicCommand)cmd);
-            } else if (cmd instanceof SetupGuestNetworkCommand) {
-                return execute((SetupGuestNetworkCommand)cmd);
-            } else if (cmd instanceof SetNetworkACLCommand) {
-                return execute((SetNetworkACLCommand)cmd);
-            } else if (cmd instanceof SetSourceNatCommand) {
-                return execute((SetSourceNatCommand)cmd);
-            } else if (cmd instanceof IpAssocVpcCommand) {
-                return execute((IpAssocVpcCommand)cmd);
-            } else if (cmd instanceof IpAssocCommand) {
-                return execute((IpAssocCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
@@ -1977,25 +2014,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+    private ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
         Connect conn;
         NicTO nic = cmd.getNic();
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
-        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-        String domainName = cmd.getNetworkDomain();
-        String dns = cmd.getDefaultDns1();
-
-        if (dns == null || dns.isEmpty()) {
-            dns = cmd.getDefaultDns2();
-        } else {
-            String dns2 = cmd.getDefaultDns2();
-            if (dns2 != null && !dns2.isEmpty()) {
-                dns += "," + dns2;
-            }
-        }
 
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
@@ -2010,62 +2032,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             if (routerNic == null) {
-                return new SetupGuestNetworkAnswer(cmd, false, "Can not find nic with mac " + nic.getMac() + " for VM " + routerName);
+                return new ExecutionResult(false, "Can not find nic with mac " + nic.getMac() + " for VM " + routerName);
             }
 
-            String dev = "eth" + nic.getDeviceId();
-            String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
-            String result = _virtRouterResource.assignGuestNetwork(dev, routerIP, routerGIP, gateway, cidr, netmask, dns, domainName);
-
-            if (result != null) {
-                return new SetupGuestNetworkAnswer(cmd, false, "Creating guest network failed due to " + result);
-            }
-            return new SetupGuestNetworkAnswer(cmd, true, "success");
+            return new ExecutionResult(true, null);
         } catch (LibvirtException e) {
             String msg = "Creating guest network failed due to " + e.toString();
             s_logger.warn(msg, e);
-            return new SetupGuestNetworkAnswer(cmd, false, msg);
+            return new ExecutionResult(false, msg);
         }
     }
 
-
-    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
-
-        try {
-            String[][] rules = cmd.generateFwRules();
-            String[] aclRules = rules[0];
-            NicTO nic = cmd.getNic();
-            String dev = "eth" + nic.getDeviceId();
-            String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < aclRules.length; i++) {
-                sb.append(aclRules[i]).append(',');
-            }
-
-            String rule = sb.toString();
-            String result = _virtRouterResource.assignNetworkACL(routerIp, dev, nic.getIp(), netmask, rule, privateGw);
-
-            if (result != null) {
-                for (int i = 0; i < results.length; i++) {
-                    results[i] = "Failed";
-                }
-                return new SetNetworkACLAnswer(cmd, false, results);
-            }
-
-            return new SetNetworkACLAnswer(cmd, true, results);
-        } catch (Exception e) {
-            String msg = "SetNetworkACL failed due to " + e.toString();
-            s_logger.error(msg, e);
-            return new SetNetworkACLAnswer(cmd, false, results);
-        }
-    }
-
-    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+    protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
         Connect conn;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -2086,7 +2064,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     /*skip over, no physical bridge device exists*/
                 } else if (pluggedVlanId == null) {
                     /*this should only be true in the case of link local bridge*/
-                    return new SetSourceNatAnswer(cmd, false, "unable to find the vlan id for bridge " + pluggedVlanBr + " when attempting to set up" + pubVlan +
+                    return new ExecutionResult(false, "unable to find the vlan id for bridge " + pluggedVlanBr + " when attempting to set up" + pubVlan +
                             " on router " + routerName);
                 } else if (pluggedVlanId.equals(pubVlan)) {
                     break;
@@ -2094,26 +2072,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 devNum++;
             }
 
-            String dev = "eth" + devNum;
-            String result = _virtRouterResource.assignSourceNat(routerIP, pubIP.getPublicIp(), dev);
+            pubIP.setNicDevId(devNum);
 
-            if (result != null) {
-                return new SetSourceNatAnswer(cmd, false, "KVM plugin \"vpc_snat\" failed:" + result);
-            }
-            return new SetSourceNatAnswer(cmd, true, "success");
+            return new ExecutionResult(true, "success");
         } catch (LibvirtException e) {
             String msg = "Ip SNAT failure due to " + e.toString();
             s_logger.error(msg, e);
-            return new SetSourceNatAnswer(cmd, false, msg);
+            return new ExecutionResult(false, msg);
         }
     }
 
-    protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+    protected ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
         Connect conn;
-        String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
@@ -2136,31 +2108,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             for (IpAddressTO ip : ips) {
-                String nicName = "eth" + broadcastUriToNicNum.get(ip.getBroadcastUri());
-                String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
-                String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
-                _virtRouterResource.assignVpcIpToRouter(routerIP, ip.isAdd(), ip.getPublicIp(), nicName, ip.getVlanGateway(), netmask, subnet, ip.isSourceNat());
-                results[i++] = ip.getPublicIp() + " - success";
+                ip.setNicDevId(broadcastUriToNicNum.get(ip.getBroadcastUri()));
             }
 
+            return new ExecutionResult(true, null);
         } catch (LibvirtException e) {
             s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
-            results[i++] = IpAssocAnswer.errorResult;
-        } catch (InternalErrorException e) {
-            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
-            results[i++] = IpAssocAnswer.errorResult;
+            return new ExecutionResult(false, e.getMessage());
         }
-
-        return new IpAssocAnswer(cmd, results);
     }
 
-    public Answer execute(IpAssocCommand cmd) {
+    public ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String[] results = new String[cmd.getIpAddresses().length];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = IpAssocAnswer.errorResult;
-        }
         Connect conn;
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
@@ -2182,11 +2142,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 nicPos++;
             }
             IpAddressTO[] ips = cmd.getIpAddresses();
-            int i = 0;
-            String result = null;
             int nicNum = 0;
-            boolean newNic = false;
             for (IpAddressTO ip : ips) {
+                boolean newNic = false;
                 if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
@@ -2195,21 +2153,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
-                result =
-                        _virtRouterResource.assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(),
-                                ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum, newNic);
 
-                if (result == null) {
-                    results[i++] = ip.getPublicIp() + " - success";
-                }
+                ip.setNicDevId(nicNum);
+                ip.setNewNic(newNic);
             }
-            return new IpAssocAnswer(cmd, results);
+            return new ExecutionResult(true, null);
         } catch (LibvirtException e) {
             s_logger.error("ipassoccmd failed", e);
-            return new IpAssocAnswer(cmd, results);
+            return new ExecutionResult(false, e.getMessage());
         } catch (InternalErrorException e) {
             s_logger.error("ipassoccmd failed", e);
-            return new IpAssocAnswer(cmd, results);
+            return new ExecutionResult(false, e.getMessage());
         }
     }
 
