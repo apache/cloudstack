@@ -312,6 +312,7 @@ import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -705,10 +706,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String controlIp = getRouterSshControlIp(cmd);
         String args = "";
         String[] results = new String[cmd.getStaticRoutes().length];
+        String[][] rules = cmd.generateSRouteRules();
         int i = 0;
 
-        // Extract and build the arguments for the command to be sent to the VR.
-        String[][] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
         String[] srRules = rules[0];
         for (int j = 0; j < srRules.length; j++) {
@@ -716,25 +716,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         args += " -a " + sb.toString();
 
-        // Send over the command for execution, via ssh, to the VR.
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticroute.sh " + args);
+        ExecutionResult result = executeInVR(controlIp, "vpc_staticroute.sh", args);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
-
-            if (!result.first()) {
-                s_logger.error("SetStaticRouteCommand failure on setting one rule. args: " + args);
+        if (!result.isSuccess()) {
+            s_logger.error("SetStaticRouteCommand failure on setting one rule. args: " + args);
+            while (i < results.length) {
                 results[i++] = "Failed";
-                endResult = false;
-            } else {
-                results[i++] = null;
             }
-        } catch (Throwable e) {
-            s_logger.error("SetStaticRouteCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
-            results[i++] = "Failed";
             endResult = false;
         }
         return new SetStaticRouteAnswer(cmd, endResult, results);
@@ -762,41 +750,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
         }
-        try {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Executing /opt/cloud/bin/vpc_netusage.sh " + args + " on DomR " + privateIp);
+
+        ExecutionResult callResult = executeInVR(privateIp, "vpc_netusage.sh", args);
+
+        if (!callResult.isSuccess()) {
+            s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
+        }
+
+        if (option.equals("get") || option.equals("vpn")) {
+            String result = callResult.getDetails();
+            if (result == null || result.isEmpty()) {
+                s_logger.error(" vpc network usage get returns empty ");
             }
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            Pair<Boolean, String> resultPair =
-                    SshHelper.sshExecute(privateIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_netusage.sh " + args);
-
-            if (!resultPair.first()) {
-                throw new Exception(" vpc network usage plugin call failed ");
-
-            }
-
-            if (option.equals("get") || option.equals("vpn")) {
-                String result = resultPair.second();
-                if (result == null || result.isEmpty()) {
-                    throw new Exception(" vpc network usage get returns empty ");
+            long[] stats = new long[2];
+            if (result != null) {
+                String[] splitResult = result.split(":");
+                int i = 0;
+                while (i < splitResult.length - 1) {
+                    stats[0] += (new Long(splitResult[i++])).longValue();
+                    stats[1] += (new Long(splitResult[i++])).longValue();
                 }
-                long[] stats = new long[2];
-                if (result != null) {
-                    String[] splitResult = result.split(":");
-                    int i = 0;
-                    while (i < splitResult.length - 1) {
-                        stats[0] += (new Long(splitResult[i++])).longValue();
-                        stats[1] += (new Long(splitResult[i++])).longValue();
-                    }
-                    return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
-                }
+                return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
             }
-            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
-        } catch (Throwable e) {
-
-            s_logger.error(
-                    "Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + VmwareHelper.getExceptionMessage(e), e);
         }
         return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
     }
@@ -813,23 +788,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         args += " -c " + config;
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/monitor_service.sh " + args);
-
-            if (!result.first()) {
-                String msg = "monitor_service.sh failed on domain router " + controlIp + " failed " + result.second();
-                s_logger.error(msg);
-                return new Answer(cmd, false, msg);
-            }
-
-            return new Answer(cmd);
-
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception: " + e.toString(), e);
-            return new Answer(cmd, false, "SetMonitorServiceCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        ExecutionResult result = executeInVR(controlIp, "monitor_service.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
+        return new Answer(cmd);
     }
 
     protected Answer execute(SetPortForwardingRulesCommand cmd) {
@@ -851,24 +814,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange();
 
-            try {
-                VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_nat.sh " + args);
-
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_nat.sh " + args);
-
-                if (!result.first()) {
-                    s_logger.error("SetPortForwardingRulesCommand failure on setting one rule. args: " + args);
-                    results[i++] = "Failed";
-                    endResult = false;
-                } else {
-                    results[i++] = null;
-                }
-            } catch (Throwable e) {
-                s_logger.error("SetPortForwardingRulesCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+            ExecutionResult result = executeInVR(controlIp, "firewall_nat.sh", args);
+            if (!result.isSuccess()) {
+                s_logger.error("SetPortForwardingRulesCommand failure on setting one rule. args: " + args);
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
 
@@ -905,40 +857,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -a " + sb.toString();
         }
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        ExecutionResult result = null;
 
-            Pair<Boolean, String> result = null;
+        if (trafficType == FirewallRule.TrafficType.Egress) {
+            result = executeInVR(controlIp, "firewall_egress.sh", args);
+        } else {
+            result = executeInVR(controlIp, "firewall_ingress.sh", args);
+        }
 
-            if (trafficType == FirewallRule.TrafficType.Egress) {
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_egress.sh " + args);
-            } else {
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_ingress.sh " + args);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                if (trafficType == FirewallRule.TrafficType.Egress) {
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_egress.sh " + args);
-                } else {
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_ingress.sh " + args);
-                }
-            }
-
-            if (!result.first()) {
-                s_logger.error("SetFirewallRulesCommand failure on setting one rule. args: " + args);
-                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
-                for (int i = 0; i < results.length; i++) {
-                    results[i] = "Failed";
-                }
-
-                return new SetFirewallRulesAnswer(cmd, false, results);
-            }
-        } catch (Throwable e) {
-            s_logger.error("SetFirewallRulesCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+        if (!result.isSuccess()) {
+            s_logger.error("SetFirewallRulesCommand failure on setting one rule. args: " + args);
             //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
             for (int i = 0; i < results.length; i++) {
                 results[i] = "Failed";
             }
+
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
 
@@ -951,37 +884,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         String[] results = new String[cmd.getRules().length];
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String controlIp = getRouterSshControlIp(cmd);
 
         int i = 0;
         boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
-            // Prepare command to be send to VPC VR
             String args = "";
             args += rule.revoked() ? " -D" : " -A";
             args += " -l " + rule.getSrcIp();
             args += " -r " + rule.getDstIp();
 
-            // Invoke command on VPC VR.
-            try {
-                Pair<Boolean, String> result =
-                        SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticnat.sh " + args);
+            ExecutionResult result = executeInVR(controlIp, "vpc_staticnat.sh", args);
 
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticnat.sh " + args);
-
-                if (!result.first()) {
-                    s_logger.error("SetVPCStaticNatRulesCommand failure on setting one rule. args: " + args);
-                    results[i++] = "Failed";
-                    endResult = false;
-                } else {
-                    results[i++] = null;
-                }
-            } catch (Throwable e) {
-                s_logger.error("SetVPCStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+            if (!result.isSuccess()) {
+                s_logger.error("SetVPCStaticNatRulesCommand failure on setting one rule. args: " + args);
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
@@ -1015,25 +935,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -d " + rule.getStringSrcPortRange();
             args += " -G ";
 
-            try {
-                VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-                String controlIp = getRouterSshControlIp(cmd);
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_nat.sh " + args);
+            String controlIp = getRouterSshControlIp(cmd);
+            ExecutionResult result = executeInVR(controlIp, "firewall_nat.sh", args);
 
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_nat.sh " + args);
-
-                if (!result.first()) {
-                    s_logger.error("SetStaticNatRulesCommand failure on setting one rule. args: " + args);
-                    results[i++] = "Failed";
-                    endResult = false;
-                } else {
-                    results[i++] = null;
-                }
-            } catch (Throwable e) {
-                s_logger.error("SetStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+            if (!result.isSuccess()) {
+                s_logger.error("SetStaticNatRulesCommand failure on setting one rule. args: " + args);
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
@@ -1076,67 +986,61 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, false, "Fail to create LB config file in VR");
         }
 
-        try {
+        String[][] rules = cfgtr.generateFwRules(cmd);
 
-            String[][] rules = cfgtr.generateFwRules(cmd);
+        String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+        String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-            String[] addRules = rules[LoadBalancerConfigurator.ADD];
-            String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-            String[] statRules = rules[LoadBalancerConfigurator.STATS];
-
-            String args = "";
-            StringBuilder sb = new StringBuilder();
-            if (addRules.length > 0) {
-                for (int i = 0; i < addRules.length; i++) {
-                    sb.append(addRules[i]).append(',');
-                }
-
-                args += " -a " + sb.toString();
+        String args = "";
+        StringBuilder sb = new StringBuilder();
+        if (addRules.length > 0) {
+            for (int i = 0; i < addRules.length; i++) {
+                sb.append(addRules[i]).append(',');
             }
 
-            sb = new StringBuilder();
-            if (removeRules.length > 0) {
-                for (int i = 0; i < removeRules.length; i++) {
-                    sb.append(removeRules[i]).append(',');
-                }
-
-                args += " -d " + sb.toString();
-            }
-
-            sb = new StringBuilder();
-            if (statRules.length > 0) {
-                for (int i = 0; i < statRules.length; i++) {
-                    sb.append(statRules[i]).append(',');
-                }
-
-                args += " -s " + sb.toString();
-            }
-
-            Pair<Boolean, String> result;
-            if (cmd.getVpcId() == null) {
-                args = " -i " + routerIp + args;
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/loadbalancer.sh " + args);
-            } else {
-                args = " -i " + cmd.getNic().getIp() + args;
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_loadbalancer.sh " + args);
-            }
-            // Invoke the command
-
-            if (!result.first()) {
-                String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
-                s_logger.error(msg);
-
-                return new Answer(cmd, false, msg);
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("LoadBalancerConfigCommand on domain router " + routerIp + " completed");
-            }
-            return new Answer(cmd);
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception: " + e.toString(), e);
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+            args += " -a " + sb.toString();
         }
+
+        sb = new StringBuilder();
+        if (removeRules.length > 0) {
+            for (int i = 0; i < removeRules.length; i++) {
+                sb.append(removeRules[i]).append(',');
+            }
+
+            args += " -d " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (statRules.length > 0) {
+            for (int i = 0; i < statRules.length; i++) {
+                sb.append(statRules[i]).append(',');
+            }
+
+            args += " -s " + sb.toString();
+        }
+
+        ExecutionResult result;
+        if (cmd.getVpcId() == null) {
+            args = " -i " + routerIp + args;
+            result = executeInVR(controlIp, "loadbalancer.sh", args);
+        } else {
+            args = " -i " + cmd.getNic().getIp() + args;
+            result = executeInVR(controlIp, "vpc_loadbalancer.sh", args);
+        }
+        // Invoke the command
+
+        if (!result.isSuccess()) {
+            String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.getDetails();
+            s_logger.error(msg);
+
+            return new Answer(cmd, false, msg);
+        }
+
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("LoadBalancerConfigCommand on domain router " + routerIp + " completed");
+        }
+        return new Answer(cmd);
     }
 
     //
@@ -1246,13 +1150,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 args += " -e " + domainName;
             }
 
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_guestnw.sh " + args);
+            ExecutionResult result = executeInVR(routerIp, "vpc_guestnw.sh", args);
 
-            if (!result.first()) {
-                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
+            if (!result.isSuccess()) {
+                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.getDetails();
                 s_logger.error(msg);
-
                 return new SetupGuestNetworkAnswer(cmd, false, msg);
             }
 
@@ -1303,6 +1205,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = getRouterSshControlIp(cmd);
         IpAddressTO pubIp = cmd.getIpAddress();
+
         try {
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
             String args = "";
@@ -1313,11 +1216,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -c ";
             args += "eth" + ethDeviceNum;
 
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_snat.sh " + args);
+            ExecutionResult result = executeInVR(routerIp, "vpc_snat.sh", args);
 
-            if (!result.first()) {
-                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
+            if (!result.isSuccess()) {
+                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.getDetails();
                 s_logger.error(msg);
 
                 return new SetSourceNatAnswer(cmd, false, msg);
@@ -1357,16 +1259,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO nic = cmd.getNic();
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic.getMac());
             String args = "";
-            Pair<Boolean, String> result;
+            ExecutionResult result;
 
             if (privateGw != null) {
                 s_logger.debug("Private gateway configuration is set");
                 args += " -d " + "eth" + ethDeviceNum;
                 args += " -a " + sb.toString();
-                result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_privategw_acl.sh " + args);
+                result = executeInVR(routerIp, "vpc_privategw_acl.sh", args);
 
-                if (!result.first()) {
-                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                if (!result.isSuccess()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.getDetails();
                     s_logger.error(msg);
                     return new SetNetworkACLAnswer(cmd, false, results);
                 }
@@ -1377,10 +1279,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
                 args += " -a " + sb.toString();
 
-                result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_acl.sh " + args);
+                result = executeInVR(routerIp, "vpc_acl.sh", args);
 
-                if (!result.first()) {
-                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                if (!result.isSuccess()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.getDetails();
                     s_logger.error(msg);
 
                     return new SetNetworkACLAnswer(cmd, false, results);
@@ -1417,19 +1319,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            try {
-                Pair<Boolean, String> sshResult =
-                        SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_portforwarding.sh " + args);
+            ExecutionResult sshResult = executeInVR(routerIp, "vpc_portforwarding.sh", args);
 
-                if (!sshResult.first()) {
-                    results[i++] = "Failed";
-                    endResult = false;
-                } else {
-                    results[i++] = null;
-                }
-            } catch (Exception e) {
+            if (!sshResult.isSuccess()) {
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
@@ -1486,25 +1382,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += cmd.getPeerGuestCidrList();
         }
 
-        Pair<Boolean, String> result;
-        try {
-            result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/ipsectunnel.sh " + args);
+        ExecutionResult result = executeInVR(routerIp, "ipsectunnel.sh", args);
 
-            if (!result.first()) {
-                s_logger.error("Setup site2site VPN " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+        if (!result.isSuccess()) {
+            s_logger.error("Setup site2site VPN " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.getDetails());
 
-                return new Answer(cmd, false, "Setup site2site VPN falied due to " + result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("setup site 2 site vpn on router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "Setup site2site VPN falied due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, "Setup site2site VPN failed due to " + VmwareHelper.getExceptionMessage(e));
+            return new Answer(cmd, false, "Setup site2site VPN falied due to " + result.getDetails());
         }
-        return new Answer(cmd, true, result.second());
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("setup site 2 site vpn on router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+        }
+
+        return new Answer(cmd, true, result.getDetails());
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
@@ -1687,10 +1577,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         args += " -n ";
         args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-        Pair<Boolean, String> result =
-                SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_ipassoc.sh " + args);
+        ExecutionResult result = executeInVR(routerIp, "vpc_ipassoc.sh", args);
 
-        if (!result.first()) {
+        if (!result.isSuccess()) {
             throw new InternalErrorException("Unable to assign public IP address");
         }
 
@@ -1700,10 +1589,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             snatArgs += " -c ";
             snatArgs += "eth" + ethDeviceNum;
 
-            Pair<Boolean, String> result_gateway =
-                    SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_privateGateway.sh " + snatArgs);
+            ExecutionResult result_gateway = executeInVR(routerIp, "vpc_privateGateway.sh", snatArgs);
 
-            if (!result_gateway.first()) {
+            if (!result_gateway.isSuccess()) {
                 throw new InternalErrorException("Unable to configure source NAT for public IP address.");
             }
         }
@@ -1787,21 +1675,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -n ";
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domain router " + privateIpAddress + ", /opt/cloud/bin/ipassoc.sh " + args);
-        }
+        ExecutionResult result = executeInVR(privateIpAddress, "ipassoc.sh", args);
 
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-        Pair<Boolean, String> result =
-                SshHelper.sshExecute(privateIpAddress, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/ipassoc.sh " + args);
-
-        if (!result.first()) {
-            s_logger.error("ipassoc command on domain router " + privateIpAddress + " failed. message: " + result.second());
-            throw new Exception("ipassoc failed due to " + result.second());
+        if (!result.isSuccess()) {
+            s_logger.error("ipassoc command on domain router " + privateIpAddress + " failed. message: " + result.getDetails());
+            throw new Exception("ipassoc failed due to " + result.getDetails());
         }
 
         if (removeVif) {
-
             String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
             int nicMasks = Integer.parseInt(nicMasksStr);
             nicMasks &= ~(1 << publicNicInfo.first().intValue());
@@ -1954,8 +1835,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new IpAssocAnswer(cmd, results);
     }
 
-    protected Pair<Boolean, String> executeInVR(String script, String routerIP, String args) {
+    protected ExecutionResult executeInVR(String routerIP, String script, String args) {
         Pair<Boolean, String> result;
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on VR: " + routerIP + ", script: " + script + " with args: " + args);
+        }
+
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             result = SshHelper.sshExecute(routerIP, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args);
@@ -1964,12 +1850,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error(msg);
             result = new Pair<Boolean, String>(false, msg);
         }
-        return result;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(script + " execution result: " + result.first().toString());
+        }
+        return new ExecutionResult(result.first(), result.second());
     }
 
     protected Answer execute(SavePasswordCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-
             s_logger.info("Executing resource SavePasswordCommand. vmName: " + cmd.getVmName() + ", vmIp: " + cmd.getVmIpAddress() + ", password: " +
                     StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
         }
@@ -1978,7 +1866,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String password = cmd.getPassword();
         final String vmIpAddress = cmd.getVmIpAddress();
 
-        // Run save_password_to_domr.sh
         String args = " -v " + vmIpAddress;
 
         if (s_logger.isDebugEnabled()) {
@@ -1988,19 +1875,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         args += " -p " + password;
 
-        Pair<Boolean, String> result = executeInVR("savepassword.sh", controlIp, args);
-        if (!result.first()) {
-            s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
-            return new Answer(cmd, false, "SavePassword failed due to " + result.second());
+        //TODO: Password should be masked, cannot output to log directly
+        ExecutionResult result = executeInVR(controlIp, "savepassword.sh", args);
+        if (!result.isSuccess()) {
+            s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.getDetails());
+            return new Answer(cmd, false, result.getDetails());
         }
-    return new Answer(cmd);
+
+        return new Answer(cmd);
     }
 
     protected Answer execute(DhcpEntryCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DhcpEntryCommand: " + _gson.toJson(cmd));
-        }
-
         // ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $ns $staticrt" >/dev/null
 
         String args = " -m " + cmd.getVmMac();
@@ -2030,68 +1915,29 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -N";
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/edithosts.sh " + args);
-        }
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "edithosts.sh", args);
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/edithosts.sh " + args);
-
-            if (!result.first()) {
-                s_logger.error("dhcp_entry command on domR " + controlIp + " failed, message: " + result.second());
-
-                return new Answer(cmd, false, "DhcpEntry failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("dhcp_entry command on domain router " + controlIp + " completed");
-            }
-
-        } catch (Throwable e) {
-            String msg = "DhcpEntryCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
         return new Answer(cmd);
     }
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing createIpAlias command: " + _gson.toJson(cmd));
-        }
         cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
         String args = "";
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/createIpAlias " + args);
-        }
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/createIpAlias.sh " + args);
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "createIpAlias.sh", args);
 
-            if (!result.first()) {
-                s_logger.error("CreateIpAlias command on domr " + controlIp + " failed, message: " + result.second());
-
-                return new Answer(cmd, false, "createipAlias failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("createIpAlias command on domain router " + controlIp + " completed");
-            }
-
-        } catch (Throwable e) {
-            String msg = "createIpAlias failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
         return new Answer(cmd);
@@ -2101,9 +1947,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing deleteIpAlias command: " + _gson.toJson(cmd));
-        }
         String args = "";
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
@@ -2112,39 +1955,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/deleteIpAlias " + args);
-        }
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/deleteIpAlias.sh " + args);
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "deleteIpAlias.sh", args);
 
-            if (!result.first()) {
-                s_logger.error("deleteIpAlias command on domr " + controlIp + " failed, message: " + result.second());
-
-                return new Answer(cmd, false, "deleteIpAlias failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("deleteIpAlias command on domain router " + controlIp + " completed");
-            }
-
-        } catch (Throwable e) {
-            String msg = "deleteIpAlias failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
         return new Answer(cmd);
     }
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing dnsmasqConfig command: " + _gson.toJson(cmd));
-        }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
 
@@ -2155,166 +1977,68 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (DhcpTO dhcpTo : dhcpTos) {
             args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-        mgr.getSystemVMKeyFile();
 
-        try {
-            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/dnsmasq.sh " + args);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Run command on domain router " + routerIp + ",  /opt/cloud/bin/dnsmasq.sh");
-            }
+        ExecutionResult result = executeInVR(controlIp, "dnsmasq.sh", args);
 
-            if (!result.first()) {
-                s_logger.error("Unable update dnsmasq config file");
-                return new Answer(cmd, false, "dnsmasq config update failed due to: " + result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("dnsmasq config command on domain router " + routerIp + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "Dnsmasqconfig command failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
         return new Answer(cmd);
     }
 
     protected CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CheckS2SVpnConnectionsCommand: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkbatchs2svpn.sh ");
+        String controlIp = getRouterSshControlIp(cmd);
+        String args = "";
+        for (String ip : cmd.getVpnIps()) {
+            args += ip + " ";
         }
 
-        Pair<Boolean, String> result;
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            String cmdline = "/opt/cloud/bin/checkbatchs2svpn.sh ";
-            for (String ip : cmd.getVpnIps()) {
-                cmdline += " " + ip;
-            }
+        ExecutionResult result = executeInVR(controlIp, "checkbatchs2svpn.sh", args);
 
-            result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, cmdline);
-
-            if (!result.first()) {
-                s_logger.error("check site-to-site vpn connections command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " +
-                        result.second());
-
-                return new CheckS2SVpnConnectionsAnswer(cmd, false, result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("check site-to-site vpn connections command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "CheckS2SVpnConnectionsCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
+        if (!result.isSuccess()) {
+            return new CheckS2SVpnConnectionsAnswer(cmd, false, result.getDetails());
         }
-        return new CheckS2SVpnConnectionsAnswer(cmd, true, result.second());
+
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result.getDetails());
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CheckRouterCommand: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkrouter.sh ");
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "checkrouter.sh", null);
+
+        if (!result.isSuccess()) {
+            return new CheckRouterAnswer(cmd, result.getDetails());
         }
-
-        Pair<Boolean, String> result;
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/checkrouter.sh ");
-
-            if (!result.first()) {
-                s_logger.error("check router command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
-
-                return new CheckRouterAnswer(cmd, "CheckRouter failed due to " + result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("check router command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "CheckRouterCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CheckRouterAnswer(cmd, msg);
-        }
-        return new CheckRouterAnswer(cmd, result.second(), true);
+        return new CheckRouterAnswer(cmd, result.getDetails(), true);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource GetDomRVersionCmd: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/get_template_version.sh ");
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "get_template_version.sh", null);
+
+        if (!result.isSuccess()) {
+            return new GetDomRVersionAnswer(cmd, result.getDetails());
         }
-
-        Pair<Boolean, String> result;
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/get_template_version.sh ");
-
-            if (!result.first()) {
-                s_logger.error("GetDomRVersionCmd on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
-
-                return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed due to " + result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("GetDomRVersionCmd on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "GetDomRVersionCmd failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new GetDomRVersionAnswer(cmd, msg);
-        }
-        String[] lines = result.second().split("&");
+        String[] lines = result.getDetails().split("&");
         if (lines.length != 2) {
-            return new GetDomRVersionAnswer(cmd, result.second());
+            return new GetDomRVersionAnswer(cmd, result.getDetails());
         }
-        return new GetDomRVersionAnswer(cmd, result.second(), lines[0], lines[1]);
+        return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource BumpUpPriorityCommand: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/bumpup_priority.sh ");
+        String controlIp = getRouterSshControlIp(cmd);
+        ExecutionResult result = executeInVR(controlIp, "bumpup_priority.sh", null);
+
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
-        Pair<Boolean, String> result;
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            String controlIp = getRouterSshControlIp(cmd);
-            result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/bumpup_priority.sh ");
-
-            if (!result.first()) {
-                s_logger.error("BumpUpPriority command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
-
-                return new Answer(cmd, false, "BumpUpPriorityCommand failed due to " + result.second());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("BumpUpPriorityCommand on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "BumpUpPriorityCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
-        }
-        if (result.second() == null || result.second().isEmpty()) {
-            return new Answer(cmd, true, result.second());
-        }
-        return new Answer(cmd, false, result.second());
+        return new Answer(cmd);
     }
 
     protected Answer execute(VmDataCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource VmDataCommand: " + _gson.toJson(cmd));
-        }
-
         String controlIp = getRouterSshControlIp(cmd);
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
@@ -2326,23 +2050,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String args = "-d " + json;
 
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        ExecutionResult result = executeInVR(controlIp, "vmdata.py", args);
 
-        try {
-            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vmdata.py " + args);
-            if (!result.first()) {
-                s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
-                return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("vm_data command on domain router " + controlIp + " completed");
-            }
-        } catch (Throwable e) {
-            String msg = "VmDataCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
+
         return new Answer(cmd);
     }
 
@@ -3588,44 +3301,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         argsBuf.append(" -C ").append(cmd.getLocalCidr());
         argsBuf.append(" -i ").append(cmd.getPublicInterface());
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
-            }
+        ExecutionResult result = executeInVR(controlIp, "vpn_l2tp.sh", argsBuf.toString());
 
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
-
-            if (!result.first()) {
-                s_logger.error("RemoteAccessVpnCfg command on domR failed, message: " + result.second());
-
-                return new Answer(cmd, false, "RemoteAccessVpnCfg command failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("RemoteAccessVpnCfg command on domain router " + argsBuf.toString() + " completed");
-            }
-
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "RemoteAccessVpnCfg command failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, result.getDetails());
         }
 
         return new Answer(cmd);
     }
 
     protected Answer execute(final VpnUsersCfgCommand cmd) {
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
         String controlIp = getRouterSshControlIp(cmd);
+
         for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
             StringBuffer argsBuf = new StringBuffer();
             if (!userpwd.isAdd()) {
@@ -3634,29 +3322,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 argsBuf.append(" -u ").append(userpwd.getUsernamePassword());
             }
 
-            try {
+            ExecutionResult result = executeInVR(controlIp, "vpn_l2tp.sh", argsBuf.toString());
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
-                }
-
-                Pair<Boolean, String> result =
-                        SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
-
-                if (!result.first()) {
-                    s_logger.error("VpnUserCfg command on domR failed, message: " + result.second());
-
-                    return new Answer(cmd, false, "VpnUserCfg command failed due to " + result.second());
-                }
-            } catch (Throwable e) {
-                if (e instanceof RemoteException) {
-                    s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                    invalidateServiceContext();
-                }
-
-                String msg = "VpnUserCfg command failed due to " + VmwareHelper.getExceptionMessage(e);
-                s_logger.error(msg, e);
-                return new Answer(cmd, false, msg);
+            if (!result.isSuccess()) {
+                return new Answer(cmd, false, result.getDetails());
             }
         }
 
@@ -6519,28 +6188,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += ethName;
         }
 
-        try {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Executing /opt/cloud/bin/netusage.sh " + args + " on DomR " + privateIpAddress);
-            }
+        ExecutionResult result = executeInVR(privateIpAddress, "netusage.sh", args);
 
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(privateIpAddress, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
-
-            if (!result.first()) {
-                return null;
-            }
-
-            return result.second();
-        } catch (Throwable e) {
-            s_logger.error(
-                    "Unable to execute NetworkUsage command on DomR (" + privateIpAddress + "), domR may not be ready yet. failure due to " +
-                            VmwareHelper.getExceptionMessage(e), e);
+        if (!result.isSuccess()) {
+            return null;
         }
 
-        return null;
+        return result.getDetails();
     }
 
     private long[] getNetworkStats(String privateIP) {
