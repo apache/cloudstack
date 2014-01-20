@@ -253,7 +253,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=8, domain_limit=4)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -280,7 +280,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=7, domain_limit=14)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -310,7 +310,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=8,domain_limit=8, project_limit=4)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 
@@ -334,7 +334,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, project_limit=12, domain_limit=12)
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                             UserName=self.child_do_admin.name,
                             DomainName=self.child_do_admin.domain)
 

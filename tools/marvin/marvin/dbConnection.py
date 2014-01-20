@@ -25,7 +25,7 @@ import sys
 import os
 
 
-class dbConnection(object):
+class DbConnection(object):
     def __init__(self, host="localhost", port=3306, user='cloud',
                  passwd='cloud', db='cloud'):
         self.host = host
@@ -68,7 +68,7 @@ class dbConnection(object):
         return self.execute(sqls)
 
 if __name__ == "__main__":
-    db = dbConnection()
+    db = DbConnection()
     '''
     try:
 

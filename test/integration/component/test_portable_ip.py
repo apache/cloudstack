@@ -221,7 +221,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
                             domainid=self.domain.id
                             )
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
@@ -361,7 +361,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
 
         self.cleanup.append(self.account)
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
@@ -552,7 +552,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
 
         self.cleanup.append(self.account)
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.account.name,
                                             DomainName=self.account.domain
                                             )
@@ -1110,7 +1110,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                             domainid=self.domain.id
                             )
 
-        self.api_client_user = self.testClient.createUserApiClient(
+        self.api_client_user = self.testClient.getUserApiClient(
                                             UserName=self.user_account.name,
                                             DomainName=self.user_account.domain
                                             )

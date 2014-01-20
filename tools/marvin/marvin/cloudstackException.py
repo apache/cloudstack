@@ -15,8 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import sys
+import traceback
+from marvin.codes import (INVALID_INPUT, EXCEPTION_OCCURRED)
 
-class cloudstackAPIException(Exception):
+
+class CloudstackAPIException(Exception):
     def __init__(self, cmd="", result=""):
         self.errorMsg = "Execute cmd: %s failed, due to: %s" % (cmd, result)
 
@@ -46,3 +50,12 @@ class internalError(Exception):
 
     def __str__(self):
         return self.errorMsg
+
+
+def GetDetailExceptionInfo(e):
+    if e is not None:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        return str(repr(traceback.format_exception(
+            exc_type, exc_value, exc_traceback)))
+    else:
+        return EXCEPTION_OCCURRED

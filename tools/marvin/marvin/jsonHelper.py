@@ -145,7 +145,7 @@ def getResultObj(returnObj, responsecls=None):
         errMsg = "errorCode: %s, errorText:%s" % (result.errorcode,
                                                   result.errortext)
         respname = responseName.replace("response", "")
-        raise cloudstackException.cloudstackAPIException(respname, errMsg)
+        raise cloudstackException.CloudstackAPIException(respname, errMsg)
 
     if result.count is not None:
         for key in result.__dict__.iterkeys():
@@ -247,7 +247,7 @@ due to missing parameter jobid"
 }'''
     try:
         asynJob = getResultObj(result)
-    except cloudstackException.cloudstackAPIException, e:
+    except cloudstackException.CloudstackAPIException, e:
         print e
 
     result = '{ "queryasyncjobresultresponse" : {}  }'

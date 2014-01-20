@@ -50,9 +50,13 @@ class configuration(object):
 
 class logger(object):
     def __init__(self):
-        '''TestCase/TestClient'''
-        self.name = None
-        self.file = None
+        self.LogFolderPath = None
+
+
+class apiLoadCfg(object):
+    def __init__(self):
+        self.ParsedApiDestFolder = None
+        self.ApiSpecFile = None
 
 
 class cloudstackConfiguration(object):
@@ -296,9 +300,8 @@ class bigip(object):
 
 
 class ConfigManager(object):
-
     '''
-    @Name: configManager
+    @Name: ConfigManager
     @Desc: 1. It provides the basic configuration facilities to marvin.
            2. User can just add configuration files for his tests, deployment
               etc, under one config folder before running their tests.
@@ -328,17 +331,22 @@ class ConfigManager(object):
            8. Users can use their own configuration file passed to
               "getConfig" API,once configObj is returned.
     '''
+    def __init__(self, cfg_file=None):
+        if cfg_file is None:
+            self.__filePath = "config/test_data.cfg"
+        else:
+            self.__filePath = cfg_file
+        self.__parsedCfgDict = None
+        '''
+        Set the Configuration
+        '''
+        self.__setConfig()
 
-    def __init__(self):
-        # Joining path with current directory will avoid relative path issue
-        # It will take correct path irrespective of from where the test case is run
-        dirPath = os.path.dirname(__file__)
-        self.filePath = os.path.join(dirPath, 'config/config.cfg')
-        self.parsedDict = None
-        if self.__verifyFile(self.filePath) is not False:
-            self.parsedDict = self.__parseConfig(self.filePath)
+    def __setConfig(self):
+        if self.__verifyFile() is not False:
+            self.__parsedCfgDict = self.__parseConfig()
 
-    def __parseConfig(self, file):
+    def __parseConfig(self):
         '''
         @Name : __parseConfig
         @Description: Parses the Input configuration Json file
@@ -363,22 +371,20 @@ class ConfigManager(object):
         finally:
             return config_dict
 
-    def __verifyFile(self, file):
+    def __verifyFile(self):
         '''
         @Name : __parseConfig
         @Description: Parses the Input configuration Json file
                   and returns a dictionary from the file.
-        @Input      : file NA
+        @Input      : NA
         @Output     : True or False based upon file input validity
                       and availability
         '''
-        if file is None or file == '':
+        if self.__filePath is None or self.__filePath == '':
             return False
-        if os.path.exists(file) is False:
-            return False
-        return True
+        return False if os.path.exists(self.__filePath) is False else True
 
-    def __getSectionData(self, return_dict, section=None):
+    def getSectionData(self, section=None):
         '''
         @Name: getSectionData
         @Desc: Gets the Section data of a particular section
@@ -387,35 +393,21 @@ class ConfigManager(object):
                 section to be returned from this dict
         @Output:Section matching inside the parsed data
         '''
-        if return_dict is not None:
-            inp = return_dict
-        elif self.parsedDict is None:
+        if self.__parsedCfgDict is None or section is None:
+            print "\nEither Parsed Dictionary is None or Section is None"
             return INVALID_INPUT
-        else:
-            inp = self.parsedDict
-
         if section is not None:
-            return inp.get(section)
-        else:
-            return inp
+            return self.__parsedCfgDict.get(section)
 
-    def getConfig(self, file_path=None, section=None):
+    def getConfig(self):
         '''
-        @Name: getConfig
-        @Desc  : Parses and converts the given configuration file to dictionary
-        @Input : file_path: path where the configuration needs to be passed
-                 section: specific section inside the file
-        @Output: INVALID_INPUT: This value is returned if the input
-                              is invalid or not able to be parsed
-                 Parsed configuration dictionary from json file
+        @Name  : getConfig
+        @Desc  : Returns the Parsed Dictionary of Config Provided
+        @Input : NA
+        @Output: ParsedDict if successful if  cfg file provided is valid
+                 None if cfg file is invalid or not able to be parsed
         '''
-        ret = None
-        if file not in [None, '']:
-            if self.__verifyFile(file_path) is False:
-                return INVALID_INPUT
-            else:
-                ret = self.__parseConfig(file_path)
-        return self.__getSectionData(ret, section)
+        return self.__parsedCfgDict
 
 
 def getDeviceUrl(obj):

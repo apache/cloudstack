@@ -24,10 +24,8 @@ from marvin.marvinInit import MarvinInit
 from nose.plugins.base import Plugin
 from marvin.codes import (SUCCESS,
                           FAILED,
-                          EXCEPTION,
-                          UNKNOWN_ERROR
-                          )
-import traceback
+                          EXCEPTION)
+from marvin.cloudstackException import GetDetailExceptionInfo
 import time
 import os
 
@@ -43,8 +41,22 @@ class MarvinPlugin(Plugin):
         self.identifier = None
         self.testClient = None
         self.parsedConfig = None
-        self.configFile = None
-        self.loadFlag = None
+        '''
+        Contains Config File
+        '''
+        self.__configFile = None
+        '''
+        Signifies the flag whether to load new API Information
+        '''
+        self.__loadNewApiFlag = None
+        '''
+        Signifies the Zone against which all tests will be Run
+        '''
+        self.__zoneForTests = None
+        '''
+        Signifies the flag whether to deploy the New DC or Not
+        '''
+        self.__deployDcFlag
         self.conf = None
         self.debugStream = sys.stdout
         self.testRunner = None
@@ -66,14 +78,12 @@ class MarvinPlugin(Plugin):
                 return
             else:
                 self.enabled = True
-        self.configFile = options.config_file
-        self.loadFlag = options.load
-        self.logFolderPath = options.log_folder_path
+
+        self.__configFile = options.config_file
+        self.__loadNewApiFlag = options.loadNewApiFlag
+        self.__deployDcFlag = options.deployDc
+        self.__zoneForTests = options.zone
         self.conf = conf
-        '''
-        Initializes the marvin with required settings
-        '''
-        self.startMarvin()
 
     def options(self, parser, env):
         """
@@ -83,19 +93,31 @@ class MarvinPlugin(Plugin):
                           default=env.get('MARVIN_CONFIG',
                                           './datacenter.cfg'),
                           dest="config_file",
-                          help="Marvin's configuration file where the " +
-                               "datacenter information is specified" +
-                               " [MARVIN_CONFIG]")
-        parser.add_option("--load", action="store_true",
+                          help="Marvin's configuration file is required."
+                               "The config file containing the datacenter and "
+                               "other management server "
+                               "information is specified")
+        parser.add_option("--deploy-dc", action="store_true",
                           default=False,
-                          dest="load",
-                          help="Only load the deployment configuration given")
-        parser.add_option("--log-folder-path",
-                          action="store",
+                          dest="deployDc",
+                          help="Deploys the DC with Given Configuration."
+                               "Requires only when DC needs to be deployed")
+        parser.add_option("--zone", action="zone_tests",
                           default=None,
-                          dest="log_folder_path",
-                          help="Path to the folder "
-                               "where log files will be stored")
+                          dest="zone",
+                          help="Runs all tests against this specified zone")
+        parser.add_option("--load-new-apis", action="store_true",
+                          default=False,
+                          dest="loadNewApiFlag",
+                          help="Loads the New Apis with Given Api Xml File."
+                               "Creates the new Api's from commands.xml File")
+        '''
+        Check if the configuration file is not valid,print and exit
+        '''
+        (options, args) = parser.parse_args()
+        if options.config_file is None:
+            parser.print_usage()
+            sys.exit(1)
         Plugin.options(self, parser, env)
 
     def wantClass(self, cls):
@@ -105,16 +127,44 @@ class MarvinPlugin(Plugin):
             return True
         return None
 
+    def prepareTest(self, test):
+        '''
+        @Desc : Initializes the marvin with required settings
+        '''
+        test_module_name = test.__str__()
+        if self.startMarvin(test_module_name) == FAILED:
+            print "Starting Marvin FAILED. Please Check Config and " \
+                  "Arguments Supplied"
+
+    def __checkImport(self, filename):
+        '''
+        @Desc : Verifies to Import the test Module before running and check
+                whether if it is importable.
+                This will check for test modules which has some issues to be
+                getting imported.
+                Returns False or True based upon the result.
+        '''
+        try:
+            __import__(filename)
+            return True
+        except ImportError, e:
+            self.tcRunLogger.exception("Module : %s Import "
+                                       "Failed Reason :%s"
+                                       % (filename, GetDetailExceptionInfo(e)))
+            return False
+
     def wantFile(self, filename):
         '''
-        Only python files will be used as test modules
+        @Desc : Only python files will be used as test modules
         '''
+        if filename is None or filename == '':
+            return False
         parts = filename.split(os.path.sep)
         base, ext = os.path.splitext(parts[-1])
-        if ext == '.py':
-            return True
-        else:
+        if ext != '.py':
             return False
+        else:
+            return self.__checkImport(filename)
 
     def loadTestsFromTestCase(self, cls):
         if cls.__name__ != 'cloudstackTestCase':
@@ -134,24 +184,15 @@ class MarvinPlugin(Plugin):
         Currently used to record start time for tests
         Dump Start Msg of TestCase to Log
         """
-        self.tcRunLogger.debug("::::::::::::STARTED : TC: " +
+        self.tcRunLogger.debug("\n\n::::::::::::STARTED : TC: " +
                                str(self.testName) + " :::::::::::")
         self.startTime = time.time()
-
-    def getErrorInfo(self, err):
-        '''
-        Extracts and returns the sanitized error message
-        '''
-        if err is not None:
-            return str(traceback.format_exc())
-        else:
-            return UNKNOWN_ERROR
 
     def handleError(self, test, err):
         '''
         Adds Exception throwing test cases and information to log.
         '''
-        err_msg = self.getErrorInfo(err)
+        err_msg = GetDetailExceptionInfo(err)
         self.tcRunLogger.fatal("%s: %s: %s" %
                                (EXCEPTION, self.testName, err_msg))
         self.testResult = EXCEPTION
@@ -160,12 +201,12 @@ class MarvinPlugin(Plugin):
         '''
         Adds Failing test cases and information to log.
         '''
-        err_msg = self.getErrorInfo(err)
+        err_msg = GetDetailExceptionInfo(err)
         self.tcRunLogger.fatal("%s: %s: %s" %
                                (FAILED, self.testName, err_msg))
         self.testResult = FAILED
 
-    def startMarvin(self):
+    def startMarvin(self, test_module_name):
         '''
         Initializes the Marvin
         creates the test Client
@@ -174,9 +215,11 @@ class MarvinPlugin(Plugin):
         Creates a debugstream for tc debug log
         '''
         try:
-            obj_marvininit = MarvinInit(self.configFile,
-                                        self.loadFlag,
-                                        self.logFolderPath)
+            obj_marvininit = MarvinInit(self.__configFile,
+                                        self.__loadNewApiFlag,
+                                        self.__deployDcFlag,
+                                        test_module_name,
+                                        self.__zoneForoTests)
             if obj_marvininit.init() == SUCCESS:
                 self.testClient = obj_marvininit.getTestClient()
                 self.tcRunLogger = obj_marvininit.getLogger()
@@ -191,7 +234,8 @@ class MarvinPlugin(Plugin):
             else:
                 return FAILED
         except Exception, e:
-            print "Exception Occurred under startMarvin: %s" % str(e)
+            print "Exception Occurred under startMarvin: %s" % \
+                  GetDetailExceptionInfo(e)
             return FAILED
 
     def stopTest(self, test):
@@ -221,5 +265,6 @@ class MarvinPlugin(Plugin):
         setattr(test, "clstestclient", self.testClient)
         if hasattr(test, "user"):
             # when the class-level attr applied. all test runs as 'user'
-            self.testClient.createUserApiClient(test.UserName, test.DomainName,
-                                                test.AcctType)
+            self.testClient.getUserApiClient(test.UserName,
+                                             test.DomainName,
+                                             test.AcctType)

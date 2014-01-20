@@ -20,17 +20,20 @@
 import logging
 import sys
 import time
-from marvin.codes import (NO,
-                          YES
+import os
+from marvin.codes import (SUCCESS,
+                          FAILED
                           )
+from marvin.cloudstackException import GetDetailExceptionInfo
 
 
 class MarvinLog:
     '''
+    @Name  : MarvinLog
     @Desc  : provides interface for logging to marvin
     @Input : logger_name : name for logger
     '''
-    logFormat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    logFormat = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     _instance = None
 
     def __new__(cls, logger_name):
@@ -39,13 +42,28 @@ class MarvinLog:
             return cls._instance
 
     def __init__(self, logger_name):
-        self.loggerName = logger_name
-        self.logger = None
+        '''
+        @Name: __init__
+        @Input: logger_name for logger
+        '''
+        self.__loggerName = logger_name
+        '''
+        Logger for Logging Info
+        '''
+        self.__logger = None
+        '''
+        Log Folder Directory
+        '''
+        self.__logFolderDir = None
         self.__setLogger()
 
     def __setLogger(self):
-        self.logger = logging.getLogger(self.loggerName)
-        self.logger.setLevel(logging.DEBUG)
+        '''
+        @Name : __setLogger
+        @Desc : Sets the Logger and Level
+        '''
+        self.__logger = logging.getLogger(self.__loggerName)
+        self.__logger.setLevel(logging.DEBUG)
 
     def setLogHandler(self, log_file_path, log_format=None,
                       log_level=logging.DEBUG):
@@ -54,6 +72,7 @@ class MarvinLog:
         @Input: log_file_path: Log File Path as where to store the logs
                log_format : Format of log messages to be dumped
                log_level : Determines the level of logging for this logger
+        @Output: SUCCESS if no issues else FAILED
         '''
         try:
             if log_file_path is not None:
@@ -66,8 +85,89 @@ class MarvinLog:
             else:
                 stream.setFormatter(self.__class__.logFormat)
             stream.setLevel(log_level)
-            self.logger.addHandler(stream)
+            self.__logger.addHandler(stream)
+            return SUCCESS
         except Exception, e:
-            print "\n Exception Occurred Under setLogHandler %s" % str(e)
-        finally:
-            return self.logger
+            print "\nException Occurred Under " \
+                  "setLogHandler %s" % GetDetailExceptionInfo(e)
+            return FAILED
+
+    def __cleanPreviousLogs(self, logfolder_to_remove):
+        '''
+        @Name : __cleanPreviousLogs
+        @Desc : Removes the Previous Logs
+        @Return: N\A
+        @Input: logfolder_to_remove: Path of Log to remove
+        '''
+        os.rmdir(logfolder_to_remove)
+
+    def getLogger(self):
+        '''
+        @Name:getLogger
+        @Desc : Returns the Logger
+        '''
+        return self.__logger
+
+    def getLogFolderPath(self):
+        '''
+        @Name : getLogFolderPath
+        @Desc : Returns the final log directory path for marvin run
+        '''
+        return self.__logFolderDir
+
+    def createLogs(self, test_module_name=None, log_cfg=None):
+        '''
+        @Name : createLogs
+        @Desc : Gets the Logger with file paths initialized and created
+        @Inputs :test_module_name: Test Module Name to use for logs while
+                 creating log folder path
+                 log_cfg: Log Configuration provided inside of
+                 Configuration
+        @Output : SUCCESS\FAILED
+        '''
+        try:
+            if log_cfg is None:
+                print "\nInvalid Log Folder Configuration." \
+                      "Please Check Config File"
+                return FAILED
+            if test_module_name is None:
+                temp_path = time.strftime("%b_%d_%Y_%H_%M_%S",
+                                          time.localtime())
+            else:
+                temp_path = test_module_name
+
+            if (('LogFolderPath' in log_cfg.__dict__.keys()) and
+                    (log_cfg.__dict__.get('LogFolderPath') is not None)):
+                self.__cleanPreviousLogs(log_cfg.
+                                         __dict__.
+                                         get('LogFolderPath') + "MarvinLogs/")
+                temp_dir = log_cfg.__dict__.get('LogFolderPath') + "MarvinLogs"
+            else:
+                temp_dir = "MarvinLogs"
+
+            self.__logFolderDir = temp_dir + temp_path
+            print "\n*********Log Folder Path: %s. " \
+                  "All logs will be available here **************" \
+                  % str(self.__logFolderDir)
+
+            os.makedirs(self.__logFolderDir)
+
+            '''
+            Log File Paths
+            1. FailedExceptionLog
+            2. RunLog contains the complete Run Information for Test Run
+            3. ResultFile contains the TC result information for Test Run
+            '''
+            tc_failed_exception_log = \
+                self.__logFolderDir + "/failed_plus_exceptions.txt"
+            tc_run_log = self.__logFolderDir + "/runinfo.txt"
+            if self.setLogHandler(tc_run_log,
+                                  log_level=logging.DEBUG) != FAILED:
+                self.setLogHandler(tc_failed_exception_log,
+                                   log_level=logging.FATAL)
+                return SUCCESS
+            return FAILED
+        except Exception, e:
+            print "\n Exception Occurred Under createLogs :%s" % \
+                  GetDetailExceptionInfo(e)
+            return FAILED

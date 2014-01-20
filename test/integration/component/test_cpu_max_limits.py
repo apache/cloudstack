@@ -251,7 +251,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=2)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -284,7 +284,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=8)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -325,7 +325,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=4, project_limit=2)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 
@@ -360,7 +360,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=6, project_limit=6)
 
-        api_client_admin = self.testClient.createUserApiClient(
+        api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,
             DomainName=self.child_do_admin.domain)
 

@@ -1300,7 +1300,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Trying to add network to vm with this api client, this should fail due to \
                     insufficient permission")
@@ -1478,7 +1478,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Trying to add network to vm with this api client, this should fail due to \
                     insufficient permission")
@@ -1749,7 +1749,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
         self.debug("Created account %s" % account.name)
 
         self.debug("creating user api client for account: %s" % account.name)
-        api_client = self.testClient.createUserApiClient(UserName=account.name, DomainName=self.account.domain)
+        api_client = self.testClient.getUserApiClient(UserName=account.name, DomainName=self.account.domain)
 
         self.debug("Listing virtual machine so that to retrive the list of non-default and default nic")
         vm_list = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)

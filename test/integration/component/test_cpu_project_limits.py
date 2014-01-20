@@ -136,7 +136,7 @@ class TestProjectsCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupProjectAccounts()
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.admin.name,
             DomainName=self.admin.domain)
 

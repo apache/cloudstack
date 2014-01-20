@@ -478,7 +478,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -550,7 +550,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -608,7 +608,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
             UserName=self.account.name,
             DomainName=self.account.domain)
 
@@ -680,7 +680,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             if cpu_account_gc[0].max != 16:
                 self.skipTest("This test case requires configuration value max.account.cpus to be 16")
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
 

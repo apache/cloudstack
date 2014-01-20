@@ -62,7 +62,7 @@ class workThread(threading.Thread):
         try:
             self.lock.acquire()
             result = self.connection.poll(job.jobId, job.responsecls).jobresult
-        except cloudstackException.cloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException, e:
             result = str(e)
         finally:
             self.lock.release()
@@ -102,7 +102,7 @@ class workThread(threading.Thread):
                     except:
                         pass
                     jobstatus.status = True
-        except cloudstackException.cloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException, e:
             jobstatus.result = str(e)
             jobstatus.status = False
         except:

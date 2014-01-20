@@ -495,7 +495,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -567,7 +567,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -625,7 +625,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 
@@ -698,7 +698,7 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
             if memory_account_gc[0].max != 8192:
                 self.skipTest("This test case requires configuration value max.account.memory to be 8192")
 
-	        api_client = self.testClient.createUserApiClient(
+	        api_client = self.testClient.getUserApiClient(
                              UserName=self.account.name,
                              DomainName=self.account.domain)
 

@@ -197,7 +197,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.cleanup.append(self.do_admin)
         self.cleanup.append(self.new_domain)
 
-        domainapiclient = self.testClient.createUserApiClient(self.do_admin.name, self.new_domain.name, 2)
+        domainapiclient = self.testClient.getUserApiClient(self.do_admin.name, self.new_domain.name, 2)
 
         aff_grp = self.create_aff_grp(api_client=domainapiclient, aff_grp=self.services["host_anti_affinity"],
                                             acc=self.do_admin.name, domainid=self.new_domain.id)
@@ -214,7 +214,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
 
-        userapiclient = self.testClient.createUserApiClient(self.user.name, self.domain.name)
+        userapiclient = self.testClient.getUserApiClient(self.user.name, self.domain.name)
 
         self.cleanup.append(self.user)
         aff_grp = self.create_aff_grp(api_client=userapiclient, aff_grp=self.services["host_anti_affinity"],
@@ -704,7 +704,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
                                         acctType=0)
@@ -740,7 +740,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
                                         acctType=0)
@@ -781,7 +781,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        user1apiclient = self.testClient.createUserApiClient(
+        user1apiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)
@@ -1294,7 +1294,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
                                         acctType=0)
@@ -1327,7 +1327,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.user2 = Account.create(self.apiclient, self.services["new_account1"])
         self.cleanup.append(self.user2)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
                                         acctType=0)
@@ -1549,7 +1549,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)
@@ -1588,7 +1588,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)
@@ -1638,7 +1638,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)
@@ -1674,7 +1674,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)
@@ -1706,7 +1706,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                                        self.services["new_account"])
 
         self.cleanup.append(self.user1)
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
                                         acctType=0)

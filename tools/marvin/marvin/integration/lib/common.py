@@ -68,6 +68,10 @@ from marvin.integration.lib.utils import (get_process_status,
 
 from marvin.sshClient import SshClient
 import random
+from utils import *
+from base import *
+from marvin.codes import PASS
+from marvin.integration.lib.utils import validateList
 
 #Import System modules
 import time
@@ -140,110 +144,155 @@ def add_netscaler(apiclient, zoneid, NSservice):
 
     return netscaler
 
-def get_region(apiclient, services=None):
-    "Returns a default region"
-
+def get_region(apiclient, region_id=None, region_name=None):
+    '''
+    @name : get_region
+    @Desc : Returns the Region Information for a given region  id or region name
+    @Input : region_name: Name of the Region
+             region_id : Id of the region
+    @Output : 1. Region  Information for the passed inputs else first Region
+              2. FAILED In case the cmd failed
+    '''
+    if region_id is None and region_name is None:
+        return FAILED
     cmd = listRegions.listRegionsCmd()
-    if services:
-        if "regionid" in services:
-            cmd.id = services["regionid"]
+    if region_name is not None:
+        cmd.name = region_name
+    if region_id is not None:
+        cmd.id = region_id
+    cmd_out = apiclient.listRegions(cmd)
+    return FAILED if validateList(cmd_out)[0] != PASS
+    return cmd_out
 
-    regions = apiclient.listRegions(cmd)
 
-    if isinstance(regions, list):
-        assert len(regions) > 0
-        return regions[0]
-    else:
-        raise Exception("Failed to find specified region.")
-
-def get_domain(apiclient, services=None):
-    "Returns a default domain"
-
+def get_domain(apiclient, domain_id=None, domain_name=None):
+    '''
+    @name : get_domain
+    @Desc : Returns the Domain Information for a given domain id or domain name
+    @Input : domain id : Id of the Domain
+             domain_name : Name of the Domain
+    @Output : 1. Domain  Information for the passed inputs else first Domain
+              2. FAILED In case the cmd failed
+    '''
     cmd = listDomains.listDomainsCmd()
-    if services:
-        if "domainid" in services:
-            cmd.id = services["domainid"]
 
-    domains = apiclient.listDomains(cmd)
-
-    if isinstance(domains, list):
-        assert len(domains) > 0
-        return domains[0]
-    else:
-        raise Exception("Failed to find specified domain.")
+    if domain_name is not None:
+        cmd.name = domain_name
+    if domain_id is not None:
+        cmd.id = domain_id
+    cmd_out = apiclient.listRegions(cmd)
+    return FAILED if validateList(cmd_out)[0] != PASS
+    return cmd_out
 
 
-def get_zone(apiclient, services=None):
-    "Returns a default zone"
-
+def get_zone(apiclient, zone_name=None, zone_id=None):
+    '''
+    @name : get_zone
+    @Desc :Returns the Zone Information for a given zone id or Zone Name
+    @Input : zone_name: Name of the Zone
+             zone_id : Id of the zone
+    @Output : 1. Zone Information for the passed inputs else first zone
+              2. FAILED In case the cmd failed
+    '''
     cmd = listZones.listZonesCmd()
-    if services:
-        if "zoneid" in services:
-            cmd.id = services["zoneid"]
+    if zone_name is not None:
+        cmd.name = zone_name
+    if zone_id is not None:
+        cmd.id = zone_id
 
-    zones = apiclient.listZones(cmd)
+    cmd_out = apiclient.listZones(cmd)
 
-    if isinstance(zones, list):
-        assert len(zones) > 0, "There are no available zones in the deployment"
-        return zones[0]
+    return FAILED if (validateList(cmd_out)[0] != PASS)
+    '''
+    Check if input zone name and zone id is None,
+    then return first element of List Zones command
+    '''
+    if ( zone_name is None and zone_id is None ) 
+        return cmd_out[0]
     else:
-        raise Exception("Failed to find specified zone.")
+        return cmd_out
 
 
-def get_pod(apiclient, zoneid, services=None):
-    "Returns a default pod for specified zone"
 
+def get_pod(apiclient, pod_id=None, pod_name=None, zone_id=None):
+    '''
+    @name : get_pod
+    @Desc :  Returns the Pod Information for a given zone id or Zone Name
+    @Input : pod_name : Name of the Pod
+             pod_id : Id of the Pod
+             zone_id: Id of the Zone
+    @Output : 1. Pod Information for the pod
+              2. FAILED In case the cmd failed
+    '''
     cmd = listPods.listPodsCmd()
-    cmd.zoneid = zoneid
 
-    if services:
-        if "podid" in services:
-            cmd.id = services["podid"]
+    if pod_name is not None:
+        cmd.name = pod_name
+    if pod_id is not None:
+        cmd.id = pod_id
+    if zone_id is not None:
+        cmd.zoneid = zone_id
 
-    pods = apiclient.listPods(cmd)
+    cmd_out = apiclient.listPods(cmd)
 
-    if isinstance(pods, list):
-        assert len(pods) > 0, "No pods found for zone %s"%zoneid
-        return pods[0]
-    else:
-        raise Exception("Exception: Failed to find specified pod.")
+    return FAILED if ( validateList(cmd_out)[0] != PASS )
+    return cmd_out
 
 
-def get_template(apiclient, zoneid, ostype, services=None,
-                 templatefilter='featured',
-                 templatetype='BUILTIN'):
-    "Returns a template"
+def get_template(apiclient, template_id=None, template_name=None, account=None, template_type='BUILTIN'
+                 domain_id=None, zone_id=None, project_id=None,
+                 hypervisor=None, ostype_desc=None, template_filter="featured"):
+    '''
+    @Name : get_template
+    @Desc : Retrieves the template Information based upon inputs provided
+            Template is retrieved based upon either of the inputs matched 
+            condition
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
 
+    '''
+    Get OS TypeID First based upon ostype_desc
+    '''
     cmd = listOsTypes.listOsTypesCmd()
-    cmd.description = ostype
-    ostypes = apiclient.listOsTypes(cmd)
+    cmd.description = ostype_desc
+    ostypes_out = apiclient.listOsTypes(cmd)
 
-    if isinstance(ostypes, list):
-        ostypeid = ostypes[0].id
-    else:
-        raise Exception(
-            "Failed to find OS type with description: %s" % ostype)
+    return FAILED if (validateList(ostypes_out)[0] != PASS )
 
-    cmd = listTemplates.listTemplatesCmd()
-    cmd.templatefilter = templatefilter
-    cmd.zoneid = zoneid
+    ostype_id = ostypes_out[0].id
 
-    if services:
-        if "template" in services:
-            cmd.id = services["template"]
+    listcmd = listTemplates.listTemplatesCmd()
+    cmd.templatefilter = template_filter
+    if domain_id is not None:
+        cmd.domainid = domain_id
+    if zone_id is not None:
+        cmd.zoneid = zone_id
+    if template_id is not None:
+        cmd.id = template_id
+    if template_name is not None:
+        cmd.name = template_name
+    if hypervisor is not None:
+        cmd.hypervisor = hypervisor
+    if project_id is not None:
+        cmd.projectid = project_id
+    if account is not None:
+        cmd.account = account
 
-    list_templates = apiclient.listTemplates(cmd)
+    '''
+    Get the Templates pertaining
+    '''
+    list_templatesout = apiclient.listTemplates(cmd)
+    return FAILED if validateList(list_templatesout)[0] != PASS
 
-    if isinstance(list_templates, list):
-        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
-        for template in list_templates:
-            if template.ostypeid == ostypeid and template.isready and template.templatetype == templatetype:
-                return template
-
-    raise Exception("Exception: Failed to find template of type %s with OSTypeID and which is in "
-                                "ready state: %s" %(templatetype, ostypeid))
-    return
-
+    for template in list_templatesout:
+        if template.ostypeid == ostype_id and template.isready and template.templatetype == template_type:
+            return template
+    '''
+    Return Failed if None of the templates matched
+    '''
+    return FAILED
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
@@ -251,13 +300,13 @@ def download_systemplates_sec_storage(server, services):
     try:
         # Login to management server
         ssh = SshClient(
-                                          server["ipaddress"],
-                                          server["port"],
-                                          server["username"],
-                                          server["password"]
-                             )
+                        server["ipaddress"],
+                        server["port"],
+                        server["username"],
+                        server["password"]
+                       )
     except Exception:
-        raise Exception("SSH access failted for server with IP address: %s" %
+        raise Exception("SSH access failed for server with IP address: %s" %
                                                             server["ipaddess"])
     # Mount Secondary Storage on Management Server
     cmds = [

@@ -396,7 +396,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 
@@ -438,7 +438,7 @@ class TestVPNUsers(cloudstackTestCase):
                                domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
-        api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
 

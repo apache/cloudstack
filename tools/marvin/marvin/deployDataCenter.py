@@ -17,20 +17,28 @@
 
 """Deploy datacenters according to a json configuration file"""
 import configGenerator
-import cloudstackException
-import cloudstackTestClient
+from cloudstackException import (
+    InvalidParameterException,
+    GetDetailExceptionInfo)
+
 import logging
 from cloudstackAPI import *
 from os import path
 from time import sleep
 from optparse import OptionParser
+from marvin.codes import (FAILED, SUCCESS)
+from sys import exit
 
 
-class deployDataCenters(object):
-
-    def __init__(self, cfg, logger=None):
+class DeployDataCenters(object):
+    '''
+    @Desc : Deploys the Data Center with information provided
+    '''
+    def __init__(self, test_client, cfg, logger=None):
+        self.testClient = test_client
         self.config = cfg
         self.tcRunLogger = logger
+        self.apiClient = None
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
@@ -50,7 +58,9 @@ class deployDataCenters(object):
             hostcmd.username = host.username
             hostcmd.zoneid = zoneId
             hostcmd.hypervisor = hypervisor
-            self.apiClient.addHost(hostcmd)
+            if self.apiClient.addHost(hostcmd) == FAILED:
+                self.tcRunLogger.exception("=== Adding Host Failed===")
+                exit(1)
 
     def addVmWareDataCenter(self, vmwareDc):
         vdc = addVmwareDc.addVmwareDcCmd()
@@ -59,12 +69,13 @@ class deployDataCenters(object):
         vdc.vcenter = vmwareDc.vcenter
         vdc.username = vmwareDc.username
         vdc.password = vmwareDc.password
-        self.apiClient.addVmwareDc(vdc)
+        if self.apiClient.addVmwareDc(vdc) == FAILED:
+            self.tcRunLogger.exception("=== Adding VmWare DC Failed===")
+            exit(1)
 
     def createClusters(self, clusters, zoneId, podId, vmwareDc=None):
         if clusters is None:
             return
-
         if vmwareDc is not None:
             vmwareDc.zoneid = zoneId
             self.addVmWareDataCenter(vmwareDc)
@@ -80,13 +91,22 @@ class deployDataCenters(object):
             clustercmd.username = cluster.username
             clustercmd.zoneid = zoneId
             clusterresponse = self.apiClient.addCluster(clustercmd)
-            clusterId = clusterresponse[0].id
-
+            if clusterresponse != FAILED and clusterresponse[0].id is not None:
+                clusterId = clusterresponse[0].id
+                self.tcRunLogger.\
+                    debug("Cluster Name : %s Id : %s Created Successfully"
+                          % (str(cluster.clustername), str(clusterId)))
+            else:
+                self.tcRunLogger.exception("====Cluster %s Creation Failed"
+                                           "=====" % str(cluster.clustername))
+                exit(1)
             if cluster.hypervisor.lower() != "vmware":
                 self.addHosts(cluster.hosts, zoneId, podId, clusterId,
                               cluster.hypervisor)
             self.waitForHost(zoneId, clusterId)
-            self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,
+            self.createPrimaryStorages(cluster.primaryStorages,
+                                       zoneId,
+                                       podId,
                                        clusterId)
 
     def waitForHost(self, zoneId, clusterId):
@@ -99,6 +119,9 @@ class deployDataCenters(object):
         cmd = listHosts.listHostsCmd()
         cmd.clusterid, cmd.zoneid = clusterId, zoneId
         hosts = self.apiClient.listHosts(cmd)
+        if hosts == FAILED:
+            self.tcRunLogger.exception("=== List Hosts Failed===")
+            exit(1)
         while retry != 0:
             for host in hosts:
                 if host.state != 'Up':
@@ -106,7 +129,11 @@ class deployDataCenters(object):
             sleep(timeout)
             retry = retry - 1
 
-    def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
+    def createPrimaryStorages(self,
+                              primaryStorages,
+                              zoneId,
+                              podId,
+                              clusterId):
         if primaryStorages is None:
             return
         for primary in primaryStorages:
@@ -118,9 +145,15 @@ class deployDataCenters(object):
             primarycmd.url = primary.url
             primarycmd.zoneid = zoneId
             primarycmd.clusterid = clusterId
-            self.apiClient.createStoragePool(primarycmd)
+            if self.apiClient.createStoragePool(primarycmd) == FAILED:
+                self.tcRunLogger.\
+                    exception("=== Create Storage Pool Failed===")
+                exit(1)
 
-    def createPods(self, pods, zoneId, networkId=None):
+    def createPods(self,
+                   pods,
+                   zoneId,
+                   networkId=None):
         if pods is None:
             return
         for pod in pods:
@@ -132,7 +165,17 @@ class deployDataCenters(object):
             createpod.endip = pod.endip
             createpod.zoneid = zoneId
             createpodResponse = self.apiClient.createPod(createpod)
-            podId = createpodResponse.id
+            if createpodResponse != \
+                    FAILED and createpodResponse.id is not None:
+                podId = createpodResponse.id
+                self.tcRunLogger.debug("Pod Name : %s Id : %s "
+                                       "Created Successfully" %
+                                       (str(pod.name), str(podId)))
+            else:
+                self.tcRunLogger.\
+                    exception("====Pod: %s Creation "
+                              "Failed=====" % str(pod.name))
+                exit(1)
 
             if pod.guestIpRanges is not None and networkId is not None:
                 self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,
@@ -164,7 +207,10 @@ class deployDataCenters(object):
                     vlanipcmd.forvirtualnetwork = "false"
             else:
                 vlanipcmd.forvirtualnetwork = "true"
-            self.apiClient.createVlanIpRange(vlanipcmd)
+            if self.apiClient.createVlanIpRange(vlanipcmd) == FAILED:
+                self.tcRunLogger.\
+                    exception("=== Create Vlan Ip Range Failed===")
+                exit(1)
 
     def createSecondaryStorages(self, secondaryStorages, zoneId):
         if secondaryStorages is None:
@@ -184,7 +230,10 @@ class deployDataCenters(object):
                                                 })
             if secondarycmd.provider == "NFS":
                 secondarycmd.zoneid = zoneId
-            self.apiClient.addImageStore(secondarycmd)
+            if self.apiClient.addImageStore(secondarycmd) == FAILED:
+                self.tcRunLogger.\
+                    exception("=== Add Image Store Failed===")
+                exit(1)
 
     def createCacheStorages(self, cacheStorages, zoneId):
         if cacheStorages is None:
@@ -203,7 +252,11 @@ class deployDataCenters(object):
                                             'key': key,
                                             'value': value
                                             })
-            self.apiClient.createSecondaryStagingStore(cachecmd)
+            if self.apiClient.createSecondaryStagingStore(cachecmd) == FAILED:
+                self.tcRunLogger.\
+                    exception("=== Create "
+                              "SecondaryStagingStorage Failed===")
+                exit(1)
 
     def createNetworks(self, networks, zoneId):
         if networks is None:
@@ -224,7 +277,17 @@ class deployDataCenters(object):
                 networkcmd.netmask = iprange.netmask
 
             networkcmdresponse = self.apiClient.createNetwork(networkcmd)
-            networkId = networkcmdresponse.id
+            if networkcmdresponse != \
+                    FAILED and networkcmdresponse.id is not None:
+                networkId = networkcmdresponse.id
+                self.tcRunLogger.\
+                    debug("Network Name : %s Id : %s Created Successfully"
+                          % (str(network.name), str(networkId)))
+            else:
+                self.tcRunLogger.\
+                    exception("====Network : %s "
+                              "Creation Failed=====" % str(network.name))
+                exit(1)
             return networkId
 
     def createPhysicalNetwork(self, net, zoneid):
@@ -233,30 +296,48 @@ class deployDataCenters(object):
         phynet.name = net.name
         phynet.isolationmethods = net.isolationmethods
         phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
+        if phynetwrk != FAILED and phynetwrk.id is not None:
+            self.tcRunLogger.debug("Physical Network Name : %s Id : %s "
+                                   "Created Successfully" %
+                                   (str(phynet.name),
+                                    str(phynetwrk.id)))
+        else:
+            self.tcRunLogger.exception("====Physical Network "
+                                       "Creation Failed=====")
+            exit(1)
         self.addTrafficTypes(phynetwrk.id, net.traffictypes)
         return phynetwrk
 
-    def updatePhysicalNetwork(self, networkid, state="Enabled", vlan=None):
+    def updatePhysicalNetwork(self, networkid, state="Enabled",
+                              vlan=None):
         upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
         upnet.id = networkid
         upnet.state = state
         if vlan:
             upnet.vlan = vlan
-        return self.apiClient.updatePhysicalNetwork(upnet)
+        ret = self.apiClient.updatePhysicalNetwork(upnet)
+        if ret == FAILED:
+            self.tcRunLogger.\
+                exception("====Update Physical Network Failed=====")
+            exit(1)
+        else:
+            return ret
 
     def enableProvider(self, provider_id):
         upnetprov =\
             updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
         upnetprov.id = provider_id
         upnetprov.state = "Enabled"
-        self.apiClient.updateNetworkServiceProvider(upnetprov)
+        if self.apiClient.updateNetworkServiceProvider(upnetprov) == FAILED:
+            self.tcRunLogger.\
+                exception("====Update Network Service Provider Failed=====")
+            exit(1)
 
     def configureProviders(self, phynetwrk, providers):
         """
         We will enable the virtualrouter elements for all zones. Other
         providers like NetScalers, SRX, etc are explicitly added/configured
         """
-
         for provider in providers:
             pnetprov = listNetworkServiceProviders.\
                 listNetworkServiceProvidersCmd()
@@ -264,6 +345,11 @@ class deployDataCenters(object):
             pnetprov.state = "Disabled"
             pnetprov.name = provider.name
             pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
+            if pnetprovres == FAILED:
+                self.tcRunLogger.\
+                    exception("====List Network "
+                              "Service Providers Failed=====")
+                exit(1)
 
             if pnetprovres and len(pnetprovres) > 0:
                 if provider.name == 'VirtualRouter'\
@@ -280,7 +366,13 @@ class deployDataCenters(object):
                         configureVirtualRouterElementCmd()
                     vrconfig.enabled = "true"
                     vrconfig.id = vrprovid
-                    self.apiClient.configureVirtualRouterElement(vrconfig)
+                    if self.apiClient.\
+                        configureVirtualRouterElement(vrconfig) == \
+                            FAILED:
+                        self.tcRunLogger.\
+                            exception("====ConfigureVirtualRouterElement "
+                                      "Failed=====")
+                        exit(1)
                     self.enableProvider(pnetprovres[0].id)
                 elif provider.name == 'InternalLbVm':
                     internallbprov = listInternalLoadBalancerElements.\
@@ -288,8 +380,13 @@ class deployDataCenters(object):
                     internallbprov.nspid = pnetprovres[0].id
                     internallbresponse = self.apiClient.\
                         listInternalLoadBalancerElements(internallbprov)
+                    if internallbresponse == FAILED:
+                        self.tcRunLogger.\
+                            exception("====List "
+                                      "InternalLoadBalancerElements "
+                                      "Failed=====")
+                        exit(1)
                     internallbid = internallbresponse[0].id
-
                     internallbconfig = \
                         configureInternalLoadBalancerElement.\
                         configureInternalLoadBalancerElementCmd()
@@ -333,9 +430,10 @@ class deployDataCenters(object):
                         dev.physicalnetworkid = phynetwrk.id
                         self.apiClient.addF5LoadBalancer(dev)
                     else:
-                        raise cloudstackException.\
-                            InvalidParameterException("Device %s doesn't match\
- any know provider type" % device)
+                        raise InvalidParameterException("Device %s "
+                                                        "doesn't match "
+                                                        "any know provider "
+                                                        "type" % device)
                 self.enableProvider(result.id)
 
     def addTrafficTypes(self, physical_network_id, traffictypes):
@@ -354,19 +452,32 @@ class deployDataCenters(object):
             if traffictype.vmware is not None else None
         traffic_type.simulatorlabel = traffictype.simulator\
             if traffictype.simulator is not None else None
-        return self.apiClient.addTrafficType(traffic_type)
+        ret = self.apiClient.addTrafficType(traffic_type)
+        if ret == FAILED:
+            self.tcRunLogger.\
+                exception("==== Add TrafficType Failed=====")
+        else:
+            return ret
 
     def enableZone(self, zoneid, allocation_state="Enabled"):
         zoneCmd = updateZone.updateZoneCmd()
         zoneCmd.id = zoneid
         zoneCmd.allocationstate = allocation_state
-        return self.apiClient.updateZone(zoneCmd)
+        ret = self.apiClient.updateZone(zoneCmd)
+        if ret == FAILED:
+            self.tcRunLogger.exception("==== Update Zone Failed=====")
+        else:
+            return ret
 
     def updateZoneDetails(self, zoneid, details):
         zoneCmd = updateZone.updateZoneCmd()
         zoneCmd.id = zoneid
         zoneCmd.details = details
-        return self.apiClient.updateZone(zoneCmd)
+        ret = self.apiClient.updateZone(zoneCmd)
+        if ret == FAILED:
+            self.tcRunLogger.exception("==== Update Zone  Failed=====")
+        else:
+            return ret
 
     def createZones(self, zones):
         for zone in zones:
@@ -383,7 +494,16 @@ class deployDataCenters(object):
                 createzone.guestcidraddress = zone.guestcidraddress
 
             zoneresponse = self.apiClient.createZone(createzone)
-            zoneId = zoneresponse.id
+            if zoneresponse != FAILED and zoneresponse.id is not None:
+                zoneId = zoneresponse.id
+                self.tcRunLogger.debug("Zone Name : %s Id : %s "
+                                       "Created Successfully" %
+                                       (str(zone.name), str(zoneId)))
+            else:
+                self.tcRunLogger.\
+                    exception("====ZoneCreation :  %s Failed=====" %
+                              str(zone.name))
+                exit(1)
 
             for pnet in zone.physical_networks:
                 phynetwrk = self.createPhysicalNetwork(pnet, zoneId)
@@ -406,7 +526,11 @@ class deployDataCenters(object):
 
                 listnetworkofferingresponse = \
                     self.apiClient.listNetworkOfferings(listnetworkoffering)
-
+                if listnetworkofferingresponse == FAILED:
+                    self.tcRunLogger.\
+                        exception("==== "
+                                  "ListNetworkOfferingResponse Failed=====")
+                    exit(1)
                 guestntwrk = configGenerator.network()
                 guestntwrk.displaytext = "guestNetworkForBasicZone"
                 guestntwrk.name = "guestNetworkForBasicZone"
@@ -437,7 +561,11 @@ class deployDataCenters(object):
 
                 listnetworkofferingresponse = \
                     self.apiClient.listNetworkOfferings(listnetworkoffering)
-
+                if listnetworkofferingresponse == FAILED:
+                    self.tcRunLogger.\
+                        exception("==== ListNetworkOfferingResponse "
+                                  "Failed=====")
+                    exit(1)
                 networkcmd = createNetwork.createNetworkCmd()
                 networkcmd.displaytext = "Shared SG enabled network"
                 networkcmd.name = "Shared SG enabled network"
@@ -455,7 +583,16 @@ class deployDataCenters(object):
                     networkcmd.vlan = iprange.vlan
 
                 networkcmdresponse = self.apiClient.createNetwork(networkcmd)
-                networkId = networkcmdresponse.id
+                if networkcmdresponse != \
+                        FAILED and networkcmdresponse.id is not None:
+                    networkId = networkcmdresponse.id
+                    self.tcRunLogger.\
+                        debug("Network Id : %s "
+                              "Created Successfully" % str(networkId))
+                else:
+                    self.tcRunLogger.\
+                        exception("====Network Creation Failed=====")
+                    exit(1)
                 self.createPods(zone.pods, zoneId, networkId)
 
             '''Note: Swift needs cache storage first'''
@@ -479,64 +616,21 @@ class deployDataCenters(object):
             return True
         return False
 
-    def registerApiKey(self):
-        listuser = listUsers.listUsersCmd()
-        listuser.account = "admin"
-        listuserRes = self.testClient.getApiClient().listUsers(listuser)
-        userId = listuserRes[0].id
-        apiKey = listuserRes[0].apikey
-        securityKey = listuserRes[0].secretkey
-        if apiKey is None:
-            registerUser = registerUserKeys.registerUserKeysCmd()
-            registerUser.id = userId
-            registerUserRes = \
-                self.testClient.getApiClient().registerUserKeys(registerUser)
-
-            apiKey = registerUserRes.apikey
-            securityKey = registerUserRes.secretkey
-
-        self.config.mgtSvr[0].port = 8080
-        self.config.mgtSvr[0].apiKey = apiKey
-        self.config.mgtSvr[0].securityKey = securityKey
-        return apiKey, securityKey
-
-    def loadCfg(self):
-        ''' Retrieving Management Server Connection Details '''
-        mgtDetails = self.config.mgtSvr[0]
-        ''' Retrieving Database Connection Details'''
-        dbSvrDetails = self.config.dbSvr
-
-        self.testClient = \
-            cloudstackTestClient.\
-            cloudstackTestClient(mgtDetails,
-                                 dbSvrDetails,
-                                 logger=self.tcRunLogger)
-
-        if mgtDetails.apiKey is None:
-            mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
-            mgtDetails.port = 8080
-            self.testClient = \
-                cloudstackTestClient.cloudstackTestClient(
-                    mgtDetails,
-                    dbSvrDetails,
-                    logger=self.tcRunLogger)
-
+    def setClient(self):
         self.apiClient = self.testClient.getApiClient()
-        """set hypervisor"""
-        if mgtDetails.hypervisor:
-            self.apiClient.hypervisor = mgtDetails.hypervisor
-        else:
-            self.apiClient.hypervisor = "XenServer"  # Defaults to Xenserver
 
     def updateConfiguration(self, globalCfg):
-        if globalCfg is None:
+        if globalCfg is None or self.apiClient is None:
             return None
 
         for config in globalCfg:
             updateCfg = updateConfiguration.updateConfigurationCmd()
             updateCfg.name = config.name
             updateCfg.value = config.value
-            self.apiClient.updateConfiguration(updateCfg)
+            if self.apiClient.updateConfiguration(updateCfg) == FAILED:
+                self.tcRunLogger.\
+                    exception("===UpdateConfiguration Failed===")
+                exit(1)
 
     def copyAttributesToCommand(self, source, command):
         map(lambda attr: setattr(command, attr, getattr(source, attr, None)),
@@ -548,28 +642,61 @@ class deployDataCenters(object):
             return
         command = addS3.addS3Cmd()
         self.copyAttributesToCommand(s3, command)
-        self.apiClient.addS3(command)
+        if self.apiClient.addS3(command) == FAILED:
+            self.tcRunLogger.exception("====AddS3 Failed===")
+            exit(1)
 
     def deploy(self):
-        self.loadCfg()
-        self.updateConfiguration(self.config.globalConfig)
-        self.createZones(self.config.zones)
-        self.configureS3(self.config.s3)
+        try:
+            self.setClient()
+            self.updateConfiguration(self.config.globalConfig)
+            self.createZones(self.config.zones)
+            self.configureS3(self.config.s3)
+            return SUCCESS
+        except Exception, e:
+            print "\nException Occurred Under deploy :%s" % \
+                  GetDetailExceptionInfo(e)
+            return FAILED
 
 if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-i", "--input", action="store",
-                      default="./datacenterCfg", dest="input", help="the path \
+                      default="./datacenterCfg", dest="input",
+                      help="the path \
                       where the json config file generated, by default is \
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()
-    from marvin.marvinLog import MarvinLog
-    cfg = configGenerator.getSetupConfig(options.input)
-    log_obj = MarvinLog("CSLog")
-    tcRunLogger = log_obj.setLogHandler("/tmp/debug.log")
-    deploy = deployDataCenters(cfg, tcRunLogger)
-    deploy.deploy()
+    if options.input:
+        '''
+        Imports the Modules Required
+        '''
+        from marvin.marvinLog import MarvinLog
+        from marvin.cloudstackTestClient import CSTestClient
+
+        cfg = configGenerator.getSetupConfig(options.input)
+        log_obj = MarvinLog("CSLog")
+        tcRunLogger = log_obj.setLogHandler("/tmp/debug.log")
+        if tcRunLogger is None:
+            print "\nLogger Creation Failed. " \
+                  "Please Check"
+            exit(1)
+        else:
+            print "\nAll Logs Are Available " \
+                  "Under /tmp/debug.log File"
+        obj_tc_client = CSTestClient(cfg.mgtSvr[0], cfg.dbSvr,
+                                     logger=tcRunLogger)
+        if obj_tc_client is not None and obj_tc_client.CreateTestClient() \
+                != FAILED:
+            deploy = DeployDataCenters(obj_tc_client, cfg, tcRunLogger)
+            if deploy.deploy() == FAILED:
+                print "\nDeploy DC Failed"
+                exit(1)
+        else:
+            print "\nTestClient Creation Failed. Please Check"
+            exit(1)
+    else:
+        print "\n Please Specify a Valid Configuration File"
 
     """
     create = createStoragePool.createStoragePoolCmd()

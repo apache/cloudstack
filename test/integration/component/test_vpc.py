@@ -1934,7 +1934,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("creating a VPC network in the account: %s" %
                                                     user.name)
 
-        userapiclient = self.testClient.createUserApiClient(
+        userapiclient = self.testClient.getUserApiClient(
                                         UserName=user.name,
                                         DomainName=user.domain,
                                         acctType=0)

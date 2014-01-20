@@ -233,7 +233,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -370,7 +370,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -429,7 +429,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -489,7 +489,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-            api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.getUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
@@ -706,11 +706,11 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
 
-        api_client_cadmin_1 = self.testClient.createUserApiClient(
+        api_client_cadmin_1 = self.testClient.getUserApiClient(
                             UserName=self.cadmin_1.name,
                             DomainName=self.cadmin_1.domain)
 
-        api_client_cadmin_2 = self.testClient.createUserApiClient(
+        api_client_cadmin_2 = self.testClient.getUserApiClient(
                             UserName=self.cadmin_2.name,
                             DomainName=self.cadmin_2.domain)
 

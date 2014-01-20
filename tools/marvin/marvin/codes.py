@@ -47,3 +47,18 @@ YES = "yes"
 FAILED = "FAILED"
 UNKNOWN_ERROR = "Unknown Error"
 EXCEPTION = "EXCEPTION"
+INVALID_RESPONSE = "Invalid Response"
+'''
+Async Job Related Codes
+'''
+JOB_INPROGRESS = 0
+JOB_SUCCEEDED = 1
+JOB_FAILED = 2
+JOB_CANCELLED = 3
+'''
+User Related Codes
+'''
+ADMIN = 1
+DOMAIN_ADMIN = 2
+USER = 0
+XEN_SERVER = "XenServer"
