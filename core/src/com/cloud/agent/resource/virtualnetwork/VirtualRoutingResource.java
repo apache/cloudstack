@@ -215,9 +215,6 @@ public class VirtualRoutingResource {
 
     private Answer execute(SetFirewallRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
-        for (int i = 0; i < cmd.getRules().length; i++) {
-            results[i] = "Failed";
-        }
         String routerAccessIp = cmd.getRouterAccessIp();
         String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
 
@@ -260,9 +257,13 @@ public class VirtualRoutingResource {
         }
 
         if (!result.isSuccess()) {
+            //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+            for (int i = 0; i < results.length; i++) {
+                results[i] = "Failed: " + result.getDetails();
+            }
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
-        return new SetFirewallRulesAnswer(cmd, true, null);
+        return new SetFirewallRulesAnswer(cmd, true, results);
 
     }
 
@@ -292,7 +293,7 @@ public class VirtualRoutingResource {
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
 
-    protected Answer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         boolean endResult = true;
@@ -315,7 +316,7 @@ public class VirtualRoutingResource {
 
     }
 
-    private Answer execute(SetStaticNatRulesCommand cmd) {
+    private SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
         if (cmd.getVpcId() != null) {
             return SetVPCStaticNatRules(cmd);
         }
@@ -364,7 +365,11 @@ public class VirtualRoutingResource {
             tmpCfgFileContents += "\n";
         }
 
-        if (!_vrDeployer.createFileInVR(cmd.getRouterAccessIp(), "/etc/haproxy/", "haproxy.cfg.new", tmpCfgFileContents).isSuccess()) {
+        String tmpCfgFilePath = "/etc/haproxy/";
+        String tmpCfgFileName = "haproxy.cfg.new";
+        ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents);
+
+        if (!result.isSuccess()) {
             return new Answer(cmd, false, "Fail to copy LB config file to VR");
         }
 
@@ -400,8 +405,6 @@ public class VirtualRoutingResource {
 
             args += " -s " + sb.toString();
         }
-
-        ExecutionResult result;
 
         if (cmd.getVpcId() == null) {
             args = " -i " + routerIp + args;
@@ -490,6 +493,7 @@ public class VirtualRoutingResource {
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
+        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
         args = args + "- ";
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
@@ -514,7 +518,7 @@ public class VirtualRoutingResource {
 
         String args = "";
         for (String ip : cmd.getVpnIps()) {
-            args += " " + ip;
+            args += ip + " ";
         }
 
         ExecutionResult result = _vrDeployer.executeInVR(routerIP, "checkbatchs2svpn.sh", args);
@@ -551,9 +555,9 @@ public class VirtualRoutingResource {
     }
 
     protected Answer execute(Site2SiteVpnCfgCommand cmd) {
-        String args;
+        String args = "";
         if (cmd.isCreate()) {
-            args = "-A";
+            args += "-A";
             args += " -l ";
             args += cmd.getLocalPublicIp();
             args += " -n ";
@@ -584,7 +588,7 @@ public class VirtualRoutingResource {
                 args += " -p ";
             }
         } else {
-            args = "-D";
+            args += "-D";
             args += " -r ";
             args += cmd.getPeerGatewayIp();
             args += " -n ";
