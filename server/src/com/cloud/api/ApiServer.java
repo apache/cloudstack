@@ -52,34 +52,6 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
-import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
-import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.ExceptionResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -110,6 +82,35 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncCommandQueued;
@@ -611,14 +612,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (userId != null) {
                 User user = ApiDBUtils.findUserById(userId);
 
-                try{
+                try {
                     checkCommandAvailable(user, commandName);
-                }
-                catch (RequestLimitException ex){
+                } catch (RequestLimitException ex) {
                     s_logger.debug(ex.getMessage());
                     throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
-                }
-                catch (PermissionDeniedException ex){
+                } catch (PermissionDeniedException ex) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
@@ -720,10 +719,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try{
                 checkCommandAvailable(user, commandName);
-            }
-            catch (PermissionDeniedException ex){
+            } catch (RequestLimitException ex) {
+                s_logger.debug(ex.getMessage());
+                throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
+            } catch (PermissionDeniedException ex) {
                 s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:"
+                        + userId);
             }
 
             // verify secret key exists
