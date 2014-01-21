@@ -23,6 +23,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 
@@ -146,18 +147,18 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                                     processNumber = new Long(1);
                                 else
                                     processNumber = processNumber + 1;
-        
+
                                 Date dt = DateUtil.currentGMTTime();
                                 queueVO.setLastProcessNumber(processNumber);
                                 queueVO.setLastUpdated(dt);
                                 queueVO.setQueueSize(queueVO.getQueueSize() + 1);
                                 _syncQueueDao.update(queueVO.getId(), queueVO);
-        
+
                                 itemVO.setLastProcessMsid(msid);
                                 itemVO.setLastProcessNumber(processNumber);
                                 itemVO.setLastProcessTime(dt);
                                 _syncQueueItemDao.update(item.getId(), itemVO);
-        
+
                                 resultList.add(item);
                             }
                         }
@@ -183,9 +184,9 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                     SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
                     if(itemVO != null) {
                         SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
-        
+
                         _syncQueueItemDao.expunge(itemVO.getId());
-        
+
                         // if item is active, reset queue information
                         if (itemVO.getLastProcessMsid() != null) {
                             queueVO.setLastUpdated(DateUtil.currentGMTTime());
@@ -239,18 +240,15 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
     }
 
     private boolean queueReadyToProcess(SyncQueueVO queueVO) {
-    	return true;
-    	
-    	//
-    	// TODO
-    	//
-    	// Need to disable concurrency disable at queue level due to the need to support
-    	// job wake-up dispatching task
-    	//
-    	// Concurrency control is better done at higher level and leave the job scheduling/serializing simpler
-    	//
-    	
-        // return queueVO.getQueueSize() < queueVO.getQueueSizeLimit();
+        int nActiveItems = _syncQueueItemDao.getActiveQueueItemCount(queueVO.getId());
+        if (nActiveItems < queueVO.getQueueSizeLimit())
+            return true;
+
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Queue (queue id, sync type, sync id) - (" + queueVO.getId()
+                    + "," + queueVO.getSyncObjType() + ", " + queueVO.getSyncObjId()
+                    + ") is reaching concurrency limit " + queueVO.getQueueSizeLimit());
+        return false;
     }
 
     @Override
