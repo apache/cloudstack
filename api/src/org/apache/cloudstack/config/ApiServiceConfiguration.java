@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.config;
 
+import javax.ejb.Local;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+@Local(value = {ApiServiceConfiguration.class})
 public class ApiServiceConfiguration implements Configurable {
     public static final ConfigKey<String> ManagementHostIPAdr = new ConfigKey<String>("Advanced", String.class, "host", "localhost", "The ip address of management server", true);
     public static final ConfigKey<String> ApiServletPath = new ConfigKey<String>("Advanced", String.class, "api.servlet.endpoint", "http://localhost:8080/client/api?",
@@ -31,7 +34,7 @@ public class ApiServiceConfiguration implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ManagementHostIPAdr};
+        return new ConfigKey<?>[] {ManagementHostIPAdr, ApiServletPath};
     }
 
 }

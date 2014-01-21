@@ -152,6 +152,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject
     protected ConfigurationManager _configMgr;
 
+
     public ConfigurationServerImpl() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
@@ -247,7 +248,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
 
                 if (needUpdateHostIp) {
-                    _configDao.update(ApiServiceConfiguration.ManagementHostIPAdr.key(), ApiServiceConfiguration.ManagementHostIPAdr.category(), hostIpAdr);
+                    _configDepot.createOrUpdateConfigObject(ApiServiceConfiguration.class.getSimpleName(), ApiServiceConfiguration.ManagementHostIPAdr, hostIpAdr);
                     s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
                 }
             }
