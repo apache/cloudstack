@@ -296,6 +296,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -2346,72 +2347,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource VmDataCommand: " + _gson.toJson(cmd));
         }
 
-        String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
+        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
+        data.put(cmd.getVmIpAddress(), cmd.getVmData());
 
-        String vmIpAddress = cmd.getVmIpAddress();
-        List<String[]> vmData = cmd.getVmData();
-        String[] vmDataArgs = new String[vmData.size() * 2 + 4];
-        vmDataArgs[0] = "routerIP";
-        vmDataArgs[1] = routerPrivateIpAddress;
-        vmDataArgs[2] = "vmIP";
-        vmDataArgs[3] = vmIpAddress;
-        int i = 4;
-        for (String[] vmDataEntry : vmData) {
-            String folder = vmDataEntry[0];
-            String file = vmDataEntry[1];
-            String contents = (vmDataEntry[2] != null) ? vmDataEntry[2] : "none";
+        String json = new Gson().toJson(data);
+        s_logger.debug("VM data JSON IS:" + json);
 
-            vmDataArgs[i] = folder + "," + file;
-            vmDataArgs[i + 1] = contents;
-            i += 2;
-        }
+        json = Base64.encodeBase64String(json.getBytes());
 
-        String content = encodeDataArgs(vmDataArgs);
-        String tmpFileName = UUID.randomUUID().toString();
+        String args = "-d " + json;
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run vm_data command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", data: " + content);
-        }
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
         try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            SshHelper.scpTo(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/tmp", content.getBytes(), tmpFileName, null);
-
-            try {
-                Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/userdata.py " + tmpFileName);
-
-                if (!result.first()) {
-                    s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
-                    return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
-                }
-            } finally {
-
-                SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "rm /tmp/" + tmpFileName);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vmdata.py " + args);
+            if (!result.first()) {
+                s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
+                return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
             }
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("vm_data command on domain router " + controlIp + " completed");
             }
-
         } catch (Throwable e) {
             String msg = "VmDataCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
         return new Answer(cmd);
-    }
-
-    private String encodeDataArgs(String[] dataArgs) {
-        StringBuilder sb = new StringBuilder();
-
-        for (String arg : dataArgs) {
-            sb.append(arg);
-            sb.append("\n");
-        }
-
-        return sb.toString();
     }
 
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
