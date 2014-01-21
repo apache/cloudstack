@@ -3570,7 +3570,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
             synchronized(hostMo.getMor().getValue().intern()) {
                 networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, getVlanInfo(nicTo, vlanToken), nicTo.getNetworkRateMbps(),
-                        nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
+                        nicTo.getNetworkRateMulticastMbps(), _opsTimeout,
                         !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
             }
         }
@@ -3586,7 +3586,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 svlanId = getPvlanInfo(nicTo);
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType,
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _opsTimeout, switchType,
                     _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 
