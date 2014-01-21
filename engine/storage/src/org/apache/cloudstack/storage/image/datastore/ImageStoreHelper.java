@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -104,7 +106,12 @@ public class ImageStoreHelper {
                 ImageStoreDetailVO detail = new ImageStoreDetailVO();
                 detail.setStoreId(store.getId());
                 detail.setName(key);
-                detail.setValue(details.get(key));
+                String value = details.get(key);
+                // encrypt swift key or s3 secret key
+                if (key.equals(ApiConstants.KEY) || key.equals(ApiConstants.S3_SECRET_KEY)) {
+                    value = DBEncryptionUtil.encrypt(value);
+                }
+                detail.setValue(value);
                 imageStoreDetailsDao.persist(detail);
             }
         }

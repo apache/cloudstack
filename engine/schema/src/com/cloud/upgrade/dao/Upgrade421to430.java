@@ -29,10 +29,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -68,6 +68,7 @@ public class Upgrade421to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         encryptLdapConfigParams(conn);
+        encryptImageStoreDetails(conn);
         upgradeMemoryOfSsvmOffering(conn);
         updateSystemVmTemplates(conn);
     }
@@ -305,8 +306,7 @@ public class Upgrade421to430 implements DbUpgrade {
                 }
             }
             s_logger.debug("Updating System Vm Template IDs Complete");
-        }
-        finally {
+        } finally {
             try {
                 if (rs != null) {
                     rs.close();
@@ -318,6 +318,44 @@ public class Upgrade421to430 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+
+    private void encryptImageStoreDetails(Connection conn) {
+        s_logger.debug("Encrypting image store details");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, value from `cloud`.`image_store_details` where name = 'key' or name = 'secretkey'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`image_store_details` set value=? where id=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting image_store_details");
     }
 
     @Override
