@@ -239,21 +239,6 @@ def routerProxy(session, args):
     return txt
 
 @echo
-def setLoadBalancerRule(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug(" set loadbalancer rule failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
 def createFile(session, args):
     file_path = args['filepath']
     file_contents = args['filecontents']
@@ -1540,7 +1525,7 @@ if __name__ == "__main__":
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "savePassword": savePassword, 
                             "routerProxy": routerProxy, 
-                            "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
+                            "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 

@@ -75,13 +75,10 @@ import org.apache.log4j.Logger;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
@@ -102,7 +99,6 @@ import java.util.Map;
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private String _publicIpAddress;
-    private String _loadbPath;
     private String _publicEthIf;
     private String _privateEthIf;
     private String _routerProxyPath;
@@ -354,7 +350,20 @@ public class VirtualRoutingResource implements Manager {
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
-    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+    protected boolean createFileInVR(String routerIp, String path, String filename, String content) {
+        File permKey = new File("/root/.ssh/id_rsa.cloud");
+        boolean result = true;
+
+        try {
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
+        } catch (Exception e) {
+            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            result = false;
+        }
+        return result;
+    }
+
+    private Answer execute(LoadBalancerConfigCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         if (routerIp == null) {
@@ -368,25 +377,24 @@ public class VirtualRoutingResource implements Manager {
             tmpCfgFileContents += config[i];
             tmpCfgFileContents += "\n";
         }
-        File permKey = new File("/root/.ssh/id_rsa.cloud");
+
+        if (!createFileInVR(routerIp, "/etc/haproxy/", "haproxy.cfg.new", tmpCfgFileContents)) {
+            return new Answer(cmd, false, "Fail to copy LB config file to VR");
+        }
 
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
-
             String[][] rules = cfgtr.generateFwRules(cmd);
 
             String[] addRules = rules[LoadBalancerConfigurator.ADD];
             String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
             String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-            String ip = cmd.getNic().getIp();
-            String args = " -i " + ip;
+            String args = "";
             StringBuilder sb = new StringBuilder();
             if (addRules.length > 0) {
                 for (int i = 0; i < addRules.length; i++) {
                     sb.append(addRules[i]).append(',');
                 }
-
                 args += " -a " + sb.toString();
             }
 
@@ -408,7 +416,15 @@ public class VirtualRoutingResource implements Manager {
                 args += " -s " + sb.toString();
             }
 
-            String result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+            String result;
+
+            if (cmd.getVpcId() == null) {
+                args = " -i " + routerIp + args;
+                result = routerProxy("loadbalancer.sh", routerIp, args);
+            } else {
+                args = " -i " + cmd.getNic().getIp() + args;
+                result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+            }
 
             if (result != null) {
                 return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
@@ -420,41 +436,6 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-    private Answer execute(LoadBalancerConfigCommand cmd) {
-        if (cmd.getVpcId() != null) {
-            return VPCLoadBalancerConfig(cmd);
-        }
-
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        File tmpCfgFile = null;
-        try {
-            String cfgFilePath = "";
-            LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
-            String[] config = cfgtr.generateConfiguration(cmd);
-            String[][] rules = cfgtr.generateFwRules(cmd);
-            if (routerIp != null) {
-                tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
-                final PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-                for (int i = 0; i < config.length; i++) {
-                    out.println(config[i]);
-                }
-                out.close();
-                cfgFilePath = tmpCfgFile.getAbsolutePath();
-            }
-
-            final String result =
-                setLoadBalancerConfig(cfgFilePath, rules[LoadBalancerConfigurator.ADD], rules[LoadBalancerConfigurator.REMOVE], rules[LoadBalancerConfigurator.STATS],
-                    routerIp);
-
-            return new Answer(cmd, result == null, result);
-        } catch (final IOException e) {
-            return new Answer(cmd, false, e.getMessage());
-        } finally {
-            if (tmpCfgFile != null) {
-                tmpCfgFile.delete();
-            }
-        }
-    }
 
     protected Answer execute(VmDataCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -494,44 +475,6 @@ public class VirtualRoutingResource implements Manager {
             }
         }
         return new IpAssocAnswer(cmd, results);
-    }
-
-    private String setLoadBalancerConfig(final String cfgFile, final String[] addRules, final String[] removeRules, final String[] statsRules, String routerIp) {
-
-        if (routerIp == null) {
-            routerIp = "none";
-        }
-
-        final Script command = new Script(_loadbPath, _timeout, s_logger);
-
-        command.add("-i", routerIp);
-        command.add("-f", cfgFile);
-
-        StringBuilder sb = new StringBuilder();
-        if (addRules.length > 0) {
-            for (int i = 0; i < addRules.length; i++) {
-                sb.append(addRules[i]).append(',');
-            }
-            command.add("-a", sb.toString());
-        }
-
-        sb = new StringBuilder();
-        if (removeRules.length > 0) {
-            for (int i = 0; i < removeRules.length; i++) {
-                sb.append(removeRules[i]).append(',');
-            }
-            command.add("-d", sb.toString());
-        }
-
-        sb = new StringBuilder();
-        if (statsRules.length > 0) {
-            for (int i = 0; i < statsRules.length; i++) {
-                sb.append(statsRules[i]).append(',');
-            }
-            command.add("-s", sb.toString());
-        }
-
-        return command.execute();
     }
 
     protected Answer execute(final SavePasswordCommand cmd) {
@@ -1102,11 +1045,6 @@ public class VirtualRoutingResource implements Manager {
         _publicIpAddress = (String)params.get("public.ip.address");
         if (_publicIpAddress != null) {
             s_logger.warn("Incoming public ip address is overriden.  Will always be using the same ip address: " + _publicIpAddress);
-        }
-
-        _loadbPath = findScript("call_loadbalancer.sh");
-        if (_loadbPath == null) {
-            throw new ConfigurationException("Unable to find the call_loadbalancer.sh");
         }
 
         _publicEthIf = (String)params.get("public.network.device");
