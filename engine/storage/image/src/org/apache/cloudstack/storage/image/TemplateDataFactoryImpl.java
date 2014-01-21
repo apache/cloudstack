@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -104,6 +105,17 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             store = storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
+    }
+
+    @Override
+    public TemplateInfo getReadyTemplateOnImageStore(long templateId, Long zoneId) {
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZoneReady(templateId, zoneId);
+        if (tmplStore != null) {
+            DataStore store = storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
+            return this.getTemplate(templateId, store);
+        } else {
+            return null;
+        }
     }
 
     @Override

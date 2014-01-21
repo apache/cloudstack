@@ -1173,7 +1173,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
-                TemplateInfo templ = tmplFactory.getTemplate(templateId, DataStoreRole.Image);
+                TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
+                if (templ == null) {
+                    s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                }
                 future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
             }
             VolumeApiResult result = null;
