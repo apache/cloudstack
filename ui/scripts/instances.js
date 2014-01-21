@@ -1525,17 +1525,17 @@
                         	                        	
                         	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuSpeed': args.data.cpuSpeed 
+                                	'details[0].cpuSpeed': args.data.cpuSpeed 
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuNumber': args.data.cpuNumber
+                                	'details[0].cpuNumber': args.data.cpuNumber
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].memory': args.data.memory
+                                	'details[0].memory': args.data.memory
                                 });
                             }                        	
                         	
@@ -1789,6 +1789,16 @@
                             serviceofferingname: {
                                 label: 'label.compute.offering'
                             },
+                            cpunumber: {
+                            	label: 'label.num.cpu.cores'
+                            },
+                            cpuspeed: {
+                            	label: 'label.cpu.mhz'
+                            },
+                            memory: {
+                            	label: 'label.memory.mb'
+                            },
+                            
                             haenable: {
                                 label: 'label.ha.enabled',
                                 converter: cloudStack.converters.toBooleanText
