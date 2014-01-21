@@ -3865,10 +3865,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
         if (network.getVpcId() != null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" + " to VPC.Specify vpcId to associate ip address to VPC");
         }
         return _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, true);
