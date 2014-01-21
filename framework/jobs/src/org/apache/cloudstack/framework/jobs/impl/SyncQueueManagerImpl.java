@@ -242,18 +242,15 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
     }
 
     private boolean queueReadyToProcess(SyncQueueVO queueVO) {
-        return true;
+        int nActiveItems = _syncQueueItemDao.getActiveQueueItemCount(queueVO.getId());
+        if (nActiveItems < queueVO.getQueueSizeLimit())
+            return true;
 
-        //
-        // TODO
-        //
-        // Need to disable concurrency disable at queue level due to the need to support
-        // job wake-up dispatching task
-        //
-        // Concurrency control is better done at higher level and leave the job scheduling/serializing simpler
-        //
-
-        // return queueVO.getQueueSize() < queueVO.getQueueSizeLimit();
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Queue (queue id, sync type, sync id) - (" + queueVO.getId()
+                    + "," + queueVO.getSyncObjType() + ", " + queueVO.getSyncObjId()
+                    + ") is reaching concurrency limit " + queueVO.getQueueSizeLimit());
+        return false;
     }
 
     @Override
