@@ -20,6 +20,7 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 
 public class LibvirtVMDefTest extends TestCase {
 
@@ -63,6 +64,30 @@ public class LibvirtVMDefTest extends TestCase {
         String expected3 = "<cpu mode='host-passthrough'></cpu>";
         assertEquals(expected3, cpuModeDef.toString());
 
+    }
+
+    public void testDiskDef() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.diskBus bus = DiskDef.diskBus.VIRTIO;
+        DiskDef.diskFmtType type = DiskDef.diskFmtType.QCOW2;
+        DiskDef.diskCacheMode cacheMode = DiskDef.diskCacheMode.WRITEBACK;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+        disk.setCacheMode(cacheMode);
+
+        assertEquals(filePath, disk.getDiskPath());
+        assertEquals(diskLabel, disk.getDiskLabel());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(DiskDef.deviceType.DISK, disk.getDeviceType());
+
+        String xmlDef = disk.toString();
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
+                             "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
+
+        assertEquals(xmlDef, expectedXml);
     }
 
 }
