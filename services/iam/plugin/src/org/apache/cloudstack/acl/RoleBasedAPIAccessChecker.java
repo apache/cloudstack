@@ -111,6 +111,15 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             }
          }
 
+        // add the system-domain capability
+
+        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), null, null, null,
+                "SystemCapability", null, Permission.Allow);
+        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), null, null, null,
+                "DomainCapability", null, Permission.Allow);
+        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1), null, null, null,
+                "DomainResourceCapability", null, Permission.Allow);
+
         for (PluggableService service : _services) {
             for (Class<?> cmdClass : service.getCommands()) {
                 APICommand command = cmdClass.getAnnotation(APICommand.class);

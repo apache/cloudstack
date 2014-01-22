@@ -538,7 +538,3 @@ INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
 
-INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 2, 'SystemCapability', 'Allow', Now());
-INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (2, 3, 'DomainCapability', 'Allow', Now());
-INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (3, 4, 'DomainResourceCapability', 'Allow', Now());
-
