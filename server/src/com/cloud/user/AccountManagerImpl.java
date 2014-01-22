@@ -21,7 +21,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +110,6 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -1962,18 +1960,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         boolean authenticated = false;
-        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
         for (UserAuthenticator authenticator : _userAuthenticators) {
-            Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
-            if (result.first()) {
+            if (authenticator.authenticate(username, password, domainId, requestParameters)) {
                 authenticated = true;
                 break;
-            } else if (result.second() != null) {
-                actionsOnFailedAuthenticaion.add(result.second());
             }
         }
-
-        boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
         if (authenticated) {
             UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
@@ -2011,14 +2003,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     if (!isInternalAccount(userAccount.getType())) {
                         // Internal accounts are not disabled
                         int attemptsMade = userAccount.getLoginAttempts() + 1;
-                        if (updateIncorrectLoginCount) {
-                            if (attemptsMade < _allowedLoginAttempts) {
-                                updateLoginAttempts(userAccount.getId(), attemptsMade, false);
-                                s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
-                            } else {
-                                updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
-                                s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." + " Please contact admin.");
-                            }
+                        if (attemptsMade < _allowedLoginAttempts) {
+                            updateLoginAttempts(userAccount.getId(), attemptsMade, false);
+                            s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
+                        } else {
+                            updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
+                            s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." +
+                                    " Please contact admin.");
                         }
                     }
                 } else {
