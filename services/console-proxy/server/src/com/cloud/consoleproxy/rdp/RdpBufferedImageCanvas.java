@@ -32,7 +32,7 @@ import common.BufferedImageCanvas;
 
 public class RdpBufferedImageCanvas extends BufferedImageCanvas implements FrameBufferCanvas {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
