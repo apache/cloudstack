@@ -47,7 +47,6 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -125,7 +124,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     protected Answer execute(CreateEntityDownloadURLCommand cmd) {
-        boolean result = _storageMgr.execute(this, cmd);
+        _storageMgr.execute(this, cmd);
         return _resource.defaultAction(cmd);
     }
 
@@ -313,46 +312,6 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String getMountPoint(String storageUrl) {
         return _resource.getRootDir(storageUrl);
-    }
-
-    private boolean validateContext(VmwareContext context, Command cmd) {
-        String guid = cmd.getContextParam("guid");
-        assert (guid != null);
-
-        String[] tokens = guid.split("@");
-        assert (tokens != null && tokens.length == 2);
-
-        ManagedObjectReference morHyperHost = new ManagedObjectReference();
-        String[] hostTokens = tokens[0].split(":");
-        assert (hostTokens.length == 2);
-
-        morHyperHost.setType(hostTokens[0]);
-        morHyperHost.setValue(hostTokens[1]);
-
-        if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
-            HostMO hostMo = new HostMO(context, morHyperHost);
-            try {
-                VmwareHypervisorHostNetworkSummary netSummary =
-                    hostMo.getHyperHostNetworkSummary(hostMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup")
-                        : cmd.getContextParam("serviceconsole"));
-                assert (netSummary != null);
-                if (netSummary.getHostIp() != null && !netSummary.getHostIp().isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Context validation succeeded. Validated via host: " + netSummary.getHostIp() + ", guid: " + guid);
-                    }
-                    return true;
-                }
-
-                s_logger.warn("Context validation failed due to invalid host network summary");
-                return false;
-            } catch (Throwable e) {
-                s_logger.warn("Context validation failed due to " + VmwareHelper.getExceptionMessage(e));
-                return false;
-            }
-        }
-
-        assert (false);
-        return true;
     }
 
     @Override
