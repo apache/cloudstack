@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class DRTask extends XenAPIObject {
      * For internal use only.
      */
     DRTask(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class DRTask extends XenAPIObject {
     {
         if (obj != null && obj instanceof DRTask)
         {
-            DRTask other = (DRTask)obj;
+            DRTask other = (DRTask) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -107,8 +108,8 @@ public class DRTask extends XenAPIObject {
         /**
          * Convert a DR_task.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("introduced_SRs", this.introducedSRs == null ? new LinkedHashSet<SR>() : this.introducedSRs);
             return map;
@@ -130,15 +131,15 @@ public class DRTask extends XenAPIObject {
      * @return all fields from the object
      */
     public DRTask.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toDRTaskRecord(result);
+            return Types.toDRTaskRecord(result);
     }
 
     /**
@@ -148,15 +149,15 @@ public class DRTask extends XenAPIObject {
      * @return reference to the object
      */
     public static DRTask getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toDRTask(result);
+            return Types.toDRTask(result);
     }
 
     /**
@@ -165,15 +166,15 @@ public class DRTask extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -182,15 +183,15 @@ public class DRTask extends XenAPIObject {
      * @return value of the field
      */
     public Set<SR> getIntroducedSRs(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_introduced_SRs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfSR(result);
+            return Types.toSetOfSR(result);
     }
 
     /**
@@ -202,9 +203,9 @@ public class DRTask extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, String type, Map<String, String> deviceConfig, Set<String> whitelist) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.DR_task.create";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(whitelist)};
@@ -222,15 +223,15 @@ public class DRTask extends XenAPIObject {
      * @return The reference to the created task
      */
     public static DRTask create(Connection c, String type, Map<String, String> deviceConfig, Set<String> whitelist) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.create";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(whitelist)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toDRTask(result);
+            return Types.toDRTask(result);
     }
 
     /**
@@ -239,9 +240,9 @@ public class DRTask extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.DR_task.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -255,9 +256,9 @@ public class DRTask extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -271,15 +272,15 @@ public class DRTask extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<DRTask> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfDRTask(result);
+            return Types.toSetOfDRTask(result);
     }
 
     /**
@@ -288,15 +289,15 @@ public class DRTask extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<DRTask, DRTask.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "DR_task.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfDRTaskDRTaskRecord(result);
+            return Types.toMapOfDRTaskDRTaskRecord(result);
     }
 
 }

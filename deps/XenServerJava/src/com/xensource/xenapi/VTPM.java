@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class VTPM extends XenAPIObject {
      * For internal use only.
      */
     VTPM(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class VTPM extends XenAPIObject {
     {
         if (obj != null && obj instanceof VTPM)
         {
-            VTPM other = (VTPM)obj;
+            VTPM other = (VTPM) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -108,8 +109,8 @@ public class VTPM extends XenAPIObject {
         /**
          * Convert a VTPM.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("VM", this.VM == null ? new VM("OpaqueRef:NULL") : this.VM);
             map.put("backend", this.backend == null ? new VM("OpaqueRef:NULL") : this.backend);
@@ -136,15 +137,15 @@ public class VTPM extends XenAPIObject {
      * @return all fields from the object
      */
     public VTPM.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVTPMRecord(result);
+            return Types.toVTPMRecord(result);
     }
 
     /**
@@ -154,15 +155,15 @@ public class VTPM extends XenAPIObject {
      * @return reference to the object
      */
     public static VTPM getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVTPM(result);
+            return Types.toVTPM(result);
     }
 
     /**
@@ -172,9 +173,9 @@ public class VTPM extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, VTPM.Record record) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.VTPM.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -191,16 +192,16 @@ public class VTPM extends XenAPIObject {
      * @return reference to the newly created object
      */
     public static VTPM create(Connection c, VTPM.Record record) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVTPM(result);
+            return Types.toVTPM(result);
     }
 
     /**
@@ -209,9 +210,9 @@ public class VTPM extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.VTPM.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -225,9 +226,9 @@ public class VTPM extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -241,15 +242,15 @@ public class VTPM extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -258,15 +259,15 @@ public class VTPM extends XenAPIObject {
      * @return value of the field
      */
     public VM getVM(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.get_VM";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVM(result);
+            return Types.toVM(result);
     }
 
     /**
@@ -275,15 +276,15 @@ public class VTPM extends XenAPIObject {
      * @return value of the field
      */
     public VM getBackend(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VTPM.get_backend";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVM(result);
+            return Types.toVM(result);
     }
 
 }

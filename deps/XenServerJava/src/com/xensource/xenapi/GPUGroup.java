@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class GPUGroup extends XenAPIObject {
      * For internal use only.
      */
     GPUGroup(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class GPUGroup extends XenAPIObject {
     {
         if (obj != null && obj instanceof GPUGroup)
         {
-            GPUGroup other = (GPUGroup)obj;
+            GPUGroup other = (GPUGroup) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -106,14 +107,17 @@ public class GPUGroup extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "VGPUs", this.VGPUs);
             print.printf("%1$20s: %2$s\n", "GPUTypes", this.GPUTypes);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
+            print.printf("%1$20s: %2$s\n", "allocationAlgorithm", this.allocationAlgorithm);
+            print.printf("%1$20s: %2$s\n", "supportedVGPUTypes", this.supportedVGPUTypes);
+            print.printf("%1$20s: %2$s\n", "enabledVGPUTypes", this.enabledVGPUTypes);
             return writer.toString();
         }
 
         /**
          * Convert a GPU_group.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
@@ -121,6 +125,9 @@ public class GPUGroup extends XenAPIObject {
             map.put("VGPUs", this.VGPUs == null ? new LinkedHashSet<VGPU>() : this.VGPUs);
             map.put("GPU_types", this.GPUTypes == null ? new LinkedHashSet<String>() : this.GPUTypes);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
+            map.put("allocation_algorithm", this.allocationAlgorithm == null ? Types.AllocationAlgorithm.UNRECOGNIZED : this.allocationAlgorithm);
+            map.put("supported_VGPU_types", this.supportedVGPUTypes == null ? new LinkedHashSet<VGPUType>() : this.supportedVGPUTypes);
+            map.put("enabled_VGPU_types", this.enabledVGPUTypes == null ? new LinkedHashSet<VGPUType>() : this.enabledVGPUTypes);
             return map;
         }
 
@@ -152,6 +159,18 @@ public class GPUGroup extends XenAPIObject {
          * Additional configuration
          */
         public Map<String, String> otherConfig;
+        /**
+         * Current allocation of vGPUs to pGPUs for this group
+         */
+        public Types.AllocationAlgorithm allocationAlgorithm;
+        /**
+         * vGPU types supported on at least one of the pGPUs in this group
+         */
+        public Set<VGPUType> supportedVGPUTypes;
+        /**
+         * vGPU types supported on at least one of the pGPUs in this group
+         */
+        public Set<VGPUType> enabledVGPUTypes;
     }
 
     /**
@@ -160,15 +179,15 @@ public class GPUGroup extends XenAPIObject {
      * @return all fields from the object
      */
     public GPUGroup.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toGPUGroupRecord(result);
+            return Types.toGPUGroupRecord(result);
     }
 
     /**
@@ -178,15 +197,15 @@ public class GPUGroup extends XenAPIObject {
      * @return reference to the object
      */
     public static GPUGroup getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toGPUGroup(result);
+            return Types.toGPUGroup(result);
     }
 
     /**
@@ -196,15 +215,15 @@ public class GPUGroup extends XenAPIObject {
      * @return references to objects with matching names
      */
     public static Set<GPUGroup> getByNameLabel(Connection c, String label) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_by_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(label)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfGPUGroup(result);
+            return Types.toSetOfGPUGroup(result);
     }
 
     /**
@@ -213,15 +232,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -230,15 +249,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public String getNameLabel(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -247,15 +266,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public String getNameDescription(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -264,15 +283,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public Set<PGPU> getPGPUs(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_PGPUs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfPGPU(result);
+            return Types.toSetOfPGPU(result);
     }
 
     /**
@@ -281,15 +300,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public Set<VGPU> getVGPUs(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_VGPUs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfVGPU(result);
+            return Types.toSetOfVGPU(result);
     }
 
     /**
@@ -298,15 +317,15 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getGPUTypes(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_GPU_types";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfString(result);
+            return Types.toSetOfString(result);
     }
 
     /**
@@ -315,15 +334,66 @@ public class GPUGroup extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the allocation_algorithm field of the given GPU_group.
+     *
+     * @return value of the field
+     */
+    public Types.AllocationAlgorithm getAllocationAlgorithm(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.get_allocation_algorithm";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toAllocationAlgorithm(result);
+    }
+
+    /**
+     * Get the supported_VGPU_types field of the given GPU_group.
+     *
+     * @return value of the field
+     */
+    public Set<VGPUType> getSupportedVGPUTypes(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.get_supported_VGPU_types";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfVGPUType(result);
+    }
+
+    /**
+     * Get the enabled_VGPU_types field of the given GPU_group.
+     *
+     * @return value of the field
+     */
+    public Set<VGPUType> getEnabledVGPUTypes(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.get_enabled_VGPU_types";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfVGPUType(result);
     }
 
     /**
@@ -332,9 +402,9 @@ public class GPUGroup extends XenAPIObject {
      * @param label New value to set
      */
     public void setNameLabel(Connection c, String label) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.set_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(label)};
@@ -348,9 +418,9 @@ public class GPUGroup extends XenAPIObject {
      * @param description New value to set
      */
     public void setNameDescription(Connection c, String description) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.set_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(description)};
@@ -364,9 +434,9 @@ public class GPUGroup extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -381,9 +451,9 @@ public class GPUGroup extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -397,9 +467,9 @@ public class GPUGroup extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -408,20 +478,144 @@ public class GPUGroup extends XenAPIObject {
     }
 
     /**
+     * Set the allocation_algorithm field of the given GPU_group.
+     *
+     * @param allocationAlgorithm New value to set
+     */
+    public void setAllocationAlgorithm(Connection c, Types.AllocationAlgorithm allocationAlgorithm) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.set_allocation_algorithm";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(allocationAlgorithm)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * 
+     *
+     * @param nameLabel 
+     * @param nameDescription 
+     * @param otherConfig 
+     * @return Task
+     */
+    public static Task createAsync(Connection c, String nameLabel, String nameDescription, Map<String, String> otherConfig) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.GPU_group.create";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(otherConfig)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * 
+     *
+     * @param nameLabel 
+     * @param nameDescription 
+     * @param otherConfig 
+     * @return 
+     */
+    public static GPUGroup create(Connection c, String nameLabel, String nameDescription, Map<String, String> otherConfig) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.create";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(otherConfig)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toGPUGroup(result);
+    }
+
+    /**
+     * 
+     *
+     * @return Task
+     */
+    public Task destroyAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.GPU_group.destroy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * 
+     *
+     */
+    public void destroy(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.destroy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * 
+     *
+     * @param vgpuType The VGPU_type for which the remaining capacity will be calculated
+     * @return Task
+     */
+    public Task getRemainingCapacityAsync(Connection c, VGPUType vgpuType) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.GPU_group.get_remaining_capacity";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(vgpuType)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * 
+     *
+     * @param vgpuType The VGPU_type for which the remaining capacity will be calculated
+     * @return The number of VGPUs of the given type which can still be started on the PGPUs in the group
+     */
+    public Long getRemainingCapacity(Connection c, VGPUType vgpuType) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "GPU_group.get_remaining_capacity";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(vgpuType)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toLong(result);
+    }
+
+    /**
      * Return a list of all the GPU_groups known to the system.
      *
      * @return references to all objects
      */
     public static Set<GPUGroup> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfGPUGroup(result);
+            return Types.toSetOfGPUGroup(result);
     }
 
     /**
@@ -430,15 +624,15 @@ public class GPUGroup extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<GPUGroup, GPUGroup.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "GPU_group.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfGPUGroupGPUGroupRecord(result);
+            return Types.toMapOfGPUGroupGPUGroupRecord(result);
     }
 
 }

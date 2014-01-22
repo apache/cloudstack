@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class PoolPatch extends XenAPIObject {
      * For internal use only.
      */
     PoolPatch(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class PoolPatch extends XenAPIObject {
     {
         if (obj != null && obj instanceof PoolPatch)
         {
-            PoolPatch other = (PoolPatch)obj;
+            PoolPatch other = (PoolPatch) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -114,8 +115,8 @@ public class PoolPatch extends XenAPIObject {
         /**
          * Convert a pool_patch.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
@@ -172,15 +173,15 @@ public class PoolPatch extends XenAPIObject {
      * @return all fields from the object
      */
     public PoolPatch.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPoolPatchRecord(result);
+            return Types.toPoolPatchRecord(result);
     }
 
     /**
@@ -190,15 +191,15 @@ public class PoolPatch extends XenAPIObject {
      * @return reference to the object
      */
     public static PoolPatch getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPoolPatch(result);
+            return Types.toPoolPatch(result);
     }
 
     /**
@@ -208,15 +209,15 @@ public class PoolPatch extends XenAPIObject {
      * @return references to objects with matching names
      */
     public static Set<PoolPatch> getByNameLabel(Connection c, String label) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_by_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(label)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfPoolPatch(result);
+            return Types.toSetOfPoolPatch(result);
     }
 
     /**
@@ -225,15 +226,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -242,15 +243,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public String getNameLabel(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -259,15 +260,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public String getNameDescription(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -276,15 +277,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public String getVersion(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_version";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -293,15 +294,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public Long getSize(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toLong(result);
+            return Types.toLong(result);
     }
 
     /**
@@ -310,15 +311,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getPoolApplied(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_pool_applied";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -327,15 +328,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public Set<HostPatch> getHostPatches(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_host_patches";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfHostPatch(result);
+            return Types.toSetOfHostPatch(result);
     }
 
     /**
@@ -344,15 +345,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public Set<Types.AfterApplyGuidance> getAfterApplyGuidance(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_after_apply_guidance";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfAfterApplyGuidance(result);
+            return Types.toSetOfAfterApplyGuidance(result);
     }
 
     /**
@@ -361,15 +362,15 @@ public class PoolPatch extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
     }
 
     /**
@@ -378,9 +379,9 @@ public class PoolPatch extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -395,9 +396,9 @@ public class PoolPatch extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -411,9 +412,9 @@ public class PoolPatch extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -428,9 +429,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task applyAsync(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.apply";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -446,15 +447,15 @@ public class PoolPatch extends XenAPIObject {
      * @return the output of the patch application process
      */
     public String apply(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.apply";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -463,9 +464,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task poolApplyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.pool_apply";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -479,9 +480,9 @@ public class PoolPatch extends XenAPIObject {
      *
      */
     public void poolApply(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.pool_apply";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -496,9 +497,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task precheckAsync(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.precheck";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -514,15 +515,15 @@ public class PoolPatch extends XenAPIObject {
      * @return the output of the patch prechecks
      */
     public String precheck(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.precheck";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -531,9 +532,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task cleanAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.clean";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -547,9 +548,9 @@ public class PoolPatch extends XenAPIObject {
      *
      */
     public void clean(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.clean";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -563,9 +564,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task poolCleanAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.pool_clean";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -579,9 +580,9 @@ public class PoolPatch extends XenAPIObject {
      *
      */
     public void poolClean(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.pool_clean";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -595,9 +596,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -611,9 +612,9 @@ public class PoolPatch extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -628,9 +629,9 @@ public class PoolPatch extends XenAPIObject {
      * @return Task
      */
     public Task cleanOnHostAsync(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.pool_patch.clean_on_host";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -645,9 +646,9 @@ public class PoolPatch extends XenAPIObject {
      * @param host The host on which to clean the patch
      */
     public void cleanOnHost(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.clean_on_host";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
@@ -661,15 +662,15 @@ public class PoolPatch extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<PoolPatch> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfPoolPatch(result);
+            return Types.toSetOfPoolPatch(result);
     }
 
     /**
@@ -678,15 +679,15 @@ public class PoolPatch extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<PoolPatch, PoolPatch.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "pool_patch.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfPoolPatchPoolPatchRecord(result);
+            return Types.toMapOfPoolPatchPoolPatchRecord(result);
     }
 
 }

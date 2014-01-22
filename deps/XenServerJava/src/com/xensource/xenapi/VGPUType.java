@@ -46,11 +46,11 @@ import java.util.Set;
 import org.apache.xmlrpc.XmlRpcException;
 
 /**
- * The metrics reported by the guest (as opposed to inferred from outside)
+ * A type of virtual GPU
  *
  * @author Citrix Systems, Inc.
  */
-public class VMGuestMetrics extends XenAPIObject {
+public class VGPUType extends XenAPIObject {
 
     /**
      * The XenAPI reference (OpaqueRef) to this object.
@@ -60,7 +60,7 @@ public class VMGuestMetrics extends XenAPIObject {
     /**
      * For internal use only.
      */
-    VMGuestMetrics(String ref) {
+    VGPUType(String ref) {
        this.ref = ref;
     }
 
@@ -72,14 +72,14 @@ public class VMGuestMetrics extends XenAPIObject {
     }
 
     /**
-     * If obj is a VMGuestMetrics, compares XenAPI references for equality.
+     * If obj is a VGPUType, compares XenAPI references for equality.
      */
     @Override
     public boolean equals(Object obj)
     {
-        if (obj != null && obj instanceof VMGuestMetrics)
+        if (obj != null && obj instanceof VGPUType)
         {
-            VMGuestMetrics other = (VMGuestMetrics) obj;
+            VGPUType other = (VGPUType) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -94,42 +94,44 @@ public class VMGuestMetrics extends XenAPIObject {
     }
 
     /**
-     * Represents all the fields in a VMGuestMetrics
+     * Represents all the fields in a VGPUType
      */
     public static class Record implements Types.Record {
         public String toString() {
             StringWriter writer = new StringWriter();
             PrintWriter print = new PrintWriter(writer);
             print.printf("%1$20s: %2$s\n", "uuid", this.uuid);
-            print.printf("%1$20s: %2$s\n", "osVersion", this.osVersion);
-            print.printf("%1$20s: %2$s\n", "PVDriversVersion", this.PVDriversVersion);
-            print.printf("%1$20s: %2$s\n", "PVDriversUpToDate", this.PVDriversUpToDate);
-            print.printf("%1$20s: %2$s\n", "memory", this.memory);
-            print.printf("%1$20s: %2$s\n", "disks", this.disks);
-            print.printf("%1$20s: %2$s\n", "networks", this.networks);
-            print.printf("%1$20s: %2$s\n", "other", this.other);
-            print.printf("%1$20s: %2$s\n", "lastUpdated", this.lastUpdated);
-            print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
-            print.printf("%1$20s: %2$s\n", "live", this.live);
+            print.printf("%1$20s: %2$s\n", "vendorName", this.vendorName);
+            print.printf("%1$20s: %2$s\n", "modelName", this.modelName);
+            print.printf("%1$20s: %2$s\n", "framebufferSize", this.framebufferSize);
+            print.printf("%1$20s: %2$s\n", "maxHeads", this.maxHeads);
+            print.printf("%1$20s: %2$s\n", "maxResolutionX", this.maxResolutionX);
+            print.printf("%1$20s: %2$s\n", "maxResolutionY", this.maxResolutionY);
+            print.printf("%1$20s: %2$s\n", "supportedOnPGPUs", this.supportedOnPGPUs);
+            print.printf("%1$20s: %2$s\n", "enabledOnPGPUs", this.enabledOnPGPUs);
+            print.printf("%1$20s: %2$s\n", "VGPUs", this.VGPUs);
+            print.printf("%1$20s: %2$s\n", "supportedOnGPUGroups", this.supportedOnGPUGroups);
+            print.printf("%1$20s: %2$s\n", "enabledOnGPUGroups", this.enabledOnGPUGroups);
             return writer.toString();
         }
 
         /**
-         * Convert a VM_guest_metrics.Record to a Map
+         * Convert a VGPU_type.Record to a Map
          */
         public Map<String,Object> toMap() {
             Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
-            map.put("os_version", this.osVersion == null ? new HashMap<String, String>() : this.osVersion);
-            map.put("PV_drivers_version", this.PVDriversVersion == null ? new HashMap<String, String>() : this.PVDriversVersion);
-            map.put("PV_drivers_up_to_date", this.PVDriversUpToDate == null ? false : this.PVDriversUpToDate);
-            map.put("memory", this.memory == null ? new HashMap<String, String>() : this.memory);
-            map.put("disks", this.disks == null ? new HashMap<String, String>() : this.disks);
-            map.put("networks", this.networks == null ? new HashMap<String, String>() : this.networks);
-            map.put("other", this.other == null ? new HashMap<String, String>() : this.other);
-            map.put("last_updated", this.lastUpdated == null ? new Date(0) : this.lastUpdated);
-            map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
-            map.put("live", this.live == null ? false : this.live);
+            map.put("vendor_name", this.vendorName == null ? "" : this.vendorName);
+            map.put("model_name", this.modelName == null ? "" : this.modelName);
+            map.put("framebuffer_size", this.framebufferSize == null ? 0 : this.framebufferSize);
+            map.put("max_heads", this.maxHeads == null ? 0 : this.maxHeads);
+            map.put("max_resolution_x", this.maxResolutionX == null ? 0 : this.maxResolutionX);
+            map.put("max_resolution_y", this.maxResolutionY == null ? 0 : this.maxResolutionY);
+            map.put("supported_on_PGPUs", this.supportedOnPGPUs == null ? new LinkedHashSet<PGPU>() : this.supportedOnPGPUs);
+            map.put("enabled_on_PGPUs", this.enabledOnPGPUs == null ? new LinkedHashSet<PGPU>() : this.enabledOnPGPUs);
+            map.put("VGPUs", this.VGPUs == null ? new LinkedHashSet<VGPU>() : this.VGPUs);
+            map.put("supported_on_GPU_groups", this.supportedOnGPUGroups == null ? new LinkedHashSet<GPUGroup>() : this.supportedOnGPUGroups);
+            map.put("enabled_on_GPU_groups", this.enabledOnGPUGroups == null ? new LinkedHashSet<GPUGroup>() : this.enabledOnGPUGroups);
             return map;
         }
 
@@ -138,84 +140,88 @@ public class VMGuestMetrics extends XenAPIObject {
          */
         public String uuid;
         /**
-         * version of the OS
+         * Name of VGPU vendor
          */
-        public Map<String, String> osVersion;
+        public String vendorName;
         /**
-         * version of the PV drivers
+         * Model name associated with the VGPU type
          */
-        public Map<String, String> PVDriversVersion;
+        public String modelName;
         /**
-         * true if the PV drivers appear to be up to date
+         * Framebuffer size of the VGPU type, in bytes
          */
-        public Boolean PVDriversUpToDate;
+        public Long framebufferSize;
         /**
-         * free/used/total memory
+         * Maximum number of displays supported by the VGPU type
          */
-        public Map<String, String> memory;
+        public Long maxHeads;
         /**
-         * disk configuration/free space
+         * Maximum resultion (width) supported by the VGPU type
          */
-        public Map<String, String> disks;
+        public Long maxResolutionX;
         /**
-         * network configuration
+         * Maximum resoltion (height) supported by the VGPU type
          */
-        public Map<String, String> networks;
+        public Long maxResolutionY;
         /**
-         * anything else
+         * List of PGPUs that support this VGPU type
          */
-        public Map<String, String> other;
+        public Set<PGPU> supportedOnPGPUs;
         /**
-         * Time at which this information was last updated
+         * List of PGPUs that have this VGPU type enabled
          */
-        public Date lastUpdated;
+        public Set<PGPU> enabledOnPGPUs;
         /**
-         * additional configuration
+         * List of VGPUs of this type
          */
-        public Map<String, String> otherConfig;
+        public Set<VGPU> VGPUs;
         /**
-         * True if the guest is sending heartbeat messages via the guest agent
+         * List of GPU groups in which at least one PGPU supports this VGPU type
          */
-        public Boolean live;
+        public Set<GPUGroup> supportedOnGPUGroups;
+        /**
+         * List of GPU groups in which at least one have this VGPU type enabled
+         */
+        public Set<GPUGroup> enabledOnGPUGroups;
     }
 
     /**
-     * Get a record containing the current state of the given VM_guest_metrics.
+     * Get a record containing the current state of the given VGPU_type.
      *
      * @return all fields from the object
      */
-    public VMGuestMetrics.Record getRecord(Connection c) throws
+    public VGPUType.Record getRecord(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_record";
+        String method_call = "VGPU_type.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVMGuestMetricsRecord(result);
+            return Types.toVGPUTypeRecord(result);
     }
 
     /**
-     * Get a reference to the VM_guest_metrics instance with the specified UUID.
+     * Get a reference to the VGPU_type instance with the specified UUID.
      *
      * @param uuid UUID of object to return
      * @return reference to the object
      */
-    public static VMGuestMetrics getByUuid(Connection c, String uuid) throws
+    public static VGPUType getByUuid(Connection c, String uuid) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_by_uuid";
+        String method_call = "VGPU_type.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVMGuestMetrics(result);
+            return Types.toVGPUType(result);
     }
 
     /**
-     * Get the uuid field of the given VM_guest_metrics.
+     * Get the uuid field of the given VGPU_type.
      *
      * @return value of the field
      */
@@ -223,7 +229,7 @@ public class VMGuestMetrics extends XenAPIObject {
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_uuid";
+        String method_call = "VGPU_type.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
@@ -232,256 +238,224 @@ public class VMGuestMetrics extends XenAPIObject {
     }
 
     /**
-     * Get the os_version field of the given VM_guest_metrics.
+     * Get the vendor_name field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getOsVersion(Connection c) throws
+    public String getVendorName(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_os_version";
+        String method_call = "VGPU_type.get_vendor_name";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toString(result);
     }
 
     /**
-     * Get the PV_drivers_version field of the given VM_guest_metrics.
+     * Get the model_name field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getPVDriversVersion(Connection c) throws
+    public String getModelName(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_PV_drivers_version";
+        String method_call = "VGPU_type.get_model_name";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toString(result);
     }
 
     /**
-     * Get the PV_drivers_up_to_date field of the given VM_guest_metrics.
+     * Get the framebuffer_size field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Boolean getPVDriversUpToDate(Connection c) throws
+    public Long getFramebufferSize(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_PV_drivers_up_to_date";
+        String method_call = "VGPU_type.get_framebuffer_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+            return Types.toLong(result);
     }
 
     /**
-     * Get the memory field of the given VM_guest_metrics.
+     * Get the max_heads field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getMemory(Connection c) throws
+    public Long getMaxHeads(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_memory";
+        String method_call = "VGPU_type.get_max_heads";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toLong(result);
     }
 
     /**
-     * Get the disks field of the given VM_guest_metrics.
+     * Get the max_resolution_x field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getDisks(Connection c) throws
+    public Long getMaxResolutionX(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_disks";
+        String method_call = "VGPU_type.get_max_resolution_x";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toLong(result);
     }
 
     /**
-     * Get the networks field of the given VM_guest_metrics.
+     * Get the max_resolution_y field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getNetworks(Connection c) throws
+    public Long getMaxResolutionY(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_networks";
+        String method_call = "VGPU_type.get_max_resolution_y";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toLong(result);
     }
 
     /**
-     * Get the other field of the given VM_guest_metrics.
+     * Get the supported_on_PGPUs field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getOther(Connection c) throws
+    public Set<PGPU> getSupportedOnPGPUs(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_other";
+        String method_call = "VGPU_type.get_supported_on_PGPUs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toSetOfPGPU(result);
     }
 
     /**
-     * Get the last_updated field of the given VM_guest_metrics.
+     * Get the enabled_on_PGPUs field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Date getLastUpdated(Connection c) throws
+    public Set<PGPU> getEnabledOnPGPUs(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_last_updated";
+        String method_call = "VGPU_type.get_enabled_on_PGPUs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toDate(result);
+            return Types.toSetOfPGPU(result);
     }
 
     /**
-     * Get the other_config field of the given VM_guest_metrics.
+     * Get the VGPUs field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Map<String, String> getOtherConfig(Connection c) throws
+    public Set<VGPU> getVGPUs(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_other_config";
+        String method_call = "VGPU_type.get_VGPUs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+            return Types.toSetOfVGPU(result);
     }
 
     /**
-     * Get the live field of the given VM_guest_metrics.
+     * Get the supported_on_GPU_groups field of the given VGPU_type.
      *
      * @return value of the field
      */
-    public Boolean getLive(Connection c) throws
+    public Set<GPUGroup> getSupportedOnGPUGroups(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_live";
+        String method_call = "VGPU_type.get_supported_on_GPU_groups";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+            return Types.toSetOfGPUGroup(result);
     }
 
     /**
-     * Set the other_config field of the given VM_guest_metrics.
+     * Get the enabled_on_GPU_groups field of the given VGPU_type.
      *
-     * @param otherConfig New value to set
+     * @return value of the field
      */
-    public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
+    public Set<GPUGroup> getEnabledOnGPUGroups(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.set_other_config";
+        String method_call = "VGPU_type.get_enabled_on_GPU_groups";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
-        return;
+        Object result = response.get("Value");
+            return Types.toSetOfGPUGroup(result);
     }
 
     /**
-     * Add the given key-value pair to the other_config field of the given VM_guest_metrics.
-     *
-     * @param key Key to add
-     * @param value Value to add
-     */
-    public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "VM_guest_metrics.add_to_other_config";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
-        Map response = c.dispatch(method_call, method_params);
-        return;
-    }
-
-    /**
-     * Remove the given key and its corresponding value from the other_config field of the given VM_guest_metrics.  If the key is not in that Map, then do nothing.
-     *
-     * @param key Key to remove
-     */
-    public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "VM_guest_metrics.remove_from_other_config";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
-        Map response = c.dispatch(method_call, method_params);
-        return;
-    }
-
-    /**
-     * Return a list of all the VM_guest_metrics instances known to the system.
+     * Return a list of all the VGPU_types known to the system.
      *
      * @return references to all objects
      */
-    public static Set<VMGuestMetrics> getAll(Connection c) throws
+    public static Set<VGPUType> getAll(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_all";
+        String method_call = "VGPU_type.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVMGuestMetrics(result);
+            return Types.toSetOfVGPUType(result);
     }
 
     /**
-     * Return a map of VM_guest_metrics references to VM_guest_metrics records for all VM_guest_metrics instances known to the system.
+     * Return a map of VGPU_type references to VGPU_type records for all VGPU_types known to the system.
      *
      * @return records of all objects
      */
-    public static Map<VMGuestMetrics, VMGuestMetrics.Record> getAllRecords(Connection c) throws
+    public static Map<VGPUType, VGPUType.Record> getAllRecords(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VM_guest_metrics.get_all_records";
+        String method_call = "VGPU_type.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfVMGuestMetricsVMGuestMetricsRecord(result);
+            return Types.toMapOfVGPUTypeVGPUTypeRecord(result);
     }
 
 }

@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class SM extends XenAPIObject {
      * For internal use only.
      */
     SM(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class SM extends XenAPIObject {
     {
         if (obj != null && obj instanceof SM)
         {
-            SM other = (SM)obj;
+            SM other = (SM) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -109,6 +110,7 @@ public class SM extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "requiredApiVersion", this.requiredApiVersion);
             print.printf("%1$20s: %2$s\n", "configuration", this.configuration);
             print.printf("%1$20s: %2$s\n", "capabilities", this.capabilities);
+            print.printf("%1$20s: %2$s\n", "features", this.features);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
             print.printf("%1$20s: %2$s\n", "driverFilename", this.driverFilename);
             return writer.toString();
@@ -117,8 +119,8 @@ public class SM extends XenAPIObject {
         /**
          * Convert a SM.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
@@ -129,6 +131,7 @@ public class SM extends XenAPIObject {
             map.put("required_api_version", this.requiredApiVersion == null ? "" : this.requiredApiVersion);
             map.put("configuration", this.configuration == null ? new HashMap<String, String>() : this.configuration);
             map.put("capabilities", this.capabilities == null ? new LinkedHashSet<String>() : this.capabilities);
+            map.put("features", this.features == null ? new HashMap<String, Long>() : this.features);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
             map.put("driver_filename", this.driverFilename == null ? "" : this.driverFilename);
             return map;
@@ -175,6 +178,10 @@ public class SM extends XenAPIObject {
          */
         public Set<String> capabilities;
         /**
+         * capabilities of the SM plugin, with capability version numbers
+         */
+        public Map<String, Long> features;
+        /**
          * additional configuration
          */
         public Map<String, String> otherConfig;
@@ -190,15 +197,15 @@ public class SM extends XenAPIObject {
      * @return all fields from the object
      */
     public SM.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSMRecord(result);
+            return Types.toSMRecord(result);
     }
 
     /**
@@ -208,15 +215,15 @@ public class SM extends XenAPIObject {
      * @return reference to the object
      */
     public static SM getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSM(result);
+            return Types.toSM(result);
     }
 
     /**
@@ -226,15 +233,15 @@ public class SM extends XenAPIObject {
      * @return references to objects with matching names
      */
     public static Set<SM> getByNameLabel(Connection c, String label) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_by_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(label)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfSM(result);
+            return Types.toSetOfSM(result);
     }
 
     /**
@@ -243,15 +250,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -260,15 +267,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getNameLabel(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -277,15 +284,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getNameDescription(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -294,15 +301,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getType(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -311,15 +318,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getVendor(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_vendor";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -328,15 +335,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getCopyright(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_copyright";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -345,15 +352,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getVersion(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_version";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -362,15 +369,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getRequiredApiVersion(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_required_api_version";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -379,32 +386,50 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getConfiguration(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_configuration";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
     }
 
     /**
      * Get the capabilities field of the given SM.
+     * @deprecated
      *
      * @return value of the field
      */
-    public Set<String> getCapabilities(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+   @Deprecated public Set<String> getCapabilities(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_capabilities";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfString(result);
+            return Types.toSetOfString(result);
+    }
+
+    /**
+     * Get the features field of the given SM.
+     *
+     * @return value of the field
+     */
+    public Map<String, Long> getFeatures(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SM.get_features";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringLong(result);
     }
 
     /**
@@ -413,15 +438,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
     }
 
     /**
@@ -430,15 +455,15 @@ public class SM extends XenAPIObject {
      * @return value of the field
      */
     public String getDriverFilename(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_driver_filename";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -447,9 +472,9 @@ public class SM extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -464,9 +489,9 @@ public class SM extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -480,9 +505,9 @@ public class SM extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -496,15 +521,15 @@ public class SM extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<SM> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfSM(result);
+            return Types.toSetOfSM(result);
     }
 
     /**
@@ -513,15 +538,15 @@ public class SM extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<SM, SM.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "SM.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfSMSMRecord(result);
+            return Types.toMapOfSMSMRecord(result);
     }
 
 }

@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -38,7 +39,6 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfig;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcHttpClientConfig;
-import org.apache.xmlrpc.client.XmlRpcSun15HttpTransportFactory;
 
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
@@ -54,19 +54,9 @@ public class Connection
     /**
      * The version of the bindings that this class belongs to.
      */
-    public static final String BINDINGS_VERSION = "6.1.0-1";
-
-    /**
-     * true if the connection is to the Rio edition of XenServer. Certain function calls are not allowed.
-     *
-     * @deprecated Use getAPIVersion() instead.
-     */
-    @Deprecated
-    public Boolean rioConnection = false;
-
+    public static final String BINDINGS_VERSION = "6.2.0-1";
+    
     private APIVersion apiVersion;
-
-    protected int _wait = 600;
 
     /**
      * Updated when Session.login_with_password() is called.
@@ -91,47 +81,37 @@ public class Connection
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     *
+     * 
      * This constructor calls Session.loginWithPassword, passing itself as the first parameter.
-     *
+     * 
      * When this constructor is used, a call to dispose() (also called in the Connection's finalizer) will attempt a
      * Session.logout on this connection.
-     *
+     * 
      * @deprecated Use a constructor that takes a URL as the first parameter instead.
      */
     @Deprecated
     public Connection(String client, String username, String password) throws java.net.MalformedURLException,
-            XmlRpcException, BadServerResponse, SessionAuthenticationFailed, XenAPIException
+        XmlRpcException, BadServerResponse, SessionAuthenticationFailed, XenAPIException
     {
         deprecatedConstructorUsed = true;
 
-        // To login normally we call login_with_password(username, password, "1.X").  On rio this call fails and we
-        // should use login_with_password(username,password) instead, and note that we are talking to a rio host so that we
-        // can refuse to make certain miami-specific calls
         final String ApiVersion = APIVersion.latest().toString();
         this.client = getClientFromURL(new URL(client));
         try
         {
-            //first try to login the modern way
             this.sessionReference = loginWithPassword(this.client, username, password, ApiVersion);
         } catch (BadServerResponse e)
         {
-            //oops, something went wrong
             String[] errDesc = e.errorDescription;
-            //was the problem that the host was running rio? If so it will have complained that it got three parameters
-            //instead of two. Let us carefully verify the details of this complaint
+
             if (0 == errDesc[0].compareTo("MESSAGE_PARAMETER_COUNT_MISMATCH")
-                && 0 == errDesc[1].compareTo("session.login_with_password")
-                && 0 == errDesc[2].compareTo("2")
-                && 0 == errDesc[3].compareTo("3"))
+                    && 0 == errDesc[1].compareTo("session.login_with_password")
+                    && 0 == errDesc[2].compareTo("2")
+                    && 0 == errDesc[3].compareTo("3"))
             {
-                //and if so, we can have another go, using the older login method, and see how that goes.
                 this.sessionReference = loginWithPassword(this.client, username, password);
-                //success!. Note that we are talking to an old host on this connection
-                this.rioConnection = true;
             } else
             {
-                //Hmm... Can't solve this here. Let upstairs know about the problem.
                 throw e;
             }
         }
@@ -139,11 +119,13 @@ public class Connection
         try
         {
             setAPIVersion(new Session(sessionReference));
-        } catch (XenAPIException exn)
+        }
+        catch (XenAPIException exn)
         {
             dispose();
             throw exn;
-        } catch (XmlRpcException exn)
+        }
+        catch (XmlRpcException exn)
         {
             dispose();
             throw exn;
@@ -153,24 +135,24 @@ public class Connection
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     *
+     * 
      * Note this constructor does NOT call Session.loginWithPassword; the programmer is responsible for calling it,
      * passing the Connection as a parameter. No attempt to connect to the server is made until login is called.
-     *
+     * 
      * When this constructor is used, a call to dispose() will do nothing. The programmer is responsible for manually
      * logging out the Session.
      */
-    public Connection(URL url, int wait)
+    public Connection(URL url)
     {
         deprecatedConstructorUsed = false;
-        _wait = wait;
+
         this.client = getClientFromURL(url);
     }
 
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     *
+     * 
      * The additional sessionReference parameter must be a reference to a logged-in Session. Any method calls on this
      * Connection will use it. This constructor does not call Session.loginWithPassword, and dispose() on the resulting
      * Connection object does not call Session.logout. The programmer is responsible for ensuring the Session is logged
@@ -206,11 +188,12 @@ public class Connection
             if (sessionReference != null)
             {
                 String method_call = "session.logout";
-                Object[] method_params = {Marshalling.toXMLRPC(this.sessionReference)};
+                Object[] method_params = { Marshalling.toXMLRPC(this.sessionReference) };
                 client.execute(method_call, method_params);
                 sessionReference = null;
             }
-        } catch (XmlRpcException exn)
+        }
+        catch (XmlRpcException exn)
         {
         }
     }
@@ -220,17 +203,17 @@ public class Connection
      */
     @Deprecated
     private static String loginWithPassword(XmlRpcClient client, String username, String password)
-        throws BadServerResponse, XmlRpcException, SessionAuthenticationFailed
+            throws BadServerResponse, XmlRpcException, SessionAuthenticationFailed
     {
         String method_call = "session.login_with_password";
-        Object[] method_params = {Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password)};
-        Map response = (Map)client.execute(method_call, method_params);
+        Object[] method_params = { Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password) };
+        Map response = (Map) client.execute(method_call, method_params);
         if (response.get("Status").equals("Success"))
         {
-            return (String)response.get("Value");
+            return (String) response.get("Value");
         } else if (response.get("Status").equals("Failure"))
         {
-            Object[] error = (Object[])response.get("ErrorDescription");
+            Object[] error = (Object[]) response.get("ErrorDescription");
             if (error[0].equals("SESSION_AUTHENTICATION_FAILED"))
             {
                 throw new SessionAuthenticationFailed();
@@ -244,18 +227,18 @@ public class Connection
      */
     @Deprecated
     private static String loginWithPassword(XmlRpcClient client, String username, String password, String ApiVersion)
-        throws BadServerResponse, XmlRpcException, SessionAuthenticationFailed
+            throws BadServerResponse, XmlRpcException, SessionAuthenticationFailed
     {
         String method_call = "session.login_with_password";
-        Object[] method_params = {Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password),
-            Marshalling.toXMLRPC(ApiVersion)};
-        Map response = (Map)client.execute(method_call, method_params);
+        Object[] method_params = { Marshalling.toXMLRPC(username), Marshalling.toXMLRPC(password),
+                Marshalling.toXMLRPC(ApiVersion) };
+        Map response = (Map) client.execute(method_call, method_params);
         if (response.get("Status").equals("Success"))
         {
-            return (String)response.get("Value");
+            return (String) response.get("Value");
         } else if (response.get("Status").equals("Failure"))
         {
-            Object[] error = (Object[])response.get("ErrorDescription");
+            Object[] error = (Object[]) response.get("ErrorDescription");
             if (error[0].equals("SESSION_AUTHENTICATION_FAILED"))
             {
                 throw new SessionAuthenticationFailed();
@@ -268,22 +251,19 @@ public class Connection
 
     public XmlRpcClientConfigImpl getConfig()
     {
-        return config;
+	return config;
     }
-
     private XmlRpcClient getClientFromURL(URL url)
     {
         config.setTimeZone(TimeZone.getTimeZone("UTC"));
         config.setServerURL(url);
-        config.setReplyTimeout(_wait * 1000);
-        config.setConnectionTimeout(5000);
         XmlRpcClient client = new XmlRpcClient();
         client.setConfig(config);
         return client;
     }
 
     /*
-     * Because the binding calls are constructing their own parameter lists, they need to be able to get to
+     * Because the binding calls are constructing their own parameter lists, they need to be able to get to 
      * the session reference directly. This is all rather ugly and needs redone
      * Changed to public to allow easier integration with HTTP-level streaming interface,
      * see CA-15447
@@ -296,9 +276,9 @@ public class Connection
     /**
      * The (auto-generated parts of) the bindings dispatch XMLRPC calls on this Connection's client through this method.
      */
-    protected Map dispatch(String method_call, Object[] method_params) throws XmlRpcException, XenAPIException
+    Map dispatch(String method_call, Object[] method_params) throws XmlRpcException, XenAPIException
     {
-        Map response = (Map)client.execute(method_call, method_params);
+        Map response = (Map) client.execute(method_call, method_params);
 
         if (!deprecatedConstructorUsed)
         {
@@ -314,7 +294,7 @@ public class Connection
                 setAPIVersion(session);
             }
             else if (method_call.equals("session.slave_local_login_with_password") &&
-                response.get("Status").equals("Success"))
+                     response.get("Status").equals("Success"))
             {
                 // Store the Session reference and assume the latest API version.
                 sessionReference = Types.toSession(response.get("Value")).ref;
@@ -329,7 +309,7 @@ public class Connection
                 // this session from the master instead.
                 if (response.get("Status").equals("Failure"))
                 {
-                    Object[] error = (Object[])response.get("ErrorDescription");
+                    Object[] error = (Object[]) response.get("ErrorDescription");
                     if (error.length == 2 && error[0].equals("HOST_IS_SLAVE"))
                     {
                         try
@@ -338,18 +318,20 @@ public class Connection
                                 ((XmlRpcHttpClientConfig)client.getClientConfig()).getServerURL();
                             Connection tmp_conn =
                                 new Connection(new URL(client_url.getProtocol(),
-                                    (String)error[1],
-                                    client_url.getPort(),
-                                    client_url.getFile()), _wait);
+                                                       (String)error[1],
+                                                       client_url.getPort(),
+                                                       client_url.getFile()));
                             tmp_conn.sessionReference = sessionReference;
                             try
                             {
                                 Session.logout(tmp_conn);
-                            } finally
+                            }
+                            finally
                             {
                                 tmp_conn.dispose();
                             }
-                        } catch (Exception exn2)
+                        }
+                        catch (Exception exn2)
                         {
                             // Ignore -- we're going to throw HostIsSlave anyway.
                         }
@@ -364,6 +346,7 @@ public class Connection
         return Types.checkResponse(response);
     }
 
+
     private void setAPIVersion(Session session) throws XenAPIException, XmlRpcException
     {
         try
@@ -371,9 +354,10 @@ public class Connection
             long major = session.getThisHost(this).getAPIVersionMajor(this);
             long minor = session.getThisHost(this).getAPIVersionMinor(this);
             apiVersion = APIVersion.fromMajorMinor(major, minor);
-        } catch (BadServerResponse exn)
+        }
+        catch (BadServerResponse exn)
         {
-            apiVersion = APIVersion.API_1_1;
+            apiVersion = APIVersion.UNKNOWN;
         }
     }
 }

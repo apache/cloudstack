@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class Event extends XenAPIObject {
      * For internal use only.
      */
     Event(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class Event extends XenAPIObject {
     {
         if (obj != null && obj instanceof Event)
         {
-            Event other = (Event)obj;
+            Event other = (Event) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -112,8 +113,8 @@ public class Event extends XenAPIObject {
         /**
          * Convert a event.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("id", this.id == null ? 0 : this.id);
             map.put("timestamp", this.timestamp == null ? new Date(0) : this.timestamp);
             map.put("class", this.clazz == null ? "" : this.clazz);
@@ -162,9 +163,9 @@ public class Event extends XenAPIObject {
      * @return Task
      */
     public static Task registerAsync(Connection c, Set<String> classes) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.event.register";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes)};
@@ -179,9 +180,9 @@ public class Event extends XenAPIObject {
      * @param classes register for events for the indicated classes
      */
     public static void register(Connection c, Set<String> classes) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "event.register";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes)};
@@ -196,9 +197,9 @@ public class Event extends XenAPIObject {
      * @return Task
      */
     public static Task unregisterAsync(Connection c, Set<String> classes) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.event.unregister";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes)};
@@ -213,9 +214,9 @@ public class Event extends XenAPIObject {
      * @param classes remove this session's registration for the indicated classes
      */
     public static void unregister(Connection c, Set<String> classes) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "event.unregister";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes)};
@@ -229,17 +230,17 @@ public class Event extends XenAPIObject {
      * @return the batch of events
      */
     public static Set<Event.Record> next(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.SessionNotRegistered,
-        Types.EventsLost {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.SessionNotRegistered,
+       Types.EventsLost {
         String method_call = "event.next";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfEventRecord(result);
+            return Types.toSetOfEventRecord(result);
     }
 
     /**
@@ -251,17 +252,17 @@ public class Event extends XenAPIObject {
      * @return the batch of events
      */
     public static Set<Event.Record> from(Connection c, Set<String> classes, String token, Double timeout) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.SessionNotRegistered,
-        Types.EventsLost {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.SessionNotRegistered,
+       Types.EventsLost {
         String method_call = "event.from";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes), Marshalling.toXMLRPC(token), Marshalling.toXMLRPC(timeout)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfEventRecord(result);
+            return Types.toSetOfEventRecord(result);
     }
 
     /**
@@ -270,15 +271,15 @@ public class Event extends XenAPIObject {
      * @return the event ID
      */
     public static Long getCurrentId(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "event.get_current_id";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toLong(result);
+            return Types.toLong(result);
     }
 
     /**
@@ -289,30 +290,15 @@ public class Event extends XenAPIObject {
      * @return the event ID
      */
     public static String inject(Connection c, String clazz, String ref) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "event.inject";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(clazz), Marshalling.toXMLRPC(ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
-    }
-
-    public static Map properFrom(Connection c, Set<String> classes, String token, Double timeout) throws BadServerResponse, XenAPIException, XmlRpcException,
-            Types.SessionNotRegistered,
-            Types.EventsLost {
-        String method_call = "event.from";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes), Marshalling.toXMLRPC(token), Marshalling.toXMLRPC(timeout)};
-        Map response = c.dispatch(method_call, method_params);
-        Object result = response.get("Value");
-        Map value = (Map)result;
-        Map<String, Object> from = new HashMap<String, Object>();
-        from.put("token", value.get("token"));
-        from.put("events", Types.toSetOfEventRecord(value.get("events")));
-        return from;
+            return Types.toString(result);
     }
 
 }

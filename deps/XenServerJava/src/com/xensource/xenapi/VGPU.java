@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class VGPU extends XenAPIObject {
      * For internal use only.
      */
     VGPU(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class VGPU extends XenAPIObject {
     {
         if (obj != null && obj instanceof VGPU)
         {
-            VGPU other = (VGPU)obj;
+            VGPU other = (VGPU) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -105,20 +106,24 @@ public class VGPU extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "device", this.device);
             print.printf("%1$20s: %2$s\n", "currentlyAttached", this.currentlyAttached);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
+            print.printf("%1$20s: %2$s\n", "type", this.type);
+            print.printf("%1$20s: %2$s\n", "residentOn", this.residentOn);
             return writer.toString();
         }
 
         /**
          * Convert a VGPU.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("VM", this.VM == null ? new VM("OpaqueRef:NULL") : this.VM);
             map.put("GPU_group", this.GPUGroup == null ? new GPUGroup("OpaqueRef:NULL") : this.GPUGroup);
             map.put("device", this.device == null ? "" : this.device);
             map.put("currently_attached", this.currentlyAttached == null ? false : this.currentlyAttached);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
+            map.put("type", this.type == null ? new VGPUType("OpaqueRef:NULL") : this.type);
+            map.put("resident_on", this.residentOn == null ? new PGPU("OpaqueRef:NULL") : this.residentOn);
             return map;
         }
 
@@ -146,6 +151,14 @@ public class VGPU extends XenAPIObject {
          * Additional configuration
          */
         public Map<String, String> otherConfig;
+        /**
+         * Preset type for this VGPU
+         */
+        public VGPUType type;
+        /**
+         * The PGPU on which this VGPU is running
+         */
+        public PGPU residentOn;
     }
 
     /**
@@ -154,15 +167,15 @@ public class VGPU extends XenAPIObject {
      * @return all fields from the object
      */
     public VGPU.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVGPURecord(result);
+            return Types.toVGPURecord(result);
     }
 
     /**
@@ -172,15 +185,15 @@ public class VGPU extends XenAPIObject {
      * @return reference to the object
      */
     public static VGPU getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVGPU(result);
+            return Types.toVGPU(result);
     }
 
     /**
@@ -189,15 +202,15 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -206,15 +219,15 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public VM getVM(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_VM";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVM(result);
+            return Types.toVM(result);
     }
 
     /**
@@ -223,15 +236,15 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public GPUGroup getGPUGroup(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_GPU_group";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toGPUGroup(result);
+            return Types.toGPUGroup(result);
     }
 
     /**
@@ -240,15 +253,15 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public String getDevice(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_device";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -257,15 +270,15 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getCurrentlyAttached(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_currently_attached";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -274,15 +287,49 @@ public class VGPU extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the type field of the given VGPU.
+     *
+     * @return value of the field
+     */
+    public VGPUType getType(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VGPU.get_type";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toVGPUType(result);
+    }
+
+    /**
+     * Get the resident_on field of the given VGPU.
+     *
+     * @return value of the field
+     */
+    public PGPU getResidentOn(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VGPU.get_resident_on";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toPGPU(result);
     }
 
     /**
@@ -291,9 +338,9 @@ public class VGPU extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -308,9 +355,9 @@ public class VGPU extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -324,9 +371,9 @@ public class VGPU extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -335,58 +382,58 @@ public class VGPU extends XenAPIObject {
     }
 
     /**
+     * 
      *
-     *
-     * @param VM
-     * @param GPUGroup
-     * @param device
-     * @param otherConfig
+     * @param VM 
+     * @param GPUGroup 
+     * @param device 
+     * @param otherConfig 
+     * @param type 
      * @return Task
      */
-    public static Task createAsync(Connection c, VM VM, GPUGroup GPUGroup, String device, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static Task createAsync(Connection c, VM VM, GPUGroup GPUGroup, String device, Map<String, String> otherConfig, VGPUType type) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.VGPU.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(VM), Marshalling.toXMLRPC(GPUGroup), Marshalling.toXMLRPC(device),
-            Marshalling.toXMLRPC(otherConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(VM), Marshalling.toXMLRPC(GPUGroup), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(type)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
     }
 
     /**
+     * 
      *
-     *
-     * @param VM
-     * @param GPUGroup
-     * @param device
-     * @param otherConfig
+     * @param VM 
+     * @param GPUGroup 
+     * @param device 
+     * @param otherConfig 
+     * @param type 
      * @return reference to the newly created object
      */
-    public static VGPU create(Connection c, VM VM, GPUGroup GPUGroup, String device, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static VGPU create(Connection c, VM VM, GPUGroup GPUGroup, String device, Map<String, String> otherConfig, VGPUType type) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(VM), Marshalling.toXMLRPC(GPUGroup), Marshalling.toXMLRPC(device),
-            Marshalling.toXMLRPC(otherConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(VM), Marshalling.toXMLRPC(GPUGroup), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(type)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVGPU(result);
+            return Types.toVGPU(result);
     }
 
     /**
-     *
+     * 
      *
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.VGPU.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -396,13 +443,13 @@ public class VGPU extends XenAPIObject {
     }
 
     /**
-     *
+     * 
      *
      */
     public void destroy(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -416,15 +463,15 @@ public class VGPU extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<VGPU> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfVGPU(result);
+            return Types.toSetOfVGPU(result);
     }
 
     /**
@@ -433,15 +480,15 @@ public class VGPU extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<VGPU, VGPU.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "VGPU.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfVGPUVGPURecord(result);
+            return Types.toMapOfVGPUVGPURecord(result);
     }
 
 }
