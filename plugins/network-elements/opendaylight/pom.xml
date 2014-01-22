@@ -48,35 +48,17 @@
     </testResources>
     <plugins>
       <plugin>
-        <groupId>com.mycila.maven-license-plugin</groupId>
-        <artifactId>maven-license-plugin</artifactId>
-        <version>1.9.0</version>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
         <executions>
           <execution>
+            <id>cloudstack-checklicence</id>
             <phase>process-classes</phase>
             <goals>
-              <goal>format</goal>
+              <goal>check</goal>
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <strictCheck>true</strictCheck>
-          <aggregate>true</aggregate>
-          <header>../../../LICENSE.header</header>
-          <mapping>
-                <xml>XML_STYLE</xml>
-                <java>DOUBLESLASH_STYLE</java>
-                <clj>SEMICOLON_STYLE</clj>
-          </mapping>
-          <useDefaultExcludes>false</useDefaultExcludes>
-          <excludes>
-            <exclude>target/**</exclude>
-            <exclude>.settings/**</exclude>
-            <exclude>.checkstyle</exclude>
-            <exclude>.project</exclude>
-            <exclude>.classpath</exclude>
-          </excludes>
-        </configuration>
       </plugin>
     </plugins>
   </build>
