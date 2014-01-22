@@ -222,7 +222,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     // TODO
-    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.job.enabled", "false",
+    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
+            Boolean.class, "vm.job.enabled", "true",
             "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
