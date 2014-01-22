@@ -614,11 +614,12 @@
                 </pluginExecution>
                 <pluginExecution>
                   <pluginExecutionFilter>
-                    <groupId>com.mycila.maven-license-plugin</groupId>
-                    <artifactId>maven-license-plugin</artifactId>
-                    <versionRange>[1.9.0,)</versionRange>
+                    <groupId>com.mycila</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <versionRange>[2.5,)</versionRange>
                     <goals>
                       <goal>format</goal>
+                      <goal>check</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
