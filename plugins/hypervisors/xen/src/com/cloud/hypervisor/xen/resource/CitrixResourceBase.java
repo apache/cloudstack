@@ -6009,7 +6009,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private void CheckXenHostInfo() throws ConfigurationException {
-        Connection conn = _connPool.getConnect(_host.ip, _username, _password);
+        Connection conn = ConnPool.getConnect(_host.ip, _username, _password);
         if( conn == null ) {
             throw new ConfigurationException("Can not create connection to " + _host.ip);
         }

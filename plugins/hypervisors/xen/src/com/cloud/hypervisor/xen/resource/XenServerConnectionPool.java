@@ -207,7 +207,7 @@ public class XenServerConnectionPool {
         return false;
     }
 
- 
+
     public Connection getConnect(String ip, String username, Queue<String> password) {
         Connection conn = new Connection(getURL(ip), 10);
         try {
@@ -220,12 +220,12 @@ public class XenServerConnectionPool {
             }  catch (Exception e1) {
                 String msg = "Unable to create master connection to host(" + maddress +") , due to " + e1.toString();
                 s_logger.debug(msg);
-                throw new CloudRuntimeException(msg, e1); 
+                throw new CloudRuntimeException(msg, e1);
             }
         } catch (Exception e) {
             String msg = "Unable to create master connection to host(" + ip +") , due to " + e.toString();
             s_logger.debug(msg);
-            throw new CloudRuntimeException(msg, e);	
+            throw new CloudRuntimeException(msg, e);
         }
         return conn;
     }
@@ -255,15 +255,15 @@ public class XenServerConnectionPool {
             if (mConn != null){
                 try{
                     Host.getByUuid(mConn, hostUuid);
-                } catch (Exception e) { 
+                } catch (Exception e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("connect through IP(" + mConn.getIp() + " for pool(" + poolUuid + ") is broken due to " + e.toString());
                     }
                     removeConnect(poolUuid);
                     mConn = null;
                 }
-            } 
- 
+            }
+
             if ( mConn == null ) {
                 mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait);
                 try {
@@ -277,12 +277,12 @@ public class XenServerConnectionPool {
                         String msg = "Unable to create master connection to host(" + maddress +") , due to " + e1.toString();
                         s_logger.debug(msg);
                         throw new CloudRuntimeException(msg, e1);
- 
-                    }                   
+
+                    }
                 } catch (Exception e) {
                     String msg = "Unable to create master connection to host(" + ipAddress +") , due to " + e.toString();
                     s_logger.debug(msg);
-                    throw new CloudRuntimeException(msg, e);	
+                    throw new CloudRuntimeException(msg, e);
                 }
                 addConnect(poolUuid, mConn);
             }
