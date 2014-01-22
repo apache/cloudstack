@@ -65,8 +65,8 @@ class MarvinLog:
         self.__logger = logging.getLogger(self.__loggerName)
         self.__logger.setLevel(logging.DEBUG)
 
-    def setLogHandler(self, log_file_path, log_format=None,
-                      log_level=logging.DEBUG):
+    def __setLogHandler(self, log_file_path, log_format=None,
+                        log_level=logging.DEBUG):
         '''
         @Desc: Adds the given Log handler to the current logger
         @Input: log_file_path: Log File Path as where to store the logs
@@ -89,7 +89,7 @@ class MarvinLog:
             return SUCCESS
         except Exception, e:
             print "\nException Occurred Under " \
-                  "setLogHandler %s" % GetDetailExceptionInfo(e)
+                  "__setLogHandler %s" % GetDetailExceptionInfo(e)
             return FAILED
 
     def __cleanPreviousLogs(self, logfolder_to_remove):
@@ -99,7 +99,12 @@ class MarvinLog:
         @Return: N\A
         @Input: logfolder_to_remove: Path of Log to remove
         '''
-        os.rmdir(logfolder_to_remove)
+        try:
+            os.rmdir(logfolder_to_remove)
+        except Exception, e:
+            print "\n Exception Occurred Under __cleanPreviousLogs :%s" % \
+                  GetDetailExceptionInfo(e)
+            return FAILED
 
     def getLogger(self):
         '''
@@ -134,18 +139,19 @@ class MarvinLog:
                 temp_path = time.strftime("%b_%d_%Y_%H_%M_%S",
                                           time.localtime())
             else:
-                temp_path = test_module_name
+                temp_path = str(test_module_name.split(".py")[0])
 
             if (('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
                 self.__cleanPreviousLogs(log_cfg.
                                          __dict__.
-                                         get('LogFolderPath') + "MarvinLogs/")
-                temp_dir = log_cfg.__dict__.get('LogFolderPath') + "MarvinLogs"
+                                         get('LogFolderPath') + "/MarvinLogs")
+                temp_dir = \
+                    log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
             else:
                 temp_dir = "MarvinLogs"
 
-            self.__logFolderDir = temp_dir + temp_path
+            self.__logFolderDir = temp_dir + "//" + temp_path
             print "\n*********Log Folder Path: %s. " \
                   "All logs will be available here **************" \
                   % str(self.__logFolderDir)
@@ -161,10 +167,10 @@ class MarvinLog:
             tc_failed_exception_log = \
                 self.__logFolderDir + "/failed_plus_exceptions.txt"
             tc_run_log = self.__logFolderDir + "/runinfo.txt"
-            if self.setLogHandler(tc_run_log,
-                                  log_level=logging.DEBUG) != FAILED:
-                self.setLogHandler(tc_failed_exception_log,
-                                   log_level=logging.FATAL)
+            if self.__setLogHandler(tc_run_log,
+                                    log_level=logging.DEBUG) != FAILED:
+                self.__setLogHandler(tc_failed_exception_log,
+                                     log_level=logging.FATAL)
                 return SUCCESS
             return FAILED
         except Exception, e:

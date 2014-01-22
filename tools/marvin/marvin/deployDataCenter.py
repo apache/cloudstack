@@ -659,6 +659,11 @@ class DeployDataCenters(object):
             return FAILED
 
 if __name__ == "__main__":
+    '''
+    @Desc : This facility is mainly to deploy
+            DataCenter by using this module as script
+            by using the input provided configuration.
+    '''
     parser = OptionParser()
     parser.add_option("-i", "--input", action="store",
                       default="./datacenterCfg", dest="input",
@@ -673,22 +678,32 @@ if __name__ == "__main__":
         '''
         from marvin.marvinLog import MarvinLog
         from marvin.cloudstackTestClient import CSTestClient
-
+        '''
+        Step1 : Parse and Create the config from input config provided
+        '''
         cfg = configGenerator.getSetupConfig(options.input)
         log_obj = MarvinLog("CSLog")
-        tcRunLogger = log_obj.setLogHandler("/tmp/debug.log")
-        if tcRunLogger is None:
-            print "\nLogger Creation Failed. " \
-                  "Please Check"
-            exit(1)
+        log_check = False
+        if log_obj is not None:
+            log_check = True
+            ret = log_obj.createLogs("DataCenter",
+                                     cfg.logger)
+            if ret != FAILED:
+                log_folder_path = log_obj.getLogFolderPath()
+                tc_run_logger = log_obj.getLogger()
+        if log_check is False:
+            print "\nLog Creation Failed. Please Check"
         else:
-            print "\nAll Logs Are Available " \
-                  "Under /tmp/debug.log File"
+            print "\nAll Logs will be available under %s" % \
+                  str(log_folder_path)
+        '''
+        Step2: Create the Test Client
+        '''
         obj_tc_client = CSTestClient(cfg.mgtSvr[0], cfg.dbSvr,
-                                     logger=tcRunLogger)
-        if obj_tc_client is not None and obj_tc_client.CreateTestClient() \
+                                     logger=tc_run_logger)
+        if obj_tc_client is not None and obj_tc_client.createTestClient() \
                 != FAILED:
-            deploy = DeployDataCenters(obj_tc_client, cfg, tcRunLogger)
+            deploy = DeployDataCenters(obj_tc_client, cfg, tc_run_logger)
             if deploy.deploy() == FAILED:
                 print "\nDeploy DC Failed"
                 exit(1)
@@ -696,7 +711,7 @@ if __name__ == "__main__":
             print "\nTestClient Creation Failed. Please Check"
             exit(1)
     else:
-        print "\n Please Specify a Valid Configuration File"
+        print "\n Please Specify a Valid Input Configuration File"
 
     """
     create = createStoragePool.createStoragePoolCmd()
