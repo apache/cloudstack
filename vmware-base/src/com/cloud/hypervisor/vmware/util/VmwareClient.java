@@ -27,8 +27,8 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.handler.MessageContext;
 
 import org.apache.log4j.Logger;
 
@@ -144,6 +144,7 @@ public class VmwareClient {
         ServiceContent serviceContent = vimPort.retrieveServiceContent(svcInstRef);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
+        @SuppressWarnings("unchecked")
         Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
         List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
@@ -256,17 +257,18 @@ public class VmwareClient {
      * @throws Exception
      *             in case of error.
      */
-    public Object getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
+    @SuppressWarnings("unchecked")
+    public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
         List<String> props = new ArrayList<String>();
         props.add(propertyName);
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
 
-        Object propertyValue = null;
+        T propertyValue = null;
         if (objContent != null && objContent.size() > 0) {
             List<DynamicProperty> dynamicProperty = objContent.get(0).getPropSet();
             if (dynamicProperty != null && dynamicProperty.size() > 0) {
                 DynamicProperty dp = dynamicProperty.get(0);
-                propertyValue = dp.getVal();
+                propertyValue = (T)dp.getVal();
                 /*
                  * If object is ArrayOfXXX object, then get the XXX[] by
                  * invoking getXXX() on the object.
@@ -274,13 +276,13 @@ public class VmwareClient {
                  * ArrayOfManagedObjectReference.getManagedObjectReference()
                  * returns ManagedObjectReference[] array.
                  */
-                Class dpCls = propertyValue.getClass();
+                Class<? extends Object> dpCls = propertyValue.getClass();
                 String dynamicPropertyName = dpCls.getName();
                 if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
                     String methodName = "get" + dynamicPropertyName.substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
 
-                    Method getMorMethod = dpCls.getDeclaredMethod(methodName, null);
-                    propertyValue = getMorMethod.invoke(propertyValue, (Object[])null);
+                    Method getMorMethod = dpCls.getDeclaredMethod(methodName, (Class<?>)null);
+                    propertyValue = (T)getMorMethod.invoke(propertyValue, (Object[])null);
                 }
             }
         }
@@ -359,7 +361,7 @@ public class VmwareClient {
      * @throws InvalidCollectorVersionFaultMsg
      */
     private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
-        RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];
