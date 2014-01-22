@@ -12,7 +12,7 @@
 
 DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
 VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
-MVNADD := $(shell if echo '$(DEBVERS)' | grep -q snapshot; then echo -SNAPSHOT; fi )
+MVNADD := $(shell if echo '$(DEBVERS)' | grep -q snapshot; then echo ; fi )
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
