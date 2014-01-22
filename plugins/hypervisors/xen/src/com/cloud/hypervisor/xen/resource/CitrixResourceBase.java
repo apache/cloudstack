@@ -430,12 +430,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean pingXenServer() {
-        Connection conn = getConnection();
+        Session slaveSession = null;
+        Connection slaveConn = null;
         try {
-            callHostPlugin(conn, "echo", "main");
+            URL slaveUrl = null;
+            slaveUrl = _connPool.getURL(_host.ip);
+            slaveConn = new Connection(slaveUrl, 10);
+            slaveSession = _connPool.slaveLocalLoginWithPassword(slaveConn, _username, _password);
             return true;
         } catch (Exception e) {
-            s_logger.debug("cannot ping host " + _host.ip + " due to " + e.toString(),  e);
+        } finally {
+            if( slaveSession != null ){
+                try{
+                    Session.localLogout(slaveConn);
+                } catch (Exception e) {
+                }
+                slaveConn.dispose();
+            }
         }
         return false;
     }
@@ -6053,9 +6064,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private void CheckXenHostInfo() throws ConfigurationException {
-        Connection conn = _connPool.getConnect(_host.ip, _username, _password);
+        Connection conn = _connPool.slaveConnect(_host.ip, _username, _password);
         if( conn == null ) {
-            throw new ConfigurationException("Can not create connection to " + _host.ip);
+            throw new ConfigurationException("Can not create slave connection to " + _host.ip);
         }
         try {
             Host.Record hostRec = null;
@@ -6075,7 +6086,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         } finally {
             try {
-                Session.logout(conn);
+                Session.localLogout(conn);
             } catch (Exception e) {
             }
         }
@@ -7371,11 +7382,35 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             Host.Record hostr = poolr.master.getRecord(conn);
             if (_host.uuid.equals(hostr.uuid)) {
+            	boolean mastermigrated = false;
                 Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
-                if (hostMap.size() > 1) {
-                  	String msg = "This host is XS master, please designate a new XS master throught XenCenter before you delete this host from CS";
+                if (hostMap.size() != 1) {
+                	Host newMaster = null;
+                	Host.Record newMasterRecord = null;
+                	for (Map.Entry<Host, Host.Record> entry : hostMap.entrySet()) {
+                		if (_host.uuid.equals(entry.getValue().uuid)) {
+                			continue;
+                		}
+                		newMaster = entry.getKey();
+                		newMasterRecord = entry.getValue();
+                		s_logger.debug("New master for the XenPool is " + newMasterRecord.uuid + " : " + newMasterRecord.address);
+                		try {
+                			_connPool.switchMaster(_host.ip, _host.pool, conn, newMaster, _username, _password, _wait);
+                			mastermigrated = true;
+                			break;
+	                    } catch (Exception e) {
+	                        s_logger.warn("Unable to switch the new master to " + newMasterRecord.uuid + ": " + newMasterRecord.address + " due to " + e.toString());
+                		}
+                    }
+                } else {
+                    s_logger.debug("This is last host to eject, so don't need to eject: " + hostuuid);
+                    return new Answer(cmd);
+                }
+                if ( !mastermigrated ) {
+                	String msg = "this host is master, and cannot designate a new master";
                 	s_logger.debug(msg);
                     return new Answer(cmd, false, msg);
+
                 }
             }
 

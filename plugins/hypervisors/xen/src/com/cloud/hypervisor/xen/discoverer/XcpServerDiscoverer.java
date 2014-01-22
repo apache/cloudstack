@@ -188,7 +188,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             String hostIp = ia.getHostAddress();
             Queue<String> pass=new LinkedList<String>();
             pass.add(password);
-            conn = _connPool.getConnect(hostIp, username, pass);
+            String masterIp = _connPool.getMasterIp(hostIp, username, pass);
+            conn = _connPool.masterConnect(masterIp, username, pass);
             if (conn == null) {
                 String msg = "Unable to get a connection to " + url;
                 s_logger.debug(msg);
@@ -391,7 +392,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             password = host.getDetail("password");
             pass.add(password);
             String address = host.getPrivateIpAddress();
-            Connection hostConn = _connPool.getConnect(address, username, pass);
+            Connection hostConn = _connPool.slaveConnect(address, username, pass);
             if (hostConn == null) {
                 continue;
             }
@@ -405,7 +406,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 s_logger.warn("Can not get master ip address from host " + address);
             } finally {
                 try{
-                    Session.logout(hostConn);
+                    Session.localLogout(hostConn);
                 } catch (Exception e ) {
                 }
                 hostConn.dispose();
