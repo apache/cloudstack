@@ -173,7 +173,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
-    select 
+    select
         service_offering.id,
         disk_offering.uuid,
         disk_offering.name,
@@ -212,10 +212,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `cloud`.`domain` ON disk_offering.domain_id = domain.id
 	where
 		disk_offering.state='Active';
-		
+
 DROP VIEW IF EXISTS `cloud`.`template_view`;
 CREATE VIEW `cloud`.`template_view` AS
-    select 
+    select
         vm_template.id,
         vm_template.uuid,
         vm_template.unique_name,
@@ -257,7 +257,7 @@ CREATE VIEW `cloud`.`template_view` AS
         domain.path domain_path,
         projects.id project_id,
         projects.uuid project_uuid,
-        projects.name project_name,        
+        projects.name project_name,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
@@ -287,23 +287,23 @@ CREATE VIEW `cloud`.`template_view` AS
     from
         `cloud`.`vm_template`
             inner join
-        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id        
+        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id
             inner join
         `cloud`.`account` ON account.id = vm_template.account_id
             inner join
         `cloud`.`domain` ON domain.id = account.domain_id
             left join
-        `cloud`.`projects` ON projects.project_account_id = account.id    
+        `cloud`.`projects` ON projects.project_account_id = account.id
             left join
-        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id         
+        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id
             left join
-        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id    
+        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id
             left join
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
             left join
-        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
+        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id
             left join
-        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null
             left join
         `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
             left join
@@ -420,7 +420,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
-            
+
 DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
 CREATE VIEW `cloud`.`storage_pool_view` AS
     select
@@ -895,4 +895,8 @@ ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `ram`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `speed`;
 
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '5.5', 128, 0, 13, 32, 1, 1);
+
+ALTER TABLE `cloud`.`network_acl_item` modify `cidr` varchar(2048);
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "api.servlet.endpoint", "http://localhost:8080/client/api?", "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", "http://localhost:8080/client/api?", NULL,NULL,0);
 

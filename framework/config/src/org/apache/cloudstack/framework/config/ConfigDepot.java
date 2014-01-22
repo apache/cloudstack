@@ -29,4 +29,6 @@ public interface ConfigDepot {
     Set<ConfigKey<?>> getConfigListByScope(String scope);
 
     <T> void set(ConfigKey<T> key, T value);
+
+    <T> void createOrUpdateConfigObject(String componentName, ConfigKey<T> key, String value);
 }

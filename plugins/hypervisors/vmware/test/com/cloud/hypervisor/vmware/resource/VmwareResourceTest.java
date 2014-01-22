@@ -86,7 +86,7 @@ public class VmwareResourceTest {
         doReturn(false).when(vmSpec).getLimitCpuUse();
         when(vmMo.configureVm(vmConfigSpec)).thenReturn(true);
 
-        ScaleVmAnswer answer = _resource.execute(cmd);
+        _resource.execute(cmd);
         verify(_resource).execute(cmd);
     }
 

@@ -613,17 +613,17 @@
             if (args.$wizard.find('input[name=compute-cpu-cores]').parent().parent().css('display') != 'none') {
 	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   	            	
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
+	            	    'details[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
 	            	});
 	            }            
 	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {    
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
+	            	    'details[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
 	            	});
 	            }            
 	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {     
 	            	$.extend(deployVmData, {
-	            	    'customparameters[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
+	            	    'details[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
 	            	});
 	            }               
             }

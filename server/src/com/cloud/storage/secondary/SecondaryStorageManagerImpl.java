@@ -30,8 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -1014,7 +1014,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
+        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 

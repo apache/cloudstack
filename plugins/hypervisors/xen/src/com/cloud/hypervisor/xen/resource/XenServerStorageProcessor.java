@@ -185,7 +185,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             catch (CloudRuntimeException ex) {
             }
 
-            Map<String, String> details = cmd.getDisk().getDetails();
+            Map<String, String> details = disk.getDetails();
             boolean isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
             // if the VM is not running and we're not dealing with managed storage, just return success (nothing to do here)
@@ -197,19 +197,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             VDI vdi = null;
 
             if (isManaged) {
-                String iScsiName = details.get(DiskTO.IQN);
-                String storageHost = details.get(DiskTO.STORAGE_HOST);
-                String chapInitiatorUsername = disk.getDetails().get(DiskTO.CHAP_INITIATOR_USERNAME);
-                String chapInitiatorSecret = disk.getDetails().get(DiskTO.CHAP_INITIATOR_SECRET);
-                Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
-
-                SR sr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
-
-                vdi = hypervisorResource.getVDIbyUuid(conn, data.getPath(), false);
-
-                if (vdi == null) {
-                    vdi = hypervisorResource.createVdi(sr, vdiNameLabel, volumeSize);
-                }
+                vdi = hypervisorResource.prepareManagedStorage(conn, details, data.getPath(), vdiNameLabel);
 
                 if (vmNotRunning) {
                     DiskTO newDisk = new DiskTO(disk.getData(), disk.getDiskSeq(), vdi.getUuid(conn), disk.getType());

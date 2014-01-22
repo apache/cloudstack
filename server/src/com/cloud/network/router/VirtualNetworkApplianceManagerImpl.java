@@ -42,11 +42,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -57,6 +56,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -107,7 +107,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -2050,7 +2049,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 // DOMR control command is sent over management server in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
                     s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
-                        dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + ClusterManager.ManagementHostIPAdr.value());
+ dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + ApiServiceConfiguration.ManagementHostIPAdr.value());
 
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Add management server explicit route to DomR.");

@@ -142,7 +142,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertTrue("Migration within cluster isn't successful.", this.result.isSuccess());
+        assertTrue("Migration within cluster isn't successful.", result.isSuccess());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertFalse("Migration within cluster didn't fail.", this.result.isSuccess());
+        assertFalse("Migration within cluster didn't fail.", result.isSuccess());
     }
 
     @Test
@@ -190,7 +190,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertTrue("Migration across cluster isn't successful.", this.result.isSuccess());
+        assertTrue("Migration across cluster isn't successful.", result.isSuccess());
     }
 
     @Test
@@ -214,25 +214,20 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertFalse("Migration across cluster didn't fail.", this.result.isSuccess());
+        assertFalse("Migration across cluster didn't fail.", result.isSuccess());
     }
 
     private class MockContext<T> extends AsyncRpcContext<T> {
-        final Map<VolumeInfo, DataStore> volumeToPool;
-        final AsyncCallFuture<CommandResult> future;
-
         /**
          * @param callback
          */
         public MockContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future, Map<VolumeInfo, DataStore> volumeToPool) {
             super(callback);
-            this.volumeToPool = volumeToPool;
-            this.future = future;
         }
     }
 
     protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> callback, MockContext<CommandResult> context) {
-        this.result = callback.getResult();
+        result = callback.getResult();
         return null;
     }
 

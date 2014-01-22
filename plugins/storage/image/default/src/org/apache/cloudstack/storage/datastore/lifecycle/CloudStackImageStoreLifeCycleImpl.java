@@ -18,6 +18,8 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import com.ibm.wsdl.util.StringUtils;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -86,7 +88,13 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole)dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        s_logger.info("Trying to add a new data store at " + StringUtils.cleanString(url) + " to data center " + dcId);
+        String logString = "";
+        if(url.contains("cifs")) {
+            logString = cleanPassword(url);
+        } else {
+            logString = StringUtils.cleanString(url);
+        }
+        s_logger.info("Trying to add a new data store at " + logString + " to data center " + dcId);
 
         URI uri = null;
         try {
@@ -167,4 +175,22 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return imageStoreHelper.convertToStagingStore(store);
     }
 
+    public static String cleanPassword(String logString) {
+        String cleanLogString = null;
+        if (logString != null) {
+            cleanLogString = logString;
+            String[] temp = logString.split(",");
+            int i = 0;
+            if (temp != null) {
+                while (i < temp.length) {
+                    temp[i] = StringUtils.cleanString(temp[i]);
+                    i++;
+                }
+                List<String> stringList = new ArrayList<String>();
+                Collections.addAll(stringList, temp);
+                cleanLogString = StringUtils.join(stringList, ",");
+            }
+        }
+        return cleanLogString;
+    }
 }

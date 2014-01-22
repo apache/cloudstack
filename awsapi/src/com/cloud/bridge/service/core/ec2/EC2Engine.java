@@ -66,6 +66,7 @@ import com.cloud.stack.models.CloudStackPasswordData;
 import com.cloud.stack.models.CloudStackResourceLimit;
 import com.cloud.stack.models.CloudStackResourceTag;
 import com.cloud.stack.models.CloudStackSecurityGroup;
+import com.cloud.stack.models.CloudStackServiceOffering;
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
 import com.cloud.stack.models.CloudStackTemplatePermission;
@@ -1414,7 +1415,7 @@ public class EC2Engine extends ManagerBase {
             if (request.getInstanceType() != null) {
                 instanceType = request.getInstanceType();
             }
-            CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
+            CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
             if (svcOffering == null) {
                 logger.info("No ServiceOffering found to be defined by name, please contact the administrator " + instanceType);
                 throw new Exception("instanceType not found");
@@ -1609,7 +1610,7 @@ public class EC2Engine extends ManagerBase {
 
             if (request.getInstanceType() != null) {
                 String instanceType = request.getInstanceType();
-                CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
+                CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
                 if (svcOffering == null)
                     throw new Exception("instanceType not found");
                 CloudStackUserVm userVm = getApi().changeServiceForVirtualMachine(instanceId, svcOffering.getId());
@@ -1783,11 +1784,12 @@ public class EC2Engine extends ManagerBase {
      *
      */
 
-    private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
+    private CloudStackServiceOffering getCSServiceOfferingId(String instanceType) throws Exception {
         try {
             if (instanceType == null)
                 instanceType = "m1.small"; // default value
-            return scvoDao.getSvcOfferingByName(instanceType);
+            List<CloudStackServiceOffering> serviceOfferings = getApi().listServiceOfferings(null, null, false, null, instanceType, null, null);
+            return serviceOfferings.get(0);
         } catch (Exception e) {
             logger.error("Error while retrieving ServiceOffering information by name - ", e);
             throw new Exception("No ServiceOffering found to be defined by name");

@@ -461,4 +461,12 @@ public interface UserVmService {
 
     UserVm expungeVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException;
 
+    /**
+     * Finds and returns an encrypted password for a VM.
+     *
+     * @param  userVmId
+     * @return Base64 encoded userdata
+     */
+    String getVmUserData(long vmId);
+
 }

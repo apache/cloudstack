@@ -71,7 +71,7 @@
                             <select name="language">
                                 <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
                                 <option value="en"><fmt:message key="label.lang.english"/></option>
-                                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+                                <option value="ja_JP"><fmt:message key="label.lang.japanese"/></option>
                                 <option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
                                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
@@ -83,6 +83,8 @@
                                 <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
                                 <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
                                 <option value="ar"><fmt:message key="label.lang.arabic"/></option>
+                                <option value="nl_NL"><fmt:message key="label.lang.dutch"/></option>
+                                <option value="pl"><fmt:message key="label.lang.polish"/></option>
                             </select>
                         </div>
                     </div>

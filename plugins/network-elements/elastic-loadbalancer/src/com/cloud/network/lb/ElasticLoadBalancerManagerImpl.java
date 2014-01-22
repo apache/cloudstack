@@ -34,14 +34,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -52,7 +52,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -802,7 +801,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
                             dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " +
-                            ClusterManager.ManagementHostIPAdr.value());
+ ApiServiceConfiguration.ManagementHostIPAdr.value());
                     }
 
                     if (s_logger.isDebugEnabled()) {

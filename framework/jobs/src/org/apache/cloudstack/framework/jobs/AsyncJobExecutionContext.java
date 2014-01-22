@@ -30,7 +30,9 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 
-public class AsyncJobExecutionContext {
+public class AsyncJobExecutionContext  {
+    private static final Logger s_logger = Logger.getLogger(AsyncJobExecutionContext.class);
+
     private AsyncJob _job;
 
     static private AsyncJobManager s_jobMgr;
@@ -112,7 +114,8 @@ public class AsyncJobExecutionContext {
     }
 
     //
-    // check failure exception before we disjoin the worker job
+    // check failure exception before we disjoin the worker job, work job usually fails with exception
+    // this will help propogate exception between jobs
     // TODO : it is ugly and this will become unnecessary after we switch to full-async mode
     //
     public void disjoinJob(long joinedJobId) throws InsufficientCapacityException,
@@ -120,21 +123,34 @@ public class AsyncJobExecutionContext {
         assert (_job != null);
 
         AsyncJobJoinMapVO record = s_joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
-        if (record.getJoinStatus() == JobInfo.Status.FAILED && record.getJoinResult() != null) {
-            Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
-            if (exception != null && exception instanceof Exception) {
-                if (exception instanceof InsufficientCapacityException)
-                    throw (InsufficientCapacityException)exception;
-                else if (exception instanceof ConcurrentOperationException)
-                    throw (ConcurrentOperationException)exception;
-                else if (exception instanceof ResourceUnavailableException)
-                    throw (ResourceUnavailableException)exception;
-                else
-                    throw new RuntimeException((Exception)exception);
+        s_jobMgr.disjoinJob(_job.getId(), joinedJobId);
+
+        if (record.getJoinStatus() == JobInfo.Status.FAILED) {
+            if (record.getJoinResult() != null) {
+                Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
+                if (exception != null && exception instanceof Exception) {
+                    if (exception instanceof InsufficientCapacityException) {
+                        s_logger.error("Job " + joinedJobId + " failed with InsufficientCapacityException");
+                        throw (InsufficientCapacityException)exception;
+                    }
+                    else if (exception instanceof ConcurrentOperationException) {
+                        s_logger.error("Job " + joinedJobId + " failed with ConcurrentOperationException");
+                        throw (ConcurrentOperationException)exception;
+                    }
+                    else if (exception instanceof ResourceUnavailableException) {
+                        s_logger.error("Job " + joinedJobId + " failed with ResourceUnavailableException");
+                        throw (ResourceUnavailableException)exception;
+                    }
+                    else {
+                        s_logger.error("Job " + joinedJobId + " failed with exception");
+                        throw new RuntimeException((Exception)exception);
+                    }
+                }
+            } else {
+                s_logger.error("Job " + joinedJobId + " failed without providing an error object");
+                throw new RuntimeException("Job " + joinedJobId + " failed without providing an error object");
             }
         }
-
-        s_jobMgr.disjoinJob(_job.getId(), joinedJobId);
     }
 
     public void completeJoin(JobInfo.Status joinStatus, String joinResult) {
@@ -151,6 +167,8 @@ public class AsyncJobExecutionContext {
     public static AsyncJobExecutionContext getCurrentExecutionContext() {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
         if (context == null) {
+            // TODO, this has security implicitions
+            s_logger.warn("Job is executed without a context, setup psudo job for the executing thread");
             context = registerPseudoExecutionContext(CallContext.current().getCallingAccountId(),
                     CallContext.current().getCallingUserId());
         }

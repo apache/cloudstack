@@ -25,6 +25,7 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostNetworkSystemMO extends BaseMO {
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(HostNetworkSystemMO.class);
 
     public HostNetworkSystemMO(VmwareContext context, ManagedObjectReference morNetworkSystem) {

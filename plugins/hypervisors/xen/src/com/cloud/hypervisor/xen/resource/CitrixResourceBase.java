@@ -16,46 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -274,6 +234,44 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 
 /**
@@ -426,23 +424,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean pingXenServer() {
-        Session slaveSession = null;
-        Connection slaveConn = null;
+        Connection conn = getConnection();
         try {
-            URL slaveUrl = null;
-            slaveUrl = ConnPool.getURL(_host.ip);
-            slaveConn = new Connection(slaveUrl, 10);
-            slaveSession = ConnPool.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+            callHostPlugin(conn, "echo", "main");
             return true;
         } catch (Exception e) {
-        } finally {
-            if (slaveSession != null) {
-                try {
-                    Session.localLogout(slaveConn);
-                } catch (Exception e) {
-                }
-                slaveConn.dispose();
-            }
+            s_logger.debug("cannot ping host " + _host.ip + " due to " + e.toString(),  e);
         }
         return false;
     }
@@ -621,6 +608,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+    public String routerProxy(String script, String routerIP, String args) {
+        Connection conn = getConnection();
+        String proxyArgs = script + " " + routerIP + " " + args;
+        return callHostPlugin(conn, "vmops", "routerProxy", "args", proxyArgs);
     }
 
     private Answer execute(PerformanceMonitorCommand cmd) {
@@ -1262,10 +1255,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
         Volume.Type type = volume.getType();
 
-        VDI vdi = mount(conn, vmName, volume);
+        if (vdi == null) {
+            vdi = mount(conn, vmName, volume);
+        }
 
         if (vdi != null) {
             if ("detached".equals(vdi.getNameLabel(conn))) {
@@ -1754,7 +1749,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vm = createVmFromTemplate(conn, vmSpec, host);
 
             for (DiskTO disk : vmSpec.getDisks()) {
-                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
+                VDI newVdi = prepareManagedDisk(conn, disk, vmName);
+
+                if (newVdi != null) {
+                    String path = newVdi.getUuid(conn);
+
+                    iqnToPath.put(disk.getDetails().get(DiskTO.IQN), path);
+                }
+
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
             }
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1866,6 +1869,53 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    // the idea here is to see if the DiskTO in question is from managed storage and
+    // does not yet have an SR
+    // if no SR, create it and create a VDI in it
+    private VDI prepareManagedDisk(Connection conn, DiskTO disk, String vmName) throws Exception {
+        Map<String, String> details = disk.getDetails();
+
+        if (details == null) {
+            return null;
+        }
+
+        boolean isManaged = new Boolean(details.get(DiskTO.MANAGED)).booleanValue();
+
+        if (!isManaged) {
+            return null;
+        }
+
+        String iqn = details.get(DiskTO.IQN);
+
+        Set<SR> srNameLabels = SR.getByNameLabel(conn, iqn);
+
+        if (srNameLabels.size() != 0) {
+            return null;
+        }
+
+        String vdiNameLabel = vmName + "-DATA";
+
+        return prepareManagedStorage(conn, details, null, vdiNameLabel);
+    }
+
+    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+        String iScsiName = details.get(DiskTO.IQN);
+        String storageHost = details.get(DiskTO.STORAGE_HOST);
+        String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
+        String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
+        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+
+        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+
+        VDI vdi = getVDIbyUuid(conn, path, false);
+
+        if (vdi == null) {
+            vdi = createVdi(sr, vdiNameLabel, volumeSize);
+        }
+
+        return vdi;
+    }
+
     protected Answer execute(ModifySshKeysCommand cmd) {
         return new Answer(cmd);
     }
@@ -1910,12 +1960,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
-        Connection conn = getConnection();
-        String args = "checkbatchs2svpn.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = "";
         for (String ip : cmd.getVpnIps()) {
-            args += " " + ip;
+            args += ip + " ";
         }
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("checkbatchs2svpn.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result == null || result.isEmpty()) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
@@ -1923,9 +1972,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
-        Connection conn = getConnection();
-        String args = "checkrouter.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("checkrouter.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), null);
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
@@ -1933,9 +1980,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
-        Connection conn = getConnection();
-        String args = "get_template_version.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("get_template_version.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), null);
         if (result == null || result.isEmpty()) {
             return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
         }
@@ -1948,8 +1993,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private Answer execute(BumpUpPriorityCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "bumpUpPriority", "args", args);
+        String args = "bumpup_priority.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "BumpUpPriorityCommand failed");
         }
@@ -1991,7 +2036,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
-            args.append(routerIp);
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
             args.append(" -l ").append(rule.getSrcIp());
@@ -1999,7 +2043,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -2013,18 +2057,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
-            String args = "vpc_staticnat.sh " + routerIp;
-            args += rule.revoked() ? " -D" : " -A";
+            String args = rule.revoked() ? "-D" : "-A";
             args += " -l " + rule.getSrcIp();
             args += " -r " + rule.getDstIp();
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+            String result = routerProxy("vpc_staticnat.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -2043,14 +2084,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
             StringBuilder args = new StringBuilder();
-            args.append(routerIp);
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -r ").append(rule.getDstIp());
@@ -2062,7 +2101,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -2075,8 +2114,66 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
-    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+    protected Answer execute(final CreateIpAliasCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
+        String args = "";
+        for (IpAliasTO ipaliasto : ipAliasTOs) {
+            args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
+        }
+        String result = routerProxy("createipAlias.sh", routerIp, args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final DeleteIpAliasCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
+        String args = "";
+        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
+        }
+        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
+        args = args + "- ";
+        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
+        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
+        }
+        String result = routerProxy("deleteipAlias", routerIp, args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final DnsMasqConfigCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<DhcpTO> dhcpTos = cmd.getIps();
+        String args = "";
+        for (DhcpTO dhcpTo : dhcpTos) {
+            args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
+        }
+
+        String result = routerProxy("dnsmasq.sh", routerIp, args);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "DnsMasqconfigCommand failed");
+        }
+
+        return new Answer(cmd);
+
+    }
+
+    protected String createFileInVR(String routerIp, String path, String content) {
         Connection conn = getConnection();
+        return callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", path, "filecontents", content);
+    }
+
+    protected Answer execute(final LoadBalancerConfigCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         if (routerIp == null) {
@@ -2091,7 +2188,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             tmpCfgFileContents += "\n";
         }
         String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
-        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+        String result = createFileInVR(routerIp, tmpCfgFilePath, tmpCfgFileContents);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
@@ -2103,9 +2200,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
         String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-        String args = "vpc_loadbalancer.sh " + routerIp;
         String ip = cmd.getNic().getIp();
-        args += " -i " + ip;
+        String args = " -i " + ip;
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
             for (int i = 0; i < addRules.length; i++) {
@@ -2133,162 +2229,37 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -s " + sb.toString();
         }
 
-        result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        if (cmd.getVpcId() == null) {
+            args = " -i " + routerIp + args;
+            result = routerProxy("loadbalancer.sh", routerIp, args);
+        } else {
+            args = " -i " + cmd.getNic().getIp() + args;
+            result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+        }
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
         }
-        return new Answer(cmd);
-    }
-
-    protected Answer execute(final CreateIpAliasCommand cmd) {
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        String args = routerIp + " ";
-        for (IpAliasTO ipaliasto : ipAliasTOs) {
-            args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
-        }
-        String result = callHostPlugin(conn, "vmops", "createipAlias", "args", args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
-        }
-
-        return new Answer(cmd);
-    }
-
-    protected Answer execute(final DeleteIpAliasCommand cmd) {
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
-        String args = routerIp + " ";
-        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
-        }
-        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
-        args = args + "- ";
-        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
-        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
-        }
-        String result = callHostPlugin(conn, "vmops", "deleteipAlias", "args", args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
-        }
-
-        return new Answer(cmd);
-    }
-
-    protected Answer execute(final DnsMasqConfigCommand cmd) {
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        List<DhcpTO> dhcpTos = cmd.getIps();
-        String args = "";
-        for (DhcpTO dhcpTo : dhcpTos) {
-            args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
-        }
-
-        String result = callHostPlugin(conn, "vmops", "configdnsmasq", "routerip", routerIp, "args", args);
-
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DnsMasqconfigCommand failed");
-        }
-
-        return new Answer(cmd);
-
-    }
-
-    protected Answer execute(final LoadBalancerConfigCommand cmd) {
-        if (cmd.getVpcId() != null) {
-            return VPCLoadBalancerConfig(cmd);
-        }
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        if (routerIp == null) {
-            return new Answer(cmd);
-        }
-
-        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
-        String[] config = cfgtr.generateConfiguration(cmd);
-
-        String[][] rules = cfgtr.generateFwRules(cmd);
-        String tmpCfgFilePath = "/tmp/" + routerIp.replace('.', '_') + ".cfg";
-        String tmpCfgFileContents = "";
-        for (int i = 0; i < config.length; i++) {
-            tmpCfgFileContents += config[i];
-            tmpCfgFileContents += "\n";
-        }
-
-        String result = callHostPlugin(conn, "vmops", "createFile", "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
-
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
-        }
-
-        String[] addRules = rules[LoadBalancerConfigurator.ADD];
-        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-        String[] statRules = rules[LoadBalancerConfigurator.STATS];
-
-        String args = "";
-        args += "-i " + routerIp;
-        args += " -f " + tmpCfgFilePath;
-
-        StringBuilder sb = new StringBuilder();
-        if (addRules.length > 0) {
-            for (int i = 0; i < addRules.length; i++) {
-                sb.append(addRules[i]).append(',');
-            }
-
-            args += " -a " + sb.toString();
-        }
-
-        sb = new StringBuilder();
-        if (removeRules.length > 0) {
-            for (int i = 0; i < removeRules.length; i++) {
-                sb.append(removeRules[i]).append(',');
-            }
-
-            args += " -d " + sb.toString();
-        }
-
-        sb = new StringBuilder();
-        if (statRules.length > 0) {
-            for (int i = 0; i < statRules.length; i++) {
-                sb.append(statRules[i]).append(',');
-            }
-
-            args += " -s " + sb.toString();
-        }
-
-        result = callHostPlugin(conn, "vmops", "setLoadBalancerRule", "args", args);
-
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
-        }
-
-        callHostPlugin(conn, "vmops", "deleteFile", "filepath", tmpCfgFilePath);
-
         return new Answer(cmd);
     }
 
     protected synchronized Answer execute(final DhcpEntryCommand cmd) {
-        Connection conn = getConnection();
-        String args = "-r " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = " -m " + cmd.getVmMac();
         if (cmd.getVmIpAddress() != null) {
-            args += " -v " + cmd.getVmIpAddress();
+            args += " -4 " + cmd.getVmIpAddress();
         }
-        args += " -m " + cmd.getVmMac();
-        args += " -n " + cmd.getVmName();
+        args += " -h " + cmd.getVmName();
+
         if (cmd.getDefaultRouter() != null) {
             args += " -d " + cmd.getDefaultRouter();
         }
-        if (cmd.getStaticRoutes() != null) {
-            args += " -s " + cmd.getStaticRoutes();
-        }
 
         if (cmd.getDefaultDns() != null) {
-            args += " -N " + cmd.getDefaultDns();
+            args += " -n " + cmd.getDefaultDns();
+        }
+
+        if (cmd.getStaticRoutes() != null) {
+            args += " -s " + cmd.getStaticRoutes();
         }
 
         if (cmd.getVmIp6Address() != null) {
@@ -2297,10 +2268,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (!cmd.isDefault()) {
-            args += " -z";
+            args += " -N";
         }
 
-        String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);
+        String result = routerProxy("edithosts.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DhcpEntry failed");
         }
@@ -2308,8 +2279,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
-        Connection conn = getConnection();
-        String args = "vpn_l2tp.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = "";
         if (cmd.isCreate()) {
             args += " -r " + cmd.getIpRange();
             args += " -p " + cmd.getPresharedKey();
@@ -2322,7 +2292,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         args += " -C " + cmd.getLocalCidr();
         args += " -i " + cmd.getPublicInterface();
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure VPN failed");
         }
@@ -2330,15 +2300,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
-        Connection conn = getConnection();
-        for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
-            String args = "vpn_l2tp.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
+            String args = "";
             if (!userpwd.isAdd()) {
                 args += " -U " + userpwd.getUsername();
             } else {
                 args += " -u " + userpwd.getUsernamePassword();
             }
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result == null || result.isEmpty()) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
             }
@@ -2348,16 +2317,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected Answer execute(final VmDataCommand cmd) {
-        Connection conn = getConnection();
-        String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
         String json = new Gson().toJson(data);
         json = Base64.encodeBase64String(json.getBytes());
 
-        String args = "vmdata.py " + routerPrivateIpAddress + " -d " + json;
+        String args = "-d " + json;
 
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("vmdata.py", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "vm_data failed");
@@ -2368,15 +2335,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected Answer execute(final SavePasswordCommand cmd) {
-        Connection conn = getConnection();
         final String password = cmd.getPassword();
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmIpAddress = cmd.getVmIpAddress();
 
-        String args = "savepassword.sh " + routerPrivateIPAddress;
-        args += " -v " + vmIpAddress;
+        String args = " -v " + vmIpAddress;
         args += " -p " + password;
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("savepassword.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "savePassword failed");
@@ -2441,7 +2405,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args = "ipassoc.sh " + privateIpAddress;
+            String args = "";
 
             if (add) {
                 args += " -A ";
@@ -2471,7 +2435,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -n";
             }
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = routerProxy("ipassoc.sh", privateIpAddress, args);
+
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
@@ -2516,8 +2481,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
 
-            String args = "vpc_ipassoc.sh " + routerIp;
-            String snatArgs = "vpc_privateGateway.sh " + routerIp;
+            String args = "";
+            String snatArgs = "";
 
             if (ip.isAdd()) {
                 args += " -A ";
@@ -2542,7 +2507,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -n ";
             args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = routerProxy("vpc_ipassoc.sh", routerIp, args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
             }
@@ -2551,7 +2516,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 snatArgs += " -l " + ip.getPublicIp();
                 snatArgs += " -c " + "eth" + correctVif.getDevice(conn);
 
-                result = callHostPlugin(conn, "vmops", "routerProxy", "args", snatArgs);
+                result = routerProxy("vpc_privateGateway.sh", routerIp, snatArgs);
                 if (result == null || result.isEmpty()) {
                     throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed.");
                 }
@@ -6044,9 +6009,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private void CheckXenHostInfo() throws ConfigurationException {
-        Connection conn = ConnPool.slaveConnect(_host.ip, _username, _password);
-        if (conn == null) {
-            throw new ConfigurationException("Can not create slave connection to " + _host.ip);
+        Connection conn = ConnPool.getConnect(_host.ip, _username, _password);
+        if( conn == null ) {
+            throw new ConfigurationException("Can not create connection to " + _host.ip);
         }
         try {
             Host.Record hostRec = null;
@@ -6066,7 +6031,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         } finally {
             try {
-                Session.localLogout(conn);
+                Session.logout(conn);
             } catch (Exception e) {
             }
         }
@@ -7335,35 +7300,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             Host.Record hostr = poolr.master.getRecord(conn);
             if (_host.uuid.equals(hostr.uuid)) {
-                boolean mastermigrated = false;
                 Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
-                if (hostMap.size() != 1) {
-                    Host newMaster = null;
-                    Host.Record newMasterRecord = null;
-                    for (Map.Entry<Host, Host.Record> entry : hostMap.entrySet()) {
-                        if (_host.uuid.equals(entry.getValue().uuid)) {
-                            continue;
-                        }
-                        newMaster = entry.getKey();
-                        newMasterRecord = entry.getValue();
-                        s_logger.debug("New master for the XenPool is " + newMasterRecord.uuid + " : " + newMasterRecord.address);
-                        try {
-                            ConnPool.switchMaster(_host.ip, _host.pool, conn, newMaster, _username, _password, _wait);
-                            mastermigrated = true;
-                            break;
-                        } catch (Exception e) {
-                            s_logger.warn("Unable to switch the new master to " + newMasterRecord.uuid + ": " + newMasterRecord.address + " due to " + e.toString());
-                        }
-                    }
-                } else {
-                    s_logger.debug("This is last host to eject, so don't need to eject: " + hostuuid);
-                    return new Answer(cmd);
-                }
-                if (!mastermigrated) {
-                    String msg = "this host is master, and cannot designate a new master";
+                if (hostMap.size() > 1) {
+                    String msg = "This host is XS master, please designate a new XS master throught XenCenter before you delete this host from CS";
                     s_logger.debug(msg);
                     return new Answer(cmd, false, msg);
-
                 }
             }
 
@@ -7534,17 +7475,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String config = cmd.getConfiguration();
 
-        Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
         if (routerIp == null) {
             return new Answer(cmd);
         }
 
-        String args = "monitor_service.sh " + routerIp;
-        args += " -c " + config;
+        String args = " -c " + config;
 
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("monitor_service.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "SetMonitorServiceCommand failed to create cfg file.");
         }
@@ -7566,8 +7504,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         String[][] rules = cmd.generateFwRules();
-        String args = "";
-        args += routerIp + " -F";
+        String args = " -F";
         if (trafficType == FirewallRule.TrafficType.Egress) {
             args += " -E";
             if (egressDefault.equals("true")) {
@@ -7587,7 +7524,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -a " + sb.toString();
         }
 
-        callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+        if (trafficType == FirewallRule.TrafficType.Egress) {
+            callResult = routerProxy("firewall_egress.sh", routerIp, args);
+        } else {
+            callResult = routerProxy("firewall_ingress.sh", routerIp, args);
+        }
 
         if (callResult == null || callResult.isEmpty()) {
             //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
@@ -7879,7 +7820,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new SetupGuestNetworkAnswer(cmd, false, "Can not find vif with mac " + mac + " for VM " + domrName);
             }
 
-            String args = "vpc_guestnw.sh " + domrIP + (cmd.isAdd() ? " -C" : " -D");
+            String args = (cmd.isAdd()?" -C":" -D");
             String dev = "eth" + domrVif.getDevice(conn);
             args += " -d " + dev;
             args += " -i " + domrGIP;
@@ -7892,7 +7833,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (domainName != null && !domainName.isEmpty()) {
                 args += " -e " + domainName;
             }
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = routerProxy("vpc_guestnw.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result == null || result.isEmpty()) {
                 return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null) ? "null" : result));
             }
@@ -7926,8 +7867,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected Answer execute(Site2SiteVpnCfgCommand cmd) {
-        Connection conn = getConnection();
-        String args = "ipsectunnel.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = "";
         if (cmd.isCreate()) {
             args += " -A";
             args += " -l ";
@@ -7968,7 +7908,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        String result = routerProxy("ipsectunnel.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure site to site VPN failed! ");
         }
@@ -7978,14 +7918,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
         Connection conn = getConnection();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         IpAddressTO pubIp = cmd.getIpAddress();
         try {
             VM router = getVM(conn, routerName);
 
             VIF correctVif = getCorrectVif(conn, router, pubIp);
 
-            String args = "vpc_snat.sh " + routerIp;
+            String args = "";
 
             args += " -A ";
             args += " -l ";
@@ -7994,7 +7933,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String result = routerProxy("vpc_snat.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"vpc_snat\" failed.");
             }
@@ -8011,7 +7950,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String callResult;
         Connection conn = getConnection();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
         try {
@@ -8032,11 +7970,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (privateGw != null) {
                 s_logger.debug("Private gateway configuration is set");
-                String args = "vpc_privategw_acl.sh " + routerIp;
+                String args = "";
                 args += " -d " + "eth" + vif.getDevice(conn);
                 args += " -a " + sb.toString();
 
-                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                callResult = routerProxy("vpc_privategw_acl.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
                 if (callResult == null || callResult.isEmpty()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i = 0; i < results.length; i++) {
@@ -8045,13 +7983,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return new SetNetworkACLAnswer(cmd, false, results);
                 }
             } else {
-                String args = "vpc_acl.sh " + routerIp;
+                String args = "";
                 args += " -d " + "eth" + vif.getDevice(conn);
                 args += " -i " + nic.getIp();
                 args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
                 args += " -a " + sb.toString();
 
-                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                callResult = routerProxy("vpc_acl.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
                 if (callResult == null || callResult.isEmpty()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i = 0; i < results.length; i++) {
@@ -8069,15 +8007,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
-        Connection conn = getConnection();
-
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
 
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String args = "vpc_portforwarding.sh " + routerIp;
+            String args = "";
             args += rule.revoked() ? " -D" : " -A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
@@ -8085,7 +8020,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+            String result = routerProxy("vpc_portforwarding.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -8099,8 +8034,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
         String callResult;
-        Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             String[] results = new String[cmd.getStaticRoutes().length];
             String[][] rules = cmd.generateSRouteRules();
@@ -8109,9 +8042,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (int i = 0; i < srRules.length; i++) {
                 sb.append(srRules[i]).append(',');
             }
-            String args = "vpc_staticroute.sh " + routerIp;
-            args += " -a " + sb.toString();
-            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            String args = "-a " + sb.toString();
+            callResult = routerProxy("vpc_staticroute.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (callResult == null || callResult.isEmpty()) {
                 //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                 for (int i = 0; i < results.length; i++) {
