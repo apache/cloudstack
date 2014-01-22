@@ -1125,6 +1125,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VolumeVO volume = _volsDao.findById(volumeId);
 
                     disk.setPath(volume.get_iScsiName());
+
+                    if (disk.getData() instanceof VolumeObjectTO) {
+                        VolumeObjectTO volTo = (VolumeObjectTO)disk.getData();
+
+                        volTo.setPath(volume.get_iScsiName());
+                    }
+
                     volume.setPath(volume.get_iScsiName());
 
                     _volsDao.update(volumeId, volume);
