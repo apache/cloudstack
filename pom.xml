@@ -171,7 +171,6 @@
     <module>engine</module>
     <module>plugins</module>
     <module>framework</module>
-    <module>test</module>
     <module>client</module>
     <module>services</module>
     <module>maven-standard</module>
@@ -827,6 +826,7 @@
         <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
       </properties>
       <modules>
+        <module>test</module>
         <module>developer</module>
         <module>tools</module>
       </modules>
