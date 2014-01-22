@@ -156,6 +156,8 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("Red Hat Enterprise Linux 5.3 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_5_64_GUEST);
 		s_mapper.put("Red Hat Enterprise Linux 5.4 (32-bit)", VirtualMachineGuestOsIdentifier.RHEL_5_GUEST);
 		s_mapper.put("Red Hat Enterprise Linux 5.4 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_5_64_GUEST);
+        s_mapper.put("Red Hat Enterprise Linux 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.RHEL_6_GUEST);
+        s_mapper.put("Red Hat Enterprise Linux 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.RHEL_6_64_GUEST);		
 
 		s_mapper.put("Ubuntu 8.04 (32-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_GUEST);
 		s_mapper.put("Ubuntu 8.04 (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);
@@ -169,6 +171,8 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("Ubuntu 10.04 (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);
 		s_mapper.put("Ubuntu 10.10 (32-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_GUEST);
 		s_mapper.put("Ubuntu 10.10 (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);
+        s_mapper.put("Ubuntu 12.04 (32-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_GUEST);
+        s_mapper.put("Ubuntu 12.04 (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);		
 		s_mapper.put("Other Ubuntu (32-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_GUEST);
 		s_mapper.put("Other Ubuntu (64-bit)", VirtualMachineGuestOsIdentifier.UBUNTU_64_GUEST);
 
