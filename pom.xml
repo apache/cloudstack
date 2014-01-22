@@ -851,5 +851,23 @@
         <module>vmware-base</module>
       </modules>
     </profile>
+    <profile>
+      <id>disablecheckstyle</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>cloudstack-checkstyle</id>
+                  <phase>none</phase>
+                  <inherited>true</inherited>
+                </execution>
+              </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>  
   </profiles>
 </project>
