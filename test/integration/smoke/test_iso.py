@@ -31,61 +31,10 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test ISO Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                        "email": "test@test.com",
-                        "firstname": "Test",
-                        "lastname": "User",
-                        "username": "test",
-                        # Random characters are appended in create account to 
-                        # ensure unique username generated each time
-                        "password": "password",
-                },
-            "iso_1":
-                    {
-                        "displaytext": "Test ISO 1",
-                        "name": "ISO 1",
-                        "url": "http://people.apache.org/~tsp/dummy.iso",
-                        # Source URL where ISO is located
-                        "isextractable": True,
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                    },
-            "iso_2":
-                    {
-                        "displaytext": "Test ISO 2",
-                        "name": "ISO 2",
-                        "url": "http://people.apache.org/~tsp/dummy.iso",
-                        # Source URL where ISO is located
-                        "isextractable": True,
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                        "mode": 'HTTP_DOWNLOAD',
-                        # Used in Extract template, value must be HTTP_DOWNLOAD
-                    },
-            "isfeatured": True,
-            "ispublic": True,
-            "isextractable": True,
-            "bootable": True, # For edit template
-            "passwordenabled": True,
-            "sleep": 60,
-            "timeout": 10,
-            "ostype": "CentOS 5.3 (64-bit)",
-            # CentOS 5.3 (64 bit)
-        }
-
-
 class TestCreateIso(cloudstackTestCase):
 
     def setUp(self):
-        self.services = Services().services
+        self.services = self.testClient.getConfigParser().parsedDict
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
@@ -189,8 +138,9 @@ class TestISO(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
+        cloudstackTestClient = super(TestISO, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)

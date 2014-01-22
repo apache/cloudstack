@@ -22,112 +22,14 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 
-class Services:
-    """Test Snapshots Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 200,    # in MHz
-                                    "memory": 256,      # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small Disk",
-                                    "name": "Small Disk",
-                                    "disksize": 1
-                        },
-                        "server_with_disk":
-                                    {
-                                        "displayname": "Test VM -With Disk",
-                                        "username": "root",
-                                        "password": "password",
-                                        "ssh_port": 22,
-                                        "hypervisor": 'XenServer',
-                                        "privateport": 22,
-                                        "publicport": 22,
-                                        "protocol": 'TCP',
-                                },
-
-                        "server_without_disk":
-                                    {
-                                        "displayname": "Test VM-No Disk",
-                                        "username": "root",
-                                        "password": "password",
-                                        "ssh_port": 22,
-                                        "hypervisor": 'XenServer',
-                                        "privateport": 22,
-                                        # For NAT rule creation
-                                        "publicport": 22,
-                                        "protocol": 'TCP',
-                                },
-                        "server": {
-                                    "displayname": "TestVM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "mgmt_server": {
-                                    "ipaddress": '192.168.100.21',
-                                    "username": "root",
-                                    "password": "password",
-                                    "port": 22,
-                                },
-                        "recurring_snapshot": {
-                                    "intervaltype": 'HOURLY',
-                                    # Frequency of snapshots
-                                    "maxsnaps": 1,  # Should be min 2
-                                    "schedule": 1,
-                                    "timezone": 'US/Arizona',
-                                    # Timezone Formats - http://cloud.mindtouch.us/CloudStack_Documentation/Developer's_Guide%3A_CloudStack
-                                },
-                        "templates": {
-                                    "displaytext": 'Template',
-                                    "name": 'Template',
-                                    "ostype": "CentOS 5.3 (64-bit)",
-                                    "templatefilter": 'self',
-                                },
-                        "volume": {
-                                   "diskname": "APP Data Volume",
-                                   "size": 1,   # in GBs
-                                   "diskdevice": ['/dev/xvdb', '/dev/sdb', '/dev/hdb', '/dev/vdb' ],   # Data Disk
-                        },
-                        "paths": {
-                                    "mount_dir": "/mnt/tmp",
-                                    "sub_dir": "test",
-                                    "sub_lvl_dir1": "test1",
-                                    "sub_lvl_dir2": "test2",
-                                    "random_data": "random.data",
-                        },
-                        "ostype": "CentOS 5.3 (64-bit)",
-                        # Cent OS 5.3 (64 bit)
-                        "sleep": 60,
-                        "timeout": 10,
-                    }
-
-
 class TestSnapshotRootDisk(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSnapshotRootDisk, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestSnapshotRootDisk, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -154,7 +56,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                             )
         cls.virtual_machine = cls.virtual_machine_with_disk = \
                     VirtualMachine.create(

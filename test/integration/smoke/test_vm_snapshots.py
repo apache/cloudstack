@@ -24,60 +24,6 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 
-class Services:
-    """Test Snapshots Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 200, # in MHz
-                "memory": 256, # In MBs
-            },
-            "server": {
-                "displayname": "TestVM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "mgmt_server": {
-                "ipaddress": '1.2.2.152',
-                "username": "root",
-                "password": "password",
-                "port": 22,
-            },
-            "templates": {
-                "displaytext": 'Template',
-                "name": 'Template',
-                "ostype": "CentOS 5.3 (64-bit)",
-                "templatefilter": 'self',
-            },
-            "test_dir": "/tmp",
-            "random_data": "random.data",
-            "snapshot_name": "TestSnapshot",
-            "snapshot_displaytext": "Test",
-            "ostype": "CentOS 5.3 (64-bit)",
-            "sleep": 60,
-            "timeout": 10,
-            "mode": 'advanced', # Networking mode: Advanced, Basic
-        }
-
 class TestVmSnapshot(cloudstackTestCase):
 
     @classmethod
@@ -109,7 +55,7 @@ class TestVmSnapshot(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
                             cls.api_client,
-                            cls.services["service_offering"]
+                            cls.services["service_offerings"]
                             )
         cls.virtual_machine = VirtualMachine.create(
                     cls.api_client,
@@ -121,6 +67,8 @@ class TestVmSnapshot(cloudstackTestCase):
                     mode=cls.services["mode"]
                     )
         cls.random_data_0 = random_gen(size=100)
+        cls.test_dir = "/tmp"
+        cls.random_data = "random.data"
         cls._cleanup = [
                 cls.service_offering,
                 cls.account,
@@ -160,8 +108,8 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                "echo %s > %s/%s" % (self.random_data_0, self.services["test_dir"], self.services["random_data"]),
-                "cat %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "echo %s > %s/%s" % (self.random_data_0, self.test_dir, self.random_data),
+                "cat %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:
@@ -184,8 +132,8 @@ class TestVmSnapshot(cloudstackTestCase):
             self.apiclient,
             self.virtual_machine.id,
             "false",
-            self.services["snapshot_name"],
-            self.services["snapshot_displaytext"]
+            "TestSnapshot",
+            "Dsiplay Text"
         )
         self.assertEqual(
             vm_snapshot.state,
@@ -203,8 +151,8 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                "rm -rf %s/%s" % (self.services["test_dir"], self.services["random_data"]),
-                "ls %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "rm -rf %s/%s" % (self.test_dir, self.random_data),
+                "ls %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:
@@ -263,7 +211,7 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
 
             cmds = [
-                "cat %s/%s" % (self.services["test_dir"], self.services["random_data"])
+                "cat %s/%s" % (self.test_dir, self.random_data)
             ]
 
             for c in cmds:

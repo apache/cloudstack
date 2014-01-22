@@ -28,111 +28,15 @@ from nose.plugins.attrib import attr
 import time
 
 _multiprocess_shared_ = True
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-                "disk_offering":{
-                    "displaytext": "Small",
-                    "name": "Small",
-                    "disksize": 1
-                },
-                "account": {
-                    "email": "test@test.com",
-                    "firstname": "Test",
-                    "lastname": "User",
-                    "username": "test",
-                    # Random characters are appended in create account to 
-                    # ensure unique username generated each time
-                    "password": "password",
-                },
-                "small":
-                # Create a small virtual machine instance with disk offering 
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "medium":   # Create a medium virtual machine instance 
-                {
-                    "displayname": "testserver",
-                    "username": "root",
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "service_offerings":
-                {
-                 "tiny":
-                   {
-                        "name": "Tiny Instance",
-                        "displaytext": "Tiny Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100, # in MHz
-                        "memory": 128, # In MBs
-                    },
-                 "small":
-                    {
-                     # Small service offering ID to for change VM 
-                     # service offering from medium to small
-                        "name": "Small Instance",
-                        "displaytext": "Small Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 256,
-                    },
-                "medium":
-                    {
-                    # Medium service offering ID to for
-                    # change VM service offering from small to medium
-                        "name": "Medium Instance",
-                        "displaytext": "Medium Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 256,
-                    }
-                },
-                "iso":  # ISO settings for Attach/Detach ISO tests
-                {
-                    "displaytext": "Test ISO",
-                    "name": "testISO",
-                    "url": "http://people.apache.org/~tsp/dummy.iso",
-                     # Source URL where ISO is located
-                    "ostype": 'CentOS 5.3 (64-bit)',
-                    "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
-                },
-                "template": {
-                    "displaytext": "Cent OS Template",
-                    "name": "Cent OS Template",
-                    "passwordenabled": True,
-                },
-            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
-
 
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.apiclient = super(TestDeployVM, cls).getClsTestClient().getApiClient()
+        cloudstackTestClient = super(TestDeployVM, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient, cls.services)
         cls.zone = get_zone(cls.apiclient, cls.services)
@@ -156,7 +60,7 @@ class TestDeployVM(cloudstackTestCase):
 
         cls.services["medium"]["zoneid"] = cls.zone.id
         cls.services["medium"]["template"] = template.id
-        cls.services["iso"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
 
         cls.account = Account.create(
             cls.apiclient,
@@ -287,8 +191,9 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestVMLifeCycle, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.api_client, cls.services)
@@ -313,7 +218,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         cls.services["medium"]["zoneid"] = cls.zone.id
         cls.services["medium"]["template"] = template.id
-        cls.services["iso"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
@@ -710,7 +615,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         iso = Iso.create(
                          self.apiclient,
-                         self.services["iso"],
+                         self.services["iso1"],
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
@@ -737,12 +642,13 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
-
-        cmds = "mkdir -p %s" % self.services["mount_dir"]
+        
+        mount_dir = "/mnt/tmp"
+        cmds = "mkdir -p %s" % mount_dir
         self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         for diskdevice in self.services["diskdevice"]:
-            res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, self.services["mount_dir"]))
+            res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, mount_dir))
             if res == []:
                 self.services["mount"] = diskdevice
                 break
@@ -767,7 +673,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         try:
             #Unmount ISO
-            command = "umount %s" % self.services["mount_dir"]
+            command = "umount %s" % "mount_dir
             ssh_client.execute(command)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %

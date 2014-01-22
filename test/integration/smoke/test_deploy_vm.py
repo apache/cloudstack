@@ -33,46 +33,15 @@ from marvin.integration.lib.common import get_zone, get_domain, get_template
 
 from nose.plugins.attrib import attr
 
-class TestData(object):
-    """Test data object that is required to create resources
-    """
-    def __init__(self):
-        self.testdata = {
-            #data to create an account
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            #data reqd for virtual machine creation
-            "virtual_machine" : {
-                "name" : "testvm",
-                "displayname" : "Test VM",
-            },
-            #small service offering
-            "service_offering": {
-                "small": {
-                    "name": "Small Instance",
-                    "displaytext": "Small Instance",
-                    "cpunumber": 1,
-                    "cpuspeed": 100,
-                    "memory": 256,
-                },
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-        }
-
-
 class TestDeployVM(cloudstackTestCase):
     """Test deploy a VM into a user account
     """
 
     def setUp(self):
-        self.testdata = TestData().testdata
         self.apiclient = self.testClient.getApiClient()
 
+        self.testdata = self.testClient.getConfigParser().parsedDict
+        
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient, self.testdata)
         self.zone = get_zone(self.apiclient, self.testdata)
@@ -88,7 +57,7 @@ class TestDeployVM(cloudstackTestCase):
         #create a service offering
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.testdata["service_offering"]["small"]
+            self.testdata["service_offerings"]["small"]
         )
         #build cleanup list
         self.cleanup = [

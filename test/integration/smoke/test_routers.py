@@ -30,53 +30,16 @@ import time
 
 
 _multiprocess_shared_ = True
-class Services:
-    """Test router Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 128, # In MBs
-                                    },
-                        "virtual_machine":
-                                    {
-                                        "displayname": "Test VM",
-                                        "username": "root",
-                                        "password": "password",
-                                        "ssh_port": 22,
-                                        "hypervisor": 'XenServer',
-                                        "privateport": 22,
-                                        "publicport": 22,
-                                        "protocol": 'TCP',
-                                },
-                        "account": {
-                                        "email": "test@test.com",
-                                        "firstname": "Test",
-                                        "lastname": "User",
-                                        "username": "testuser",
-                                        "password": "password",
-                                        },
-                         "ostype": "CentOS 5.3 (64-bit)",
-                         "sleep": 60,
-                         "timeout": 10,
-                        }
-
 
 class TestRouterServices(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-                               TestRouterServices,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestRouterServices, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -96,7 +59,7 @@ class TestRouterServices(cloudstackTestCase):
                                      )
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                             )
         cls.vm_1 = VirtualMachine.create(
                                     cls.api_client,

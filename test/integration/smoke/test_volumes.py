@@ -34,65 +34,13 @@ import tempfile
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Volume Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 260       # In MBs
-
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        'resized_disk_offering': {
-                                    "displaytext": "Resized",
-                                    "name": "Resized",
-                                    "disksize": 3
-                        },
-                        "volume_offerings": {
-                            0: {
-                                "diskname": "TestDiskServ",
-                            },
-                        },
-                        "customdisksize": 1,    # GBs
-                        "username": "root",     # Creds for SSH to VM
-                        "password": "password",
-                        "ssh_port": 22,
-                        "diskname": "TestDiskServ",
-                        "hypervisor": 'KVM',
-                        "privateport": 22,
-                        "publicport": 22,
-                        "protocol": 'TCP',
-                        "ostype": 'CentOS 5.5 (64-bit)',
-                        "sleep": 10,
-                        "timeout": 600,
-                    }
-
-
 class TestCreateVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestCreateVolume, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -127,7 +75,7 @@ class TestCreateVolume(cloudstackTestCase):
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                             )
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
@@ -280,8 +228,10 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVolumes, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestVolumes, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -322,7 +272,7 @@ class TestVolumes(cloudstackTestCase):
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                         )
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,

@@ -26,35 +26,14 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 import datetime
 
-
-class Services:
-    """Test Dedicating Guest Vlan Ranges
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                                   },
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                         },
-                        "name": "testphysicalnetwork",
-
-                        "vlan": "2118-2120",
-                    }
-
-
 class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
+        cls.apiclient = cloudstackTestClient.getApiClient() 
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain
         cls.domain = get_domain(cls.apiclient, cls.services)
         cls.zone = get_zone(cls.apiclient, cls.services)

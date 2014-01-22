@@ -27,75 +27,12 @@ from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended in create account to
-                # ensure unique username generated each time
-                "password": "password",
-            },
-            "small":
-            # Create a small virtual machine instance with disk offering
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-            "service_offerings":
-                {
-                    "small":
-                        {
-                            # Small service offering ID to for change VM
-                            # service offering from medium to small
-                            "name": "SmallInstance",
-                            "displaytext": "SmallInstance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 256,
-                        },
-                    "big":
-                        {
-                            # Big service offering ID to for change VM
-                            "name": "BigInstance",
-                            "displaytext": "BigInstance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 512,
-                        }
-                },
-            #Change this
-            "template": {
-                "displaytext": "xs",
-                "name": "xs",
-                "passwordenabled": False,
-            },
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
-
-
 class TestScaleVm(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestScaleVm, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestScaleVm, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.api_client, cls.services)

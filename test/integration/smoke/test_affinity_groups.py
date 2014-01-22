@@ -24,44 +24,6 @@ from marvin.integration.lib.common import *
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 
-class Services:
-    """Test Account Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "domain": {
-                "name": "Domain",
-            },
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                # in MHz
-                "memory": 128,
-                # In MBs
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "virtual_machine" : {
-                "affinity": {
-                    "name": "webvms",
-                    "type": "host anti-affinity",
-                },
-                "hypervisor" : "XenServer",
-            }
-        }
-
-
 class TestDeployVmWithAffinityGroup(cloudstackTestCase):
     """
     This test deploys a virtual machine into a user account
@@ -73,7 +35,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.test_client = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient()
         zone_name = cls.test_client.getZoneForTests() 
         cls.api_client = cls.test_client.getApiClient()
-        cls.services = Services().services
+        cls.services = cls.test_client.getConfigParser().parsedDict
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -97,7 +59,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
 
         cls.ag = AffinityGroup.create(cls.api_client, cls.services["virtual_machine"]["affinity"],

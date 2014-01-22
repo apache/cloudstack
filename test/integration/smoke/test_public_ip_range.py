@@ -26,32 +26,6 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 import datetime
 
-class Services:
-    """Test Dedicating Public IP addresses
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                                   },
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                         },
-                        "gateway": "10.102.197.1",
-                        "netmask": "255.255.255.0",
-                        "forvirtualnetwork": "true",
-                        "startip": "10.102.197.70",
-                        "endip": "10.102.197.73",
-                        "zoneid": "1",
-                        "podid": "",
-                        "vlan": "4444",
-                    }
-
 class TestDedicatePublicIPRange(cloudstackTestCase):
 
     @classmethod

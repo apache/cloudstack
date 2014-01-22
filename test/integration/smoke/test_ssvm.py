@@ -31,16 +31,6 @@ import telnetlib
 import time
 _multiprocess_shared_ = True
 
-class Services:
-    """Test SSVM Services
-    """
-
-    def __init__(self):
-        self.services = {
-                       "sleep": 60,
-                       "timeout": 10,
-                      }
-
 class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):

@@ -27,87 +27,15 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Network Services
-    """
-
-    def __init__(self):
-        self.services = {
-                            "ostype": "CentOS 5.3 (64-bit)",
-                            # Cent OS 5.3 (64 bit)
-                            "lb_switch_wait": 10,
-                            # Time interval after which LB switches the requests
-                            "sleep": 60,
-                            "timeout":10,
-                            "network_offering": {
-                                    "name": 'Test Network offering',
-                                    "displaytext": 'Test Network offering',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                        },
-                                },
-                            "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                },
-                            "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    # in MHz
-                                    "memory": 256,
-                                    # In MBs
-                                    },
-                            "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                                    },
-                            "server":
-                                    {
-                                    "displayname": "Small Instance",
-                                    "username": "root",
-                                    "password": "password",
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "ssh_port": 22,
-                                    "protocol": 'TCP',
-                                },
-                        "natrule":
-                                {
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": "TCP"
-                                },
-                        "lbrule":
-                                {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": 'TCP'
-                                }
-                        }
-
 class TestLoadBalance(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestLoadBalance, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestLoadBalance, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient() 
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -127,7 +55,7 @@ class TestLoadBalance(cloudstackTestCase):
                             )
         cls.service_offering = ServiceOffering.create(
                                         cls.api_client,
-                                        cls.services["service_offering"]
+                                        cls.services["service_offerings"]
                                         )
         cls.vm_1 = VirtualMachine.create(
                                     cls.api_client,

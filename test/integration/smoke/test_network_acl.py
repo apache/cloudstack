@@ -24,70 +24,19 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-            "network_offering": {
-                "name": "Network offering for internal lb service",
-                "displaytext": "Network offering for internal lb service",
-                "guestiptype": "Isolated",
-                "traffictype": "Guest",
-                "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
-                "serviceProviderList": {
-                    "Dhcp": "VpcVirtualRouter",
-                    "Dns": "VpcVirtualRouter",
-                    "Vpn": "VpcVirtualRouter",
-                    "UserData": "VpcVirtualRouter",
-                    "Lb": "InternalLbVM",
-                    "SourceNat": "VpcVirtualRouter",
-                    "StaticNat": "VpcVirtualRouter",
-                    "PortForwarding": "VpcVirtualRouter",
-                    "NetworkACL": "VpcVirtualRouter",
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
-                }
-            }
-        }
-
-
 class TestNetworkACL(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestNetworkACL, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestNetworkACL, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         cls.zone = get_zone(cls.apiclient, cls.services)
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
         cls.template = get_template(

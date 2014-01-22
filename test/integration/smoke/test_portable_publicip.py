@@ -23,68 +23,6 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
-class Services:
-    """Test Data
-    """
-
-    def __init__(self):
-        self.services = {
-            "domain": {
-                "name": "Domain",
-            },
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                # in MHz
-                "memory": 128,
-                # In MBs
-            },
-            "network_offering": {
-                    "name": 'Test Network offering',
-                    "displaytext": 'Test Network offering',
-                    "guestiptype": 'Isolated',
-                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                    "traffictype": 'GUEST',
-                    "availability": 'Optional',
-                    "serviceProviderList" : {
-                            "Dhcp": 'VirtualRouter',
-                            "Dns": 'VirtualRouter',
-                            "SourceNat": 'VirtualRouter',
-                            "PortForwarding": 'VirtualRouter',
-                        },
-            },
-            "network": {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "gateway" : "172.1.1.1",
-            "netmask" : "255.255.255.0",
-            "startip" : "172.1.1.10",
-            "endip" : "172.1.1.20",
-            "regionid" : "1",
-            "vlan" :"10",
-            "isportable" : "true",
-            "virtual_machine" : {
-                "affinity": {
-                    "name": "webvms",
-                    "type": "host anti-affinity",
-                },
-                "hypervisor" : "XenServer",
-            }
-        }
-
 class TestPortablePublicIPRange(cloudstackTestCase):
 
     """
@@ -95,8 +33,10 @@ class TestPortablePublicIPRange(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestPortablePublicIPRange, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestPortablePublicIPRange, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -161,8 +101,10 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestPortablePublicIPAcquire, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestPortablePublicIPAcquire, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)

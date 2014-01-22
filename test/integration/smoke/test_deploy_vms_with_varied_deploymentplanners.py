@@ -21,34 +21,6 @@ from marvin.integration.lib.common import get_zone, get_domain, get_template
 from marvin.integration.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Planner Service Offering",
-                "displaytext": "Planner Service Offering",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                # in MHz
-                "memory": 128,
-                # In MBs
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "virtual_machine": {
-                "hypervisor": "XenServer",
-            }
-        }
-
-
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
     """ Test to create services offerings for deployment planners
 	- firstfit, userdispersing
@@ -56,8 +28,10 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient()
+        cls.apiclient = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient, cls.services)
         cls.zone = get_zone(cls.apiclient, cls.services)
@@ -89,7 +63,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         #FIXME: How do we know that first fit actually happened?
         self.service_offering_firstfit = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='FirstFitPlanner'
         )
 
@@ -132,7 +106,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         """
         self.service_offering_userdispersing = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='UserDispersingPlanner'
         )
 
@@ -191,7 +165,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         """
         self.service_offering_userconcentrated = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"],
+            self.services["service_offerings"],
             deploymentplanner='UserConcentratedPodPlanner'
         )
 

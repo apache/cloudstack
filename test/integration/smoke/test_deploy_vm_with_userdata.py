@@ -26,52 +26,23 @@ from nose.plugins.attrib import attr
 import random
 import string
 
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-        }
-
-
 class TestDeployVmWithUserData(cloudstackTestCase):
     """Tests for UserData
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.apiClient = super(TestDeployVmWithUserData, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
+        cls.apiClient = cloudstackTestClient.getApiClient() 
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         cls.zone = get_zone(cls.apiClient, cls.services)
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
-            cls.services["service_offering"]["storagetype"] = "local"
+            cls.services["service_offerings"]["storagetype"] = "local"
         cls.service_offering = ServiceOffering.create(
             cls.apiClient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiClient, services=cls.services["account"])
         cls.cleanup = [cls.account]

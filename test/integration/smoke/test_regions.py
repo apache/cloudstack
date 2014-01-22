@@ -22,25 +22,16 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
-class Services:
-    def __init__(self):
-        self.services = {
-            "region": {
-                "regionid": "2",
-                "regionname": "Region2",
-                "regionendpoint": "http://region2:8080/client"
-            }
-        }
-
-
 class TestRegions(cloudstackTestCase):
     """Test Regions - basic region creation
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRegions, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestRegions, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.cleanup = []
 

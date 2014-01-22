@@ -32,72 +32,6 @@ import datetime
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Templates Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        "virtual_machine": {
-                                    "displayname": "testVM",
-                                    "hypervisor": 'XenServer',
-                                    "protocol": 'TCP',
-                                    "ssh_port": 22,
-                                    "username": "root",
-                                    "password": "password",
-                                    "privateport": 22,
-                                    "publicport": 22,
-                         },
-                        "volume": {
-                                "diskname": "Test Volume",
-                                 },
-                         "template_1": {
-                                "displaytext": "Cent OS Template",
-                                "name": "Cent OS Template",
-                                "ostype": "CentOS 5.3 (64-bit)",
-                         },
-                         "template_2": {
-                                "displaytext": "Public Template",
-                                "name": "Public template",
-                                "ostype": "CentOS 5.3 (64-bit)",
-                                "isfeatured": True,
-                                "ispublic": True,
-                                "isextractable": True,
-                                "mode": "HTTP_DOWNLOAD",
-                         },
-                        "templatefilter": 'self',
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "isextractable": False,
-                        "bootable": True,
-                        "passwordenabled": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                        "sleep": 30,
-                        "timeout": 10,
-                     }
-
-
 class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):
@@ -118,8 +52,10 @@ class TestCreateTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
+        
+        cloudstackTestClient = super(TestCreateTemplate, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -134,7 +70,7 @@ class TestCreateTemplate(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
 
@@ -152,7 +88,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                             )
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
@@ -233,7 +169,7 @@ class TestCreateTemplate(cloudstackTestCase):
         #Create template from Virtual machine and Volume ID
         template = Template.create(
                                 self.apiclient,
-                                self.services["template_1"],
+                                self.services["template"],
                                 self.volume.id,
                                 account=self.account.name,
                                 domainid=self.account.domainid
@@ -264,18 +200,18 @@ class TestCreateTemplate(cloudstackTestCase):
 
         self.assertEqual(
                             template_response.displaytext,
-                            self.services["template_1"]["displaytext"],
+                            self.services["template"]["displaytext"],
                             "Check display text of newly created template"
                         )
         name = template_response.name
         self.assertEqual(
-                            name.count(self.services["template_1"]["name"]),
+                            name.count(self.services["template"]["name"]),
                             1,
                             "Check name of newly created template"
                         )
         self.assertEqual(
                             template_response.ostypeid,
-                            self.services["template_1"]["ostypeid"],
+                            self.services["template"]["ostypeid"],
                             "Check osTypeID of newly created template"
                         )
         return
@@ -286,8 +222,9 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.services = Services().services
-        cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+        cloudstackTestClient = super(TestTemplates, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -314,7 +251,7 @@ class TestTemplates(cloudstackTestCase):
         cls.services["template_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
 
-        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
 
@@ -335,7 +272,7 @@ class TestTemplates(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]
                                         )
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
@@ -390,7 +327,7 @@ class TestTemplates(cloudstackTestCase):
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(
                                          cls.api_client,
-                                         cls.services["template_1"],
+                                         cls.services["template"],
                                          cls.volume.id,
                                          account=cls.account.name,
                                          domainid=cls.account.domainid

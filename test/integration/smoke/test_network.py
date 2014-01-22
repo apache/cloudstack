@@ -31,80 +31,6 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Network Services
-    """
-
-    def __init__(self):
-        self.services = {
-                            "ostype": "CentOS 5.3 (64-bit)",
-                            # Cent OS 5.3 (64 bit)
-                            "lb_switch_wait": 10,
-                            # Time interval after which LB switches the requests
-                            "sleep": 60,
-                            "timeout":10,
-                            "network_offering": {
-                                    "name": 'Test Network offering',
-                                    "displaytext": 'Test Network offering',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                        },
-                                },
-                            "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                },
-                            "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    # in MHz
-                                    "memory": 256,
-                                    # In MBs
-                                    },
-                            "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                                    },
-                            "server":
-                                    {
-                                    "displayname": "Small Instance",
-                                    "username": "root",
-                                    "password": "password",
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "ssh_port": 22,
-                                    "protocol": 'TCP',
-                                },
-                        "natrule":
-                                {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": "TCP"
-                                },
-                        "lbrule":
-                                {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "protocol": 'TCP'
-                                }
-                        }
-
 
 class TestPublicIP(cloudstackTestCase):
 
@@ -114,8 +40,10 @@ class TestPublicIP(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestPublicIP, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cloudstackTestClient = super(TestPublicIP, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -293,9 +221,10 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-
+        cloudstackTestClient = super(TestPortForwarding, cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -311,14 +240,14 @@ class TestPortForwarding(cloudstackTestCase):
                                 admin=True,
                                 domainid=cls.domain.id
                                 )
-        cls.services["server"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
                                 cls.api_client,
-                                cls.services["service_offering"]
+                                cls.services["service_offerings"]
                                 )
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
-                                    cls.services["server"],
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -483,7 +412,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             self.account.name,
                                             self.zone.id,
                                             self.account.domainid,
-                                            self.services["server"]
+                                            self.services["virtual_machine"]
                                             )
         self.cleanup.append(ip_address)
 
@@ -596,7 +525,7 @@ class TestRebootRouter(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.cloudstackTestClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
@@ -606,7 +535,7 @@ class TestRebootRouter(cloudstackTestCase):
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM and IP addresses
         self.account = Account.create(
@@ -617,11 +546,11 @@ class TestRebootRouter(cloudstackTestCase):
                                       )
         self.service_offering = ServiceOffering.create(
                                             self.apiclient,
-                                            self.services["service_offering"]
+                                            self.services["service_offerings"]
                                             )
         self.vm_1 = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -646,7 +575,7 @@ class TestRebootRouter(cloudstackTestCase):
                                             self.vm_1.account,
                                             self.vm_1.zoneid,
                                             self.vm_1.domainid,
-                                            self.services["server"]
+                                            self.services["virtual_machine"]
                                             )
         #Open up firewall port for SSH
         fw_rule = FireWallRule.create(
@@ -762,7 +691,7 @@ class TestReleaseIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
@@ -772,7 +701,7 @@ class TestReleaseIP(cloudstackTestCase):
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM, Port forwarding rule, LB rules
         self.account = Account.create(
@@ -784,12 +713,12 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.service_offering = ServiceOffering.create(
                                            self.apiclient,
-                                           self.services["service_offering"]
+                                           self.services["service_offerings"]
                                          )
 
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -899,7 +828,7 @@ class TestDeleteAccount(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
+        self.services = self.testClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
@@ -909,7 +838,7 @@ class TestDeleteAccount(cloudstackTestCase):
                             self.zone.id,
                             self.services["ostype"]
                             )
-        self.services["server"]["zoneid"] = self.zone.id
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM and IP addresses
         self.account = Account.create(
@@ -920,11 +849,11 @@ class TestDeleteAccount(cloudstackTestCase):
                                 )
         self.service_offering = ServiceOffering.create(
                                     self.apiclient,
-                                    self.services["service_offering"]
+                                    self.services["service_offerings"]
                                     )
         self.vm_1 = VirtualMachine.create(
                                     self.apiclient,
-                                    self.services["server"],
+                                    self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,

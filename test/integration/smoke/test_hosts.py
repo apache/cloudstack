@@ -30,79 +30,13 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Hosts & Clusters Services
-    """
-
-    def __init__(self):
-        self.services = {
-                       "clusters": {
-                                   0: {
-                                        "clustername": "Xen Cluster",
-                                        "clustertype": "CloudManaged",
-                                        # CloudManaged or ExternalManaged"
-                                        "hypervisor": "XenServer",
-                                        # Hypervisor type
-                                    },
-                                   1: {
-                                        "clustername": "KVM Cluster",
-                                        "clustertype": "CloudManaged",
-                                        # CloudManaged or ExternalManaged"
-                                        "hypervisor": "KVM",
-                                        # Hypervisor type
-                                        },
-                                   2: {
-                                        "hypervisor": 'VMware',
-                                        # Hypervisor type
-                                        "clustertype": 'ExternalManaged',
-                                        # CloudManaged or ExternalManaged"
-                                        "username": 'administrator',
-                                        "password": 'fr3sca',
-                                        "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
-                                        # Format:http://vCenter Host/Datacenter/Cluster
-                                        "clustername": 'VMWare Cluster',
-                                        },
-                                    },
-                       "hosts": {
-                                 "xenserver": {
-                                # Must be name of corresponding Hypervisor type
-                                # in cluster in small letters
-                                          "hypervisor": 'XenServer',
-                                          # Hypervisor type
-                                          "clustertype": 'CloudManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.211',
-                                          "username": "root",
-                                          "password": "fr3sca",
-                                          },
-                                 "kvm": {
-                                          "hypervisor": 'KVM',
-                                          # Hypervisor type
-                                          "clustertype": 'CloudManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.212',
-                                          "username": "root",
-                                          "password": "fr3sca",
-                                          },
-                                 "vmware": {
-                                          "hypervisor": 'VMware',
-                                          # Hypervisor type
-                                          "clustertype": 'ExternalManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.203',
-                                          "username": "administrator",
-                                          "password": "fr3sca",
-                                         },
-                                 },
-                       }
-
 class TestHosts(cloudstackTestCase):
 
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
+        self.services = self.testClient.getConfigParser().parsedDict
         self.zone = get_zone(self.apiclient, self.services)
         self.pod = get_pod(self.apiclient, self.zone.id, self.services)
         self.cleanup = []
