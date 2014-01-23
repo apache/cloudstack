@@ -32,6 +32,7 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 
+import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 
@@ -181,7 +182,7 @@ public class DatastoreMO extends BaseMO {
     }
 
     public boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
-        ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
+            ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
         DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);
@@ -209,7 +210,7 @@ public class DatastoreMO extends BaseMO {
     }
 
     public boolean moveDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
-        ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
+            ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
         DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);
@@ -342,6 +343,10 @@ public class DatastoreMO extends BaseMO {
         ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders("[" + getName() + "]", fileName, caseInsensitive);
         if (results != null && results.size() > 1) {
             s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
+        } else if (results == null) {
+            String msg = "No file found with name " + fileName + " found in datastore " + datastorePath;
+            s_logger.error(msg);
+            throw new CloudException(msg);
         }
         for (HostDatastoreBrowserSearchResults result : results) {
             List<FileInfo> info = result.getFile();
