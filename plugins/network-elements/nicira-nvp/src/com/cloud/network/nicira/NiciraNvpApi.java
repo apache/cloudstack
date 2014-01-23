@@ -102,11 +102,11 @@ public class NiciraNvpApi {
 
     private final Gson gson;
 
-    protected static Map<Class, String> prefixMap;
+    protected final static Map<Class, String> prefixMap;
 
-    protected static Map<Class, Type> listTypeMap;
+    protected final static Map<Class, Type> listTypeMap;
 
-    protected static Map<String, String> defaultListParams;
+    protected final static Map<String, String> defaultListParams;
 
     static {
         prefixMap = new HashMap<Class, String>();
