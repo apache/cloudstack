@@ -469,6 +469,19 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>cloudstack-findbugs</id>
+            <phase>none</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -576,6 +589,15 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.3</version>
+          <configuration>
+            <port>9000</port>
+            <tempWebappDirectory>${basedir}/target/site/tempdir</tempWebappDirectory>
+          </configuration>
         </plugin>
         <!--This plugin's configuration is used to store Eclipse m2e settings only. 
           It has no influence on the Maven build itself. -->
@@ -840,9 +862,44 @@
             </formats>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <version>2.5.3</version>
+          <configuration>
+            <effort>Max</effort>
+            <threshold>High</threshold>
+            <xmlOutput>true</xmlOutput>
+            <failOnError>false</failOnError>
+          </configuration>
+          <executions>
+            <execution>
+              <id>cloudstack-findbugs</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <configuration>
+          <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
+          <effort>Default</effort><!-- Min|Default|Max -->
+        </configuration>
+      </plugin>
+      <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
   <profiles>
     <profile>
       <id>awsapi</id>
@@ -909,6 +966,24 @@
                 <execution>
                   <id>cloudstack-checkstyle</id>
                   <phase>none</phase>
+                  <inherited>true</inherited>
+                </execution>
+              </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>  
+    <profile>
+      <id>enablefindbugs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>cloudstack-findbugs</id>
+                  <phase>process-classes</phase>
                   <inherited>true</inherited>
                 </execution>
               </executions>
