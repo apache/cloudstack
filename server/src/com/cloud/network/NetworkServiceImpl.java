@@ -669,6 +669,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
+        int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), 10);
+        Long nicWiseIpCount = _nicSecondaryIpDao.countByNicId(nicId);
+        if(nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
+            s_logger.error("Maximum Number of Ips \"vm.network.nic.max.secondary.ipaddresses = \"" + maxAllowedIpsPerNic + " per Nic has been crossed for the nic " +  nicId + ".");
+            throw new InsufficientAddressCapacityException("Maximum Number of Ips per Nic has been crossed.", Nic.class, nicId);
+        }
+
+
         s_logger.debug("Calling the ip allocation ...");
         String ipaddr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type

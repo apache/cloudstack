@@ -51,4 +51,6 @@ public interface NicSecondaryIpDao extends GenericDao<NicSecondaryIpVO, Long> {
     NicSecondaryIpVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, Long vmId, String vmIp);
 
     List<String> getSecondaryIpAddressesForNic(long nicId);
+
+    Long countByNicId(long nicId);
 }

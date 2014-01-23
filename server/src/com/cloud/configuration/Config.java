@@ -402,6 +402,10 @@ public enum Config {
             "10",
             "The maximum number of subnets per customer gateway",
             null),
+    MaxNumberOfSecondaryIPsPerNIC(
+            "Network", ManagementServer.class, Integer.class,
+            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "Specify the number of secondary ip addresses per nic per vm", null),
 
     // Console Proxy
     ConsoleProxyCapacityStandby(

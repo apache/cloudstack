@@ -130,7 +130,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         try {
             result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
         } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for nic failed");
+            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
         }
 
         if (result != null) {
