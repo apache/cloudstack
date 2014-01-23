@@ -2971,6 +2971,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getEntityId();
         Long hostId = cmd.getHostId();
         UserVmVO vm = _vmDao.findById(vmId);
+        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
         try {
