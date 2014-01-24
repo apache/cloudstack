@@ -166,7 +166,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
             }
             String updatedInventoryPath = validateCluster(url, vmwareDc);
-            if (url.getPath() != updatedInventoryPath) {
+            if (!url.getPath().equals(updatedInventoryPath)) {
                 // If url from API doesn't specify DC then update url in database with DC associated with this zone.
                 clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
