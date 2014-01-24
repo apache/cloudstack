@@ -82,12 +82,15 @@ public class VpcVO implements Vpc {
     @Column(name="uses_distributed_router")
     boolean usesDistributedRouter = false;
 
+    @Column(name = "region_level_vpc")
+    boolean regionLevelVpc = false;
+
     public VpcVO() {
         uuid = UUID.randomUUID().toString();
     }
 
     public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr,
-                 String networkDomain, boolean useDistributedRouter) {
+                 String networkDomain, boolean useDistributedRouter, boolean regionLevelVpc) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -98,7 +101,8 @@ public class VpcVO implements Vpc {
         state = State.Enabled;
         this.networkDomain = networkDomain;
         vpcOfferingId = vpcOffId;
-        usesDistributedRouter = useDistributedRouter;
+        this.usesDistributedRouter = useDistributedRouter;
+        this.regionLevelVpc = regionLevelVpc;
     }
 
     @Override
@@ -189,6 +193,11 @@ public class VpcVO implements Vpc {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public boolean isRegionLevelVpc() {
+        return regionLevelVpc;
     }
 
 

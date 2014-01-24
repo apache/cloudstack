@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.configuration;
 
+import com.cloud.network.element.NetworkElement;
 import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -3814,10 +3815,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
 
+        // validate the 'Connectivity' service capabilities specified in the network offering, if 'Connectivity' service
+        // is in the supported services of network offering
+        Map<Capability, String> connectivityServiceCapabilityMap = cmd.getServiceCapabilities(Service.Connectivity);
+        if (!serviceProviderMap.containsKey(Service.Connectivity) &&
+                (connectivityServiceCapabilityMap != null && !connectivityServiceCapabilityMap.isEmpty()))  {
+            throw new InvalidParameterValueException("Capabilities for 'Connectivity' service can be specified " +
+                    "only when Connectivity service is enabled for network offering.");
+        }
+        validateConnectivityServiceCapablities(serviceProviderMap.get(Service.Connectivity), connectivityServiceCapabilityMap);
+
         Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
+        serviceCapabilityMap.put(Service.Connectivity, connectivityServiceCapabilityMap);
 
         // if Firewall service is missing, add Firewall service/provider
         // combination
@@ -3952,6 +3964,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+    void validateConnectivityServiceCapablities(Set<Provider> providers, Map<Capability, String> connectivityServiceCapabilityMap) {
+        if (connectivityServiceCapabilityMap != null && !connectivityServiceCapabilityMap.isEmpty()) {
+            for (Capability capability: connectivityServiceCapabilityMap.keySet()) {
+                if (capability == Capability.StretchedL2Subnet) {
+                    String value = connectivityServiceCapabilityMap.get(capability).toLowerCase();
+                    if (!(value.contains("true") ^ value.contains("false"))) {
+                        throw new InvalidParameterValueException("Invalid value (" + value + ") for " + capability +
+                        " should be true/false");
+                    }
+                } else {
+                    throw new InvalidParameterValueException("Capability " + capability.getName() + " can not be "
+                            + " specified with connectivity service.");
+                }
+            }
+        }
+
+        if (providers != null && !providers.isEmpty()) {
+            for (Provider provider: providers) {
+                NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
+                Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+                if (capabilities != null && !capabilities.isEmpty()) {
+                    Map<Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
+                    if (connectivityCapabilities == null || (connectivityCapabilities != null && !connectivityCapabilities.keySet().contains(Capability.StretchedL2Subnet))) {
+                        throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
+                                + Capability.StretchedL2Subnet.getName());
+                    }
+                }
+            }
+        }
+    }
     @Override
     @DB
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
@@ -4012,6 +4054,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean inline = false;
         boolean publicLb = false;
         boolean internalLb = false;
+        boolean strechedL2Subnet = false;
+
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
 
@@ -4079,6 +4123,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             }
+
+            Map<Capability, String> connectivityServiceCapabilityMap = serviceCapabilityMap.get(Service.Connectivity);
+            if (connectivityServiceCapabilityMap != null && !connectivityServiceCapabilityMap.isEmpty()) {
+                String value = connectivityServiceCapabilityMap.get(Capability.StretchedL2Subnet);
+                if ("true".equalsIgnoreCase(value)) {
+                    strechedL2Subnet = true;
+                }
+            }
         }
 
         if (serviceProviderMap != null && serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
@@ -4088,7 +4140,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability,
                 tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb,
-                internalLb, egressDefaultPolicy);
+                internalLb, egressDefaultPolicy, strechedL2Subnet);
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);

@@ -2713,7 +2713,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean securityGroupEnabled = false;
         boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
-            if (network.getDataCenterId() != zone.getId()) {
+            if ((network.getDataCenterId() != zone.getId()) && !network.isStrechedL2Network()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
 

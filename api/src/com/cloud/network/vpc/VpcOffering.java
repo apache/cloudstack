@@ -56,8 +56,12 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Long getServiceOfferingId();
 
     /**
-     *
      * @return true if the offering provides a distributed router capable of one-hop forwarding
      */
     boolean supportsDistributedRouter();
+
+    /**
+     * @return true if VPC created with the offering can span multiple zones in the region
+     */
+    boolean offersRegionLevelVPC();
 }

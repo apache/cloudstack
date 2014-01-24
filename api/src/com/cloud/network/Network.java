@@ -57,7 +57,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
-        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter);
+        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
 
         private final String name;
         private final Capability[] caps;
@@ -187,6 +187,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability LbSchemes = new Capability("LbSchemes");
         public static final Capability DhcpAccrossMultipleSubnets = new Capability("DhcpAccrossMultipleSubnets");
         public static final Capability DistributedRouter = new Capability("DistributedRouter");
+        public static final Capability StretchedL2Subnet = new Capability("StretchedL2Subnet");
+        public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
 
         private final String name;
 
@@ -337,4 +339,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Long getNetworkACLId();
 
     void setNetworkACLId(Long networkACLId);
+
+    boolean isStrechedL2Network();
 }
