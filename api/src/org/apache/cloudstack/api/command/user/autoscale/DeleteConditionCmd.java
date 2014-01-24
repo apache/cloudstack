@@ -19,6 +19,9 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +37,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class, entityType = { AclEntityType.Condition })
 public class DeleteConditionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteConditionCmd.class.getName());
     private static final String s_name = "deleteconditionresponse";
@@ -43,6 +46,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
     private Long id;
 

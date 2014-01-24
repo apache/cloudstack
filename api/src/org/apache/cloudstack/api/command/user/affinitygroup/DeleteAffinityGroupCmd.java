@@ -19,7 +19,9 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,6 +55,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
                entityType = DomainResponse.class)
     private Long domainId;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                description = "The ID of the affinity group. Mutually exclusive with name parameter",

@@ -21,6 +21,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class)
+@APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class, entityType = { AclEntityType.AutoScaleVmGroup })
 public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmGroupCmd.class.getName());
 
@@ -73,6 +76,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
                description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = AutoScaleVmGroupResponse.class,

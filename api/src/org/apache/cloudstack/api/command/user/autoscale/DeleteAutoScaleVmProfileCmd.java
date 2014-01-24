@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class, entityType = { AclEntityType.AutoScaleVmProfile })
 public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAutoScaleVmProfileCmd.class.getName());
     private static final String s_name = "deleteautoscalevmprofileresponse";
@@ -41,6 +44,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = AutoScaleVmProfileResponse.class,

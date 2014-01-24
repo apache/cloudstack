@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +41,7 @@ import com.cloud.network.rules.LoadBalancer;
 
 @APICommand(name = "createAutoScaleVmGroup",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
-            responseObject = AutoScaleVmGroupResponse.class)
+ responseObject = AutoScaleVmGroupResponse.class, entityType = { AclEntityType.AutoScaleVmGroup })
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 

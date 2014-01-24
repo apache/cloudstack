@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class, entityType = { AclEntityType.Event })
 public class DeleteEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());

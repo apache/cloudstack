@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -44,7 +46,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
-        + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
+        + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
@@ -53,7 +55,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
