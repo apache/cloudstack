@@ -254,7 +254,7 @@ namespace HypervResource
                 // Assert
                 if (result.dataStore == null || (result.primaryDataStore == null && result.nfsDataStore == null))
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volumeObjectTOJson.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volumeObjectTOJson.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -292,7 +292,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volInfo.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volInfo.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }

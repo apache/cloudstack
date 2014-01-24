@@ -207,7 +207,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.AttachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.AttachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -268,7 +268,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DettachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DettachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -485,7 +485,7 @@ namespace HypervResource
         {
             JObject ansObj = Utils.CreateCloudStackObject(ansType, ansContent);
             JArray answer = new JArray(ansObj);
-            logger.Info(ansObj.ToString());
+            logger.Info(Utils.CleanString(ansObj.ToString()));
             return answer;
         }
 
@@ -496,7 +496,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -603,7 +603,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
                 long size = 0;
@@ -871,7 +871,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -889,7 +889,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 string localPath;
                 StoragePoolType poolType;
@@ -1045,7 +1045,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.StartCommand + cmd.ToString()); // TODO: Security hole? VM data printed to log
+                logger.Info(CloudStackTypes.StartCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
 
@@ -1144,7 +1144,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateObjectCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateObjectCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
@@ -1315,7 +1315,7 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 // Log command *after* we've removed security details from the command.
-                logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CopyCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
@@ -1691,7 +1691,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetStorageStatsCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetStorageStatsCommand + Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 string details = null;
                 long capacity = 0;

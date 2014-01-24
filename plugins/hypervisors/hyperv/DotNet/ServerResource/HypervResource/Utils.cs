@@ -164,6 +164,16 @@ namespace HypervResource
             capacity = totalNumberOfBytes > 0 ? (long)totalNumberOfBytes : 0;
         }
 
+        public static string CleanString(string stringToClean)
+        {
+            string cleanString = null;
+            string regexQueryString = "(&|%26)?(password|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))";
+            string regexJson = "\"(password|accesskey|secretkey)\":\".*?\",?";
+            cleanString = System.Text.RegularExpressions.Regex.Replace(stringToClean, regexQueryString, "");
+            cleanString = System.Text.RegularExpressions.Regex.Replace(cleanString, regexJson, "");
+            return cleanString;
+        }
+
         // from http://stackoverflow.com/a/2541569/939250
         #region imports
         [DllImport("advapi32.dll", SetLastError = true)]
