@@ -3974,6 +3974,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     break;
 
                 case PowerOff:
+                case PowerReportMissing:
                     handlePowerOffReportWithNoPendingJobsOnVM(vm);
                     break;
 
@@ -4094,7 +4095,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
                             + " -> Stopped) from out-of-context transition.");
 
-            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-on report from hypervisor");
+            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-off report from hypervisor");
 
             // TODO: we need to forcely release all resource allocation
             break;

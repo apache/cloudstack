@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -78,6 +79,30 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             } else {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("VM power state does not change, skip DB writing. vm id: " + entry.getKey());
+    		}
+    	}
+
+        // for all running/stopping VMs, we provide monitoring of missing report
+        List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStates(hostId, VirtualMachine.State.Running,
+                VirtualMachine.State.Stopping);
+        java.util.Iterator<VMInstanceVO> it = vmsThatAreMissingReport.iterator();
+        while (it.hasNext()) {
+            VMInstanceVO instance = it.next();
+            if (translatedInfo.get(instance.getId()) != null)
+                it.remove();
+        }
+
+        if (vmsThatAreMissingReport.size() > 0) {
+            for (VMInstanceVO instance : vmsThatAreMissingReport) {
+                if (_instanceDao.updatePowerState(instance.getId(), hostId, VirtualMachine.PowerState.PowerReportMissing)) {
+                    if (s_logger.isDebugEnabled())
+                        s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + instance.getId() + ", power state: PowerReportMissing ");
+
+                    _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, instance.getId());
+                } else {
+                    if (s_logger.isDebugEnabled())
+                        s_logger.debug("VM power state does not change, skip DB writing. vm id: " + instance.getId());
+                }
             }
         }
     }
