@@ -36,7 +36,8 @@ public interface SecurityChecker extends Adapter {
         ModifyProject,
         UseNetwork,
         DeleteEntry,
-        OperateEntry
+        OperateEntry,
+        UseEntry
     }
 
     /**

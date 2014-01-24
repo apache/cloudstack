@@ -670,7 +670,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<AclPolicyPermission> listPolicyPermissionByEntityType(long policyId, String action, String entityType) {
+    public List<AclPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action,
+            String entityType) {
         @SuppressWarnings("rawtypes")
         List pp = _policyPermissionDao.listByPolicyActionAndEntity(policyId, action, entityType);
         return pp;
@@ -678,9 +679,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<AclPolicyPermission> listPolicyPermissionByAccessType(long policyId, String accessType, String entityType, String action) {
+    public List<AclPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
+            String entityType) {
         @SuppressWarnings("rawtypes")
-        List pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType, action);
+        List pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType);
         return pp;
     }
 

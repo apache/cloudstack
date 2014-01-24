@@ -108,6 +108,9 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
+
     //TO be implemented, to check accessibility for an entity owned by domain
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
 }

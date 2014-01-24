@@ -66,7 +66,7 @@ public interface IAMService {
 
     List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
 
-    List<AclPolicyPermission> listPolicyPermissionByEntityType(long policyId, String action, String entityType);
+    List<AclPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action, String entityType);
 
     boolean isActionAllowedForPolicies(String action, List<AclPolicy> policies);
 
@@ -74,6 +74,7 @@ public interface IAMService {
 
     AclPolicy resetAclPolicy(long aclPolicyId);
 
-    List<AclPolicyPermission> listPolicyPermissionByAccessType(long policyId, String accessType, String entityType, String action);
+    List<AclPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
+            String entityType);
 
 }

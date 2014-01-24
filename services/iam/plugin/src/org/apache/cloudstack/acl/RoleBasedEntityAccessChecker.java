@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
@@ -71,7 +72,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         String entityType = entity.getEntityType().toString();
 
         if (accessType == null) {
-            accessType = AccessType.ListEntry;
+            accessType = AccessType.UseEntry;
         }
 
         // get all Policies of this caller w.r.t the entity
@@ -82,13 +83,21 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             List<AclPolicyPermission> permissions = new ArrayList<AclPolicyPermission>();
 
             if (action != null) {
-                permissions = _iamSrv.listPolicyPermissionByEntityType(policy.getId(), action, entityType);
+                permissions = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action, entityType);
+                if (permissions.isEmpty()) {
+                    if (accessType != null) {
+                        permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                                accessType.toString(), entityType));
+                    }
+                }
             } else {
-                permissions = _iamSrv.listPolicyPermissionByAccessType(policy.getId(), accessType.toString(),
-                        entityType, action);
+                if (accessType != null) {
+                    permissions.addAll(_iamSrv.listPolicyPermissionByAccessAndEntity(policy.getId(),
+                            accessType.toString(), entityType));
+                }
             }
             for (AclPolicyPermission permission : permissions) {
-                if (checkPermissionScope(caller, permission.getScope(), entity)) {
+                if (checkPermissionScope(caller, permission.getScope(), permission.getScopeId(), entity)) {
                     if (permission.getEntityType().equals(entityType)) {
                         policyPermissionMap.put(policy, permission.getPermission().isGranted());
                         break;
@@ -114,18 +123,38 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         return false;
     }
 
-    private boolean checkPermissionScope(Account caller, String scope, ControlledEntity entity) {
+    private boolean checkPermissionScope(Account caller, String scope, Long scopeId, ControlledEntity entity) {
 
-        if (scope.equals(PermissionScope.ACCOUNT.name())) {
-            if(caller.getAccountId() == entity.getAccountId()){
-                return true;
+        if(scopeId != null && !scopeId.equals(new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))){
+            //scopeId is set
+            if (scope.equals(PermissionScope.ACCOUNT.name())) {
+                if(scopeId == entity.getAccountId()){
+                    return true;
+                }
+            } else if (scope.equals(PermissionScope.DOMAIN.name())) {
+                if (_domainDao.isChildDomain(scopeId, entity.getDomainId())) {
+                    return true;
+                }
+            } else if (scope.equals(PermissionScope.RESOURCE.name())) {
+                if (entity instanceof InternalIdentity) {
+                    InternalIdentity entityWithId = (InternalIdentity) entity;
+                    if(scopeId.equals(entityWithId.getId())){
+                        return true;
+                    }
+                }
             }
-        } else if (scope.equals(PermissionScope.DOMAIN.name())) {
-            if (_domainDao.isChildDomain(caller.getDomainId(), entity.getDomainId())) {
-                return true;
+        } else if (scopeId == null || scopeId.equals(new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))) {
+            if (scope.equals(PermissionScope.ACCOUNT.name())) {
+                if(caller.getAccountId() == entity.getAccountId()){
+                    return true;
+                }
+            } else if (scope.equals(PermissionScope.DOMAIN.name())) {
+                if (_domainDao.isChildDomain(caller.getDomainId(), entity.getDomainId())) {
+                    return true;
+                }
             }
         }
-
+        
         return false;
     }
 

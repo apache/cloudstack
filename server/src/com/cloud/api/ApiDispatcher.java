@@ -40,6 +40,7 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -107,19 +108,14 @@ public class ApiDispatcher {
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
-        if (cmd instanceof BaseAsyncCreateCmd) {
-            //check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
-        }
+        APICommand commandAnnotation = cmd.getClass().getAnnotation(APICommand.class);
+        String apiName = commandAnnotation != null ? commandAnnotation.name() : null;
 
         if (!entitiesToAccess.isEmpty()) {
-            //check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, true, owner);
             for (Object entity : entitiesToAccess.keySet()) {
                 if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity)entity);
+                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), false, apiName, (ControlledEntity) entity);
                 } else if (entity instanceof InfrastructureEntity) {
                     //FIXME: Move this code in adapter, remove code from Account manager
                 }

@@ -30,9 +30,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 import org.apache.cloudstack.iam.api.IAMService;
 
@@ -205,7 +207,9 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             try {
                 cmdObj = (BaseCmd) cmdClass.newInstance();
                 if (cmdObj instanceof BaseListCmd) {
-                    accessType = AccessType.ListEntry;
+                    accessType = AccessType.UseEntry;
+                } else if (!(cmdObj instanceof BaseAsyncCreateCmd)) {
+                    accessType = AccessType.OperateEntry;
                 }
             } catch (Exception e) {
                 throw new CloudRuntimeException(String.format(
@@ -238,11 +242,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
 
         if (entityTypes == null || entityTypes.length == 0) {
-            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(-1),
+            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
         } else {
             for (AclEntityType entityType : entityTypes) {
-                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(-1),
+                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
             }
          }

@@ -49,4 +49,5 @@ public interface AclPolicyPermission {
 
     long getId();
 
+    public static final long PERMISSION_SCOPE_ID_CURRENT_CALLER = -1;
 }

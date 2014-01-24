@@ -447,6 +447,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
+        checkAccess(caller, accessType, sameOwner, null, entities);
+    }
+
+    @Override
+    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
         //check for the same owner
         Long ownerId = null;
         ControlledEntity prevEntity = null;
@@ -492,7 +497,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
-                if (checker.checkAccess(caller, entity, accessType)) {
+                if (checker.checkAccess(caller, entity, accessType, apiName)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
                     }
