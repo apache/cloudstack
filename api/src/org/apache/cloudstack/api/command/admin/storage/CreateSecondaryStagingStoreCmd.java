@@ -18,9 +18,7 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -54,7 +52,7 @@ public class CreateSecondaryStagingStoreCmd extends BaseCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the staging store")
-    private Map<String, String> details;
+    private Map<String, ? extends Map<String, String>> details;
 
     @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "the scope of the staging store: zone only for now")
     private String scope;
@@ -78,13 +76,8 @@ public class CreateSecondaryStagingStoreCmd extends BaseCmd {
         Map<String, String> detailsMap = null;
         if (details != null && !details.isEmpty()) {
             detailsMap = new HashMap<String, String>();
-            Collection<?> props = details.values();
-            Iterator<?> iter = props.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> detail = (HashMap<String, String>)iter.next();
-                String key = detail.get("key");
-                String value = detail.get("value");
-                detailsMap.put(key, value);
+            for (Map<String, String> detail : details.values()) {
+                detailsMap.put(detail.get("key"), detail.get("value"));
             }
         }
         return detailsMap;
