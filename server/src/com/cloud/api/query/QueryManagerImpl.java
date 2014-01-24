@@ -2268,7 +2268,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
-        Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getType());
+        Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain

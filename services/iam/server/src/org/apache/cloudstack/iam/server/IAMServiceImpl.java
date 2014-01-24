@@ -137,6 +137,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         groupSB.selectFields(groupSB.entity().getAclGroupId());
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
         SearchCriteria<Long> groupSc = groupSB.create();
+        groupSc.setParameters("account", accountId);
 
         List<Long> groupIds = _aclGroupAccountMapDao.customSearch(groupSc, null);
 
@@ -340,7 +341,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         policySc.setJoinParameters("accountgroupjoin", "account", accountId);
 
         List<Long> policyIds = _aclGroupPolicyMapDao.customSearch(policySc, null);
-
+        if (policyIds == null || policyIds.size() == 0) {
+            return new ArrayList<AclPolicy>();
+        }
         SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<AclPolicyVO> sc = sb.create();
@@ -608,6 +611,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     public boolean isActionAllowedForPolicies(String action, List<AclPolicy> policies) {
 
         boolean allowed = false;
+
+        if (policies == null || policies.size() == 0) {
+            return allowed;
+        }
 
         List<Long> policyIds = new ArrayList<Long>();
         for (AclPolicy policy : policies) {
