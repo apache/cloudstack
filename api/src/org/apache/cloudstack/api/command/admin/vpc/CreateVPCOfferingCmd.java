@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
