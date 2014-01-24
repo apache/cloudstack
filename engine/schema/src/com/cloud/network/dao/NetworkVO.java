@@ -167,6 +167,9 @@ public class NetworkVO implements Network {
     @Column(name = "network_acl_id")
     Long networkACLId;
 
+    @Column(name = "streched_l2")
+    boolean strechedL2Network = false;
+
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -588,5 +591,14 @@ public class NetworkVO implements Network {
     @Override
     public IAMEntityType getEntityType() {
         return IAMEntityType.Network;
+    }
+
+    @Override
+    public boolean isStrechedL2Network() {
+        return strechedL2Network;
+    }
+
+    public void setStrechedL2Network(boolean strechedL2Network) {
+        this.strechedL2Network = strechedL2Network;
     }
 }

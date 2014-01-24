@@ -116,6 +116,10 @@ public class NetworkOfferingResponse extends BaseResponse {
     @Param(description = "maximum number of concurrents connections to be handled by lb")
     private Integer concurrentConnections;
 
+    @SerializedName(ApiConstants.SUPPORTS_STRECHED_L2_SUBNET)
+    @Param(description = "true if network offering supports network that span multiple zones")
+    private Boolean supportsStrechedL2Subnet;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -200,4 +204,7 @@ public class NetworkOfferingResponse extends BaseResponse {
         this.concurrentConnections = concurrentConnections;
     }
 
+    public void setSupportsStrechedL2Subnet(Boolean supportsStrechedL2Subnet) {
+        this.supportsStrechedL2Subnet = supportsStrechedL2Subnet;
+    }
 }
