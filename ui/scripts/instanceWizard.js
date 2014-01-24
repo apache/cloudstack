@@ -239,7 +239,11 @@
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
                     },
-                    customHidden: function(args) {                        
+                    customHidden: function(args) {
+                        ////
+                        return true; // Disabled -- not supported in backend right now
+                        ////
+                        
                         if (selectedTemplateOrIso == 'select-template') {
                             return false; //show Root Disk Size field
                         } else { //selectedTemplateOrIso == 'select-iso'
