@@ -586,6 +586,7 @@ public class ApiConstants {
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
     public static final String REMAININGCAPACITY = "remainingcapacity";
+    public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

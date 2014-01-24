@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -61,6 +63,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.STRING,
                description = "services supported by the vpc offering")
     private List<String> supportedServices;
+
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of vpc offering")
+    private Map serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. "
         + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
@@ -118,7 +123,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders(), getServiceOfferingId());
+        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(),
+                getServiceProviders(), serviceCapabilitystList, getServiceOfferingId());
         if (vpcOff != null) {
             setEntityId(vpcOff.getId());
             setEntityUuid(vpcOff.getUuid());
