@@ -241,7 +241,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         List<AclPolicy> policies = _iamSrv.listAclPolicies(accountId);
         AclPolicyPermission curPerm = null;
         for (AclPolicy policy : policies) {
-            List<AclPolicyPermission> perms = _iamSrv.listPolicyPermissionByEntityType(policy.getId(), action,
+            List<AclPolicyPermission> perms = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action,
                     entityType);
             if (perms == null || perms.size() == 0)
                 continue;

@@ -154,7 +154,6 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 }
             }
         }
-        
         return false;
     }
 

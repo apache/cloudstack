@@ -372,4 +372,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     }
 
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+
+    }
+
 }
