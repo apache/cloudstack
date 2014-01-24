@@ -239,7 +239,6 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
  * to perform the required functionalities for CloudStack.
@@ -2496,6 +2495,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Connection conn) {
+
+        // TODO : new VM sync model does not require a cluster-scope report, we need to optimize
+        // the report accordingly
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         Map<VM, VM.Record> vm_map = null;
         for (int i = 0; i < 2; i++) {
@@ -2534,7 +2536,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (XmlRpcException e) {
                     s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 }
-                vmStates.put(record.nameLabel, new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion));
+
+                if (host_uuid.equalsIgnoreCase(_host.uuid)) {
+                    vmStates.put(
+                            record.nameLabel,
+                            new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion)
+                            );
+                }
             }
         }
 

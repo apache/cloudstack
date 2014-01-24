@@ -79,8 +79,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             } else {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("VM power state does not change, skip DB writing. vm id: " + entry.getKey());
-    		}
-    	}
+            }
+        }
 
         // for all running/stopping VMs, we provide monitoring of missing report
         List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStates(hostId, VirtualMachine.State.Running,
