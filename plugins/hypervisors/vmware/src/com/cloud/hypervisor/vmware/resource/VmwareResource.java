@@ -3512,7 +3512,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             public int compare(DiskTO arg0, DiskTO arg1) {
                 if (arg0.getDiskSeq() < arg1.getDiskSeq()) {
                     return -1;
-                } else if (arg0.getDiskSeq() == arg1.getDiskSeq()) {
+                } else if (arg0.getDiskSeq().equals(arg1.getDiskSeq())) {
                     return 0;
                 }
 
