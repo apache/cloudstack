@@ -840,7 +840,7 @@ public class NetUtils {
                 //this implies cidrA is super set of cidrB
                 return supersetOrSubset.isSuperset;
             }
-            else if (cidrALong[1] == cidrBLong[1]) {
+            else if (cidrALong[1].equals(cidrBLong[1])) {
                 //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }

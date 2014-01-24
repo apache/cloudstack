@@ -95,7 +95,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         try {
             VMInstanceVO instance = instanceDao.findById(vmTo.getId());
             if (instance != null) {
-                if (srcHost.getClusterId() == destHost.getClusterId()) {
+                if (srcHost.getClusterId().equals(destHost.getClusterId())) {
                     answer = migrateVmWithVolumesWithinCluster(instance, vmTo, srcHost, destHost, volumeMap);
                 } else {
                     answer = migrateVmWithVolumesAcrossCluster(instance, vmTo, srcHost, destHost, volumeMap);

@@ -960,7 +960,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         if (disk == null) {
-            throw new CloudRuntimeException("Failed to create " + disk.getPath() + " from template " + template.getName());
+            throw new CloudRuntimeException("Failed to create disk from template " + template.getName());
         }
 
         return disk;

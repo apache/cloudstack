@@ -846,7 +846,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Set<VIF> dom0Vifs = dom0.getVIFs(conn);
         for (VIF vif:dom0Vifs) {
             vif.getRecord(conn);
-            if (vif.getNetwork(conn).getUuid(conn) == nw.getUuid(conn)) {
+            if (vif.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
                 dom0vif = vif;
                 s_logger.debug("A VIF for dom0 has already been found - No need to create one");
             }
@@ -3427,7 +3427,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 Set<VBD> vbds = vm.getVBDs(conn);
                 for( VBD vbd : vbds) {
                     VBD.Record vbdRec = vbd.getRecord(conn);
-                    if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
+                    if( vbdRec.type.equals(Types.VbdType.CD) && !vbdRec.empty ) {
                         vbd.eject(conn);
                         break;
                     }
