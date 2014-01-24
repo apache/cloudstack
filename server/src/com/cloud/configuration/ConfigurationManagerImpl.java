@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.configuration;
 
+import com.cloud.network.element.NetworkElement;
 import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -3817,7 +3818,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Capabilities for 'Connectivity' service can be specified " +
                     "only when Connectivity service is enabled for network offering.");
         }
-        validateConnectivityServiceCapablities(connectivityServiceCapabilityMap);
+        validateConnectivityServiceCapablities(serviceProviderMap.get(Service.Connectivity), connectivityServiceCapabilityMap);
 
         Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
@@ -3958,7 +3959,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    void validateConnectivityServiceCapablities(Map<Capability, String> connectivityServiceCapabilityMap) {
+    void validateConnectivityServiceCapablities(Set<Provider> providers, Map<Capability, String> connectivityServiceCapabilityMap) {
         if (connectivityServiceCapabilityMap != null && !connectivityServiceCapabilityMap.isEmpty()) {
             for (Capability capability: connectivityServiceCapabilityMap.keySet()) {
                 if (capability == Capability.StretchedL2Subnet) {
@@ -3970,6 +3971,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     throw new InvalidParameterValueException("Capability " + capability.getName() + " can not be "
                             + " specified with connectivity service.");
+                }
+            }
+        }
+
+        if (providers != null && !providers.isEmpty()) {
+            for (Provider provider: providers) {
+                NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
+                Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+                if (capabilities != null && !capabilities.isEmpty()) {
+                    Map<Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
+                    if (connectivityCapabilities == null || (connectivityCapabilities != null && !connectivityCapabilities.keySet().contains(Capability.StretchedL2Subnet))) {
+                        throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
+                                + Capability.StretchedL2Subnet.getName());
+                    }
                 }
             }
         }

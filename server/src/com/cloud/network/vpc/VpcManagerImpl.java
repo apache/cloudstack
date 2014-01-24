@@ -17,6 +17,7 @@
 package com.cloud.network.vpc;
 
 
+import com.cloud.network.element.NetworkElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -379,6 +380,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        validateConnectivtyServiceCapablitlies(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);
         boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
 
         VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId, offersRegionLevelVPC);
@@ -422,6 +424,55 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
+    private void validateConnectivtyServiceCapablitlies(Set<Provider> providers, Map serviceCapabilitystList) {
+
+        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
+            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
+            Iterator iter = serviceCapabilityCollection.iterator();
+            Map<Network.Capability, String> capabilityMap = null;
+
+            while (iter.hasNext()) {
+                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
+                Network.Capability capability = null;
+                String svc = svcCapabilityMap.get("service");
+                String capabilityName = svcCapabilityMap.get("capabilitytype");
+                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
+                if (capabilityName != null) {
+                    capability = Network.Capability.getCapability(capabilityName);
+                }
+
+                if ((capability == null) || (capabilityName == null) || (capabilityValue == null)) {
+                    throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
+                }
+
+                if (!svc.equalsIgnoreCase(Service.Connectivity.getName())) {
+                    throw new InvalidParameterValueException("Invalid Service:" + svc + " specified. Only for 'Connectivity' service capabilities can be specified");
+                }
+
+                if (!capabilityName.equalsIgnoreCase("RegionLevelVpc")) {
+                    throw new InvalidParameterValueException("Invalid Capability:" + capabilityName + " specified. Only 'RegionLevelVpc' capability can be specified.");
+                }
+
+                if (!capabilityValue.equalsIgnoreCase("true") && capabilityValue.equalsIgnoreCase("false")) {
+                    throw new InvalidParameterValueException("Invalid Capability value:" + capabilityValue + " specified.");
+                }
+            }
+        }
+
+        if (providers != null && !providers.isEmpty()) {
+            for (Provider provider: providers) {
+                NetworkElement element = _ntwkModel.getElementImplementingProvider(provider.getName());
+                Map<Service, Map<Network.Capability, String>> capabilities = element.getCapabilities();
+                if (capabilities != null && !capabilities.isEmpty()) {
+                    Map<Network.Capability, String> connectivityCapabilities =  capabilities.get(Service.Connectivity);
+                    if (connectivityCapabilities == null || (connectivityCapabilities != null && !connectivityCapabilities.keySet().contains(Network.Capability.RegionLevelVpc))) {
+                        throw new InvalidParameterValueException("Provider: " + provider.getName() + " does not support "
+                                + Network.Capability.RegionLevelVpc.getName());
+                    }
+                }
+            }
+        }
+    }
     private boolean isVpcOfferingForRegionLevelVpc(Map serviceCapabilitystList) {
         boolean offersRegionLevelVPC = false;
         if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
