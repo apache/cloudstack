@@ -1954,6 +1954,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new IpAssocAnswer(cmd, results);
     }
 
+    protected Pair<Boolean, String> executeInVR(String script, String routerIP, String args) {
+        Pair<Boolean, String> result;
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            result = SshHelper.sshExecute(routerIP, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args);
+        } catch (Exception e) {
+            String msg = "Command failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            result = new Pair<Boolean, String>(false, msg);
+        }
+        return result;
+    }
+
     protected Answer execute(SavePasswordCommand cmd) {
         if (s_logger.isInfoEnabled()) {
 
@@ -1975,27 +1988,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         args += " -p " + password;
 
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/savepassword.sh " + args);
-
-            if (!result.first()) {
-                s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
-
-                return new Answer(cmd, false, "SavePassword failed due to " + result.second());
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("savepassword command on domain router " + controlIp + " completed");
-            }
-
-        } catch (Throwable e) {
-            String msg = "SavePasswordCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+        Pair<Boolean, String> result = executeInVR("savepassword.sh", controlIp, args);
+        if (!result.first()) {
+            s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
+            return new Answer(cmd, false, "SavePassword failed due to " + result.second());
         }
-        return new Answer(cmd);
+    return new Answer(cmd);
     }
 
     protected Answer execute(DhcpEntryCommand cmd) {

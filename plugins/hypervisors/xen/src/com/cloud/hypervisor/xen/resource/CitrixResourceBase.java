@@ -264,6 +264,7 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -614,11 +615,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    public String routerProxy(String script, String routerIP, String args) {
+    public ExecutionResult executeInVR(String routerIP, String script, String args) {
         Connection conn = getConnection();
-        String proxyArgs = script + " " + routerIP + " " + args;
-        return callHostPlugin(conn, "vmops", "routerProxy", "args", proxyArgs);
+        String rc = callHostPlugin(conn, "vmops", "routerProxy", "args", script + " " + routerIP + " " + args);
+        // Fail case would be start with "fail#"
+        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
     }
+
+    protected ExecutionResult createFileInVR(String routerIp, String path, String content) {
+        Connection conn = getConnection();
+        String rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", path, "filecontents", content);
+        // Fail case would be start with "fail#"
+        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
+    }
+
 
     private Answer execute(PerformanceMonitorCommand cmd) {
         Connection conn = getConnection();
@@ -1968,31 +1978,31 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (String ip : cmd.getVpnIps()) {
             args += ip + " ";
         }
-        String result = routerProxy("checkbatchs2svpn.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-        if (result == null || result.isEmpty()) {
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "checkbatchs2svpn.sh", args);
+        if (!result.isSuccess()) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
-        return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result.getDetails());
     }
 
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
-        String result = routerProxy("checkrouter.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), null);
-        if (result == null || result.isEmpty()) {
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "checkrouter.sh", null);
+        if (!result.isSuccess()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
-        return new CheckRouterAnswer(cmd, result, true);
+        return new CheckRouterAnswer(cmd, result.getDetails(), true);
     }
 
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
-        String result = routerProxy("get_template_version.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), null);
-        if (result == null || result.isEmpty()) {
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "get_template_version.sh", null);
+        if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
         }
-        String[] lines = result.split("&");
+        String[] lines = result.getDetails().split("&");
         if (lines.length != 2) {
-            return new GetDomRVersionAnswer(cmd, result);
+            return new GetDomRVersionAnswer(cmd, result.getDetails());
         }
-        return new GetDomRVersionAnswer(cmd, result, lines[0], lines[1]);
+        return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
 
     private Answer execute(BumpUpPriorityCommand cmd) {
@@ -2032,7 +2042,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         getConnection();
-
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
@@ -2047,10 +2056,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
 
-            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
+            ExecutionResult result = executeInVR(routerIp, "firewall_nat.sh", args.toString());
 
-            if (result == null || result.isEmpty()) {
-                results[i++] = "Failed";
+            if (!result.isSuccess()) {
+                results[i++] = "Failed: " + result.getDetails();
                 endResult = false;
             } else {
                 results[i++] = null;
@@ -2069,10 +2078,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String args = rule.revoked() ? "-D" : "-A";
             args += " -l " + rule.getSrcIp();
             args += " -r " + rule.getDstIp();
-            String result = routerProxy("vpc_staticnat.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+            ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_staticnat.sh", args);
 
-            if (result == null || result.isEmpty()) {
-                results[i++] = "Failed";
+            if (!result.isSuccess()) {
+                results[i++] = "Failed: " + result.getDetails();
                 endResult = false;
             } else {
                 results[i++] = null;
@@ -2105,10 +2114,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
 
-            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
+            ExecutionResult result = executeInVR(routerIp, "firewall_nat.sh", args.toString());
 
-            if (result == null || result.isEmpty()) {
-                results[i++] = "Failed";
+            if (!result.isSuccess()) {
+                results[i++] = "Failed:" + result.getDetails();
                 endResult = false;
             } else {
                 results[i++] = null;
@@ -2125,9 +2134,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        String result = routerProxy("createipAlias.sh", routerIp, args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
+        ExecutionResult result = executeInVR(routerIp, "createipAlias.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "CreateIPAliasCommand failed due to " + result.getDetails());
         }
 
         return new Answer(cmd);
@@ -2146,9 +2155,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        String result = routerProxy("deleteipAlias", routerIp, args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
+        ExecutionResult result = executeInVR(routerIp, "deleteipAlias", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "DeleteipAliasCommand failed due to " + result.getDetails());
         }
 
         return new Answer(cmd);
@@ -2162,19 +2171,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
 
-        String result = routerProxy("dnsmasq.sh", routerIp, args);
+        ExecutionResult result = executeInVR(routerIp, "dnsmasq.sh", args);
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DnsMasqconfigCommand failed");
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "DnsMasqconfigCommand failed due to " + result.getDetails());
         }
 
         return new Answer(cmd);
-
-    }
-
-    protected String createFileInVR(String routerIp, String path, String content) {
-        Connection conn = getConnection();
-        return callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", path, "filecontents", content);
     }
 
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
@@ -2192,10 +2195,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             tmpCfgFileContents += "\n";
         }
         String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
-        String result = createFileInVR(routerIp, tmpCfgFilePath, tmpCfgFileContents);
+        ExecutionResult result = createFileInVR(routerIp, tmpCfgFilePath, tmpCfgFileContents);
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file: " + result.getDetails());
         }
 
         String[][] rules = cfgtr.generateFwRules(cmd);
@@ -2235,14 +2238,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd.getVpcId() == null) {
             args = " -i " + routerIp + args;
-            result = routerProxy("loadbalancer.sh", routerIp, args);
+            result = executeInVR(routerIp, "loadbalancer.sh", args);
         } else {
             args = " -i " + cmd.getNic().getIp() + args;
-            result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+            result = executeInVR(routerIp, "vpc_loadbalancer.sh", args);
         }
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed: " + result.getDetails());
         }
         return new Answer(cmd);
     }
@@ -2275,9 +2278,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -N";
         }
 
-        String result = routerProxy("edithosts.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DhcpEntry failed");
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "edithosts.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "DhcpEntry failed: " + result.getDetails());
         }
         return new Answer(cmd);
     }
@@ -2296,9 +2299,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         args += " -C " + cmd.getLocalCidr();
         args += " -i " + cmd.getPublicInterface();
-        String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "Configure VPN failed");
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpn_l2tp.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "Configure VPN failed" + result.getDetails());
         }
         return new Answer(cmd);
     }
@@ -2311,9 +2314,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 args += " -u " + userpwd.getUsernamePassword();
             }
-            String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-            if (result == null || result.isEmpty()) {
-                return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
+            ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpn_l2tp.sh", args);
+            if (!result.isSuccess()) {
+                return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername() + ":" + result.getDetails());
             }
         }
 
@@ -2328,10 +2331,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String args = "-d " + json;
 
-        String result = routerProxy("vmdata.py", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vmdata.py", args);
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "vm_data failed");
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "vm_data failed:" + result.getDetails());
         } else {
             return new Answer(cmd);
         }
@@ -2344,10 +2347,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String args = " -v " + vmIpAddress;
         args += " -p " + password;
-        String result = routerProxy("savepassword.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "savepassword.sh", args);
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "savePassword failed");
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "savePassword failed:" + result.getDetails());
         }
         return new Answer(cmd);
     }
@@ -2439,10 +2442,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -n";
             }
 
-            String result = routerProxy("ipassoc.sh", privateIpAddress, args);
+            ExecutionResult result = executeInVR(privateIpAddress, "ipassoc.sh", args);
 
-            if (result == null || result.isEmpty()) {
-                throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
+            if (!result.isSuccess()) {
+                throw new InternalErrorException("Xen plugin \"ipassoc\" failed." + result.getDetails());
             }
 
             if (removeVif) {
@@ -2511,18 +2514,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -n ";
             args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-            String result = routerProxy("vpc_ipassoc.sh", routerIp, args);
-            if (result == null || result.isEmpty()) {
-                throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
+            ExecutionResult result = executeInVR(routerIp, "vpc_ipassoc.sh", args);
+            if (!result.isSuccess()) {
+                throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed." + result.getDetails());
             }
 
             if (ip.isSourceNat()) {
                 snatArgs += " -l " + ip.getPublicIp();
                 snatArgs += " -c " + "eth" + correctVif.getDevice(conn);
 
-                result = routerProxy("vpc_privateGateway.sh", routerIp, snatArgs);
-                if (result == null || result.isEmpty()) {
-                    throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed.");
+                result = executeInVR(routerIp, "vpc_privateGateway.sh", snatArgs);
+                if (!result.isSuccess()) {
+                    throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed." + result.getDetails());
                 }
             }
 
@@ -7493,9 +7496,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String args = " -c " + config;
 
-        String result = routerProxy("monitor_service.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "SetMonitorServiceCommand failed to create cfg file.");
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "monitor_service.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed to create cfg file." + result.getDetails());
         }
 
         return new Answer(cmd, success, "");
@@ -7504,8 +7507,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
-        String callResult;
-        getConnection();
+        ExecutionResult callResult;
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
         FirewallRuleTO[] allrules = cmd.getRules();
@@ -7536,15 +7538,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (trafficType == FirewallRule.TrafficType.Egress) {
-            callResult = routerProxy("firewall_egress.sh", routerIp, args);
+            callResult = executeInVR(routerIp, "firewall_egress.sh", args);
         } else {
-            callResult = routerProxy("firewall_ingress.sh", routerIp, args);
+            callResult = executeInVR(routerIp, "firewall_ingress.sh", args);
         }
 
-        if (callResult == null || callResult.isEmpty()) {
+        if (!callResult.isSuccess()) {
             //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
             for (int i = 0; i < results.length; i++) {
-                results[i] = "Failed";
+                results[i] = "Failed: " + callResult.getDetails();
             }
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
@@ -7844,9 +7846,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (domainName != null && !domainName.isEmpty()) {
                 args += " -e " + domainName;
             }
-            String result = routerProxy("vpc_guestnw.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-            if (result == null || result.isEmpty()) {
-                return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null) ? "null" : result));
+            ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_guestnw.sh", args);
+            if (!result.isSuccess()) {
+                return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + result.getDetails());
             }
             return new SetupGuestNetworkAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -7919,9 +7921,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        String result = routerProxy("ipsectunnel.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "Configure site to site VPN failed! ");
+        ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "ipsectunnel.sh", args);
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, "Configure site to site VPN failed! " + result.getDetails());
         }
         return new Answer(cmd);
     }
@@ -7944,9 +7946,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
 
-            String result = routerProxy("vpc_snat.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-            if (result == null || result.isEmpty()) {
-                throw new InternalErrorException("Xen plugin \"vpc_snat\" failed.");
+            ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_snat.sh", args);
+            if (!result.isSuccess()) {
+                throw new InternalErrorException("Xen plugin \"vpc_snat\" failed." + result.getDetails());
             }
             return new SetSourceNatAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -7958,7 +7960,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
         String[] results = new String[cmd.getRules().length];
-        String callResult;
+        ExecutionResult callResult;
         Connection conn = getConnection();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
@@ -7985,11 +7987,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -d " + "eth" + vif.getDevice(conn);
                 args += " -a " + sb.toString();
 
-                callResult = routerProxy("vpc_privategw_acl.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-                if (callResult == null || callResult.isEmpty()) {
+                callResult = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_privategw_acl.sh", args);
+                if (!callResult.isSuccess()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i = 0; i < results.length; i++) {
-                        results[i] = "Failed";
+                        results[i] = "Failed:" + callResult.getDetails();
                     }
                     return new SetNetworkACLAnswer(cmd, false, results);
                 }
@@ -8000,11 +8002,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
                 args += " -a " + sb.toString();
 
-                callResult = routerProxy("vpc_acl.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-                if (callResult == null || callResult.isEmpty()) {
+                callResult = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_acl.sh", args);
+                if (!callResult.isSuccess()) {
                     //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                     for (int i = 0; i < results.length; i++) {
-                        results[i] = "Failed";
+                        results[i] = "Failed:" + callResult.getDetails();
                     }
                     return new SetNetworkACLAnswer(cmd, false, results);
                 }
@@ -8031,10 +8033,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            String result = routerProxy("vpc_portforwarding.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+            ExecutionResult result = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_portforwarding.sh", args);
 
-            if (result == null || result.isEmpty()) {
-                results[i++] = "Failed";
+            if (!result.isSuccess()) {
+                results[i++] = "Failed:" + result.getDetails();
                 endResult = false;
             } else {
                 results[i++] = null;
@@ -8044,7 +8046,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        String callResult;
+        ExecutionResult callResult;
         try {
             String[] results = new String[cmd.getStaticRoutes().length];
             String[][] rules = cmd.generateSRouteRules();
@@ -8054,11 +8056,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 sb.append(srRules[i]).append(',');
             }
             String args = "-a " + sb.toString();
-            callResult = routerProxy("vpc_staticroute.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
-            if (callResult == null || callResult.isEmpty()) {
+            callResult = executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "vpc_staticroute.sh", args);
+            if (!callResult.isSuccess()) {
                 //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
                 for (int i = 0; i < results.length; i++) {
-                    results[i] = "Failed";
+                    results[i] = "Failed:" + callResult.getDetails();
                 }
                 return new SetStaticRouteAnswer(cmd, false, results);
             }

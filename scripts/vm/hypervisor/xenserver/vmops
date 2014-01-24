@@ -230,12 +230,10 @@ def routerProxy(session, args):
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
-        if txt is None or len(txt) == 0 :
-            txt = 'success'
+        txt = 'succ#' + txt
     except:
         logging.debug("routerProxy command " + sargs + " failed "  )
-        txt = '' 
-
+        txt = 'fail#' + txt
     return txt
 
 @echo
@@ -265,13 +263,12 @@ def createFileInDomr(session, args):
         f.write(file_contents)
         f.close()
         target = "root@" + domrip + ":" + file_path
-        util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
+        txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
         util.pread2(['rm',tmpfile])
-        txt = 'success'
+        txt = 'succ#' + txt
     except:
-        logging.debug(" failed to create HA proxy cfg file ")
-        txt = ''
-
+        logging.debug("failed to create file " + file_path + " in VR, contain: " + file_contents)
+        txt = 'fail#' + txt
     return txt
 
 @echo
