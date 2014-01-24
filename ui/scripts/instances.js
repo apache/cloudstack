@@ -45,7 +45,10 @@
                     quiescevm: {
                         label: 'label.quiesce.vm',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: false,
+                        isHidden: function(args) {
+                            return args.context.instances[0].hypervisor !== 'VMware';
+                        }
                     }
                 }
             },
