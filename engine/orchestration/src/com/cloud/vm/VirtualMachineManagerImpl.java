@@ -2925,12 +2925,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        for (final Answer answer : answers) {
-            if (answer instanceof ClusterSyncAnswer) {
-                ClusterSyncAnswer hs = (ClusterSyncAnswer)answer;
-                if (!hs.isExceuted()) {
-                    deltaSync(hs.getNewStates());
-                    hs.setExecuted();
+        if (!VmJobEnabled.value()) {
+            for (final Answer answer : answers) {
+                if (answer instanceof ClusterSyncAnswer) {
+                    ClusterSyncAnswer hs = (ClusterSyncAnswer)answer;
+                    if (!hs.isExceuted()) {
+                        deltaSync(hs.getNewStates());
+                        hs.setExecuted();
+                    }
                 }
             }
         }
@@ -3018,48 +3020,51 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         long agentId = agent.getId();
 
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
-            StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
-            HashMap<String, Ternary<String, State, String>> allStates = startup.getClusterVMStateChanges();
-            if (allStates != null) {
-                fullSync(clusterId, allStates);
-            }
+            if (!VmJobEnabled.value()) {
+                StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
+                HashMap<String, Ternary<String, State, String>> allStates = startup.getClusterVMStateChanges();
+                if (allStates != null) {
+                    fullSync(clusterId, allStates);
+                }
 
-            // initiate the cron job
-            ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
-            try {
-                long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
-                s_logger.debug("Cluster VM sync started with jobid " + seq_no);
-            } catch (AgentUnavailableException e) {
-                s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
-            }
-        } else { // for others KVM and VMWare
-            StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
-            Commands commands = fullHostSync(agentId, startup);
-
-            if (commands.size() > 0) {
-                s_logger.debug("Sending clean commands to the agent");
-
+                // initiate the cron job
+                ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
                 try {
-                    boolean error = false;
-                    Answer[] answers = _agentMgr.send(agentId, commands);
-                    for (Answer answer : answers) {
-                        if (!answer.getResult()) {
-                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-                            error = true;
-                        }
-                    }
-                    if (error) {
-                        throw new ConnectionException(true, "Unable to stop VMs");
-                    }
-                } catch (final AgentUnavailableException e) {
-                    s_logger.warn("Agent is unavailable now", e);
-                    throw new ConnectionException(true, "Unable to sync", e);
-                } catch (final OperationTimedoutException e) {
-                    s_logger.warn("Agent is unavailable now", e);
-                    throw new ConnectionException(true, "Unable to sync", e);
+                    long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
+                    s_logger.debug("Cluster VM sync started with jobid " + seq_no);
+                } catch (AgentUnavailableException e) {
+                    s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
                 }
             }
+        } else { // for others KVM and VMWare
+            if (!VmJobEnabled.value()) {
+                StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
+                Commands commands = fullHostSync(agentId, startup);
 
+                if (commands.size() > 0) {
+                    s_logger.debug("Sending clean commands to the agent");
+
+                    try {
+                        boolean error = false;
+                        Answer[] answers = _agentMgr.send(agentId, commands);
+                        for (Answer answer : answers) {
+                            if (!answer.getResult()) {
+                                s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                                error = true;
+                            }
+                        }
+                        if (error) {
+                            throw new ConnectionException(true, "Unable to stop VMs");
+                        }
+                    } catch (final AgentUnavailableException e) {
+                        s_logger.warn("Agent is unavailable now", e);
+                        throw new ConnectionException(true, "Unable to sync", e);
+                    } catch (final OperationTimedoutException e) {
+                        s_logger.warn("Agent is unavailable now", e);
+                        throw new ConnectionException(true, "Unable to sync", e);
+                    }
+                }
+            }
         }
     }
 
