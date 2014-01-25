@@ -28,7 +28,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 @Target({FIELD})
 public @interface ACL {
 
-    AccessType accessType() default AccessType.ListEntry;
+    AccessType accessType() default AccessType.UseEntry;
 
     String pointerToEntity() default "";
 
