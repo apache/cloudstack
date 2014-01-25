@@ -32,30 +32,18 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.manager.allocator.PodAllocator;
-import com.cloud.capacity.CapacityVO;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = PodAllocator.class)
 public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
@@ -246,35 +234,37 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         // List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
         List<VMInstanceVO> vms = null;
         long usedCapacity = 0;
-        for (VMInstanceVO vm : vms) {
-            if (skipCalculation(vm)) {
-                continue;
-            }
-
-            ServiceOffering so = null;
-
-            if (vm.getType() == VirtualMachine.Type.User) {
-                UserVmVO userVm = _vmDao.findById(vm.getId());
-                if (userVm == null) {
+        if (vms != null) {
+            for (VMInstanceVO vm : vms) {
+                if (skipCalculation(vm)) {
                     continue;
                 }
-            }
 
-            so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                ServiceOffering so = null;
 
-            if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
-                usedCapacity += so.getRamSize() * 1024L * 1024L;
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId
-                            + ", currently counted: " + usedCapacity + " Bytes");
+                if (vm.getType() == VirtualMachine.Type.User) {
+                    UserVmVO userVm = _vmDao.findById(vm.getId());
+                    if (userVm == null) {
+                        continue;
+                    }
                 }
-            } else if (capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
-                usedCapacity += so.getCpu() * so.getSpeed();
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed()
-                            + ", currently counted: " + usedCapacity + " Bytes");
+                so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+
+                if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+                    usedCapacity += so.getRamSize() * 1024L * 1024L;
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId
+                                + ", currently counted: " + usedCapacity + " Bytes");
+                    }
+                } else if (capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
+                    usedCapacity += so.getCpu() * so.getSpeed();
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed()
+                                + ", currently counted: " + usedCapacity + " Bytes");
+                    }
                 }
             }
         }
