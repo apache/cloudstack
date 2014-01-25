@@ -44,7 +44,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class)
+@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class, entityType = { AclEntityType.FirewallRule })
 public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateEgressFirewallRuleCmd.class.getName());
 

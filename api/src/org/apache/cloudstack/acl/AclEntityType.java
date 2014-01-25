@@ -34,6 +34,7 @@ public enum AclEntityType {
     InstanceGroup,
     GlobalLoadBalancerRule,
     FirewallRule,
+ PortForwardingRule,
     Event,
     AsyncJob,
     AclPolicy,
