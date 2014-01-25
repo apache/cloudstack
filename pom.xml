@@ -87,6 +87,7 @@
     <cs.daemon.version>1.0.10</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
     <cs.checkstyle.version>2.10</cs.checkstyle.version>
+    <cs.findbugs.version>2.5.3</cs.findbugs.version>
   </properties>
 
   <distributionManagement>
@@ -444,6 +445,21 @@
     </testResources>
     <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
     <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>cloudstack-findbugs</id>
+            <phase>none</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -712,6 +728,25 @@
             </formats>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <version>${cs.findbugs.version}</version>
+          <configuration>
+            <effort>Max</effort>
+            <threshold>High</threshold>
+            <xmlOutput>true</xmlOutput>
+            <failOnError>false</failOnError>
+          </configuration>
+          <executions>
+            <execution>
+              <id>cloudstack-findbugs</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -771,5 +806,23 @@
         <module>vmware-base</module>
       </modules>
     </profile>
+    <profile>
+      <id>enablefindbugs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>cloudstack-findbugs</id>
+                  <phase>process-classes</phase>
+                  <inherited>true</inherited>
+                </execution>
+              </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>  
   </profiles>
 </project>
