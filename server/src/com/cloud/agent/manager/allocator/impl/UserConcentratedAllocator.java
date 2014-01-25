@@ -32,18 +32,30 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = PodAllocator.class)
 public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
