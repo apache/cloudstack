@@ -397,7 +397,7 @@
                                     	var returnedHostCount = 0;
                                     	var returnedHostCpusocketsSum = 0;
                                     	                                              	
-                                    	var callListHostsWithPage = function(setTotalHostCount) {                                                		
+                                    	var callListHostsWithPage = function() {                                                		
                                     		$.ajax({
                             					url: createURL('listHosts'),
                                         		async: false,
@@ -411,10 +411,8 @@
                                         			if (json.listhostsresponse.count == undefined) {                                        				
                                         				return;
                                         			}
-                                        			                                        			
-                                        			if (setTotalHostCount) {
-                                        				totalHostCount = json.listhostsresponse.count;
-                                        			}                                                    			
+                                        			            
+                                        			totalHostCount = json.listhostsresponse.count;                                        			                                                  			
                                         			returnedHostCount += json.listhostsresponse.host.length;
                                         			                                                    			
                                         			var items = json.listhostsresponse.host;
@@ -426,13 +424,13 @@
                                         			
                                         			if (returnedHostCount < totalHostCount) {
                                         				currentPage++;
-                                        				callListHostsWithPage(false);
+                                        				callListHostsWithPage();
                                         			}                                                    			
                                         		}
                             				});                                                		
                                     	}
                                     	
-                                    	callListHostsWithPage(true);
+                                    	callListHostsWithPage();
                                     	                                    	
                                     	socketCount += returnedHostCpusocketsSum;                                    	                                    	
                                     })
@@ -7468,73 +7466,144 @@
                                     sockets: { label: 'label.sockets' }
                                 },
                                 dataProvider: function(args) {
-                                    $.ajax({
-                                        url: createURL('listHypervisors'),
-                                        success: function(json) {
-                                        	var supportSocketHypervisors = {
-                                        		"Hyperv": 1, 
-                                        		"KVM": 1, 
-                                        		"XenServer": 1, 
-                                        		"VMware": 1
-                                        	};                                        	
-                                        	
-                                            args.response.success({
-                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
-                                                	var totalHostCount = 0;                                                	
-                                                	var currentPage = 1;
-                                                	var returnedHostCount = 0;
-                                                	var returnedHostCpusocketsSum = 0;
-                                                	                                                	                                                	
-                                                	var callListHostsWithPage = function(setTotalHostCount) {                                                		
-                                                		$.ajax({
-                                        					url: createURL('listHosts'),
-                                                    		async: false,
-                                                    		data: {
-                                                    			type: 'routing',
-                                                    			hypervisor: hypervisor.name,
-                                                    			page: currentPage,
-                                                    	        pagesize: pageSize //global variable
-                                                    		},
-                                                    		success: function(json) {   
-                                                    			if (json.listhostsresponse.count == undefined) {   
-                                                    				return;
-                                                    			}                                                    			
-                                                    			
-                                                    			if (setTotalHostCount) {
-                                                    				totalHostCount = json.listhostsresponse.count;
-                                                    			}                                                    			
-                                                    			returnedHostCount += json.listhostsresponse.host.length;
-                                                    			                                                    			
-                                                    			var items = json.listhostsresponse.host;
-                                                    			for (var i = 0; i < items.length; i++) {
-                                                    				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
-                                                    					returnedHostCpusocketsSum += items[i].cpusockets;
-                                                    				} 
-                                                    			}  
-                                                    			
-                                                    			if (returnedHostCount < totalHostCount) {
-                                                    				currentPage++;
-                                                    				callListHostsWithPage(false);
-                                                    			}                                                    			
-                                                    		}
-                                        				});                                                		
-                                                	}
-                                                	
-                                                	callListHostsWithPage(true);
-                                                	                                                  	
-                                                	if ((hypervisor.name in supportSocketHypervisors) == false) {                                                		
-                                                		returnedHostCpusocketsSum = 'N/A';                                                		                                              		
-                                                	}
-                                                	                                                	
-                                                    return {
-                                                        hypervisor: hypervisor.name,
-                                                        hosts: totalHostCount,
-                                                        sockets: returnedHostCpusocketsSum                                                    
-                                                    };
-                                                })
-                                            });
-                                        }
+                                	var array1 = [];
+                                	
+                                	// ***** non XenServer (begin) *****
+                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "Ovm", "LXC"];
+                                	
+                                	var supportSocketHypervisors = {
+                                		"Hyperv": 1, 
+                                		"KVM": 1, 
+                                		"VMware": 1                              		
+                                	};      
+                                	
+                                	for (var h = 0; h < hypervisors.length; h++) {
+                                		var totalHostCount = 0;                                                	
+                                    	var currentPage = 1;
+                                    	var returnedHostCount = 0;
+                                    	var returnedHostCpusocketsSum = 0;
+                                    	                                                	                                                	
+                                    	var callListHostsWithPage = function() {                                                		
+                                    		$.ajax({
+                            					url: createURL('listHosts'),
+                                        		async: false,
+                                        		data: {
+                                        			type: 'routing',
+                                        			hypervisor: hypervisors[h],
+                                        			page: currentPage,
+                                        	        pagesize: pageSize //global variable
+                                        		},
+                                        		success: function(json) {   
+                                        			if (json.listhostsresponse.count == undefined) {   
+                                        				return;
+                                        			}           
+                                        			
+                                        			totalHostCount = json.listhostsresponse.count;                                        			                                                    			
+                                        			returnedHostCount += json.listhostsresponse.host.length;
+                                        			                                                    			
+                                        			var items = json.listhostsresponse.host;
+                                        			for (var i = 0; i < items.length; i++) {
+                                        				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSum += items[i].cpusockets;
+                                        				} 
+                                        			}  
+                                        			
+                                        			if (returnedHostCount < totalHostCount) {
+                                        				currentPage++;
+                                        				callListHostsWithPage();
+                                        			}                                                    			
+                                        		}
+                            				});                                                		
+                                    	}
+                                    	
+                                    	callListHostsWithPage();
+                                    	                                                  	
+                                    	if ((hypervisors[h] in supportSocketHypervisors) == false) {                                                		
+                                    		returnedHostCpusocketsSum = 'N/A';                                                		                                              		
+                                    	}
+                                    	
+                                    	var hypervisorName = hypervisors[h];
+                                    	if (hypervisorName == "Hyperv") {
+                                    		hypervisorName = "Hyper-V";
+                                    	}
+                                    	
+                                    	array1.push({
+                                            hypervisor: hypervisorName,
+                                            hosts: totalHostCount,
+                                            sockets: returnedHostCpusocketsSum                                                    
+                                        });               		
+                                	}
+                                	// ***** non XenServer (end) *****
+                                	
+                                	
+                                	// ***** XenServer (begin) *****
+                                	var totalHostCount = 0;                                                	
+                                	var currentPage = 1;
+                                	var returnedHostCount = 0;
+                                	
+                                	var returnedHostCountForXenServer = 0;
+                                	var returnedHostCountForXenServer620 = 0;                                 	
+                                	var returnedHostCpusocketsSumForXenServer620 = 0;    
+                                	
+                                	var callListHostsWithPage = function() {                                                		
+                                		$.ajax({
+                        					url: createURL('listHosts'),
+                                    		async: false,
+                                    		data: {
+                                    			type: 'routing',
+                                    			hypervisor: 'XenServer',
+                                    			page: currentPage,
+                                    	        pagesize: pageSize //global variable
+                                    		},
+                                    		success: function(json) {   
+                                    			if (json.listhostsresponse.count == undefined) {   
+                                    				return;
+                                    			}           
+                                    			
+                                    			totalHostCount = json.listhostsresponse.count;                                        			                                                    			
+                                    			returnedHostCount += json.listhostsresponse.host.length;
+                                    			                                                    			
+                                    			var items = json.listhostsresponse.host;
+                                    			for (var i = 0; i < items.length; i++) {
+                                    				//"hypervisorversion" == "6.2.0"
+                                    				if (items[i].hypervisorversion == "6.2.0") {
+                                    					returnedHostCountForXenServer620 ++;
+                                    					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
+                                        				} 
+                                    				} else {
+                                    					returnedHostCountForXenServer++;
+                                    				}
+                                    			}  
+                                    			
+                                    			if (returnedHostCount < totalHostCount) {
+                                    				currentPage++;
+                                    				callListHostsWithPage();
+                                    			}                                                    			
+                                    		}
+                        				});                                                		
+                                	}
+                                	
+                                	callListHostsWithPage();                                	                                                  	
+                                	
+                                	array1.push({
+                                        hypervisor: 'XenServer',
+                                        hosts: returnedHostCountForXenServer,
+                                        sockets: 'N/A'                                                   
                                     });
+                                	
+                                	array1.push({
+                                        hypervisor: 'XenServer 6.2.0',
+                                        hosts: returnedHostCountForXenServer620,
+                                        sockets: returnedHostCpusocketsSumForXenServer620                                                    
+                                    });
+                                	// ***** XenServer (end) *****
+                                	
+                                	
+                                	args.response.success({
+                                        data: array1
+                                    });
+                                	
                                 }
                             };
 
