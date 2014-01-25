@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.ssh;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,7 +30,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class)
+@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class, entityType = { AclEntityType.SSHKeyPair })
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
     private static final String s_name = "registersshkeypairresponse";
