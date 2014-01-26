@@ -31,6 +31,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -49,8 +51,16 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -71,7 +81,6 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -104,7 +113,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
@@ -113,19 +121,10 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.manager.allocator.HostAllocator;
 
 
 @Local(value = { DeploymentPlanningManager.class })
@@ -209,7 +208,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return _affinityProcessors;
     }
     public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
-        this._affinityProcessors = affinityProcessors;
+        _affinityProcessors = affinityProcessors;
     }
 
     @Override
@@ -953,7 +952,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         // Cluster can be put in avoid set in following scenarios:
-        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster 
+        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster
         // or pools not suitable for the allocators to handle or there is no
         // linkage of any suitable host to any of the pools in cluster
         // 2. If all 'shared' or 'local' pools are in avoid set
@@ -1154,9 +1153,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 List<StoragePool> suitablePools = new ArrayList<StoragePool>();
                 StoragePool pool = null;
                 if (toBeCreated.getPoolId() != null) {
-                    pool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
+                    pool = (StoragePool) dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 } else {
-                    pool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
+                    pool = (StoragePool) dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
 
                 if (!pool.isInMaintenance()) {
@@ -1169,7 +1168,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 && plan.getClusterId() == exstPoolClusterId) {
                             canReusePool = true;
                         } else if (plan.getDataCenterId() == exstPoolDcId) {
-                            DataStore dataStore = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                            DataStore dataStore = dataStoreMgr.getPrimaryDataStore(pool.getId());
                             if (dataStore != null && dataStore.getScope() != null
                                     && dataStore.getScope().getScopeType() == ScopeType.ZONE) {
                                 canReusePool = true;
@@ -1274,7 +1273,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
         if (suitableVolumeStoragePools.values() != null) {
-            poolsToAvoidOutput.removeAll(suitableVolumeStoragePools.values());
+            HashSet<Long> toRemove = new HashSet<Long>();
+            for (List<StoragePool> lsp : suitableVolumeStoragePools.values()) {
+                for (StoragePool sp : lsp) {
+                    toRemove.add(sp.getId());
+                }
+            }
+            poolsToAvoidOutput.removeAll(toRemove);
         }
         if (avoid.getPoolsToAvoid() != null) {
             avoid.getPoolsToAvoid().addAll(poolsToAvoidOutput);
