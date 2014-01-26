@@ -17,6 +17,7 @@
 package com.cloud.consoleproxy;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -118,10 +119,10 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -502,7 +503,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             byte[] details = proxy.getSessionDetails();
             status = gson.fromJson(details != null ? new String(details, Charset.forName("US-ASCII")) : null, ConsoleProxyStatus.class);
         } catch (Throwable e) {
-            s_logger.warn("Unable to parse proxy session details : " + proxy.getSessionDetails());
+            s_logger.warn("Unable to parse proxy session details : " + Arrays.toString(proxy.getSessionDetails()));
         }
 
         if (status != null && status.getConnections() != null) {
@@ -1708,7 +1709,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
-        this._consoleProxyAllocators = consoleProxyAllocators;
+        _consoleProxyAllocators = consoleProxyAllocators;
     }
 
 }
