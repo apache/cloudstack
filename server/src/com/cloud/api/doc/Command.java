@@ -16,11 +16,16 @@
 // under the License.
 package com.cloud.api.doc;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Command {
+public class Command implements Serializable{
 	
-	private String name;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -4318310162503004975L;
+    private String name;
 	private String description;
     private String usage;
 	private boolean isAsync;
@@ -84,7 +89,7 @@ public class Command {
 	}
 	
     public Argument getReqArgByName(String name){
-		for (Argument a : this.getRequest()) {
+		for (Argument a : getRequest()) {
 			if (a.getName().equals(name)) {
                 return a;
             }
@@ -93,7 +98,7 @@ public class Command {
 	}
 	
 	public Argument getResArgByName(String name){
-		for (Argument a : this.getResponse()) {
+		for (Argument a : getResponse()) {
 			if (a.getName().equals(name)) {
                 return a;
             }
