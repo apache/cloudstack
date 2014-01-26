@@ -22,6 +22,11 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Answer;
@@ -44,13 +49,9 @@ import com.cloud.server.ManagementServer;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 /**
  * Utility class to manage interactions with agent-based console access
@@ -72,12 +73,12 @@ public abstract class AgentHookBase implements AgentHook {
 
     public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
             AgentManager agentMgr, ManagementServer ms) {
-        this._instanceDao = instanceDao;
-        this._hostDao = hostDao;
-        this._agentMgr = agentMgr;
-        this._configDao = cfgDao;
-        this._ksMgr = ksMgr;
-        this._ms = ms;
+        _instanceDao = instanceDao;
+        _hostDao = hostDao;
+        _agentMgr = agentMgr;
+        _configDao = cfgDao;
+        _ksMgr = ksMgr;
+        _ms = ms;
     }
 
     @Override
@@ -204,7 +205,9 @@ public abstract class AgentHookBase implements AgentHook {
 
         assert (ksBits != null);
         if (ksBits == null) {
-            s_logger.error("Could not find and construct a valid SSL certificate");
+            String msg = "Could not find and construct a valid SSL certificate";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
         cmd.setEncryptorPassword(getEncryptorPassword());
