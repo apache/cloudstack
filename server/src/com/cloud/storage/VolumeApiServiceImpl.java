@@ -445,29 +445,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-        VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
-        volume.setPoolId(null);
-        volume.setDataCenterId(zoneId);
-        volume.setPodId(null);
-        volume.setAccountId(owner.getAccountId());
-        volume.setDomainId(owner.getDomainId());
-        long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-        volume.setDiskOfferingId(diskOfferingId);
-        // volume.setSize(size);
-        volume.setInstanceId(null);
-        volume.setUpdated(new Date());
-        volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
-        volume.setFormat(ImageFormat.valueOf(format));
-        volume = _volsDao.persist(volume);
-        CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+                VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
+                volume.setPoolId(null);
+                volume.setDataCenterId(zoneId);
+                volume.setPodId(null);
+                volume.setAccountId((owner == null) ? null : owner.getAccountId());
+                volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
+                long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
+                volume.setDiskOfferingId(diskOfferingId);
+                // volume.setSize(size);
+                volume.setInstanceId(null);
+                volume.setUpdated(new Date());
+                volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
+                volume.setFormat(ImageFormat.valueOf(format));
+                volume = _volsDao.persist(volume);
+                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
-        // Increment resource count during allocation; if actual creation fails,
-        // decrement it
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                // Increment resource count during allocation; if actual creation fails,
+                // decrement it
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 
-        return volume;
-    }
+                return volume;
+            }
         });
     }
 
