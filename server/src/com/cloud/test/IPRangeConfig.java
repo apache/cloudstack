@@ -28,7 +28,6 @@ import java.util.Vector;
 
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
@@ -72,7 +71,7 @@ public class IPRangeConfig {
 
             long zoneId = PodZoneConfig.getZoneId(zone);
             result = changeRange(op, "public", -1, zoneId, startIP, endIP, null, -1);
-            result.replaceAll("<br>", "/n");
+            result = result.replaceAll("<br>", "/n");
             System.out.println(result);
         } else if (type.equals("private")) {
             if (args.length != 5 && args.length != 6) {
@@ -94,7 +93,7 @@ public class IPRangeConfig {
             long podId = PodZoneConfig.getPodId(pod, zone);
             long zoneId = PodZoneConfig.getZoneId(zone);
             result = changeRange(op, "private", podId, zoneId, startIP, endIP, null, -1);
-            result.replaceAll("<br>", "/n");
+            result = result.replaceAll("<br>", "/n");
             System.out.println(result);
         } else {
             printError(usage());
@@ -515,7 +514,7 @@ public class IPRangeConfig {
         } catch (Exception ex) {
             System.out.print(ex.getMessage());
             ex.printStackTrace();
-        } 
+        }
 
         return problemIPs;
     }
@@ -574,7 +573,7 @@ public class IPRangeConfig {
 //		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.ip.network\"", "value",
 //		"Unable to start DB connection to read guest IP network. Please contact Cloud Support.");
 //	}
-//	
+//
 //	public static String getGuestNetmask() {
 //		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.netmask\"", "value",
 //		"Unable to start DB connection to read guest netmask. Please contact Cloud Support.");
@@ -583,10 +582,10 @@ public class IPRangeConfig {
 //	public static String getGuestSubnet() {
 //		String guestIpNetwork = getGuestIpNetwork();
 //		String guestNetmask = getGuestNetmask();
-//		
+//
 //		if (guestIpNetwork == null || guestIpNetwork.isEmpty()) printError("Please enter a valid guest IP network address.");
 //		if (guestNetmask == null || guestNetmask.isEmpty()) printError("Please enter a valid guest IP network netmask");
-//		
+//
 //		return NetUtils.getSubNet(guestIpNetwork, guestNetmask);
 //	}
 
