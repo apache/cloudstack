@@ -19,11 +19,12 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.BaseCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -145,7 +146,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     if (caller.getId() != entity.getAccountId()) {
                         throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                     }
-                }  
+                }
             }
         }
         
@@ -166,7 +167,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			//admin has all permissions
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
 				return true;
-			}		
+			}
 			//if account is normal user or domain admin
 			//check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
@@ -192,7 +193,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		}
 		//not found
 		return false;
-	}	
+	}
 
 	@Override
     public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
@@ -202,7 +203,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			//admin has all permissions
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
 				return true;
-			}		
+			}
 			//if account is normal user or domain admin
 			//check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
@@ -228,7 +229,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		}
 		//not found
 		return false;
-	}	
+	}
     
 	@Override
 	public boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException {
@@ -238,7 +239,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			//admin has all permissions
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
 				return true;
-			}		
+			}
 			//if account is normal user
 			//check if account's domain is a child of zone's domain
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -298,7 +299,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		    			}
 		    		}
 		    		//didn't find in upper tree
-                    if (zoneDomainRecord.getPath().contains(accountDomainRecord.getPath())) {
+                    if (zoneDomainRecord != null &&
+                            accountDomainRecord != null &&
+                            zoneDomainRecord.getPath().contains(accountDomainRecord.getPath())) {
 		    			return true;
 		    		}
 				}
