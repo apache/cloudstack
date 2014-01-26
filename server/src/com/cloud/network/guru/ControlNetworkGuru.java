@@ -134,7 +134,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
-         HypervisorType hType = dest.getHost().getHypervisorType(); 
+         HypervisorType hType = dest.getHost().getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
             if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
                 super.reserve(nic, config, vm, dest, context);
@@ -168,7 +168,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
-        HypervisorType hType = vm.getHypervisorType(); 
+        HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
@@ -218,12 +218,12 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
 
-        _cidr = dbParams.get(Config.ControlCidr);
+        _cidr = dbParams.get(Config.ControlCidr.toString());
         if (_cidr == null) {
             _cidr = "169.254.0.0/16";
         }
 
-        _gateway = dbParams.get(Config.ControlGateway);
+        _gateway = dbParams.get(Config.ControlGateway.toString());
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }
