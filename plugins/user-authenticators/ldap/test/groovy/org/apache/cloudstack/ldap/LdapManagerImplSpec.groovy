@@ -297,30 +297,16 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		thrown InvalidParameterValueException
     }
 
-    def supportedLdapCommands() {
-	List<Class<?>> cmdList = new ArrayList<Class<?>>();
-	cmdList.add(LdapUserSearchCmd.class);
-	cmdList.add(LdapListUsersCmd.class);
-	cmdList.add(LdapAddConfigurationCmd.class);
-	cmdList.add(LdapDeleteConfigurationCmd.class);
-	cmdList.add(LdapListConfigurationCmd.class);
-	cmdList.add(LdapCreateAccountCmd.class);
-	cmdList.add(LdapImportUsersCmd.class);
-	return cmdList
-    }
-
     def "Test that getCommands isn't empty"() {
 		given: "We have an LdapConfigurationDao, LdapContextFactory, LdapUserManager and LdapManager"
 		def ldapConfigurationDao = Mock(LdapConfigurationDaoImpl)
 		def ldapContextFactory = Mock(LdapContextFactory)
 		def ldapUserManager = Mock(LdapUserManager)
-	final List<Class<?>> cmdList = supportedLdapCommands()
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
 		when: "Get commands is called"
 		def result = ldapManager.getCommands()
-		then: "it must return all the commands"
+		then: "it must contain commands"
 		result.size() > 0
-	result == cmdList
     }
 
     def "Testing of listConfigurations"() {
