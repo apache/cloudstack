@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
@@ -376,7 +377,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     protected String generateRulesetSignature(Map<PortAndProto, Set<String>> ingress, Map<PortAndProto, Set<String>> egress) {
         String ruleset = ingress.toString();
-        ruleset.concat(egress.toString());
+        ruleset = ruleset.concat(egress.toString());
         return DigestUtils.md5Hex(ruleset);
     }
 
@@ -401,7 +402,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
-        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
+        boolean locked = _workLock.lock(_globalWorkLockTimeout);
         if (!locked) {
             s_logger.warn("Security Group Mgr: failed to acquire global work lock");
             return;
@@ -885,7 +886,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         _serverId = ManagementServerNode.getManagementServerId();
 
-        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads +
                 ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
         createThreadPools();
 
