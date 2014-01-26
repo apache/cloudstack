@@ -16,10 +16,15 @@
 // under the License.
 package com.cloud.api.doc;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Argument implements Comparable{
-	private String name;
+public class Argument implements Comparable<Object>, Serializable{
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5696100838854848492L;
+    private String name;
 	private String description;
 	private Boolean required;
 	private String type;
@@ -42,7 +47,7 @@ public class Argument implements Comparable{
     }
 	
 	public String getType() {
-	    return this.type;
+	    return type;
 	}
 	
 	public void setType(String type) {
@@ -89,11 +94,12 @@ public class Argument implements Comparable{
 		this.sinceVersion = sinceVersion;
 	}
     
+    @Override
     public int compareTo(Object anotherAgrument) throws ClassCastException {
         if (!(anotherAgrument instanceof Argument))
             throw new ClassCastException("An Argument object expected.");
         Argument argument = (Argument)anotherAgrument;
-        return this.getName().compareToIgnoreCase(argument.getName());    
+        return getName().compareToIgnoreCase(argument.getName());
     }
     
     public boolean hasArguments() {
