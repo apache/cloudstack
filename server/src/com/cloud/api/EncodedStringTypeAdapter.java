@@ -36,7 +36,7 @@ public class EncodedStringTypeAdapter implements JsonSerializer<String>{
     }
 
     private static String encodeString(String value) {
-        if (!ApiServer.encodeApiResponse) {
+        if (!ApiServer.isEncodeApiResponse()) {
             return value;
         }
         try {

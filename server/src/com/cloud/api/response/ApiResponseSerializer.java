@@ -277,7 +277,7 @@ public class ApiResponseSerializer {
     }
 
     private static String encodeParam(String value) {
-        if (!ApiServer.encodeApiResponse) {
+        if (!ApiServer.isEncodeApiResponse()) {
             return value;
         }
         try {

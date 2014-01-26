@@ -34,6 +34,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -366,7 +367,7 @@ public class ApiServlet extends HttpServlet {
     private void writeResponse(HttpServletResponse resp, String response, int responseCode, String responseType) {
         try {
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(ApiServer.jsonContentType + "; charset=UTF-8");
+                resp.setContentType(ApiServer.getJsonContentType() + "; charset=UTF-8");
             } else {
                 resp.setContentType("text/xml; charset=UTF-8");
             }
