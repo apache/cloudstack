@@ -957,7 +957,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         String backupUuid = UUID.randomUUID().toString();
         Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName);
-        return new Ternary<String, String, String[]>(backupUuid + "/" + backupUuid, snapshotInfo.first(), snapshotInfo.second());
+        return new Ternary<String, String, String[]>(backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
 
     @Override
@@ -1040,8 +1040,25 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     answer = new CopyCmdAnswer(details);
                 } else {
                     details = "Successfully backedUp the snapshot with Uuid: " + snapshotUuid + " to secondary storage.";
+
+                    // Get snapshot physical size
+                    long physicalSize = 0l;
+                    String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+                    String snapshotDir =  destSnapshot.getPath() + "/" + snapshotBackupUuid;
+                    File[] files = new File(secondaryMountPoint + "/" + snapshotDir).listFiles();
+                    if(files != null) {
+                        for(File file : files) {
+                            String fileName = file.getName();
+                            if(fileName.toLowerCase().startsWith(snapshotBackupUuid) && fileName.toLowerCase().endsWith(".vmdk")) {
+                                physicalSize = new File(secondaryMountPoint + "/" + snapshotDir + "/" + fileName).length();
+                                break;
+                            }
+                        }
+                    }
+
                     SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-                    newSnapshot.setPath(destSnapshot.getPath() + "/" + snapshotBackupUuid);
+                    newSnapshot.setPath(snapshotDir + "/" + snapshotBackupUuid);
+                    newSnapshot.setPhysicalSize(physicalSize);
                     answer = new CopyCmdAnswer(newSnapshot);
                 }
             } finally {
