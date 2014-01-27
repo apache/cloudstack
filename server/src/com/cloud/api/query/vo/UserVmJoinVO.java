@@ -34,7 +34,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -121,10 +120,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="ha_enabled", updatable=true, nullable=true)
     private boolean haEnabled;
-
-    @Encrypt
-    @Column(name="vnc_password", updatable=true, nullable=false, length=255)
-    protected String vncPassword;
 
     @Column(name="limit_cpu_use", updatable=true, nullable=true)
     private boolean limitCpuUse;
@@ -517,10 +512,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean isHaEnabled() {
         return haEnabled;
-    }
-
-    public String getVncPassword() {
-        return vncPassword;
     }
 
     public String getPrivateIpAddress() {
