@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {AclEntityType.VirtualMachineTemplate}, responseView = ResponseView.Full)
 public class ListTemplatesCmdByAdmin extends ListTemplatesCmd {
 
 }
