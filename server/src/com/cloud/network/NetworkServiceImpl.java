@@ -3534,7 +3534,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)
-    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel,
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel,
             String simulatorLabel, String vlan, String hypervLabel) {
 
         // verify input parameters
@@ -3589,6 +3589,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel,
                     vlan, hypervLabel);
             pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
+
+            // For public traffic, get isolation method of physical network and update the public network accordingly
+            // each broadcast type will individually need to be qualified for support of public traffic
+            List<String> isolationMethods = network.getIsolationMethods();
+            if ((isolationMethods.size() == 1 && isolationMethods.get(0).toLowerCase().equals("vxlan"))
+                || (isolationMethod != null && isolationMethods.contains(isolationMethod) && isolationMethod.toLowerCase().equals("vxlan"))) {
+                // find row in networks table that is defined as 'Public', created when zone was deployed
+                NetworkVO publicNetwork = _networksDao.listByZoneAndTrafficType(network.getDataCenterId(),TrafficType.Public).get(0);
+                if (publicNetwork != null) {
+                    s_logger.debug("setting public network " + publicNetwork + " to broadcast type vxlan");
+                    publicNetwork.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+                    _networksDao.persist(publicNetwork);
+                }
+            }
 
             return pNetworktrafficType;
         } catch (Exception ex) {

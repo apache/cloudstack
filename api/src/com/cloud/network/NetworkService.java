@@ -110,7 +110,7 @@ public interface NetworkService {
 
     long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
 
-    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel,
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel,
         String simulatorLabel, String vlan, String hypervLabel);
 
     PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
