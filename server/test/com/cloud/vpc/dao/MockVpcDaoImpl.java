@@ -98,9 +98,9 @@ public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDa
     public VpcVO findById(Long id) {
         VpcVO vo = null;
         if (id.longValue() == 1) {
-            vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain");
+            vo = new VpcVO(new Long(1), "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain", false);
         } else if (id.longValue() == 2) {
-            vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain");
+            vo = new VpcVO(new Long(1), "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain", false);
             vo.setState(State.Inactive);
         }
 

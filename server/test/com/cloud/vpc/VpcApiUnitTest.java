@@ -85,7 +85,7 @@ public class VpcApiUnitTest extends TestCase {
     public void validateNtwkOffForVpc() {
         //validate network offering
         //1) correct network offering
-        VpcVO vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain");
+        VpcVO vo = new VpcVO(new Long(1), "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain", false);
         boolean result = false;
         try {
             _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);

@@ -705,6 +705,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        boolean isRegionLevelVpcOff = vpcOff.offersRegionLevelVPC();
+        if (zoneId == null && !isRegionLevelVpcOff) {
+            throw new InvalidParameterValueException("VPC Offering does not support region level VPC. So specify zone id in which VPC is to be created");
+        }
+
+        if (isRegionLevelVpcOff && networkDomain == null) {
+            throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
+        }
+
         //Validate zone
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
@@ -728,12 +737,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc);
+        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc, regionLevelVpc);
     }
 
     @DB
     protected Vpc createVpc(final long zoneId, final long vpcOffId, final Account vpcOwner, final String vpcName, final String displayText, final String cidr,
-            final String networkDomain, final Boolean displayVpc) {
+            final String networkDomain, final Boolean displayVpc, regionLevelVpc) {
 
         //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
@@ -755,7 +764,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(TransactionStatus status) {
-                VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, networkDomain);
+                VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, networkDomain, regionLevelVpc);
                 if (displayVpc != null) {
                     vpc.setDisplay(displayVpc);
                 }

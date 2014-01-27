@@ -111,6 +111,10 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "is vpc for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName((ApiConstants.REGION_LEVEL_VPC))
+    @Param(description = "true if VPC is region level")
+    private Boolean regionLevelVpc;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -196,7 +200,12 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
         this.tags = tags;
     }
 
+<<<<<<< HEAD
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+=======
+    public void setRegionLevelVpc(Boolean regionLevelVpc) {
+        this.regionLevelVpc = regionLevelVpc;
+>>>>>>> make zone id optional parameter in createVpc, zone id can be null only
     }
 }

@@ -48,7 +48,7 @@ public class VpcVO implements Vpc {
     String displayText;
 
     @Column(name = "zone_id")
-    long zoneId;
+    Long zoneId;
 
     @Column(name = "cidr")
     private String cidr = null;
@@ -81,11 +81,15 @@ public class VpcVO implements Vpc {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "region_level_vpc")
+    boolean regionLevelVpc = false;
+
     public VpcVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr, String networkDomain) {
+    public VpcVO(Long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId,
+                 String cidr, String networkDomain, boolean regionLevelVpc) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -96,6 +100,7 @@ public class VpcVO implements Vpc {
         state = State.Enabled;
         this.networkDomain = networkDomain;
         vpcOfferingId = vpcOffId;
+        this.regionLevelVpc = regionLevelVpc;
     }
 
     @Override
@@ -186,6 +191,10 @@ public class VpcVO implements Vpc {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+
+    @Override
+    public boolean isRegionLevelVpc() {
+        return regionLevelVpc;
     }
 
     public void setDisplay(boolean display) {
