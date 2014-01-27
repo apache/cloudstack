@@ -2927,10 +2927,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
             /*
-             * Hard code lm flags: VIR_MIGRATE_LIVE(1<<0) and
-             * VIR_MIGRATE_PERSIST_DEST(1<<3)
+             * Hard code lm flag: VIR_MIGRATE_LIVE(1<<0)
              */
-            destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), xmlDesc, vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
+            destDomain = dm.migrate(dconn, (1 << 0), xmlDesc, vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
 
             _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(cmd.getVirtualMachine());
         } catch (LibvirtException e) {
