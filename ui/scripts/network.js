@@ -2396,7 +2396,7 @@
                                                     };
 
                                                     if (args.filterBy.search.value) {
-                                                        data.name = args.filterBy.search.value;
+                                                        data.keyword = args.filterBy.search.value;
                                                     }
 
                                                     var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
