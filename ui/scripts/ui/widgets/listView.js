@@ -877,7 +877,7 @@
                 $('<div>').attr({
                     id: 'advanced_search'
                 })
-                .addClass('button search')
+                .addClass('button search advanced-search')
                 .append($('<div>').addClass('icon'))
             );
         }
@@ -1872,11 +1872,11 @@
         };
 
         var closeAdvancedSearch = function() {
-            $('#advanced_search .form-container:visible').remove();
+            $listView.find('.advanced-search .form-container:visible').remove();
         };
 
-        $listView.find('.button.search#advanced_search .icon').bind('click', function(event) {
-            if ($('#advanced_search .form-container:visible').size()) {
+        $listView.find('.advanced-search .icon').bind('click', function(event) {
+            if ($listView.find('.advanced-search .form-container:visible').size()) {
                 closeAdvancedSearch();
 
                 return false;
@@ -1897,7 +1897,7 @@
             var $formContainer = form.$formContainer;
             var $form = $formContainer.find('form');
 
-            $formContainer.hide().appendTo('#advanced_search').show();
+            $formContainer.hide().appendTo($listView.find('.advanced-search')).show();
             $form.find('.form-item:first input').focus();
             $form.find('input[type=submit]')
                 .show()
