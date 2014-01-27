@@ -34,7 +34,7 @@
   </issueManagement>
 
   <properties>
-    <cs.jdk.version>1.6</cs.jdk.version>
+    <cs.jdk.version>1.7</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <cs.log4j.version>1.2.16</cs.log4j.version>
