@@ -176,8 +176,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         boolean isAdmin = _accountDao.findById(templateOwner.getId()).getType() == Account.ACCOUNT_TYPE_ADMIN;
-
-        if (!isAdmin && zoneId == null) {
+        boolean isRegionStore = false;
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            isRegionStore = true;
+        }
+        
+        if (!isAdmin && zoneId == null && !isRegionStore ) {
+            // domain admin and user should also be able to register template on a region store
             throw new InvalidParameterValueException("Please specify a valid zone Id.");
         }
 
