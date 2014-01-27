@@ -783,6 +783,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof ResourceUnavailableException)
                     throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
         }
     }
@@ -1333,6 +1337,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof OperationTimedoutException)
                     throw (OperationTimedoutException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
         }
     }
@@ -1638,6 +1646,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (jobResult != null) {
                 if (jobResult instanceof RuntimeException)
                     throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
         }
     }
@@ -1734,6 +1744,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof RuntimeException)
                     throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+
             }
         }
     }
@@ -2015,6 +2028,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ResourceUnavailableException)jobException;
                 else if (jobException instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobException;
+                else if (jobException instanceof RuntimeException)
+                    throw (RuntimeException)jobException;
+                else if (jobException instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
            }
         }
     }
@@ -2312,6 +2329,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof InsufficientCapacityException)
                     throw (InsufficientCapacityException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
         }
     }
@@ -3252,6 +3273,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (InsufficientCapacityException)jobException;
                 else if (jobException instanceof RuntimeException)
                     throw (RuntimeException)jobException;
+                else if (jobException instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
                 else if (jobException instanceof Long)
                     return requested;
             }
@@ -3363,6 +3386,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof RuntimeException)
                     throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                 else if (jobResult instanceof Boolean)
                     return (Boolean)jobResult;
             }
@@ -3610,6 +3635,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ResourceUnavailableException)jobResult;
                 else if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
         }
     }
