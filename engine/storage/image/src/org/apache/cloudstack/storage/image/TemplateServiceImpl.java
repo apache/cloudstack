@@ -723,7 +723,7 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore) {
         // for vmware template, we need to check if ova packing is needed, since template created from snapshot does not have .ova file
-        // we invoke createEntityExtractURL to trigger ova packing. Ideally, we can directly use extractURL to pass to following createTemplate. 
+        // we invoke createEntityExtractURL to trigger ova packing. Ideally, we can directly use extractURL to pass to following createTemplate.
         // Need to understand what is the background to use two different urls for copy and extract.
         if (srcTemplate.getFormat() == ImageFormat.OVA){
             ImageStoreEntity tmpltStore = (ImageStoreEntity)srcTemplate.getDataStore();
