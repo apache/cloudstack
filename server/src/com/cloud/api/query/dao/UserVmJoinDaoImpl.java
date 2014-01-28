@@ -99,7 +99,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setId(userVm.getUuid());
         userVmResponse.setName(userVm.getName());
 
-        userVmResponse.setDisplayName(userVm.getDisplayName());
+        if (userVm.getDisplayName() != null) {
+            userVmResponse.setDisplayName(userVm.getDisplayName());
+        } else {
+            userVmResponse.setDisplayName(userVm.getName());
+        }
 
         if (userVm.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
             userVmResponse.setProjectId(userVm.getProjectUuid());
