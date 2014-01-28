@@ -47,7 +47,13 @@
                         isBoolean: true,
                         isChecked: false,
                         isHidden: function(args) {
-                            return args.context.instances[0].hypervisor !== 'VMware';
+                            if (args.context.instances[0].hypervisor !== 'VMware') {
+                                return true;
+                            }
+
+                            args.form.fields.quiescevm.isChecked = true;
+                            
+                            return false;
                         }
                     }
                 }
