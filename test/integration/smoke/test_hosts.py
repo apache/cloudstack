@@ -38,7 +38,7 @@ class TestHosts(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.getZoneForTests())
-        self.pod = get_pod(apilcient=self.apiclient, self.zone.id)
+        self.pod = get_pod(self.apiclient, self.zone.id)
         self.cleanup = []
 
         return

@@ -679,7 +679,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         try:
             #Unmount ISO
-            command = "umount %s" % "mount_dir
+            command = "umount %s" % mount_dir
             ssh_client.execute(command)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %

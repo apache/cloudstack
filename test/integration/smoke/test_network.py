@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 import marvin
-from marvin.cloudstackException import cloudstackAPIException
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -383,7 +383,7 @@ class TestPortForwarding(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Nat Rule is deleted")
 
         # Check if the Public SSH port is inaccessible
@@ -501,7 +501,7 @@ class TestPortForwarding(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Nat Rule is deleted")
 
         # Check if the Public SSH port is inaccessible
@@ -801,7 +801,7 @@ class TestReleaseIP(cloudstackTestCase):
                                         id=self.nat_rule.id
                                         )
             self.debug("List NAT Rule response" + str(list_nat_rule))
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # listLoadBalancerRules should not list
@@ -812,7 +812,7 @@ class TestReleaseIP(cloudstackTestCase):
                                      id=self.lb_rule.id
                                      )
             self.debug("List LB Rule response" + str(list_lb_rule))
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # SSH Attempt though public IP should fail
@@ -927,7 +927,7 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                                     )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # ListPortForwardingRules should not
@@ -938,7 +938,7 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                         )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("NATRule is deleted")
 
         #Retrieve router for the user account
@@ -953,7 +953,7 @@ class TestDeleteAccount(cloudstackTestCase):
                              None,
                              "Check routers are properly deleted."
                    )
-        except cloudstackAPIException:
+        except CloudstackAPIException:
             self.debug("Router is deleted")
 
         except Exception as e:

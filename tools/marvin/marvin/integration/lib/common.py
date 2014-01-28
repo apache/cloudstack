@@ -161,8 +161,7 @@ def get_region(apiclient, region_id=None, region_name=None):
     if region_id is not None:
         cmd.id = region_id
     cmd_out = apiclient.listRegions(cmd)
-    return FAILED if validateList(cmd_out)[0] != PASS
-    return cmd_out
+    return FAILED if validateList(cmd_out)[0] != PASS else cmd_out
 
 
 def get_domain(apiclient, domain_id=None, domain_name=None):
@@ -181,8 +180,7 @@ def get_domain(apiclient, domain_id=None, domain_name=None):
     if domain_id is not None:
         cmd.id = domain_id
     cmd_out = apiclient.listRegions(cmd)
-    return FAILED if validateList(cmd_out)[0] != PASS
-    return cmd_out
+    return FAILED if validateList(cmd_out)[0] != PASS else cmd_out
 
 
 def get_zone(apiclient, zone_name=None, zone_id=None):
@@ -202,12 +200,12 @@ def get_zone(apiclient, zone_name=None, zone_id=None):
 
     cmd_out = apiclient.listZones(cmd)
 
-    return FAILED if (validateList(cmd_out)[0] != PASS)
+    if validateList(cmd_out)[0] != PASS: return FAILED
     '''
     Check if input zone name and zone id is None,
     then return first element of List Zones command
     '''
-    if ( zone_name is None and zone_id is None ) 
+    if (zone_name is None and zone_id is None): 
         return cmd_out[0]
     else:
         return cmd_out
@@ -235,8 +233,7 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
 
     cmd_out = apiclient.listPods(cmd)
 
-    return FAILED if ( validateList(cmd_out)[0] != PASS )
-    return cmd_out
+    return FAILED if (validateList(cmd_out)[0] != PASS) else cmd_out
 
 
 def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
@@ -259,7 +256,7 @@ def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="fea
     cmd.description = ostype_desc
     ostypes_out = apiclient.listOsTypes(cmd)
 
-    return FAILED if (validateList(ostypes_out)[0] != PASS )
+    if (validateList(ostypes_out)[0] != PASS): return FAILED
 
     ostype_id = ostypes_out[0].id
 
@@ -284,7 +281,7 @@ def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="fea
     Get the Templates pertaining
     '''
     list_templatesout = apiclient.listTemplates(cmd)
-    return FAILED if validateList(list_templatesout)[0] != PASS
+    if validateList(list_templatesout)[0] != PASS: return FAILED
 
     for template in list_templatesout:
         if template.ostypeid == ostype_id and template.isready and template.templatetype == template_type:
