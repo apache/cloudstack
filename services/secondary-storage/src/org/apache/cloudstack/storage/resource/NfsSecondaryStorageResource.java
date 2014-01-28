@@ -1740,16 +1740,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 parent += File.separator;
             }
             String absoluteTemplatePath = parent + relativeTemplatePath;
-            File tmpltParent = new File(absoluteTemplatePath).getParentFile();
+            File tmpltDir = new File(absoluteTemplatePath);
             String details = null;
-            if (!tmpltParent.exists()) {
-                details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
+            if (!tmpltDir.exists()) {
+                details = "template parent directory " + tmpltDir.getName() + " doesn't exist";
                 s_logger.debug(details);
                 return new Answer(cmd, true, details);
             }
-            File[] tmpltFiles = tmpltParent.listFiles();
+            File[] tmpltFiles = tmpltDir.listFiles();
             if (tmpltFiles == null || tmpltFiles.length == 0) {
-                details = "No files under template parent directory " + tmpltParent.getName();
+                details = "No files under template parent directory " + tmpltDir.getName();
                 s_logger.debug(details);
             } else {
                 boolean found = false;
@@ -1776,12 +1776,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
 
                 if (!found) {
-                    details = "Can not find template.properties under " + tmpltParent.getName();
+                    details = "Can not find template.properties under " + tmpltDir.getName();
                     s_logger.debug(details);
                 }
             }
-            if (!tmpltParent.delete()) {
-                details = "Unable to delete directory " + tmpltParent.getName() + " under Template path "
+            if (!tmpltDir.delete()) {
+                details = "Unable to delete directory " + tmpltDir.getName() + " under Template path "
                         + relativeTemplatePath;
                 s_logger.debug(details);
                 return new Answer(cmd, false, details);
