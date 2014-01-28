@@ -424,6 +424,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean _canBridgeFirewall;
     protected String _localStoragePath;
     protected String _localStorageUUID;
+    protected boolean _noMemBalloon = false;
     protected String _guestCpuMode;
     protected String _guestCpuModel;
     private final Map<String, String> _pifs = new HashMap<String, String>();
@@ -770,6 +771,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         value = (String)params.get("cmds.timeout");
         _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
+
+        value = (String) params.get("vm.memballoon.disable");
+        if (Boolean.parseBoolean(value)) {
+            _noMemBalloon = true;
+        }
 
         value = (String)params.get("host.reserved.mem.mb");
         _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
@@ -3426,7 +3432,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         GuestResourceDef grd = new GuestResourceDef();
 
-        if (vmTO.getMinRam() != vmTO.getMaxRam()) {
+        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
             grd.setMemBalloning(true);
             grd.setCurrentMem(vmTO.getMinRam() / 1024);
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
