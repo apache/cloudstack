@@ -36,13 +36,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -1120,71 +1120,33 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource VmDataCommand: " + s_gson.toJson(cmd));
         }
-        String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
+        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
+        data.put(cmd.getVmIpAddress(), cmd.getVmData());
 
-        String vmIpAddress = cmd.getVmIpAddress();
-        List<String[]> vmData = cmd.getVmData();
-        String[] vmDataArgs = new String[vmData.size() * 2 + 4];
-        vmDataArgs[0] = "routerIP";
-        vmDataArgs[1] = routerPrivateIpAddress;
-        vmDataArgs[2] = "vmIP";
-        vmDataArgs[3] = vmIpAddress;
-        int i = 4;
-        for (String[] vmDataEntry : vmData) {
-            String folder = vmDataEntry[0];
-            String file = vmDataEntry[1];
-            String contents = (vmDataEntry[2] != null) ? vmDataEntry[2] : "none";
+        String json = new Gson().toJson(data);
+        s_logger.debug("VM data JSON IS:" + json);
 
-            vmDataArgs[i] = folder + "," + file;
-            vmDataArgs[i + 1] = contents;
-            i += 2;
-        }
+        json = Base64.encodeBase64String(json.getBytes());
 
-        String content = encodeDataArgs(vmDataArgs);
-        String tmpFileName = UUID.randomUUID().toString();
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run vm_data command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", data: " + content);
-        }
+        String args = "-d " + json;
 
         try {
-            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/tmp", content.getBytes(), tmpFileName, null);
-
-            try {
-                Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/userdata.py " + tmpFileName);
-
-                if (!result.first()) {
-                    s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
-                    return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
-                }
-            } finally {
-
-                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "rm /tmp/" + tmpFileName);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vmdata.py " + args);
+            if (!result.first()) {
+                s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
+                return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
             }
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("vm_data command on domain router " + controlIp + " completed");
             }
-
         } catch (Throwable e) {
-            String msg = "VmDataCommand failed due to " + e;
+            String msg = "VmDataCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
         return new Answer(cmd);
-    }
-
-    private String encodeDataArgs(String[] dataArgs) {
-        StringBuilder sb = new StringBuilder();
-
-        for (String arg : dataArgs) {
-            sb.append(arg);
-            sb.append("\n");
-        }
-
-        return sb.toString();
     }
 
     protected Answer execute(DhcpEntryCommand cmd) {
