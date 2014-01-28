@@ -135,7 +135,7 @@ get_boot_params() {
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
           #waiting for the hv_kvp_daemon to start up
-          #sleep 30 need to fix the race condition of hv_kvp_daemon and cloud-early-config
+          #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
           sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
@@ -1250,6 +1250,10 @@ start() {
   patch_log4j
   parse_cmd_line
   change_password
+  if [ "$hyp" == "hyperv" ]; then
+    # eject the systemvm.iso
+      eject
+  fi
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
