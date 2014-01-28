@@ -105,7 +105,6 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
 
-    String _name;
     @Inject
     VMInstanceDao _vmInstanceDao;
     @Inject VMSnapshotDao _vmSnapshotDao;
