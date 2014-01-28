@@ -84,7 +84,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
         // for all running/stopping VMs, we provide monitoring of missing report
         List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStates(hostId, VirtualMachine.State.Running,
-                VirtualMachine.State.Stopping);
+                VirtualMachine.State.Stopping, VirtualMachine.State.Starting);
         java.util.Iterator<VMInstanceVO> it = vmsThatAreMissingReport.iterator();
         while (it.hasNext()) {
             VMInstanceVO instance = it.next();
