@@ -142,7 +142,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -162,7 +162,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -178,7 +178,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -194,7 +194,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -210,7 +210,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
