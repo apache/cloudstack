@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ResponseObject;
 
 public class ApiSerializerHelper {
     public static final Logger s_logger = Logger.getLogger(ApiSerializerHelper.class.getName());
-    public static String token = "/";
+    private static String token = "/";
 
     public static String toSerializedString(Object result) {
         if (result != null) {
