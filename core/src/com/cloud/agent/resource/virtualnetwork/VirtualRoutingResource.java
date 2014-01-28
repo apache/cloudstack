@@ -821,9 +821,12 @@ public class VirtualRoutingResource implements Manager {
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
-    public String configureMonitor(final String routerIP, final String config) {
+    public String configureMonitor(final String routerIP, final String config, final String disable) {
 
         String args= " -c " + config;
+        if (disable != null) {
+            args = args + "-d";
+        }
         return  routerProxy("monitor_service.sh", routerIP, args);
     }
 
@@ -968,9 +971,11 @@ public class VirtualRoutingResource implements Manager {
     private Answer execute(SetMonitorServiceCommand cmd) {
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String disable =  cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_DISABLE);
         String config = cmd.getConfiguration();
 
-        String result = configureMonitor(routerIp, config);
+
+        String result = configureMonitor(routerIp, config, disable);
 
         if (result != null) {
             return new Answer(cmd, false, "SetMonitorServiceCommand failed");
