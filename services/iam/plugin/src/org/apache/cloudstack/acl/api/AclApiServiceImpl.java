@@ -66,6 +66,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
@@ -107,6 +108,18 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     s_logger.debug("MessageBus message: new Account Added: " + accountId + ", adding it to groupId :"
                             + groupId);
                     addAccountToAclGroup(accountId, groupId);
+                    // add it to domain group too
+                    AccountVO account = _accountDao.findById(accountId);
+                    Domain domain = _domainDao.findById(account.getDomainId());
+                    if (domain != null) {
+                        ListResponse<AclGroupResponse> domainGroups = listAclGroups(null,
+                                "DomainGrp-" + domain.getUuid(), domain.getId(), null, null);
+                        if (domainGroups.getResponses() != null) {
+                            for (AclGroupResponse group : domainGroups.getResponses()) {
+                                addAccountToAclGroup(accountId, new Long(group.getId()));
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -119,6 +132,18 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     s_logger.debug("MessageBus message: Account removed: " + accountId
                             + ", releasing the group associations");
                     removeAccountFromAclGroups(accountId);
+                }
+            }
+        });
+
+        _messageBus.subscribe(DomainManager.MESSAGE_ADD_DOMAIN_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Long domainId = ((Long) obj);
+                if (domainId != null) {
+                    s_logger.debug("MessageBus message: new Domain created: " + domainId + ", creating a new group");
+                    Domain domain = _domainDao.findById(domainId);
+                    _iamSrv.createAclGroup("DomainGrp-" + domain.getUuid(), "Domain group", domain.getPath());
                 }
             }
         });
@@ -157,6 +182,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     public AclGroup addAccountsToGroup(final List<Long> acctIds, final Long groupId) {
         return _iamSrv.addAccountsToGroup(acctIds, groupId);
     }
+
 
     private void removeAccountFromAclGroups(long accountId) {
         List<AclGroup> groups = listAclGroups(accountId);

@@ -32,6 +32,8 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.RegionManager;
 
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -104,6 +106,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private NetworkOrchestrationService _networkMgr;
     @Inject
     private NetworkDomainDao _networkDomainDao;
+
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -204,6 +209,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         });
 
         CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+
+        _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+
         return domain;
     }
 
