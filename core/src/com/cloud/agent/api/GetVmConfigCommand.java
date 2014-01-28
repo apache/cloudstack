@@ -14,12 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package com.cloud.hypervisor.hyperv.manager;
+package com.cloud.agent.api;
 
-import com.cloud.utils.component.Manager;
 
-public interface HypervManager extends Manager {
-    public String prepareSecondaryStorageStore(long zoneId);
-    int getRouterExtraPublicNics();
+import java.util.List;
+
+import com.cloud.agent.api.to.NicTO;
+
+public class GetVmConfigCommand extends Command {
+    String vmName;
+    List<NicTO> nics;
+    protected GetVmConfigCommand() {
+    }
+
+    public GetVmConfigCommand(String vmName) {
+        this.vmName = vmName;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setNics(List<NicTO> nics){
+        this.nics = nics;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

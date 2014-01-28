@@ -2125,7 +2125,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
 
-        if (profile.getHypervisorType() == HypervisorType.VMware) {
+        if (profile.getHypervisorType() == HypervisorType.VMware || profile.getHypervisorType() == HypervisorType.Hyperv) {
             buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
 

@@ -690,6 +690,20 @@ namespace HypervResource
         public String entityType;
     }
 
+    public class NicDetails
+    {
+        [JsonProperty("macAddress")]
+        public string macaddress;
+        [JsonProperty("vlanid")]
+        public int vlanid;
+        public NicDetails() { }
+        public NicDetails(String macaddress, int vlanid)
+        {
+            this.macaddress = macaddress;
+            this.vlanid = vlanid;
+        }
+    }
+
     /// <summary>
     /// Fully qualified named for a number of types used in CloudStack.  Used to specify the intended type for JSON serialised objects. 
     /// </summary>
@@ -738,6 +752,10 @@ namespace HypervResource
         public const string GetVmDiskStatsCommand = "com.cloud.agent.api.GetVmDiskStatsCommand";
         public const string GetVmStatsAnswer = "com.cloud.agent.api.GetVmStatsAnswer";
         public const string GetVmStatsCommand = "com.cloud.agent.api.GetVmStatsCommand";
+        public const string GetVmConfigCommand = "com.cloud.agent.api.GetVmConfigCommand";
+        public const string GetVmConfigAnswer = "com.cloud.agent.api.GetVmConfigAnswer";
+        public const string ModifyVmNicConfigCommand = "com.cloud.agent.api.ModifyVmNicConfigCommand";
+        public const string ModifyVmNicConfigAnswer = "com.cloud.agent.api.ModifyVmNicConfigAnswer";
         public const string GetVncPortAnswer = "com.cloud.agent.api.GetVncPortAnswer";
         public const string GetVncPortCommand = "com.cloud.agent.api.GetVncPortCommand";
         public const string HostStatsEntry = "com.cloud.agent.api.HostStatsEntry";

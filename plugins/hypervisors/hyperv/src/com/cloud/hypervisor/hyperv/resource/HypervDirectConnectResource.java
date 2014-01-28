@@ -71,7 +71,12 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetVmConfigAnswer;
+import com.cloud.agent.api.GetVmConfigAnswer.NicDetails;
+import com.cloud.agent.api.GetVmConfigCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.agent.api.ModifyVmNicConfigAnswer;
+import com.cloud.agent.api.ModifyVmNicConfigCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
@@ -117,11 +122,13 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.hyperv.manager.HypervManager;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
@@ -133,6 +140,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
+
+
 /**
  * Implementation of dummy resource to be returned from discoverer.
  **/
@@ -706,65 +715,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
     }
 
-    //
-    // find mac address of a specified ethx device
-    //    ip address show ethx | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2
-    // returns
-    //      eth0:xx.xx.xx.xx
-
-    //
-    // list IP with eth devices
-    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }'
-    //     | awk -F: '{ print $1 ": " $3 }'
-    //
-    // returns
-    //      eth0:xx.xx.xx.xx
-    //
-    //
-
-    private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
-
-        s_logger.info("findRouterEthDeviceIndex. mac: " + mac);
-
-        // TODO : this is a temporary very inefficient solution, will refactor it later
-        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "ls /proc/sys/net/ipv4/conf");
-
-        // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
-        // we use a waiting loop here as a workaround to synchronize activities in systems
-        long startTick = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTick < 15000) {
-            if (result.first()) {
-                String[] tokens = result.second().split("\\s+");
-                for (String token : tokens) {
-                    if (!("all".equalsIgnoreCase(token) || "default".equalsIgnoreCase(token) || "lo".equalsIgnoreCase(token))) {
-                        String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
-
-                        if (s_logger.isDebugEnabled())
-                            s_logger.debug("Run domr script " + cmd);
-                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
-                            // TODO need to find the dev index inside router based on IP address
-                            cmd);
-                        if (s_logger.isDebugEnabled())
-                            s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
-
-                        if (result2.first() && result2.second().trim().equalsIgnoreCase(mac.trim()))
-                            return Integer.parseInt(token.substring(3));
-                    }
-                }
-            }
-
-            s_logger.warn("can not find intereface associated with mac: " + mac + ", guest OS may still at loading state, retry...");
-
-            try {
-                Thread.currentThread();
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        return -1;
-    }
-
     protected Answer execute(SetPortForwardingRulesCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetPortForwardingRulesCommand: " + s_gson.toJson(cmd));
@@ -1170,7 +1120,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource VmDataCommand: " + s_gson.toJson(cmd));
         }
-
         String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
 
@@ -1386,6 +1335,102 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return new Answer(cmd);
     }
 
+    //
+    // find mac address of a specified ethx device
+    //    ip address show ethx | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2
+    // returns
+    //      eth0:xx.xx.xx.xx
+
+    //
+    // list IP with eth devices
+    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }'
+    //     | awk -F: '{ print $1 ": " $3 }'
+    //
+    // returns
+    //      eth0:xx.xx.xx.xx
+    //
+    //
+
+    private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
+
+        s_logger.info("findRouterEthDeviceIndex. mac: " + mac);
+
+        // TODO : this is a temporary very inefficient solution, will refactor it later
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                "ls /proc/sys/net/ipv4/conf");
+
+        // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
+        // we use a waiting loop here as a workaround to synchronize activities in systems
+        long startTick = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTick < 15000) {
+            if (result.first()) {
+                String[] tokens = result.second().split("\\s+");
+                for (String token : tokens) {
+                    if (!("all".equalsIgnoreCase(token) || "default".equalsIgnoreCase(token) || "lo".equalsIgnoreCase(token))) {
+                        String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
+
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("Run domr script " + cmd);
+                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                                // TODO need to find the dev index inside router based on IP address
+                                cmd);
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
+
+                        if (result2.first() && result2.second().trim().equalsIgnoreCase(mac.trim()))
+                            return Integer.parseInt(token.substring(3));
+                    }
+                }
+            }
+
+            s_logger.warn("can not find intereface associated with mac: " + mac + ", guest OS may still at loading state, retry...");
+
+        }
+
+        return -1;
+    }
+
+    private Pair<Integer, String> findRouterFreeEthDeviceIndex(String routerIp) throws Exception {
+
+        s_logger.info("findRouterFreeEthDeviceIndex. mac: ");
+
+        // TODO : this is a temporary very inefficient solution, will refactor it later
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                "ip address | grep DOWN| cut -f2 -d :");
+
+        // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
+        // we use a waiting loop here as a workaround to synchronize activities in systems
+        long startTick = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTick < 15000) {
+            if (result.first() && !result.second().isEmpty()) {
+                String[] tokens = result.second().split("\\n");
+                for (String token : tokens) {
+                    if (!("all".equalsIgnoreCase(token) || "default".equalsIgnoreCase(token) || "lo".equalsIgnoreCase(token))) {
+                        //String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
+                        //TODO: don't check for eth0,1,2, as they will be empty by default.
+                        //String cmd = String.format("ip address show %s ", token);
+                        String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("Run domr script " + cmd);
+                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                                // TODO need to find the dev index inside router based on IP address
+                                cmd);
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
+
+                        if (result2.first() && result2.second().trim().length() > 0)
+                            return new Pair<Integer, String>(Integer.parseInt(token.trim().substring(3)), result2.second().trim()) ;
+                    }
+                }
+            }
+
+            //s_logger.warn("can not find intereface associated with mac: , guest OS may still at loading state, retry...");
+
+        }
+
+        return new Pair<Integer, String>(-1, "");
+    }
+
     protected Answer execute(IpAssocCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource IPAssocCommand: " + s_gson.toJson(cmd));
@@ -1401,7 +1446,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             String controlIp = getRouterSshControlIp(cmd);
             for (IpAddressTO ip : ips) {
                 assignPublicIpAddress(routerName, controlIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
-                    ip.getVlanNetmask(), ip.getVifMacAddress());
+                        ip.getVlanNetmask(), ip.getVifMacAddress());
                 results[i++] = ip.getPublicIp() + " - success";
             }
 
@@ -1419,16 +1464,97 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return new IpAssocAnswer(cmd, results);
     }
 
+    protected int getVmNics(String vmName, int vlanid) {
+        GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
+        URI agentUri = null;
+        int nicposition = -1;
+        try {
+            String cmdName = GetVmConfigCommand.class.getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+        }
+        String ansStr = postHttpRequest(s_gson.toJson(vmConfig), agentUri);
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        s_logger.debug("executeRequest received response "
+                + s_gson.toJson(result));
+        if (result.length > 0) {
+            GetVmConfigAnswer ans = ((GetVmConfigAnswer)result[0]);
+            List<NicDetails> nics = ans.getNics();
+            for (NicDetails nic : nics) {
+                if (nic.getVlanid() == vlanid) {
+                    nicposition = nics.indexOf(nic);
+                    break;
+                }
+            }
+        }
+        return nicposition;
+    }
+
+    protected void modifyNicVlan(String vmName, int vlanId, String macAddress) {
+        ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, macAddress);
+        URI agentUri = null;
+        try {
+            String cmdName = ModifyVmNicConfigCommand.class.getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+        }
+        String ansStr = postHttpRequest(s_gson.toJson(modifynic), agentUri);
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        s_logger.debug("executeRequest received response "
+                + s_gson.toJson(result));
+        if (result.length > 0) {
+            ModifyVmNicConfigAnswer ans = ((ModifyVmNicConfigAnswer)result[0]);
+        }
+    }
+
     protected void assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-        final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
+            final boolean sourceNat, final String broadcastId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
+
+        URI broadcastUri = BroadcastDomainType.fromString(broadcastId);
+        if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+            throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + broadcastId);
+        }
+        int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+
+        int publicNicInfo = -1;
+        publicNicInfo = getVmNics(vmName, vlanId);
 
         boolean addVif = false;
-        if (add) {
+        if (add && publicNicInfo == -1) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Plug new NIC to associate" + privateIpAddress + " to " + publicIpAddress);
             }
             addVif = true;
         } else if (!add && firstIP) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unplug NIC " + publicNicInfo);
+            }
+        }
+
+        if (addVif) {
+            Pair<Integer, String> nicdevice = findRouterFreeEthDeviceIndex(privateIpAddress);
+            publicNicInfo = nicdevice.first();
+            if (publicNicInfo > 0) {
+                modifyNicVlan(vmName, vlanId, nicdevice.second());
+                // After modifying the vnic on VR, check the VR VNics config in the host and get the device position
+                publicNicInfo = getVmNics(vmName, vlanId);
+                // As a new nic got activated in the VR. add the entry in the NIC's table.
+                networkUsage(privateIpAddress, "addVif", "eth" + publicNicInfo);
+            }
+            else {
+                // we didn't find any eth device available in VR to configure the ip range with new VLAN
+                String msg = "No Nic is available on DomR VIF to associate/disassociate IP with.";
+                s_logger.error(msg);
+                throw new InternalErrorException(msg);
+            }
         }
 
         String args = null;
@@ -1450,8 +1576,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         args += publicIpAddress + "/" + cidrSize;
 
         args += " -c ";
-        args += "eth" + "2";  // currently hardcoding to eth 2 (which is default public ipd)//publicNicInfo.first();
 
+        args += "eth" + publicNicInfo;
         args += " -g ";
         args += vlanGateway;
 
@@ -1464,7 +1590,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         Pair<Boolean, String> result =
-            SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/ipassoc.sh " + args);
+                SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/ipassoc.sh " + args);
 
         if (!result.first()) {
             s_logger.error("ipassoc command on domain router " + privateIpAddress + " failed. message: " + result.second());
@@ -1840,7 +1966,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 sch.connect(addr);
                 return null;
             } catch (IOException e) {
-                s_logger.info("Could not connect to " + ipAddress + " due to " + e.toString());
+                s_logger.info("Could] not connect to " + ipAddress + " due to " + e.toString());
                 if (e instanceof ConnectException) {
                     // if connection is refused because of VM is being started,
                     // we give it more sleep time
