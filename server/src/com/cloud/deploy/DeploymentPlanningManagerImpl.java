@@ -165,7 +165,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
-        this._storagePoolAllocators = storagePoolAllocators;
+        _storagePoolAllocators = storagePoolAllocators;
     }
 
     protected List<HostAllocator> _hostAllocators;
@@ -175,7 +175,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     public void setHostAllocators(List<HostAllocator> hostAllocators) {
-        this._hostAllocators = hostAllocators;
+        _hostAllocators = hostAllocators;
     }
 
     @Inject
@@ -221,7 +221,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     public void setPlanners(List<DeploymentPlanner> planners) {
-        this._planners = planners;
+        _planners = planners;
     }
 
     protected List<AffinityGroupProcessor> _affinityProcessors;
@@ -231,7 +231,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
-        this._affinityProcessors = affinityProcessors;
+        _affinityProcessors = affinityProcessors;
     }
 
     @Override
@@ -1142,9 +1142,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 List<StoragePool> suitablePools = new ArrayList<StoragePool>();
                 StoragePool pool = null;
                 if (toBeCreated.getPoolId() != null) {
-                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
+                    pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 } else {
-                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
+                    pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
 
                 if (!pool.isInMaintenance()) {
@@ -1156,7 +1156,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         if (plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId) {
                             canReusePool = true;
                         } else if (plan.getDataCenterId() == exstPoolDcId) {
-                            DataStore dataStore = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                            DataStore dataStore = dataStoreMgr.getPrimaryDataStore(pool.getId());
                             if (dataStore != null && dataStore.getScope() != null && dataStore.getScope().getScopeType() == ScopeType.ZONE) {
                                 canReusePool = true;
                             }
@@ -1259,9 +1259,14 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
-        if (suitableVolumeStoragePools.values() != null) {
-            poolsToAvoidOutput.removeAll(suitableVolumeStoragePools.values());
+        HashSet<Long> toRemove = new HashSet<Long>();
+        for (List<StoragePool> lsp : suitableVolumeStoragePools.values()) {
+            for (StoragePool sp : lsp) {
+                toRemove.add(sp.getId());
+            }
         }
+        poolsToAvoidOutput.removeAll(toRemove);
+
         if (avoid.getPoolsToAvoid() != null) {
             avoid.getPoolsToAvoid().addAll(poolsToAvoidOutput);
         }
