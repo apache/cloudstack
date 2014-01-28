@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
 from marvin.integration.lib.common import get_zone, get_domain, get_template

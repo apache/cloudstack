@@ -17,7 +17,6 @@
 """ P1 tests for Dedicating Guest Vlan Ranges
 """
 #Import Local Modules
-from marvin.cloudstackTestClient import getZoneForTests
 import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *

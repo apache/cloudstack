@@ -18,7 +18,6 @@
 """
 #Import Local Modules
 import marvin
-from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *

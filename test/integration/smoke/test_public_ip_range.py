@@ -17,7 +17,6 @@
 """ P1 tests for Dedicating Public IP addresses
 """
 #Import Local Modules
-from marvin.cloudstackTestClient import getZoneForTests
 import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *

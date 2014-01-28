@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.cloudstackTestClient import getZoneForTests
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *

@@ -17,7 +17,6 @@
 
 # Import Local Modules
 import marvin
-from marvin.cloudstackTestClient import getZoneForTests
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *

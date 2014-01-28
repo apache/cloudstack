@@ -19,7 +19,6 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *

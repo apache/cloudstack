@@ -31,7 +31,6 @@ from marvin.integration.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.integration.lib.common import get_zone, get_domain, get_template
 
-from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackAPI.addIpToNic import addIpToNicCmd
 from marvin.cloudstackAPI.removeIpFromNic import removeIpFromNicCmd
 from marvin.cloudstackAPI.listNics import listNicsCmd

@@ -16,7 +16,6 @@
 # under the License.
 
 #Test from the Marvin - Testing in Python wiki
-from marvin.cloudstackTestClient import getZoneForTests
 
 #All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
