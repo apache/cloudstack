@@ -48,7 +48,7 @@ public class VpcVO implements Vpc {
     String displayText;
 
     @Column(name = "zone_id")
-    Long zoneId;
+    long zoneId;
 
     @Column(name = "cidr")
     private String cidr = null;
@@ -88,7 +88,7 @@ public class VpcVO implements Vpc {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VpcVO(Long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId,
+    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId,
                  String cidr, String networkDomain, boolean regionLevelVpc) {
         this.zoneId = zoneId;
         this.name = name;

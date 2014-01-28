@@ -62,7 +62,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     private Long projectId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-               description = "the ID of the availability zone")
+            required = true, description = "the ID of the availability zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the VPC")

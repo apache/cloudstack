@@ -706,10 +706,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         boolean isRegionLevelVpcOff = vpcOff.offersRegionLevelVPC();
-        if (zoneId == null && !isRegionLevelVpcOff) {
-            throw new InvalidParameterValueException("VPC Offering does not support region level VPC. So specify zone id in which VPC is to be created");
-        }
-
         if (isRegionLevelVpcOff && networkDomain == null) {
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
         }
