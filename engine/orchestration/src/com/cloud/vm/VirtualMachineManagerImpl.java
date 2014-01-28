@@ -577,6 +577,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
         ReservationContextImpl.init(_entityMgr);
         VirtualMachineProfileImpl.init(_entityMgr);
+        VmWorkMigrate.init(_entityMgr);
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
         _nodeId = ManagementServerNode.getManagementServerId();
