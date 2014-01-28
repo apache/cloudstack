@@ -105,6 +105,7 @@ public enum Config {
 	SecurityGroupDefaultAdding("Network", ManagementServer.class, Boolean.class, "network.securitygroups.defaultadding", "true", "If true, the user VM would be added to the default security group by default", null),
 
 	GuestOSNeedGatewayOnNonDefaultNetwork("Network", NetworkOrchestrationService.class, String.class, "network.dhcp.nondefaultnetwork.setgateway.guestos", "Windows", "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.", null),
+    EnableServiceMonitoring("Network", ManagementServer.class, Boolean.class, "network.router.enableserviceMonitoring", "false", "service monitoring in router enable/disable option, default false", null),
 
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),

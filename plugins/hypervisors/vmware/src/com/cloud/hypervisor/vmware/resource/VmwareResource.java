@@ -806,10 +806,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String controlIp = getRouterSshControlIp(cmd);
         String config = cmd.getConfiguration();
+        String disable =  cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_DISABLE);
 
         String args = "";
 
         args += " -c " + config;
+        if (disable != null) {
+            args = args + " -d ";
+        }
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
