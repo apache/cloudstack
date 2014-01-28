@@ -449,8 +449,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
-                volume.setAccountId(owner.getAccountId());
-                volume.setDomainId(owner.getDomainId());
+                volume.setAccountId((owner == null) ? null : owner.getAccountId());
+                volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
                 long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
                 volume.setDiskOfferingId(diskOfferingId);
                 // volume.setSize(size);
