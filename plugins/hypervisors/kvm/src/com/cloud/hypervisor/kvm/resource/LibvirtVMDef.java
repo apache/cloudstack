@@ -166,6 +166,8 @@ public class LibvirtVMDef {
             }
             if (_memBalloning){
                 resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
+            } else {
+                resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
                 resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
