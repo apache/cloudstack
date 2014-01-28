@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -36,33 +37,36 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cloudstackTestClient = super(TestRouterServices, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestRouterServices, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
-                                     cls.api_client,
+                                     cls.apiclient,
                                      cls.services["account"],
                                      domainid=cls.domain.id
                                      )
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
         cls.vm_1 = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -78,12 +82,12 @@ class TestRouterServices(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(
+            cls.apiclient = super(
                                    TestRouterServices,
                                    cls
                                    ).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.apiclient, cls.cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)

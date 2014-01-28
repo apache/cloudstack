@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -32,25 +33,30 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_client = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient()
-        zone_name = cls.test_client.getZoneForTests() 
-        cls.api_client = cls.test_client.getApiClient()
-        cls.services = cls.test_client.getConfigParser().parsedDict
+        cls.testClient = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient()
+        zone_name = cls.testClient.getZoneForTests()
+        cls.domain = get_domain(cls.apiclient) 
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+                            
         cls.template = get_template(
-            cls.api_client,
+            cls.apiclient,
             cls.zone.id,
             cls.services["ostype"]
         )
+        
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
         cls.account = Account.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
@@ -58,11 +64,11 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["service_offerings"]
         )
 
-        cls.ag = AffinityGroup.create(cls.api_client, cls.services["virtual_machine"]["affinity"],
+        cls.ag = AffinityGroup.create(cls.apiclient, cls.services["virtual_machine"]["affinity"],
             account=cls.services["account"], domainid=cls.domain.id)
 
         cls._cleanup = [
@@ -82,7 +88,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         """
         #deploy VM1 in affinity group created in setUp
         vm1 = VirtualMachine.create(
-            self.api_client,
+            self.apiclient,
             self.services["virtual_machine"],
             templateid=self.template.id,
             accountid=self.account.name,
@@ -92,7 +98,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         )
 
         list_vm1 = list_virtual_machines(
-            self.api_client,
+            self.apiclient,
             id=vm1.id
         )
         self.assertEqual(
@@ -115,7 +121,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
         #deploy VM2 in affinity group created in setUp
         vm2 = VirtualMachine.create(
-            self.api_client,
+            self.apiclient,
             self.services["virtual_machine"],
             templateid=self.template.id,
             accountid=self.account.name,
@@ -124,7 +130,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             affinitygroupnames=[self.ag.name]
         )
         list_vm2 = list_virtual_machines(
-            self.api_client,
+            self.apiclient,
             id=vm2.id
         )
         self.assertEqual(
@@ -153,6 +159,6 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         def tearDownClass(cls):
             try:
                 #Clean up, terminate the created templates
-                cleanup_resources(cls.api_client, cls._cleanup)
+                cleanup_resources(cls.apiclient, cls._cleanup)
             except Exception as e:
                 raise Exception("Warning: Exception during cleanup : %s" % e)

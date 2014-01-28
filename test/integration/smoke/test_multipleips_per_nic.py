@@ -31,6 +31,7 @@ from marvin.integration.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.integration.lib.common import get_zone, get_domain, get_template
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackAPI.addIpToNic import addIpToNicCmd
 from marvin.cloudstackAPI.removeIpFromNic import removeIpFromNicCmd
 from marvin.cloudstackAPI.listNics import listNicsCmd
@@ -43,14 +44,17 @@ class TestDeployVM(cloudstackTestCase):
     """
 
     def setUp(self):
-        self.testdata = self.testClient.getConfigParser().parsedDict
+        self.testdata = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient))
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+
+        if self.template == FAILED:
+            self.fail("get_template() failed to return template with description %s" % self.testdata["ostype"])
 
         #create a user account
         self.account = Account.create(

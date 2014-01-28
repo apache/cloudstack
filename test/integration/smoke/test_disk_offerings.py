@@ -30,7 +30,7 @@ _multiprocess_shared_ = True
 class TestCreateDiskOffering(cloudstackTestCase):
 
     def setUp(self):
-        self.services = self.testClient.getConfigParser().parsedDict
+        self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -109,16 +109,16 @@ class TestDiskOfferings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDiskOfferings, cls).getClsTestClient()
-        self.api_client = self.cloudstackTestClient.getApiClient()
-        self.services = self.cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDiskOfferings, cls).getClsTestClient()
+        self.apiclient = self.testClient.getApiClient()
+        self.services = self.testClient.getParsedTestDataConfig()
         
         cls.disk_offering_1 = DiskOffering.create(
-                                                  cls.api_client,
+                                                  cls.apiclient,
                                                   cls.services["disk_offering"]
                                                   )
         cls.disk_offering_2 = DiskOffering.create(
-                                                  cls.api_client,
+                                                  cls.apiclient,
                                                   cls.services["disk_offering"]
                                                   )
         cls._cleanup = [cls.disk_offering_1]
@@ -127,8 +127,8 @@ class TestDiskOfferings(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestDiskOfferings, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestDiskOfferings, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

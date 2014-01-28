@@ -17,6 +17,7 @@
 """ P1 tests for Dedicating Guest Vlan Ranges
 """
 #Import Local Modules
+from marvin.cloudstackTestClient import getZoneForTests
 import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
@@ -30,13 +31,13 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
-        cls.apiclient = cloudstackTestClient.getApiClient() 
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient() 
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(

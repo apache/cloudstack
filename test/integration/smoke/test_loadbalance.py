@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -32,33 +33,36 @@ class TestLoadBalance(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cloudstackTestClient = super(TestLoadBalance, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient() 
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestLoadBalance, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient() 
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+        
         cls.services["server"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
         cls.service_offering = ServiceOffering.create(
-                                        cls.api_client,
+                                        cls.apiclient,
                                         cls.services["service_offerings"]
                                         )
         cls.vm_1 = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -66,7 +70,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_2 = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -74,7 +78,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_3 = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["server"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -82,7 +86,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.non_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.account.name,
                                             cls.zone.id,
                                             cls.account.domainid,
@@ -90,7 +94,7 @@ class TestLoadBalance(cloudstackTestCase):
                                             )
         # Open up firewall port for SSH
         cls.fw_rule = FireWallRule.create(
-                            cls.api_client,
+                            cls.apiclient,
                             ipaddressid=cls.non_src_nat_ip.ipaddress.id,
                             protocol=cls.services["lbrule"]["protocol"],
                             cidrlist=['0.0.0.0/0'],
@@ -113,7 +117,7 @@ class TestLoadBalance(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def try_ssh(self, ip_addr, hostnames):

@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -53,23 +54,26 @@ class TestCreateTemplate(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         
-        cloudstackTestClient = super(TestCreateTemplate, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestCreateTemplate, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
@@ -80,19 +84,19 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.services["sourcezoneid"] = cls.zone.id
 
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -102,7 +106,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     )
 
         #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+        cls.virtual_machine.stop(cls.apiclient)
 
         # Poll listVM to ensure VM is stopped properly
         timeout = cls.services["timeout"]
@@ -111,7 +115,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
             # Ensure that VM is in stopped state
             list_vm_response = list_virtual_machines(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             id=cls.virtual_machine.id
                                             )
 
@@ -129,7 +133,7 @@ class TestCreateTemplate(cloudstackTestCase):
             timeout = timeout - 1
 
         list_volume = list_volumes(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
@@ -146,9 +150,9 @@ class TestCreateTemplate(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -222,29 +226,32 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cloudstackTestClient = super(TestTemplates, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestTemplates, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        cls.zones = cls.api_client.listZones(cmd)
+        cls.zones = cls.apiclient.listZones(cmd)
         if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
 
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
@@ -256,14 +263,14 @@ class TestTemplates(cloudstackTestCase):
         cls.services["ostypeid"] = template.ostypeid
 
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -271,12 +278,12 @@ class TestTemplates(cloudstackTestCase):
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                         )
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -285,7 +292,7 @@ class TestTemplates(cloudstackTestCase):
                                     mode=cls.services["mode"]
                                     )
         #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+        cls.virtual_machine.stop(cls.apiclient)
 
         # Poll listVM to ensure VM is stopped properly
         timeout = cls.services["timeout"]
@@ -294,7 +301,7 @@ class TestTemplates(cloudstackTestCase):
 
             # Ensure that VM is in stopped state
             list_vm_response = list_virtual_machines(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             id=cls.virtual_machine.id
                                             )
 
@@ -312,7 +319,7 @@ class TestTemplates(cloudstackTestCase):
             timeout = timeout - 1
 
         list_volume = list_volumes(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
@@ -326,14 +333,14 @@ class TestTemplates(cloudstackTestCase):
 
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(
-                                         cls.api_client,
+                                         cls.apiclient,
                                          cls.services["template"],
                                          cls.volume.id,
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
         cls.template_2 = Template.create(
-                                         cls.api_client,
+                                         cls.apiclient,
                                          cls.services["template_2"],
                                          cls.volume.id,
                                          account=cls.account.name,
@@ -349,9 +356,9 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestTemplates, cls).getClsTestClient().getApiClient()
             #Cleanup created resources such as templates and VMs
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)

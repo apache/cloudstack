@@ -17,6 +17,7 @@
 """ Tests for configuring Internal Load Balancing Rules.
 """
 #Import Local Modules
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -30,11 +31,11 @@ class TestInternalLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestInternalLb, cls).getClsTestClient()
-        cls.apiclient = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestInternalLb, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
@@ -46,6 +47,10 @@ class TestInternalLb(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))

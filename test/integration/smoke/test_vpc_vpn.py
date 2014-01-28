@@ -17,6 +17,7 @@
 """ Tests for VPN in VPC
 """
 #Import Local Modules
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -30,11 +31,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
@@ -46,6 +47,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.cleanup = [cls.account]
 
     @attr(tags=["advanced"])
@@ -134,11 +138,11 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVpcSite2SiteVpn, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestVpcSite2SiteVpn, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
@@ -150,6 +154,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.cleanup = [cls.account]
 
     @attr(tags=["advanced"])

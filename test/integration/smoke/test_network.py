@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
@@ -40,45 +41,45 @@ class TestPublicIP(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestPublicIP, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestPublicIP, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Create Accounts & networks
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["network_offering"],
                                     )
         # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
+        cls.network_offering.update(cls.apiclient, state='Enabled')
 
         cls.services["network"]["networkoffering"] = cls.network_offering.id
         cls.account_network = Network.create(
-                                             cls.api_client,
+                                             cls.apiclient,
                                              cls.services["network"],
                                              cls.account.name,
                                              cls.account.domainid
                                              )
         cls.user_network = Network.create(
-                                             cls.api_client,
+                                             cls.apiclient,
                                              cls.services["network"],
                                              cls.user.name,
                                              cls.user.domainid
@@ -86,13 +87,13 @@ class TestPublicIP(cloudstackTestCase):
 
         # Create Source NAT IP addresses
         account_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.account.name,
                                             cls.zone.id,
                                             cls.account.domainid
                                             )
         user_src_nat_ip = PublicIPAddress.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.user.name,
                                             cls.zone.id,
                                             cls.user.domainid
@@ -110,7 +111,7 @@ class TestPublicIP(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -221,32 +222,35 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cloudstackTestClient = super(TestPortForwarding, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestPortForwarding, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
-                                cls.api_client,
+                                cls.apiclient,
                                 cls.services["account"],
                                 admin=True,
                                 domainid=cls.domain.id
                                 )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
-                                cls.api_client,
+                                cls.apiclient,
                                 cls.services["service_offerings"]
                                 )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -267,8 +271,8 @@ class TestPortForwarding(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestPortForwarding, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -525,16 +529,18 @@ class TestRebootRouter(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = self.testClient.cloudstackTestClient.getConfigParser().parsedDict
+        self.services = self.testClient.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
                             self.services["ostype"]
                             )
+        if template == FAILED:
+            self.fail("get_template() failed to return template with description %s" % self.services["ostype"])
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         #Create an account, network, VM and IP addresses
@@ -691,11 +697,11 @@ class TestReleaseIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.services = self.testClient.getConfigParser().parsedDict
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -828,11 +834,11 @@ class TestDeleteAccount(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = self.testClient.getConfigParser().parsedDict
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,

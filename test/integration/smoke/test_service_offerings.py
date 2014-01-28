@@ -17,6 +17,7 @@
 """ BVT tests for Service offerings"""
 
 #Import Local Modules
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import changeServiceForVirtualMachine,updateServiceOffering
 from marvin.integration.lib.utils import (isAlmostEqual,
@@ -41,7 +42,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        self.services = self.testClient.getConfigParser().parsedDict
+        self.services = self.testClient.getParsedTestDataConfig()
 
     def tearDown(self):
         try:
@@ -132,27 +133,30 @@ class TestServiceOfferings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestServiceOfferings, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestServiceOfferings, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.service_offering_1 = ServiceOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["service_offerings"]
         )
         cls.service_offering_2 = ServiceOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["service_offerings"]
         )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -162,22 +166,22 @@ class TestServiceOfferings(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=domain.id
                             )
 
         cls.small_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["small"]
                                     )
 
         cls.medium_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["medium"]
                                     )
         cls.medium_virtual_machine = VirtualMachine.create(
-                                       cls.api_client,
+                                       cls.apiclient,
                                        cls.services["medium"],
                                        accountid=cls.account.name,
                                        domainid=cls.account.domainid,
@@ -194,9 +198,9 @@ class TestServiceOfferings(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestServiceOfferings, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestServiceOfferings, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)

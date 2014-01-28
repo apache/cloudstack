@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
 from marvin.integration.lib.common import get_zone, get_domain, get_template
@@ -28,18 +29,22 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient()
-        cls.apiclient = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.template = get_template(
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id

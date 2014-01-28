@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -30,40 +31,43 @@ _multiprocess_shared_ = True
 class TestResetVmOnReboot(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestResetVmOnReboot, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict        
+        testClient = super(TestResetVmOnReboot, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()        
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = zone.networktype
 
         template = get_template(
-            cls.api_client,
+            cls.apiclient,
             zone.id,
             cls.services["ostype"]
         )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
         cls.services["small"]["template"] = template.id
 
         # Create account, service offerings, vm.
         cls.account = Account.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["account"],
             domainid=domain.id
         )
 
         cls.small_offering = ServiceOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["service_offerings"]["small"],
             isvolatile="true"
         )
 
         #create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
-            cls.api_client,
+            cls.apiclient,
             cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
@@ -77,8 +81,8 @@ class TestResetVmOnReboot(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestResetVmOnReboot, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cls.apiclient = super(TestResetVmOnReboot, cls).getClsTestClient().getApiClient()
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def setUp(self):

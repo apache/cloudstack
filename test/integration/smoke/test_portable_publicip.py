@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -33,17 +34,17 @@ class TestPortablePublicIPRange(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestPortablePublicIPRange, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestPortablePublicIPRange, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -56,7 +57,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -81,7 +82,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
         """
         self.debug("attempting to create a portable Public IP range")
         self.portable_ip_range = PortablePublicIpRange.create(
-                                    self.api_client,
+                                    self.apiclient,
                                     self.services
                                )
         self.debug("attempting to verify portable Public IP range is created")
@@ -101,31 +102,31 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestPortablePublicIPAcquire, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestPortablePublicIPAcquire, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         # Create Account
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["network_offering"],
                                     )
         # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
+        cls.network_offering.update(cls.apiclient, state='Enabled')
 
         cls.services["network"]["networkoffering"] = cls.network_offering.id
         cls.account_network = Network.create(
-                                             cls.api_client,
+                                             cls.apiclient,
                                              cls.services["network"],
                                              cls.account.name,
                                              cls.account.domainid
@@ -142,7 +143,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -167,13 +168,13 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
         """
         self.debug("attempting to create a portable Public IP range")
         self.portable_ip_range = PortablePublicIpRange.create(
-                                    self.api_client,
+                                    self.apiclient,
                                     self.services
                                     )
 
-        ip_address = PublicIPAddress.create(self.api_client, self.account.name,
+        ip_address = PublicIPAddress.create(self.apiclient, self.account.name,
                             self.zone.id, self.account.domainid, isportable=True)
 
-        ip_address.delete(self.api_client)
+        ip_address.delete(self.apiclient)
         self.portable_ip_range.delete(self.apiclient)
         return

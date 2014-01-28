@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -34,33 +35,33 @@ class TestResourceDetail(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestResourceDetail, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestResourceDetail, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = zone.networktype
 
         # Set Zones and disk offerings ??
 
         # Create account, service offerings, vm.
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=domain.id
                             )
 
  
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
 
         #create a volume
         cls.volume = Volume.create(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    { "diskname" : "ndm"},
                                    zoneid=zone.id,
                                    account=cls.account.name,
@@ -75,8 +76,8 @@ class TestResourceDetail(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestResourceDetail, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cls.apiclient = super(TestResourceDetail, cls).getClsTestClient().getApiClient()
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def setUp(self):
@@ -108,7 +109,7 @@ class TestResourceDetail(cloudstackTestCase):
         listResourceDetailCmd = listResourceDetails.listResourceDetailsCmd()
         listResourceDetailCmd.resourceid = self.volume.id
         listResourceDetailCmd.resourcetype = "Volume"
-        listResourceDetailResponse = self.api_client.listResourceDetails(listResourceDetailCmd)
+        listResourceDetailResponse = self.apiclient.listResourceDetails(listResourceDetailCmd)
 
         self.assertEqual(listResourceDetailResponse, None, "Check if the list API \
                             returns an empty response")

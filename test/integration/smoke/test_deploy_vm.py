@@ -16,6 +16,7 @@
 # under the License.
 
 #Test from the Marvin - Testing in Python wiki
+from marvin.cloudstackTestClient import getZoneForTests
 
 #All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -40,13 +41,16 @@ class TestDeployVM(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
 
-        self.testdata = self.testClient.getConfigParser().parsedDict
+        self.testdata = self.testClient.getParsedTestDataConfig()
         
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testdata)
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+
+        if self.template == FAILED:
+            self.fail("get_template() failed to return template with description %s" % self.testdata["ostype"])
 
         #create a user account
         self.account = Account.create(

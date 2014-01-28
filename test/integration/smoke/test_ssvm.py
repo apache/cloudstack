@@ -19,6 +19,7 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *
@@ -38,7 +39,7 @@ class TestSSVMs(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
         self.services = Services().services
-        self.zone = get_zone(self.apiclient, self.services)
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         return
 
     def tearDown(self):

@@ -214,13 +214,13 @@ def get_zone(apiclient, zone_name=None, zone_id=None):
 
 
 
-def get_pod(apiclient, pod_id=None, pod_name=None, zone_id=None):
+def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     '''
     @name : get_pod
     @Desc :  Returns the Pod Information for a given zone id or Zone Name
-    @Input : pod_name : Name of the Pod
+    @Input : zone_id: Id of the Zone
+             pod_name : Name of the Pod
              pod_id : Id of the Pod
-             zone_id: Id of the Zone
     @Output : 1. Pod Information for the pod
               2. FAILED In case the cmd failed
     '''
@@ -239,9 +239,9 @@ def get_pod(apiclient, pod_id=None, pod_name=None, zone_id=None):
     return cmd_out
 
 
-def get_template(apiclient, template_id=None, template_name=None, account=None, template_type='BUILTIN'
-                 domain_id=None, zone_id=None, project_id=None,
-                 hypervisor=None, ostype_desc=None, template_filter="featured"):
+def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
+                 template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+                 hypervisor=None):
     '''
     @Name : get_template
     @Desc : Retrieves the template Information based upon inputs provided

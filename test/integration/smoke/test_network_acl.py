@@ -28,11 +28,11 @@ class TestNetworkACL(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworkACL, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestNetworkACL, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
@@ -44,6 +44,10 @@ class TestNetworkACL(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))

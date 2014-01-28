@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.integration.lib.base import (ServiceOffering,
                                          VirtualMachine,
@@ -32,11 +33,11 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
-        cls.apiClient = cloudstackTestClient.getApiClient() 
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
+        cls.apiClient = testClient.getApiClient() 
+        cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiClient, cls.services)
+        cls.zone = get_zone(cls.apiClient, cls.getZoneForTests())
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
             cls.services["service_offerings"]["storagetype"] = "local"
@@ -51,6 +52,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))

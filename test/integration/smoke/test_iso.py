@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -34,12 +35,12 @@ _multiprocess_shared_ = True
 class TestCreateIso(cloudstackTestCase):
 
     def setUp(self):
-        self.services = self.testClient.getConfigParser().parsedDict
+        self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         self.services['mode'] = self.zone.networktype
         self.services["domainid"] = self.domain.id
         self.services["iso_2"]["zoneid"] = self.zone.id
@@ -138,13 +139,13 @@ class TestISO(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestISO, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestISO, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         
         cls.services["domainid"] = cls.domain.id
         cls.services["iso_1"]["zoneid"] = cls.zone.id
@@ -152,20 +153,20 @@ class TestISO(cloudstackTestCase):
         cls.services["sourcezoneid"] = cls.zone.id
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        cls.zones = cls.api_client.listZones(cmd)
+        cls.zones = cls.apiclient.listZones(cmd)
         if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
 
         #Create an account, ISOs etc.
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.name
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
-                    cls.api_client,
+                    cls.apiclient,
                     description=cls.services["ostype"]
                     )
         if not isinstance(ostypes, list):
@@ -176,25 +177,25 @@ class TestISO(cloudstackTestCase):
         cls.services["ostypeid"] = ostypes[0].id
 
         cls.iso_1 = Iso.create(
-                               cls.api_client, 
+                               cls.apiclient, 
                                cls.services["iso_1"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
         try:
-            cls.iso_1.download(cls.api_client)
+            cls.iso_1.download(cls.apiclient)
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_1.id, e))
             
         cls.iso_2 = Iso.create(
-                               cls.api_client, 
+                               cls.apiclient, 
                                cls.services["iso_2"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
         try:
-            cls.iso_2.download(cls.api_client)
+            cls.iso_2.download(cls.apiclient)
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"\
                       % (cls.iso_2.id, e))
@@ -205,9 +206,9 @@ class TestISO(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestISO, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestISO, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)

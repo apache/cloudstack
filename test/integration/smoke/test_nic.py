@@ -16,6 +16,7 @@
 # under the License.
 """ NIC tests for VM """
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
@@ -44,11 +45,11 @@ class TestNic(cloudstackTestCase):
         try:
             self.apiclient = self.testClient.getApiClient()
             self.dbclient  = self.testClient.getDbConnection()
-            self.services  = self.testClient.getConfigParser().parsedDict
+            self.services  = self.testClient.getParsedTestDataConfig()
 
             # Get Zone, Domain and templates
-            domain = get_domain(self.apiclient, self.services)
-            zone = get_zone(self.apiclient, self.services)
+            domain = get_domain(self.apiclient)
+            zone = get_zone(self.apiclient, self.getZoneForTests())
             self.services['mode'] = zone.networktype
 
             if zone.networktype != 'Advanced':
@@ -64,7 +65,10 @@ class TestNic(cloudstackTestCase):
                                 zone.id,
                                 self.services["ostype"]
                                 )
-            # Set Zones and disk offerings
+            if self.template == FAILED:
+                self.fail("get_template() failed to return template with description %s" % self.services["ostype"])
+
+              # Set Zones and disk offerings
             self.services["small"]["zoneid"] = zone.id
             self.services["small"]["template"] = template.id
 

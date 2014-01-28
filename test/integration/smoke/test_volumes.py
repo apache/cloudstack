@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
@@ -38,28 +39,31 @@ class TestCreateVolume(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestCreateVolume, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestCreateVolume, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         cls.custom_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"],
                                     custom=True
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
@@ -67,18 +71,18 @@ class TestCreateVolume(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -218,8 +222,8 @@ class TestCreateVolume(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestCreateVolume, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -228,33 +232,36 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVolumes, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestVolumes, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         cls.resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"]
                                     )
         cls.custom_resized_disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["resized_disk_offering"],
                                     custom=True
                                     )
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
@@ -264,18 +271,18 @@ class TestVolumes(cloudstackTestCase):
 
         # Create VMs, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
 
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                         )
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -284,7 +291,7 @@ class TestVolumes(cloudstackTestCase):
                                 )
 
         cls.volume = Volume.create(
-                                   cls.api_client,
+                                   cls.apiclient,
                                    cls.services,
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
@@ -301,7 +308,7 @@ class TestVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -649,7 +656,7 @@ class TestVolumes(cloudstackTestCase):
         self.debug("Delete Volume ID: %s" % self.volume.id)
 
         self.volume_1 = Volume.create(
-                                   self.api_client,
+                                   self.apiclient,
                                    self.services,
                                    account=self.account.name,
                                    domainid=self.account.domainid

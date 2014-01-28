@@ -17,6 +17,7 @@
 """ P1 tests for Dedicating Public IP addresses
 """
 #Import Local Modules
+from marvin.cloudstackTestClient import getZoneForTests
 import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
@@ -30,15 +31,15 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDedicatePublicIPRange, cls).getClsTestClient().getApiClient()
+        cls.apiclient = super(TestDedicatePublicIPRange, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -51,7 +52,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -86,7 +87,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         self.debug("Creating Public IP range")
         self.public_ip_range = PublicIpRange.create(
-                                    self.api_client,
+                                    self.apiclient,
                                     self.services
                                )
         list_public_ip_range_response = PublicIpRange.list(

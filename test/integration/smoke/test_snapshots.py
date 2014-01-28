@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
@@ -26,20 +27,23 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestSnapshotRootDisk, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestSnapshotRootDisk, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         cls.services["domainid"] = cls.domain.id
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
         cls.services["templates"]["ostypeid"] = template.ostypeid
@@ -47,7 +51,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -55,12 +59,12 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
+                                            cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
         cls.virtual_machine = cls.virtual_machine_with_disk = \
                     VirtualMachine.create(
-                                cls.api_client,
+                                cls.apiclient,
                                 cls.services["server_without_disk"],
                                 templateid=template.id,
                                 accountid=cls.account.name,
@@ -78,7 +82,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

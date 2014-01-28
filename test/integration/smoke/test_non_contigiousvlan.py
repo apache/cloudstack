@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin import cloudstackTestCase
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase

@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestClient import getZoneForTests
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -33,13 +34,13 @@ class TestDeployVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestDeployVM, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestDeployVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         #If local storage is enabled, alter the offerings to use localstorage
@@ -54,6 +55,9 @@ class TestDeployVM(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -191,13 +195,13 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVMLifeCycle, cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        testClient = super(TestVMLifeCycle, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         #if local storage is enabled, alter the offerings to use localstorage
@@ -208,10 +212,13 @@ class TestVMLifeCycle(cloudstackTestCase):
             cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -222,23 +229,23 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=domain.id
                             )
 
         cls.small_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["small"]
                                     )
 
         cls.medium_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["medium"]
                                     )
         #create small and large virtual machines
         cls.small_virtual_machine = VirtualMachine.create(
-                                        cls.api_client,
+                                        cls.apiclient,
                                         cls.services["small"],
                                         accountid=cls.account.name,
                                         domainid=cls.account.domainid,
@@ -246,7 +253,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         mode=cls.services["mode"]
                                         )
         cls.medium_virtual_machine = VirtualMachine.create(
-                                       cls.api_client,
+                                       cls.apiclient,
                                        cls.services["medium"],
                                        accountid=cls.account.name,
                                        domainid=cls.account.domainid,
@@ -254,7 +261,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                        mode=cls.services["mode"]
                                     )
         cls.virtual_machine = VirtualMachine.create(
-                                        cls.api_client,
+                                        cls.apiclient,
                                         cls.services["small"],
                                         accountid=cls.account.name,
                                         domainid=cls.account.domainid,
@@ -269,8 +276,8 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def setUp(self):
@@ -510,7 +517,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         #deploy VM on target host
         self.vm_to_migrate = VirtualMachine.create(
-            self.api_client,
+            self.apiclient,
             self.services["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
@@ -523,7 +530,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         migrate_host.id
                                         ))
 
-        self.vm_to_migrate.migrate(self.api_client, migrate_host.id)
+        self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
 
         list_vm_response = list_virtual_machines(
                                             self.apiclient,
