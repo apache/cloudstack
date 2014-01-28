@@ -718,6 +718,8 @@ addAccountToAclGroup=1
 removeAccountFromAclGroup=1
 attachAclPolicyToAclGroup=1
 removeAclPolicyFromAclGroup=1
+attachAclPolicyToAccount=1
+removeAclPolicyFromAccount=1
 
 #### juniper-contrail commands
 createServiceInstance=1

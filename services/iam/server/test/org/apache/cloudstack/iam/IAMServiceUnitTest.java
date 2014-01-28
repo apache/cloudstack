@@ -51,6 +51,7 @@ import org.apache.cloudstack.iam.api.IAMService;
 import org.apache.cloudstack.iam.server.AclGroupVO;
 import org.apache.cloudstack.iam.server.AclPolicyVO;
 import org.apache.cloudstack.iam.server.IAMServiceImpl;
+import org.apache.cloudstack.iam.server.dao.AclAccountPolicyMapDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
@@ -186,6 +187,11 @@ public class IAMServiceUnitTest {
         @Bean
         public AclGroupAccountMapDao aclGroupAccountMapDao() {
             return Mockito.mock(AclGroupAccountMapDao.class);
+        }
+
+        @Bean
+        public AclAccountPolicyMapDao aclAccountPolicyMapDao() {
+            return Mockito.mock(AclAccountPolicyMapDao.class);
         }
 
         @Bean

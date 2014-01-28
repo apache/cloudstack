@@ -29,6 +29,7 @@ import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 import org.apache.cloudstack.iam.api.IAMService;
+import org.apache.cloudstack.iam.server.dao.AclAccountPolicyMapDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
@@ -69,6 +70,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @Inject
     AclGroupPolicyMapDao _aclGroupPolicyMapDao;
+
+    @Inject
+    AclAccountPolicyMapDao _aclAccountPolicyMapDao;
 
     @Inject
     AclGroupAccountMapDao _aclGroupAccountMapDao;
@@ -341,7 +345,12 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         policySc.setJoinParameters("accountgroupjoin", "account", accountId);
 
         List<Long> policyIds = _aclGroupPolicyMapDao.customSearch(policySc, null);
-        if (policyIds == null || policyIds.size() == 0) {
+        // add policies directly attached to the account
+        List<AclAccountPolicyMapVO> acctPolicies = _aclAccountPolicyMapDao.listByAccountId(accountId);
+        for (AclAccountPolicyMapVO p : acctPolicies) {
+            policyIds.add(p.getAclPolicyId());
+        }
+        if (policyIds.size() == 0) {
             return new ArrayList<AclPolicy>();
         }
         SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
@@ -350,6 +359,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sc.setParameters("ids", policyIds.toArray(new Object[policyIds.size()]));
         @SuppressWarnings("rawtypes")
         List policies = _aclPolicyDao.customSearch(sc, null);
+
         return policies;
 
     }
@@ -479,70 +489,54 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return group;
     }
 
-    /*
-    @DB
+
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting permission to Acl Role")
-    public AclP addAclPermissionToAclPolicy(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclPolicyDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to grant permission to role.");
+    public void attachAclPolicyToAccounts(final Long policyId, final List<Long> acctIds) {
+        AclPolicy policy = _aclPolicyDao.findById(policyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
+                    + "; failed to add policy to account.");
         }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // add entries in acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm == null) {
+                // add entries in acl_group_policy_map table
+                for (Long acctId : acctIds) {
+                    AclAccountPolicyMapVO acctMap = _aclAccountPolicyMapDao.findByAccountAndPolicy(acctId, policyId);
+                    if (acctMap == null) {
                         // not there already
-                        perm = new AclApiPermissionVO(aclRoleId, api);
-                        _apiPermissionDao.persist(perm);
+                        acctMap = new AclAccountPolicyMapVO(acctId, policyId);
+                        _aclAccountPolicyMapDao.persist(acctMap);
                     }
                 }
             }
         });
-
-        return role;
-
     }
 
-    @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_REVOKE, eventDescription = "Revoking permission from Acl Role")
-    public AclRole revokeApiPermissionFromAclRole(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclPolicyDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to revoke permission from role.");
+    public void removeAclPolicyFromAccounts(final Long policyId, final List<Long> acctIds) {
+        AclPolicy policy = _aclPolicyDao.findById(policyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
+                    + "; failed to add policy to account.");
         }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove entries from acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm != null) {
-                        // not removed yet
-                        _apiPermissionDao.remove(perm.getId());
+                // add entries in acl_group_policy_map table
+                for (Long acctId : acctIds) {
+                    AclAccountPolicyMapVO acctMap = _aclAccountPolicyMapDao.findByAccountAndPolicy(acctId, policyId);
+                    if (acctMap == null) {
+                        // not there already
+                        acctMap = new AclAccountPolicyMapVO(acctId, policyId);
+                        _aclAccountPolicyMapDao.remove(acctMap.getId());
                     }
                 }
             }
         });
-        return role;
     }
-    */
 
     @DB
     @Override

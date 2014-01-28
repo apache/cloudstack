@@ -32,6 +32,7 @@ import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.api.command.AddAccountToAclGroupCmd;
 import org.apache.cloudstack.acl.api.command.AddAclPermissionToAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.AttachAclPolicyToAccountCmd;
 import org.apache.cloudstack.acl.api.command.AttachAclPolicyToAclGroupCmd;
 import org.apache.cloudstack.acl.api.command.CreateAclGroupCmd;
 import org.apache.cloudstack.acl.api.command.CreateAclPolicyCmd;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.acl.api.command.ListAclGroupsCmd;
 import org.apache.cloudstack.acl.api.command.ListAclPoliciesCmd;
 import org.apache.cloudstack.acl.api.command.RemoveAccountFromAclGroupCmd;
 import org.apache.cloudstack.acl.api.command.RemoveAclPermissionFromAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.RemoveAclPolicyFromAccountCmd;
 import org.apache.cloudstack.acl.api.command.RemoveAclPolicyFromAclGroupCmd;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPermissionResponse;
@@ -245,6 +247,20 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @DB
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ACCOUNT_POLICY_UPDATE, eventDescription = "Attaching policy to accounts")
+    public void attachAclPolicyToAccounts(final Long policyId, final List<Long> accountIds) {
+        _iamSrv.attachAclPolicyToAccounts(policyId, accountIds);
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ACCOUNT_POLICY_UPDATE, eventDescription = "Removing policy from accounts")
+    public void removeAclPolicyFromAccounts(final Long policyId, final List<Long> accountIds) {
+        _iamSrv.removeAclPolicyFromAccounts(policyId, accountIds);
+    }
+
+    @DB
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting acl permission to Acl Policy")
     public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm) {
         Class<?> cmdClass = _apiServer.getCmdClass(action);
@@ -439,6 +455,8 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         cmdList.add(ListAclGroupsCmd.class);
         cmdList.add(AddAccountToAclGroupCmd.class);
         cmdList.add(RemoveAccountFromAclGroupCmd.class);
+        cmdList.add(AttachAclPolicyToAccountCmd.class);
+        cmdList.add(RemoveAclPolicyFromAccountCmd.class);
         return cmdList;
     }
 }

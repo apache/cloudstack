@@ -459,6 +459,7 @@ public class EventTypes {
     public static final String EVENT_ACL_GROUP_DELETE = "ACLGROUP.DELETE";
     public static final String EVENT_ACL_GROUP_GRANT = "ACLGROUP.GRANT";
     public static final String EVENT_ACL_GROUP_REVOKE = "ACLGROUP.REVOKE";
+    public static final String EVENT_ACL_ACCOUNT_POLICY_UPDATE = "ACLACCOUNTPOLICY.UPDATE";
 
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";

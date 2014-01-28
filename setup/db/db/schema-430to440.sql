@@ -471,7 +471,7 @@ CREATE TABLE `cloud`.`acl_group_account_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 
-CREATE TABLE `acl_policy` (
+CREATE TABLE `cloud`.`acl_policy` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
@@ -487,7 +487,7 @@ CREATE TABLE `acl_policy` (
   KEY `i_acl_policy__removed` (`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `acl_group_policy_map` (
+CREATE TABLE `cloud`.`acl_group_policy_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
@@ -500,7 +500,20 @@ CREATE TABLE `acl_group_policy_map` (
   CONSTRAINT `fk_acl_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `acl_policy_permission` (
+CREATE TABLE `cloud`.`acl_account_policy_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the account',
+  `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the account',
+  PRIMARY KEY (`id`),
+  KEY `fk_acl_account_policy_map__account_id` (`account_id`),
+  KEY `fk_acl_account_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_acl_account_policy_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_account_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`acl_policy_permission` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `policy_id` bigint(20) unsigned NOT NULL,
   `action` varchar(100) NOT NULL,

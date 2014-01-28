@@ -32,6 +32,8 @@
     <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDaoImpl" />
     <bean id="AclGroupPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDaoImpl" />    
     <bean id="AclPolicyPermissionDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDaoImpl" />
+    <bean id="AclAccountPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclAccountPolicyMapDaoImpl" />    
+
         
     <bean id="IAMServiceImpl" class="org.apache.cloudstack.iam.server.IAMServiceImpl" />
 
