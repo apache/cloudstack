@@ -205,16 +205,7 @@
                 .addClass('reduced')
             ).removeClass('active maximized');
 
-            $toRemove.css(
-                _panel.initialState($container), {
-                    duration: 500,
-                    complete: function() {
-                        $(this).remove();
-
-                        if (complete) complete($toShow);
-                    }
-                }
-            );
+            $toRemove.remove();
             $toShow.show();
             $panel.css({
                 left: _panel.position($container, {
