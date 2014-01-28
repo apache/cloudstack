@@ -104,7 +104,7 @@
                 },
                 dataProvider: function(args) {
                     args.response.success({ data: [] });
-                    
+
                     ok(true, 'Data provider called');
                     start();
                 }
@@ -128,7 +128,7 @@
                             { fieldA: 'FieldDataA', fieldB: 'FieldDataB' }
                         ]
                     });
-                    
+
                     start();
                 }
             }
@@ -146,7 +146,7 @@
             { fieldA: 'FieldDataA2', fieldB: 'FieldDataB2' },
             { fieldA: 'FieldDataA3', fieldB: 'FieldDataB3' }
         ];
-        
+
         var $listView = listView({
             listView: {
                 fields: {
@@ -157,7 +157,7 @@
                     args.response.success({
                         data: testData
                     });
-                    
+
                     start();
                 }
             }
@@ -169,9 +169,37 @@
             var $tr = $listView.find('table.body tbody tr').filter(function() {
                 return $(this).index() === index;
             });
-            
+
             equal($tr.find('td.fieldA > span').html(), 'FieldDataA' + (index + 1), 'FieldDataA' + (index + 1) + ' present');
             equal($tr.find('td.fieldB > span').html(), 'FieldDataB' + (index + 1), 'FieldDataB' + (index + 1) + ' present');
         });
+    });
+
+    test('Field pre-filter', function() {
+        var $listView = listView({
+            listView: {
+                fields: {
+                    fieldA: { label: 'TestFieldA' },
+                    fieldB: { label: 'TestFieldB' },
+                    fieldHidden: { label: 'TestFieldHidden' }
+                },
+                preFilter: function(args) {
+                    return ['fieldHidden'];
+                },
+                dataProvider: function(args) {
+                    args.response.success({
+                        data: [
+                            { fieldA: 'FieldDataA', fieldB: 'FieldDataB', fieldHidden: 'FieldDataHidden' }
+                        ]
+                    });
+
+                    start();
+                }
+            }
+        });
+
+        equal($listView.find('table tr th').size(), 2, 'Correct number of header columns present');
+        equal($listView.find('table.body tbody tr td').size(), 2, 'Correct number of data body columns present');
+        ok(!$listView.find('table.body tbody td.fieldHidden').size(), 'Hidden field not present');
     });
 }());
