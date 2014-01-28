@@ -427,8 +427,8 @@ public class ApiDispatcher {
                         }
                     } else {
                         DateFormat format = BaseCmd.INPUT_FORMAT;
-                        format.setLenient(false);
                         synchronized (format) {
+                        format.setLenient(false);
                             field.set(cmdObj, format.parse(paramObj.toString()));
                         }
                     }
