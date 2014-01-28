@@ -1252,6 +1252,10 @@ start() {
   patch_log4j
   parse_cmd_line
   change_password
+  if [ "$hyp" == "hyperv" ]; then
+    # eject the systemvm.iso
+      eject
+  fi
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
