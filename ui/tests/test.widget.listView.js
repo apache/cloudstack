@@ -202,4 +202,44 @@
         equal($listView.find('table.body tbody tr td').size(), 2, 'Correct number of data body columns present');
         ok(!$listView.find('table.body tbody td.fieldHidden').size(), 'Hidden field not present');
     });
+
+    test('Filter dropdown', function() {
+        var $listView = listView({
+            listView: {
+                fields: {
+                    state: { label: 'State' }
+                },
+                filters: {
+                    on: { label: 'FilterOnLabel' },
+                    off: { label: 'FilterOffLabel' }
+                },
+                dataProvider: function(args) {
+                    var filterBy = args.filterBy.kind;
+                    var data = filterBy === 'on' ? [{ state: 'on' }] : [{ state: 'off' }];
+
+                    args.response.success({
+                        data: data
+                    });
+
+                    start();
+                }
+            }
+        });
+        
+        var $filters = $listView.find('.filters select');
+
+        var testFilterDropdownContent = function() {
+            equal($filters.find('option').size(), 2, 'Correct # of filters present');
+            equal($filters.find('option:first').html(), 'FilterOnLabel', 'Filter on label present');
+            equal($filters.find('option:last').html(), 'FilterOffLabel', 'Filter off label present');
+        };
+
+        testFilterDropdownContent();
+        equal($filters.find('option').val(), 'on', 'Correct default filter active');
+        equal($listView.find('tbody td.state span').html(), 'on', '"on" data item visible');
+        ok($filters.val('off').trigger('change'), 'Change filter to "off"');
+        equal($listView.find('tbody td.state span').html(), 'off', '"off" data item visible');
+        equal($filters.val(), 'off', 'Correct filter active');
+        testFilterDropdownContent();
+    });
 }());
