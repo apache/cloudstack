@@ -151,6 +151,7 @@ class TestPublicIP(cloudstackTestCase):
                     )
 
         ip_address.delete(self.apiclient)
+        time.sleep(30)
 
         # Validate the following:
         # 1.listPublicIpAddresses should no more return the released address
@@ -159,10 +160,15 @@ class TestPublicIP(cloudstackTestCase):
                                               id=ip_address.ipaddress.id
                                               )
         self.assertEqual(
-                    list_pub_ip_addr_resp,
-                    None,
-                    "Check if disassociated IP Address is no longer available"
-                    )
+                            isinstance(list_pub_ip_addr_resp, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        self.assertEqual(
+                            len(list_pub_ip_addr_resp),
+                            0,
+                            "Check if the list public ip api response is not zero"
+                            )
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
@@ -369,22 +375,27 @@ class TestPortForwarding(cloudstackTestCase):
                                     ))
 
             self.virtual_machine.get_ssh_client(src_nat_ip_addr.ipaddress)
-
+            vm_response = VirtualMachine.list(
+                                           self.apiclient,
+                                           id=self.virtual_machine.id
+                                           )
+            if vm_response[0].state != 'Running':
+                self.fail("State of VM : %s is not found to be Running" % str(self.virtual_machine.ipaddress))
+ 
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
                       (self.virtual_machine.ipaddress, e)
                       )
 
-        nat_rule.delete(self.apiclient)
-
         try:
+            nat_rule.delete(self.apiclient)
             list_nat_rule_response = list_nat_rules(
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
         except CloudstackAPIException:
-            self.debug("Nat Rule is deleted")
+            self.fail("Nat Rule Deletion or Listing Failed")
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
@@ -396,9 +407,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
-                                            self.virtual_machine.password,
-                                            retries=2,
-                                            delay=0
+                                            self.virtual_machine.password
                                             )
         return
 
