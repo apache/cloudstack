@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import java.util.HashMap;
-
 import com.cloud.agent.api.Command;
+
+import java.util.HashMap;
 
 public abstract class NetworkElementCommand extends Command {
     HashMap<String, String> accessDetails = new HashMap<String, String>(0);
@@ -34,6 +34,8 @@ public abstract class NetworkElementCommand extends Command {
     public static final String GUEST_BRIDGE = "guest.bridge";
     public static final String VPC_PRIVATE_GATEWAY = "vpc.gateway.private";
     public static final String FIREWALL_EGRESS_DEFAULT = "firewall.egress.default";
+
+    private String routerAccessIp;
 
     protected NetworkElementCommand() {
         super();
@@ -52,4 +54,11 @@ public abstract class NetworkElementCommand extends Command {
         return false;
     }
 
+    public String getRouterAccessIp() {
+        return routerAccessIp;
+    }
+
+    public void setRouterAccessIp(String routerAccessIp) {
+        this.routerAccessIp = routerAccessIp;
+    }
 }

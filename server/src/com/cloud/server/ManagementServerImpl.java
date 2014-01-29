@@ -19,8 +19,6 @@ package com.cloud.server;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLDecoder;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -200,6 +198,7 @@ import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.GetVMUserDataCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -756,9 +755,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     ClusterManager _clusterMgr;
-    private String _hashKey = null;
-    private String _encryptionKey = null;
-    private String _encryptionIV = null;
 
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -859,6 +855,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public DetailVO findDetail(long hostId, String name) {
+        return _detailsDao.findDetail(hostId, name);
+    }
+
+    @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();
     }
@@ -940,15 +941,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _eventDao.remove(event.getId());
         }
         return result;
-    }
-
-    private Date massageDate(Date date, int hourOfDay, int minute, int second) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        cal.set(Calendar.MINUTE, minute);
-        cal.set(Calendar.SECOND, second);
-        return cal.getTime();
     }
 
     @Override
@@ -2868,6 +2860,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GenerateAlertCmd.class);
         cmdList.add(ListOvsElementsCmd.class);
         cmdList.add(ConfigureOvsElementCmd.class);
+        cmdList.add(GetVMUserDataCmd.class);
         return cmdList;
     }
 
@@ -3389,65 +3382,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return Arrays.asList(hypervisors);
         }
         return result;
-    }
-
-    @Override
-    public String getHashKey() {
-        // although we may have race conditioning here, database transaction serialization should
-        // give us the same key
-        if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), getBase64EncodedRandomKey(128), Config.HashKey.getDescription());
-        }
-        return _hashKey;
-    }
-
-    @Override
-    public String getEncryptionKey() {
-        if (_encryptionKey == null) {
-            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), Config.EncryptionKey.getCategory(), getBase64EncodedRandomKey(128),
-                    Config.EncryptionKey.getDescription());
-        }
-        return _encryptionKey;
-    }
-
-    @Override
-    public String getEncryptionIV() {
-        if (_encryptionIV == null) {
-            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), Config.EncryptionIV.getCategory(), getBase64EncodedRandomKey(128),
-                    Config.EncryptionIV.getDescription());
-        }
-        return _encryptionIV;
-    }
-
-    @Override
-    @DB
-    public void resetEncryptionKeyIV() {
-
-        SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
-        sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.done();
-
-        SearchCriteria<ConfigurationVO> sc = sb.create();
-        sc.setParameters("name1", Config.EncryptionKey.key());
-        sc.setParameters("name2", Config.EncryptionIV.key());
-
-        _configDao.expunge(sc);
-        _encryptionKey = null;
-        _encryptionIV = null;
-    }
-
-    private static String getBase64EncodedRandomKey(int nBits) {
-        SecureRandom random;
-        try {
-            random = SecureRandom.getInstance("SHA1PRNG");
-            byte[] keyBytes = new byte[nBits / 8];
-            random.nextBytes(keyBytes);
-            return Base64.encodeBase64URLSafeString(keyBytes);
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unhandled exception: ", e);
-        }
-        return null;
     }
 
     @Override

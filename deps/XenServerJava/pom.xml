@@ -40,9 +40,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${cs.checkstyle.version}</version>
         <executions>
           <execution>
+	    <id>cloudstack-checkstyle</id>
             <phase>none</phase>
           </execution>
         </executions>

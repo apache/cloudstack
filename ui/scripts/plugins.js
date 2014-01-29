@@ -98,15 +98,37 @@
                     }
 
                     // Execute module
-                    cloudStack[type][id](
-                        $.extend(true, {}, cloudStack.pluginAPI, {
-                            pluginAPI: {
-                                extend: function(api) {
-                                    cloudStack.pluginAPI[id] = api;
+                    var target = cloudStack[type][id];
+
+                    if ($.isArray(target)) { // Load additional JS includes
+                        pluginTotal += target[0].length;
+                        require(
+                            $(target[0]).map(function(index, val) {
+                                return basePath + val;
+                            }).toArray(),
+                            function() {
+                                loadedPlugins = loadedPlugins + target[0].length;
+                                target[1](
+                                    $.extend(true, {}, cloudStack.pluginAPI, {
+                                        pluginAPI: {
+                                            extend: function(api) {
+                                                cloudStack.pluginAPI[id] = api;
+                                            }
+                                        }
+                                    })
+                                );
+                            });
+                    } else {
+                        target(
+                            $.extend(true, {}, cloudStack.pluginAPI, {
+                                pluginAPI: {
+                                    extend: function(api) {
+                                        cloudStack.pluginAPI[id] = api;
+                                    }
                                 }
-                            }
-                        })
-                    );
+                            })
+                        );
+                    }
 
                     if (pluginDictionary) {
                         // Callback for extending the dictionary with new entries
@@ -133,13 +155,16 @@
 
                     loadedPlugins = loadedPlugins + 1;
 
-                    if (loadedPlugins === pluginTotal) {
-                        $(window).trigger('cloudStack.pluginReady');
-                    }
-
                     loadCSS(css);
                 });
             }
         );
     });
+
+    var loadTimer = setInterval(function() {
+        if (loadedPlugins === pluginTotal) {
+            clearInterval(loadTimer);
+            $(window).trigger('cloudStack.pluginReady');
+        }
+    }, 100);
 }(jQuery, cloudStack, require));

@@ -60,7 +60,7 @@ done
 vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
-rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
+rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
 mkdir dist
 
 # Export for Xen
@@ -92,14 +92,18 @@ echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2
 vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-vmware.vmdk --format VMDK
 bzip2 $appliance-$build_date-$branch-vmware.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.vmdk.bz2"
-vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
+vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ovf
+mv $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig
+java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware.ovf
+tar -cf $appliance-$build_date-$branch-vmware.ova $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware-disk1.vmdk
+rm -f $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware-disk1.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
 # Export for HyperV
 vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
-# HyperV doesn't support import a zipped image from S3
-#bzip2 $appliance-$build_date-$branch-hyperv.vhd
+# HyperV doesn't support import a zipped image from S3, but we create a zipped version to save space on the jenkins box
+zip $appliance-$build_date-$branch-hyperv.vhd.zip $appliance-$build_date-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd"
 
-mv *-hyperv.vhd *.bz2 *.ova dist/
+mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
 

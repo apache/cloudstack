@@ -54,14 +54,29 @@ public class ConsoleProxyHttpHandlerHelper {
             // make sure we get information from token only
             guardUserInput(map);
             if (param != null) {
-                if (param.getClientHostAddress() != null)
+                if (param.getClientHostAddress() != null) {
+                    s_logger.debug("decode token. host: " + param.getClientHostAddress());
                     map.put("host", param.getClientHostAddress());
-                if (param.getClientHostPort() != 0)
+                } else {
+                    s_logger.error("decode token. host info is not found!");
+                }
+                if (param.getClientHostPort() != 0) {
+                    s_logger.debug("decode token. port: " + param.getClientHostPort());
                     map.put("port", String.valueOf(param.getClientHostPort()));
-                if (param.getClientTag() != null)
+                } else {
+                    s_logger.error("decode token. port info is not found!");
+                }
+                if (param.getClientTag() != null) {
+                    s_logger.debug("decode token. tag: " + param.getClientTag());
                     map.put("tag", param.getClientTag());
-                if (param.getClientHostPassword() != null)
+                } else {
+                    s_logger.error("decode token. tag info is not found!");
+                }
+                if (param.getClientHostPassword() != null) {
                     map.put("sid", param.getClientHostPassword());
+                } else {
+                    s_logger.error("decode token. sid info is not found!");
+                }
                 if (param.getClientTunnelUrl() != null)
                     map.put("consoleurl", param.getClientTunnelUrl());
                 if (param.getClientTunnelSession() != null)
@@ -70,6 +85,14 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("ticket", param.getTicket());
                 if (param.getLocale() != null)
                     map.put("locale", param.getLocale());
+                if (param.getHypervHost() != null)
+                    map.put("hypervHost", param.getHypervHost());
+                if (param.getUsername() != null)
+                    map.put("username", param.getUsername());
+                if (param.getPassword() != null)
+                    map.put("password", param.getPassword());
+            } else {
+                s_logger.error("Unable to decode token");
             }
         } else {
             // we no longer accept information from parameter other than token
@@ -88,5 +111,8 @@ public class ConsoleProxyHttpHandlerHelper {
         map.remove("sessionref");
         map.remove("ticket");
         map.remove("locale");
+        map.remove("hypervHost");
+        map.remove("username");
+        map.remove("password");
     }
 }

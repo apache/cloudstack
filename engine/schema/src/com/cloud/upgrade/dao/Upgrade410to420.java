@@ -27,11 +27,9 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -83,7 +81,6 @@ public class Upgrade410to420 implements DbUpgrade {
         persistVswitchConfiguration(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
-        updateSystemVmTemplates(conn);
         updateOverCommitRatioClusterDetails(conn);
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
@@ -632,173 +629,6 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
 
-    }
-
-    private void updateSystemVmTemplates(Connection conn) {
-        // TODO: system vm template migration after storage refactoring
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        s_logger.debug("Updating System Vm template IDs");
-        try {
-            //Get all hypervisors in use
-            Set<HypervisorType> hypervisorsListInUse = new HashSet<HypervisorType>();
-            try {
-                pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
-                rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    switch (HypervisorType.getType(rs.getString(1))) {
-                        case XenServer:
-                            hypervisorsListInUse.add(HypervisorType.XenServer);
-                            break;
-                        case KVM:
-                            hypervisorsListInUse.add(HypervisorType.KVM);
-                            break;
-                        case VMware:
-                            hypervisorsListInUse.add(HypervisorType.VMware);
-                            break;
-                        case Hyperv:
-                            hypervisorsListInUse.add(HypervisorType.Hyperv);
-                            break;
-                        case LXC:
-                            hypervisorsListInUse.add(HypervisorType.LXC);
-                            break;
-                    }
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while listing hypervisors in use", e);
-            }
-
-            Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>() {
-                {
-                    put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
-                    put(HypervisorType.VMware, "systemvm-vmware-4.2");
-                    put(HypervisorType.KVM, "systemvm-kvm-4.2");
-                    put(HypervisorType.LXC, "systemvm-lxc-4.2");
-                    put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
-                }
-            };
-
-            Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>() {
-                {
-                    put(HypervisorType.XenServer, "router.template.xen");
-                    put(HypervisorType.VMware, "router.template.vmware");
-                    put(HypervisorType.KVM, "router.template.kvm");
-                    put(HypervisorType.LXC, "router.template.lxc");
-                    put(HypervisorType.Hyperv, "router.template.hyperv");
-                }
-            };
-
-            Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>() {
-                {
-                    put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2");
-                    put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
-                    put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
-                    put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
-                    put(HypervisorType.Hyperv, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
-                }
-            };
-
-            Map<HypervisorType, String> newTemplateChecksum = new HashMap<HypervisorType, String>() {
-                {
-                    put(HypervisorType.XenServer, "fb1b6e032a160d86f2c28feb5add6d83");
-                    put(HypervisorType.VMware, "8fde62b1089e5844a9cd3b9b953f9596");
-                    put(HypervisorType.KVM, "6cea42b2633841648040becb588bd8f0");
-                    put(HypervisorType.LXC, "2755de1f9ef2ce4d6f2bee2efbb4da92");
-                    put(HypervisorType.Hyperv, "fb1b6e032a160d86f2c28feb5add6d83");
-                }
-            };
-
-            for (Map.Entry<HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
-                s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
-                try {
-                    //Get 4.2.0 system Vm template Id for corresponding hypervisor
-                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");
-                    pstmt.setString(1, hypervisorAndTemplateName.getValue());
-                    rs = pstmt.executeQuery();
-                    if (rs.next()) {
-                        long templateId = rs.getLong(1);
-                        rs.close();
-                        pstmt.close();
-                        // Mark the old system templates as removed
-                        pstmt =
-                            conn.prepareStatement("UPDATE `cloud`.`vm_template` SET removed = now() WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null");
-                        pstmt.setString(1, hypervisorAndTemplateName.getKey().toString());
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                        // change template type to SYSTEM
-                        pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                        pstmt.setLong(1, templateId);
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                        // update templete ID of system Vms
-                        pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ?");
-                        pstmt.setLong(1, templateId);
-                        pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                        // Change value of global configuration parameter router.template.* for the corresponding hypervisor
-                        pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");
-                        pstmt.setString(1, hypervisorAndTemplateName.getValue());
-                        pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
-                        pstmt.executeUpdate();
-                        pstmt.close();
-                    } else {
-                        if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
-                            throw new CloudRuntimeException("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
-                        } else {
-                            s_logger.warn("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() +
-                                " hypervisor is not used, so not failing upgrade");
-                            // Update the latest template URLs for corresponding hypervisor
-                            pstmt =
-                                conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");
-                            pstmt.setString(1, newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
-                            pstmt.setString(2, newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
-                            pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
-                            pstmt.executeUpdate();
-                            pstmt.close();
-                        }
-                    }
-                } catch (SQLException e) {
-                    throw new CloudRuntimeException("Error while updating " + hypervisorAndTemplateName.getKey() + " systemVm template", e);
-                }
-            }
-            try {
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` set dynamically_scalable = 1 where name = ? and type = 'SYSTEM'");
-                pstmt.setString(1, NewTemplateNameList.get(HypervisorType.VMware));
-                pstmt.executeUpdate();
-                pstmt.close();
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating dynamically_scalable flag to 1 for SYSTEM template systemvm-vmware-4.2");
-            }
-            s_logger.debug("Updating System Vm Template IDs Complete");
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
-        }
-        /*
-        pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-        }
-         */
     }
 
     //KVM snapshot flag: only turn on if Customers is using snapshot;

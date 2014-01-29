@@ -384,8 +384,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
         resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().getOrdinal()).toString());
+
         if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
-            resourceLimitResponse.setMax((long)Math.ceil(limit.getMax() / ResourceType.bytesToGiB));
+            resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
         } else {
             resourceLimitResponse.setMax(limit.getMax());
         }
@@ -1804,8 +1805,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     public SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules) {
         SecurityGroupResponse response = new SecurityGroupResponse();
         Map<Long, Account> securiytGroupAccounts = new HashMap<Long, Account>();
-        Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
-        Map<Long, Account> allowedSecuriytGroupAccounts = new HashMap<Long, Account>();
 
         if ((securityRules != null) && !securityRules.isEmpty()) {
             SecurityGroupJoinVO securityGroup = ApiDBUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
@@ -3008,11 +3007,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCidr(result.getCidr());
 
         StaticRoute.State state = result.getState();
-        String stateToSet = state.toString();
-        if (state.equals(FirewallRule.State.Revoke)) {
-            stateToSet = "Deleting";
+        if (state.equals(StaticRoute.State.Revoke)) {
+            state = StaticRoute.State.Deleting;
         }
-        response.setState(stateToSet);
+        response.setState(state.toString());
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
 
@@ -3501,11 +3499,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
         ruleResponse.setInstancePort(lb.getDefaultPortStart());
         ruleResponse.setSourcePort(lb.getSourcePortStart());
-        String stateToSet = lb.getState().toString();
+        FirewallRule.State stateToSet = lb.getState();
         if (stateToSet.equals(FirewallRule.State.Revoke)) {
-            stateToSet = "Deleting";
+            stateToSet = FirewallRule.State.Deleting;
         }
-        ruleResponse.setState(stateToSet);
+        ruleResponse.setState(stateToSet.toString());
         ruleResponse.setObjectName("loadbalancerrule");
         ruleResponses.add(ruleResponse);
         lbResponse.setLbRules(ruleResponses);

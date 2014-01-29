@@ -61,7 +61,7 @@ namespace HypervResource
             get
             {
                 string uncPath = null;
-                if (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem"))
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem")))
                 {
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
@@ -73,8 +73,13 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+                string user = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    user = System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+                }
+                return user;
             }
         }
 
@@ -82,8 +87,13 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+                string password = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    password = System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+                }
+                return password;
             }
         }
 
@@ -91,12 +101,17 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
+                string domain = null;
+                if (uri != null)
                 {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    if (queryDictionary["domain"] != null)
+                    {
+                        domain = System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                    }
+                    else domain = uri.Host;
                 }
-                else return uri.Host;
+                return domain;
             }
         }
 
@@ -239,7 +254,7 @@ namespace HypervResource
                 // Assert
                 if (result.dataStore == null || (result.primaryDataStore == null && result.nfsDataStore == null))
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volumeObjectTOJson.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volumeObjectTOJson.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -277,7 +292,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volInfo.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volInfo.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -675,6 +690,20 @@ namespace HypervResource
         public String entityType;
     }
 
+    public class NicDetails
+    {
+        [JsonProperty("macAddress")]
+        public string macaddress;
+        [JsonProperty("vlanid")]
+        public int vlanid;
+        public NicDetails() { }
+        public NicDetails(String macaddress, int vlanid)
+        {
+            this.macaddress = macaddress;
+            this.vlanid = vlanid;
+        }
+    }
+
     /// <summary>
     /// Fully qualified named for a number of types used in CloudStack.  Used to specify the intended type for JSON serialised objects. 
     /// </summary>
@@ -723,6 +752,10 @@ namespace HypervResource
         public const string GetVmDiskStatsCommand = "com.cloud.agent.api.GetVmDiskStatsCommand";
         public const string GetVmStatsAnswer = "com.cloud.agent.api.GetVmStatsAnswer";
         public const string GetVmStatsCommand = "com.cloud.agent.api.GetVmStatsCommand";
+        public const string GetVmConfigCommand = "com.cloud.agent.api.GetVmConfigCommand";
+        public const string GetVmConfigAnswer = "com.cloud.agent.api.GetVmConfigAnswer";
+        public const string ModifyVmNicConfigCommand = "com.cloud.agent.api.ModifyVmNicConfigCommand";
+        public const string ModifyVmNicConfigAnswer = "com.cloud.agent.api.ModifyVmNicConfigAnswer";
         public const string GetVncPortAnswer = "com.cloud.agent.api.GetVncPortAnswer";
         public const string GetVncPortCommand = "com.cloud.agent.api.GetVncPortCommand";
         public const string HostStatsEntry = "com.cloud.agent.api.HostStatsEntry";

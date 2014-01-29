@@ -41,12 +41,13 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
+
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -832,7 +833,7 @@ public class NetUtils {
             if (cidrALong[1] < cidrBLong[1]) {
                 //this implies cidrA is super set of cidrB
                 return supersetOrSubset.isSuperset;
-            } else if (cidrALong[1] == cidrBLong[1]) {
+            } else if (cidrALong[1].equals(cidrBLong[1])) {
                 //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }
@@ -1209,7 +1210,7 @@ public class NetUtils {
 
     public static boolean isValidIpv6(String ip) {
         try {
-            IPv6Address address = IPv6Address.fromString(ip);
+            IPv6Address.fromString(ip);
         } catch (IllegalArgumentException ex) {
             return false;
         }
@@ -1218,7 +1219,7 @@ public class NetUtils {
 
     public static boolean isValidIp6Cidr(String ip6Cidr) {
         try {
-            IPv6Network network = IPv6Network.fromString(ip6Cidr);
+            IPv6Network.fromString(ip6Cidr);
         } catch (IllegalArgumentException ex) {
             return false;
         }

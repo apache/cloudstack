@@ -28,4 +28,5 @@
                       >
     <bean id="keystoreManagerImpl" class="org.apache.cloudstack.framework.security.keystore.KeystoreManagerImpl" />
     <bean id="keystoreDaoImpl" class="org.apache.cloudstack.framework.security.keystore.KeystoreDaoImpl" />
+    <bean id="keysManagerImpl" class="org.apache.cloudstack.framework.security.keys.KeysManagerImpl"/>
 </beans>

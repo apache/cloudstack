@@ -27,7 +27,11 @@ public class ConsoleProxyClientParam {
     private String clientTunnelUrl;
     private String clientTunnelSession;
 
+    private String hypervHost;
+
     private String ajaxSessionId;
+    private String username;
+    private String password;
 
     public ConsoleProxyClientParam() {
         clientHostPort = 0;
@@ -89,20 +93,20 @@ public class ConsoleProxyClientParam {
         this.clientTunnelSession = clientTunnelSession;
     }
 
-    public String getLocale() {
-        return this.locale;
-    }
-
-    public void setLocale(String locale) {
-        this.locale = locale;
-    }
-
     public String getAjaxSessionId() {
-        return this.ajaxSessionId;
+        return ajaxSessionId;
     }
 
     public void setAjaxSessionId(String ajaxSessionId) {
         this.ajaxSessionId = ajaxSessionId;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 
     public String getClientMapKey() {
@@ -110,5 +114,30 @@ public class ConsoleProxyClientParam {
             return clientTag;
 
         return clientHostAddress + ":" + clientHostPort;
+    }
+
+    public void setHypervHost(String host) {
+        hypervHost = host;
+    }
+
+    public String getHypervHost() {
+        return hypervHost;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

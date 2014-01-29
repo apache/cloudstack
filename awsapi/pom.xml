@@ -142,7 +142,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -162,7 +162,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -178,7 +178,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -194,7 +194,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -210,7 +210,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.opensaml</groupId>
-          <artifactId>opensaml</artifactId>
+          <artifactId>opensaml1</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -223,7 +223,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -271,8 +270,6 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk16</artifactId>
-      <!--  TODO: do we need this explicit version override? -->
-      <version>1.45</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -320,9 +317,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${cs.checkstyle.version}</version>
         <executions>
           <execution>
+            <id>cloudstack-checkstyle</id>
             <phase>none</phase>
           </execution>
         </executions>

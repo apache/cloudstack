@@ -45,7 +45,16 @@
                     quiescevm: {
                         label: 'label.quiesce.vm',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: false,
+                        isHidden: function(args) {
+                            if (args.context.instances[0].hypervisor !== 'VMware') {
+                                return true;
+                            }
+
+                            args.form.fields.quiescevm.isChecked = true;
+                            
+                            return false;
+                        }
                     }
                 }
             },
@@ -355,9 +364,9 @@
                     label: 'label.affinity.groups'
                 }, {
                     path: '_zone.hosts',
-                    label: 'label.hosts',
+                    label: 'label.host',
                     preFilter: function(args) {
-                        return isAdmin();
+                        return isAdmin() && args.context.instances[0].hostid;
                     },
                     updateContext: function(args) {
                         var instance = args.context.instances[0];
@@ -1525,17 +1534,17 @@
                         	                        	
                         	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuSpeed': args.data.cpuSpeed 
+                                	'details[0].cpuSpeed': args.data.cpuSpeed 
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuNumber': args.data.cpuNumber
+                                	'details[0].cpuNumber': args.data.cpuNumber
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].memory': args.data.memory
+                                	'details[0].memory': args.data.memory
                                 });
                             }                        	
                         	
@@ -1789,6 +1798,16 @@
                             serviceofferingname: {
                                 label: 'label.compute.offering'
                             },
+                            cpunumber: {
+                            	label: 'label.num.cpu.cores'
+                            },
+                            cpuspeed: {
+                            	label: 'label.cpu.mhz'
+                            },
+                            memory: {
+                            	label: 'label.memory.mb'
+                            },
+                            
                             haenable: {
                                 label: 'label.ha.enabled',
                                 converter: cloudStack.converters.toBooleanText

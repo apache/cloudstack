@@ -19,6 +19,7 @@ package com.cloud.api.query;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -360,7 +361,7 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createTemplateResponse(TemplateJoinVO... templates) {
-        Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
+        LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {

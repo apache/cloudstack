@@ -738,14 +738,6 @@ public class ApiDBUtils {
         return s_vmDao.findById(vmId);
     }
 
-    public static long getMemoryOrCpuCapacitybyHost(Long hostId, short capacityType) {
-        // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
-        // so if this Utils class can have some kind of config rather than a static initializer (maybe from
-        // management server instantiation?) then maybe the management server method can be moved entirely
-        // into this utils class.
-        return s_ms.getMemoryOrCpuCapacityByHost(hostId, capacityType);
-    }
-
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
         // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from

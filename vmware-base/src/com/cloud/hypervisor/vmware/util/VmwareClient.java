@@ -27,8 +27,8 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.handler.MessageContext;
 
 import org.apache.log4j.Logger;
 
@@ -144,6 +144,7 @@ public class VmwareClient {
         ServiceContent serviceContent = vimPort.retrieveServiceContent(svcInstRef);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
+        @SuppressWarnings("unchecked")
         Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
         List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
@@ -256,7 +257,8 @@ public class VmwareClient {
      * @throws Exception
      *             in case of error.
      */
-    public Object getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
+    @SuppressWarnings("unchecked")
+    public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
         List<String> props = new ArrayList<String>();
         props.add(propertyName);
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
@@ -284,7 +286,7 @@ public class VmwareClient {
                 }
             }
         }
-        return propertyValue;
+        return (T)propertyValue;
     }
 
     private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws Exception {
@@ -359,7 +361,7 @@ public class VmwareClient {
      * @throws InvalidCollectorVersionFaultMsg
      */
     private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
-        RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];

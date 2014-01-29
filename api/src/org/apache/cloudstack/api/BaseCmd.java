@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.domain.Domain;
@@ -152,8 +153,6 @@ public abstract class BaseCmd {
     public DomainService _domainService;
     @Inject
     public ResourceLimitService _resourceLimitService;
-    @Inject
-    public IdentityService _identityService;
     @Inject
     public StorageNetworkService _storageNetworkService;
     @Inject
@@ -358,11 +357,11 @@ public abstract class BaseCmd {
     }
 
     public void setFullUrlParams(Map<String, String> map) {
-        this.fullUrlParams = map;
+        fullUrlParams = map;
     }
 
     public Map<String, String> getFullUrlParams() {
-        return this.fullUrlParams;
+        return fullUrlParams;
     }
 
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {

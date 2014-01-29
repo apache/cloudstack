@@ -32,9 +32,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -43,6 +43,7 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -52,7 +53,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
@@ -152,6 +152,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject
     protected ConfigurationManager _configMgr;
 
+
     public ConfigurationServerImpl() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
@@ -240,14 +241,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             if (hostIpAdr != null) {
                 Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
                 if (devel) {
-                    String value = _configDao.getValue(ClusterManager.ManagementHostIPAdr.key());
+                    String value = _configDao.getValue(ApiServiceConfiguration.ManagementHostIPAdr.key());
                     if (value != null && !value.equals("localhost")) {
                         needUpdateHostIp = false;
                     }
                 }
 
                 if (needUpdateHostIp) {
-                    _configDao.update(ClusterManager.ManagementHostIPAdr.key(), ClusterManager.ManagementHostIPAdr.category(), hostIpAdr);
+                    _configDepot.createOrUpdateConfigObject(ApiServiceConfiguration.class.getSimpleName(), ApiServiceConfiguration.ManagementHostIPAdr, hostIpAdr);
                     s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
                 }
             }

@@ -425,7 +425,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        eventId = eventId == null ? 0 : eventId;
+        eventId = (eventId == null ? 0 : eventId);
 
         if (!_accountMgr.isRootAdmin(caller.getType()) && _disableExtraction) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
@@ -1785,7 +1785,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
+        if (Long.valueOf(1).equals(id)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
             ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;

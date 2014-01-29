@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,16 +95,6 @@ public class VmwareCleanupMaid {
 
     public long getCheckPoint() {
         return _checkPoint;
-    }
-
-    private synchronized static void addLeftOverVM(VmwareCleanupMaid cleanupMaid) {
-        List<VmwareCleanupMaid> l = s_leftoverDummyVMs.get(cleanupMaid.getVCenterServer());
-        if (l == null) {
-            l = new ArrayList<VmwareCleanupMaid>();
-            s_leftoverDummyVMs.put(cleanupMaid.getVCenterServer(), l);
-        }
-
-        l.add(cleanupMaid);
     }
 
     public synchronized static void gcLeftOverVMs(VmwareContext context) {

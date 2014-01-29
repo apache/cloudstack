@@ -307,7 +307,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                         }
                     }
                     //didn't find in upper tree
-                    if (zoneDomainRecord.getPath().contains(accountDomainRecord.getPath())) {
+                    if (zoneDomainRecord != null &&
+                            accountDomainRecord != null &&
+                            zoneDomainRecord.getPath().contains(accountDomainRecord.getPath())) {
                         return true;
                     }
                 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -181,7 +182,7 @@ public class ActionEventUtils {
         }
 
         org.apache.cloudstack.framework.events.Event event =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), null);
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Account account = s_accountDao.findById(accountId);
@@ -233,6 +234,8 @@ public class ActionEventUtils {
         else if (eventType.startsWith("USER."))
         {
             return User.class;
+        }else if (eventType.startsWith("VM.")){
+            return VirtualMachine.class;
         }
 
         return null;

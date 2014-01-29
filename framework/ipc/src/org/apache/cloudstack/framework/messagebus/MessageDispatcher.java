@@ -20,17 +20,24 @@ package org.apache.cloudstack.framework.messagebus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 public class MessageDispatcher implements MessageSubscriber {
-    private static Map<Class<?>, Method> s_handlerCache = new HashMap<Class<?>, Method>();
+    private static final Logger s_logger = Logger.getLogger(MessageDispatcher.class);
+
+    private static Map<Class<?>, List<Method>> s_handlerCache = new HashMap<Class<?>, List<Method>>();
 
     private static Map<Object, MessageDispatcher> s_targetMap = new HashMap<Object, MessageDispatcher>();
     private Object _targetObject;
 
     public MessageDispatcher(Object targetObject) {
         _targetObject = targetObject;
+        buildHandlerMethodCache(targetObject.getClass());
     }
 
     @Override
@@ -67,10 +74,13 @@ public class MessageDispatcher implements MessageSubscriber {
         try {
             handler.invoke(target, subject, senderAddress, args);
         } catch (IllegalArgumentException e) {
+            s_logger.error("Unexpected exception when calling " + target.getClass().getName() + "." + handler.getName(), e);
             throw new RuntimeException("IllegalArgumentException when invoking event handler for subject: " + subject);
         } catch (IllegalAccessException e) {
+            s_logger.error("Unexpected exception when calling " + target.getClass().getName() + "." + handler.getName(), e);
             throw new RuntimeException("IllegalAccessException when invoking event handler for subject: " + subject);
         } catch (InvocationTargetException e) {
+            s_logger.error("Unexpected exception when calling " + target.getClass().getName() + "." + handler.getName(), e);
             throw new RuntimeException("InvocationTargetException when invoking event handler for subject: " + subject);
         }
 
@@ -79,18 +89,18 @@ public class MessageDispatcher implements MessageSubscriber {
 
     public static Method resolveHandler(Class<?> handlerClz, String subject) {
         synchronized (s_handlerCache) {
-            Method handler = s_handlerCache.get(handlerClz);
-            if (handler != null)
-                return handler;
+            List<Method> handlerList = s_handlerCache.get(handlerClz);
+            if (handlerList != null) {
+                for (Method method : handlerList) {
+                    MessageHandler annotation = method.getAnnotation(MessageHandler.class);
+                    assert (annotation != null);
 
-            for (Method method : handlerClz.getMethods()) {
-                MessageHandler annotation = method.getAnnotation(MessageHandler.class);
-                if (annotation != null) {
                     if (match(annotation.topic(), subject)) {
-                        s_handlerCache.put(handlerClz, method);
                         return method;
                     }
                 }
+            } else {
+                s_logger.error("Handler class " + handlerClz.getName() + " is not registered");
             }
         }
 
@@ -99,5 +109,41 @@ public class MessageDispatcher implements MessageSubscriber {
 
     private static boolean match(String expression, String param) {
         return param.matches(expression);
+    }
+
+    private void buildHandlerMethodCache(Class<?> handlerClz) {
+        if (s_logger.isInfoEnabled())
+            s_logger.info("Build message handler cache for " + handlerClz.getName());
+
+        synchronized (s_handlerCache) {
+            List<Method> handlerList = s_handlerCache.get(handlerClz);
+            if (handlerList == null) {
+                handlerList = new ArrayList<Method>();
+                s_handlerCache.put(handlerClz, handlerList);
+
+                Class<?> clz = handlerClz;
+                while (clz != null && clz != Object.class) {
+                    for (Method method : clz.getDeclaredMethods()) {
+                        MessageHandler annotation = method.getAnnotation(MessageHandler.class);
+                        if (annotation != null) {
+                            // allow private member access via reflection
+                            method.setAccessible(true);
+                            handlerList.add(method);
+
+                            if (s_logger.isInfoEnabled())
+                                s_logger.info("Add message handler " + handlerClz.getName() + "." + method.getName() + " to cache");
+                        }
+                    }
+
+                    clz = clz.getSuperclass();
+                }
+            } else {
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("Message handler for class " + handlerClz.getName() + " is already in cache");
+            }
+        }
+
+        if (s_logger.isInfoEnabled())
+            s_logger.info("Done building message handler cache for " + handlerClz.getName());
     }
 }

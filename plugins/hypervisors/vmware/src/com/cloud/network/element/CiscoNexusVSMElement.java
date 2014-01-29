@@ -269,8 +269,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                 throw new CloudRuntimeException(msg);
             }
 
-            Transaction txn;
-
             // If VSM already exists and is mapped to a cluster, fail this operation.
             vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
             if (vsm != null) {

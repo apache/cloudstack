@@ -76,7 +76,7 @@ public class PerfManagerMO extends BaseMO {
     public List<PerfMetricId> queryAvailablePerfMetric(ManagedObjectReference morEntity, Calendar beginTime, Calendar endTime, Integer intervalId) throws Exception {
 
         return _context.getService().queryAvailablePerfMetric(_mor, morEntity, calendarToXMLGregorianCalendar(beginTime), calendarToXMLGregorianCalendar(endTime),
-            intervalId);
+                intervalId);
     }
 
     public PerfCompositeMetric queryPerfComposite(PerfQuerySpec spec) throws Exception {
@@ -114,10 +114,10 @@ public class PerfManagerMO extends BaseMO {
     }
 
     public List<PerfCounterInfo> getCounterInfo() throws Exception {
-        return (List<PerfCounterInfo>)_context.getVimClient().getDynamicProperty(_mor, "perfCounter");
+        return _context.getVimClient().getDynamicProperty(_mor, "perfCounter");
     }
 
     public List<PerfInterval> getIntervalInfo() throws Exception {
-        return (List<PerfInterval>)_context.getVimClient().getDynamicProperty(_mor, "historicalInterval");
+        return _context.getVimClient().getDynamicProperty(_mor, "historicalInterval");
     }
 }

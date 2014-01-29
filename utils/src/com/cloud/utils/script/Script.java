@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.utils.script;
 
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
+import org.apache.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,12 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
     private static final Logger s_logger = Logger.getLogger(Script.class);
@@ -60,6 +59,10 @@ public class Script implements Callable<String> {
     long _timeout;
     Process _process;
     Thread _thread;
+
+    public int getExitValue()  {
+        return _process.exitValue();
+    }
 
     public Script(String command, long timeout, Logger logger) {
         _command = new ArrayList<String>();

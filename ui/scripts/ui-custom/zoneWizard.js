@@ -723,7 +723,10 @@
                             }).html('VXLAN'),
                             $('<option>').attr({
                                 value: 'ODL'
-                            }).html('ODL')
+                            }).html('ODL'),
+                            $('<option>').attr({
+                                value: 'L3VPN'
+                            }).html('L3VPN')
                         )
                     )
                 );

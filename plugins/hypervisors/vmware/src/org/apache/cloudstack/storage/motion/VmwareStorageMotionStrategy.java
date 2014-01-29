@@ -99,7 +99,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         try {
             VMInstanceVO instance = instanceDao.findById(vmTo.getId());
             if (instance != null) {
-                if (srcHost.getClusterId() == destHost.getClusterId()) {
+                if (srcHost.getClusterId().equals(destHost.getClusterId())) {
                     answer = migrateVmWithVolumesWithinCluster(instance, vmTo, srcHost, destHost, volumeMap);
                 } else {
                     answer = migrateVmWithVolumesAcrossCluster(instance, vmTo, srcHost, destHost, volumeMap);
@@ -119,7 +119,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     }
 
     private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
-        throws AgentUnavailableException {
+            throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -157,7 +157,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     }
 
     private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
-        throws AgentUnavailableException {
+            throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {

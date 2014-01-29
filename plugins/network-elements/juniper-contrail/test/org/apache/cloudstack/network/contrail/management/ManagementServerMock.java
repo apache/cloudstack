@@ -327,17 +327,17 @@ public class ManagementServerMock {
             _znet = _networkService.getPhysicalNetwork(id);
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), "vlan", null, null, null, null, null, null);
             }
         } catch (InvalidParameterValueException e) {
             List<String> isolationMethods = new ArrayList<String>();
-            isolationMethods.add("GRE");
+            isolationMethods.add("L3VPN");
             _znet =
                 _networkService.createPhysicalNetwork(_zone.getId(), null, null, isolationMethods, BroadcastDomainRange.ZONE.toString(), _zone.getDomainId(), null,
                     "znet");
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), "vlan", null, null, null, null, null, null);
             }
         }
         if (_znet.getState() != PhysicalNetwork.State.Enabled) {
@@ -353,14 +353,14 @@ public class ManagementServerMock {
             }
         }
         if (!found) {
-            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(), null, null, null, null, null, null);
+            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(), "vlan", null, null, null, null, null, null);
         }
 
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
-            _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrail.getName(), null, null, null);
+            _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null, null);
         if (providers.second() == 0) {
-            s_logger.debug("Add " + Provider.JuniperContrail.getName() + " to network " + _znet.getName());
-            PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrail.getName(), null, null);
+            s_logger.debug("Add " + Provider.JuniperContrailRouter.getName() + " to network " + _znet.getName());
+            PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null);
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
         } else {
             PhysicalNetworkServiceProvider provider = providers.first().get(0);
@@ -372,7 +372,7 @@ public class ManagementServerMock {
         providers = _networkService.listNetworkServiceProviders(_znet.getId(), null, PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
         s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
         for (PhysicalNetworkServiceProvider provider : providers.first()) {
-            if (provider.getProviderName().equals(Provider.JuniperContrail.getName())) {
+            if (provider.getProviderName().equals(Provider.JuniperContrailRouter.getName())) {
                 continue;
             }
             s_logger.debug("Disabling " + provider.getProviderName());
