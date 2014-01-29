@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.AutoScaleVmProfileDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
@@ -107,6 +108,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
     @Inject
     UserDetailsDao _userDetailsDao;
+    @Inject
+    AutoScaleVmProfileDetailsDao _autoScaleVmProfileDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -134,6 +137,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDetailsDao);
         s_daoMap.put(ResourceObjectType.DiskOffering, _diskOfferingDetailsDao);
         s_daoMap.put(ResourceObjectType.User, _userDetailsDao);
+        s_daoMap.put(ResourceObjectType.AutoScaleVmProfile, _autoScaleVmProfileDetailsDao);
 
         return true;
     }
