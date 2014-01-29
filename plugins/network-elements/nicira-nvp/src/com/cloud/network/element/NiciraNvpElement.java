@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -253,25 +254,29 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                 network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
             s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
 
-            PublicIp sourceNatIp = _ipAddrMgr
-                    .assignSourceNatIpAddressToGuestNetwork(owner, network);
-            String publicCidr = sourceNatIp.getAddress().addr() + "/"
-                    + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
-            String internalCidr = network.getGateway() + "/"
-                    + network.getCidr().split("/")[1];
-            long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0
-                    : Long.parseLong(sourceNatIp.getVlanTag());
+            PublicIp sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+            String publicCidr = sourceNatIp.getAddress().addr() + "/" + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
+            String internalCidr = network.getGateway() + "/" + network.getCidr().split("/")[1];
+            // assuming a vlan:
+            String vtag = sourceNatIp.getVlanTag();
+            BroadcastDomainType tiep = null;
+            try {
+                tiep = BroadcastDomainType.getTypeOf(vtag);
+            } catch (URISyntaxException use) {
+                throw new CloudRuntimeException("vlantag for sourceNatIp is not valid: " + vtag, use);
+            }
+            if (tiep == BroadcastDomainType.Vlan) {
+                vtag = BroadcastDomainType.Vlan.getValueFrom(BroadcastDomainType.fromString(vtag));
+            } else if (!(tiep == BroadcastDomainType.UnDecided || tiep == BroadcastDomainType.Native)) {
+                throw new CloudRuntimeException("only vlans are supported for sourceNatIp, at this moment: " + vtag);
+            }
+            long vlanid = (Vlan.UNTAGGED.equals(vtag)) ? 0 : Long.parseLong(vtag);
 
-            CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
-                    niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
-                    BroadcastDomainType.getValue(network.getBroadcastUri()),
-                    "router-" + network.getDisplayText(), publicCidr,
-                    sourceNatIp.getGateway(), internalCidr, context
-                    .getDomain().getName()
-                    + "-"
-                    + context.getAccount().getAccountName());
-            CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer)_agentMgr
-                    .easySend(niciraNvpHost.getId(), cmd);
+            CreateLogicalRouterCommand cmd =
+                new CreateLogicalRouterCommand(niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid, BroadcastDomainType.getValue(network.getBroadcastUri()),
+                    "router-" + network.getDisplayText(), publicCidr, sourceNatIp.getGateway(), internalCidr, context.getDomain().getName() + "-" +
+                        context.getAccount().getAccountName());
+            CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer)_agentMgr.easySend(niciraNvpHost.getId(), cmd);
             if (answer.getResult() == false) {
                 s_logger.error("Failed to create Logical Router for network "
                         + network.getDisplayText());
