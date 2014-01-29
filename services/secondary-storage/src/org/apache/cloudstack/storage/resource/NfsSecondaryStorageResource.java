@@ -1740,7 +1740,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 parent += File.separator;
             }
             String absoluteTemplatePath = parent + relativeTemplatePath;
-            File tmpltParent = new File(absoluteTemplatePath).getParentFile();
+            File tmpltParent;
+            if(absoluteTemplatePath.endsWith(String.valueOf(obj.getId()))) {
+                tmpltParent = new File(absoluteTemplatePath);
+            } else {
+                tmpltParent = new File(absoluteTemplatePath).getParentFile();
+            }
             String details = null;
             if (!tmpltParent.exists()) {
                 details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
