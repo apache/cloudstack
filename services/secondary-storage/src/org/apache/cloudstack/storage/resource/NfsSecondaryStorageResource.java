@@ -1716,16 +1716,23 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 parent += File.separator;
             }
             String absoluteTemplatePath = parent + relativeTemplatePath;
-            File tmpltDir = new File(absoluteTemplatePath);
+
+            File tmpltParent;
+            if(absoluteTemplatePath.endsWith(String.valueOf(obj.getId()))) {
+                tmpltParent = new File(absoluteTemplatePath);
+            } else {
+                tmpltParent = new File(absoluteTemplatePath).getParentFile();
+            }
+
             String details = null;
-            if (!tmpltDir.exists()) {
-                details = "template parent directory " + tmpltDir.getName() + " doesn't exist";
+            if (!tmpltParent.exists()) {
+                details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
                 s_logger.debug(details);
                 return new Answer(cmd, true, details);
             }
-            File[] tmpltFiles = tmpltDir.listFiles();
+            File[] tmpltFiles = tmpltParent.listFiles();
             if (tmpltFiles == null || tmpltFiles.length == 0) {
-                details = "No files under template parent directory " + tmpltDir.getName();
+                details = "No files under template parent directory " + tmpltParent.getName();
                 s_logger.debug(details);
             } else {
                 boolean found = false;
@@ -1751,12 +1758,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
 
                 if (!found) {
-                    details = "Can not find template.properties under " + tmpltDir.getName();
+                    details = "Can not find template.properties under " + tmpltParent.getName();
                     s_logger.debug(details);
                 }
             }
-            if (!tmpltDir.delete()) {
-                details = "Unable to delete directory " + tmpltDir.getName() + " under Template path " + relativeTemplatePath;
+            if (!tmpltParent.delete()) {
+                details = "Unable to delete directory " + tmpltParent.getName() + " under Template path " + relativeTemplatePath;
                 s_logger.debug(details);
                 return new Answer(cmd, false, details);
             }
