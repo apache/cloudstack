@@ -60,6 +60,9 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     @Column(name = "permission")
     @Enumerated(value = EnumType.STRING)
     private Permission permission;
+    
+    @Column(name = "recursive")
+    private Boolean recursive;  
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -72,7 +75,7 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     }
 
     public AclPolicyPermissionVO(long aclPolicyId, String action, String entityType, String accessType, String scope,
-            Long scopeId, Permission permission) {
+            Long scopeId, Permission permission, Boolean recursive) {
         this.aclPolicyId = aclPolicyId;
         this.action = action;
         this.entityType = entityType;
@@ -80,6 +83,7 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
         this.scope = scope;
         this.scopeId = scopeId;
         this.permission = permission;
+        this.recursive = recursive;
     }
 
     @Override
@@ -169,4 +173,9 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     public Date getCreated() {
         return created;
     }
+    
+    public Boolean isRecursive() {
+        return recursive;
+    }
+    
 }

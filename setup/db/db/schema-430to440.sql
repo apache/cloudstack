@@ -522,6 +522,7 @@ CREATE TABLE `cloud`.`acl_policy_permission` (
   `scope` varchar(40) DEFAULT NULL,
   `access_type` varchar(40) DEFAULT NULL,
   `permission`  varchar(40) NOT NULL COMMENT 'Allow or Deny',
+  `recursive` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if this permission applies recursively in a group/policy hierarchy',
   `removed` datetime DEFAULT NULL COMMENT 'date the permission was revoked',
   `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
   PRIMARY KEY (`id`),
