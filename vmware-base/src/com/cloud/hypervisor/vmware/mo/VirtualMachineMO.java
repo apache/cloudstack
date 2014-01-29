@@ -190,10 +190,10 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public boolean powerOn() throws Exception {
-        if(getResetSafePowerState() == VirtualMachinePowerState.POWERED_ON)
-                return true;
+        if (getResetSafePowerState() == VirtualMachinePowerState.POWERED_ON)
+            return true;
 
-                ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
+        ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
@@ -248,17 +248,12 @@ public class VirtualMachineMO extends BaseMO {
             }
         });
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
-                return true;
-            } else {
-                s_logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-        } finally {
-            // make sure to let VM question monitor exit
-            flags[0] = true;
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
         return false;
