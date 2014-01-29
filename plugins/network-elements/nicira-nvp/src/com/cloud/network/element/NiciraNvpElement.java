@@ -259,8 +259,20 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                     + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
             String internalCidr = network.getGateway() + "/"
                     + network.getCidr().split("/")[1];
-            long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0
-                    : Long.parseLong(sourceNatIp.getVlanTag());
+            // assuming a vlan:
+            String vtag = sourceNatIp.getVlanTag();
+            BroadcastDomainType tiep = null;
+            try {
+                tiep = BroadcastDomainType.getTypeOf(vtag);
+            } catch (URISyntaxException use) {
+                throw new CloudRuntimeException("vlantag for sourceNatIp is not valid: " + vtag, use);
+            }
+            if (tiep == BroadcastDomainType.Vlan) {
+                vtag = BroadcastDomainType.Vlan.getValueFrom(BroadcastDomainType.fromString(vtag));
+            } else if (!(tiep == BroadcastDomainType.UnDecided || tiep == BroadcastDomainType.Native)) {
+                throw new CloudRuntimeException("only vlans are supported for sourceNatIp, at this moment: " + vtag);
+            }
+            long vlanid = (Vlan.UNTAGGED.equals(vtag)) ? 0 : Long.parseLong(vtag);
 
             CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
                     niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
