@@ -2226,7 +2226,7 @@
                                 }
                             }
 
-                            if (ipAddress.issourcenat) {
+                            if (ipAddress.vpcid != null && ipAddress.issourcenat) { //don't show Configuration(ipRules) tab on VPC sourceNAT IP
                                 disableIpRules = true;
                             }
                             
