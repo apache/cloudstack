@@ -737,7 +737,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                             }
 
                                             String counterName = getCounternamebyCondition(conditionId.longValue());
-                                            if (counterName == Counter.Source.memory.toString()) {
+                                            if (Counter.Source.memory.toString().equals(counterName)) {
                                                 // calculate memory in percent
                                                 Long profileId = asGroup.getProfileId();
                                                 AutoScaleVmProfileVO profileVo = _asProfileDao.findById(profileId);
