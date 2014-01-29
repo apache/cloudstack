@@ -449,7 +449,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
-                volume.setAccountId((owner == null) ? null : owner.getAccountId());
+                // to prevent a nullpointer deref I put the system account id here when no owner is given.
+                // TODO Decide if this is valid or whether  throwing a CloudRuntimeException is more appropriate
+                volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
                 long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
                 volume.setDiskOfferingId(diskOfferingId);
