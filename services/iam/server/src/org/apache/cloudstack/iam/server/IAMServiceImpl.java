@@ -579,6 +579,20 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return policy;
     }
 
+    @DB
+    @Override
+    public void removeAclPermissionForEntity(final String entityType, final Long entityId) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove entry from acl_entity_permission table
+                List<AclPolicyPermissionVO> permitList = _policyPermissionDao.listByEntity(entityType, entityId);
+                for (AclPolicyPermissionVO permit : permitList) {
+                    _policyPermissionDao.remove(permit.getId());
+                }
+            }
+        });
+    }
 
     @DB
     @Override

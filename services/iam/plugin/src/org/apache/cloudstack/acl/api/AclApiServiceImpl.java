@@ -75,6 +75,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 
 @Local(value = {AclApiService.class})
 public class AclApiServiceImpl extends ManagerBase implements AclApiService, Manager {
@@ -161,6 +162,19 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
                     _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                }
+            }
+        });
+
+        _messageBus.subscribe(EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Pair<AclEntityType, Long> entity = (Pair<AclEntityType, Long>)obj;
+                if (entity != null) {
+                    String entityType = entity.first().toString();
+                    Long entityId = entity.second();
+                    s_logger.debug("MessageBus message: delete an entity: (" + entityType + "," + entityId + "), remove its related permission");
+                    _iamSrv.removeAclPermissionForEntity(entityType, entityId);
                 }
             }
         });

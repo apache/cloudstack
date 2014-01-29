@@ -64,6 +64,8 @@ public interface IAMService {
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action);
 
+    void removeAclPermissionForEntity(final String entityType, final Long entityId);
+
     AclPolicy getResourceOwnerPolicy();
 
     List<AclPolicyPermission> listPolicyPermissions(long policyId);

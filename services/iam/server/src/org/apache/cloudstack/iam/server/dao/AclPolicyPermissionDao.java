@@ -16,9 +16,9 @@
 // under the License.
 package org.apache.cloudstack.iam.server.dao;
 import java.util.List;
+
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 import org.apache.cloudstack.iam.server.AclPolicyPermissionVO;
-
 
 import com.cloud.utils.db.GenericDao;
 
@@ -35,4 +35,5 @@ public interface AclPolicyPermissionDao extends GenericDao<AclPolicyPermissionVO
 
     List<AclPolicyPermissionVO> listByPolicyAccessAndEntity(long policyId, String accessType, String entityType);
 
+    List<AclPolicyPermissionVO> listByEntity(String entityType, Long entityId);
 }

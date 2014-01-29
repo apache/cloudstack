@@ -34,6 +34,7 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
     private SearchBuilder<AclPolicyPermissionVO> policyIdSearch;
     private SearchBuilder<AclPolicyPermissionVO> fullSearch;
     private SearchBuilder<AclPolicyPermissionVO> actionScopeSearch;
+    private SearchBuilder<AclPolicyPermissionVO> entitySearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -59,6 +60,11 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         actionScopeSearch.and("action", actionScopeSearch.entity().getAction(), SearchCriteria.Op.EQ);
         actionScopeSearch.and("permission", actionScopeSearch.entity().getPermission(), SearchCriteria.Op.EQ);
         actionScopeSearch.done();
+
+        entitySearch = createSearchBuilder();
+        entitySearch.and("entityType", fullSearch.entity().getEntityType(), SearchCriteria.Op.EQ);
+        entitySearch.and("scopeId", fullSearch.entity().getScopeId(), SearchCriteria.Op.EQ);
+        entitySearch.done();
 
         return true;
     }
@@ -109,6 +115,14 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         sc.setParameters("policyId", policyId);
         sc.setParameters("entityType", entityType);
         sc.setParameters("accessType", accessType);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AclPolicyPermissionVO> listByEntity(String entityType, Long entityId) {
+        SearchCriteria<AclPolicyPermissionVO> sc = fullSearch.create();
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("scopeId", entityId);
         return listBy(sc);
     }
 

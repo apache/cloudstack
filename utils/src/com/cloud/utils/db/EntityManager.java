@@ -70,4 +70,6 @@ public interface EntityManager {
     public <T> List<? extends T> list(Class<T> entityType);
 
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
+
+    public static final String MESSAGE_REMOVE_ENTITY_EVENT = "Message.RemoveEntity.Event";
 }
