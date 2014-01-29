@@ -898,8 +898,6 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 ALTER TABLE `cloud`.`network_acl_item` modify `cidr` varchar(2048);
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "api.servlet.endpoint", "http://localhost:8080/client/api?", "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", "http://localhost:8080/client/api?", NULL,NULL,0);
-
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select
