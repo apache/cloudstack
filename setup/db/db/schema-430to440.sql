@@ -447,3 +447,13 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'vm.network.nic.max.secondary.ipaddresses', NULL, 'Specify the number of secondary ip addresses per nic per vm', '256') ON DUPLICATE KEY UPDATE category='NetworkManager';
+
+CREATE TABLE `cloud`.`autoscale_vmprofile_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `autoscale_vmprofile_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end autoscale_vmprofile',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_autoscale_vmprofile_details__autoscale_vmprofile_id` FOREIGN KEY `fk_autoscale_vmprofile_details__autoscale_vmprofile_id`(`autoscale_vmprofile_id`) REFERENCES `autoscale_vmprofiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

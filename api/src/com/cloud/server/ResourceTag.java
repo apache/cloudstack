@@ -51,7 +51,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         CustomerGateway(false, true),
         VpnConnection(false, true),
         User(true, true),
-        DiskOffering(false, true);
+        DiskOffering(false, true),
+        AutoScaleVmProfile(false, true);
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
             this.resourceTagsSupport = resourceTagsSupport;
