@@ -871,7 +871,7 @@
             <threshold>High</threshold>
             <xmlOutput>true</xmlOutput>
             <failOnError>false</failOnError>
-            <maxHeap>1024</maxHeap>
+            <maxHeap>2048</maxHeap>
           </configuration>
           <executions>
             <execution>
