@@ -65,6 +65,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -146,6 +147,20 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     s_logger.debug("MessageBus message: new Domain created: " + domainId + ", creating a new group");
                     Domain domain = _domainDao.findById(domainId);
                     _iamSrv.createAclGroup("DomainGrp-" + domain.getUuid(), "Domain group", domain.getPath());
+                }
+            }
+        });
+
+        _messageBus.subscribe(TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Long templateId = (Long)obj;
+                if (templateId != null) {
+                    s_logger.debug("MessageBus message: new public template registered: " + templateId + ", grant permission to domain admin and normal user policies");
+                    _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                    _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
                 }
             }
         });

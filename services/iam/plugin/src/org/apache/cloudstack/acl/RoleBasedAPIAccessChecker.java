@@ -40,6 +40,8 @@ import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.api.ApiServerService;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -61,6 +63,8 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
     ApiServerService _apiServer;
     @Inject
     IAMService _iamSrv;
+    @Inject
+    VMTemplateDao _templateDao;
 
     Set<String> commandsPropertiesOverrides = new HashSet<String>();
     Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
@@ -121,6 +125,15 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
                 "DomainCapability", null, Permission.Allow);
         _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1), null, null, null,
                 "DomainResourceCapability", null, Permission.Allow);
+
+        // add permissions for public templates
+        List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
+        for (VMTemplateVO tmpl : pTmplts){
+            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+        }
 
         for (PluggableService service : _services) {
             for (Class<?> cmdClass : service.getCommands()) {

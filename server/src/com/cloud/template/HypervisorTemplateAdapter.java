@@ -44,6 +44,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -95,6 +97,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     EndPointSelector _epSelector;
     @Inject
     DataCenterDao _dcDao;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public String getName() {
@@ -267,6 +271,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
+            // need to grant permission for public templates
+            if (tmplt.isPublicTemplate()) {
+                _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
+            }
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
