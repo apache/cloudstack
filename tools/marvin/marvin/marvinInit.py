@@ -94,7 +94,7 @@ class MarvinInit:
         return self.__tcRunLogger
 
     def getDebugFile(self):
-        if self.__logFolderPath is None:
+        if self.__logFolderPath is not None:
             self.__tcResultFile = open(self.__logFolderPath +
                                        "/results.txt", "w")
             return self.__tcResultFile

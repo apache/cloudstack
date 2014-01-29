@@ -17,7 +17,10 @@
 
 import paramiko
 import time
-import cloudstackException
+from cloudstackException import (
+    internalError,
+    GetDetailExceptionInfo
+    )
 import contextlib
 import logging
 from marvin.codes import (
@@ -60,8 +63,7 @@ class SshClient(object):
         if port is not None or port >= 0:
             self.port = port
         if self.createConnection() == FAIL:
-            raise cloudstackException.\
-                internalError("Connection Failed")
+            raise internalError("Connection Failed")
 
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
@@ -134,8 +136,7 @@ class SshClient(object):
                  INVALID_INPUT : If invalid value for command is passed
                  2: stdin,stdout,stderr values of command output
         '''
-        excep_msg = ''
-        ret = {"status": None, "stdin": None, "stdout": None, "stderr": None}
+        ret = {"status": FAIL, "stdin": None, "stdout": None, "stderr": ''}
         if command is None or command == '':
             ret["status"] = INVALID_INPUT
             return ret
@@ -152,14 +153,12 @@ class SshClient(object):
                 status_check = stdout.channel.recv_exit_status()
             if status_check == 0:
                 ret["status"] = SUCCESS
-            else:
-                ret["status"] = FAIL
         except Exception as e:
-            excep_msg = str(e)
             ret["status"] = EXCEPTION_OCCURRED
+            ret["stderr"] = GetDetailExceptionInfo(e)
         finally:
             self.logger.debug(" Host: %s Cmd: %s Output:%s Exception: %s" %
-                              (self.host, command, str(ret), excep_msg))
+                              (self.host, command, str(ret), ret["stderr"]))
             return ret
 
     def scp(self, srcFile, destPath):

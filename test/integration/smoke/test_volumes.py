@@ -25,6 +25,8 @@ from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from marvin.integration.lib.utils import checkVolumeSize
+from marvin.codes import SUCCESS
 from nose.plugins.attrib import attr
 #Import System modules
 import os
@@ -178,7 +180,6 @@ class TestCreateVolume(cloudstackTestCase):
                                             )
 
                 if isinstance(list_vm_response, list):
-
                     vm = list_vm_response[0]
                     if vm.state == 'Running':
                         self.debug("VM state: %s" % vm.state)
@@ -187,31 +188,17 @@ class TestCreateVolume(cloudstackTestCase):
                 if timeout == 0:
                     raise Exception(
                         "Failed to start VM (ID: %s) " % vm.id)
-
                 timeout = timeout - 1
 
-            try:
-                ssh = self.virtual_machine.get_ssh_client(
+            vol_sz = str(list_volume_response[0].size)
+            ssh = self.virtual_machine.get_ssh_client(
                                                       reconnect=True
                                                       )
-                c = "/sbin/fdisk -l"
-                res = ssh.execute(c)
-
-            except Exception as e:
-                self.fail("SSH access failed for VM: %s - %s" %
-                                (self.virtual_machine.ipaddress, e))
-
-            # Disk /dev/sda doesn't contain a valid partition table
-            # Disk /dev/sda: 21.5 GB, 21474836480 bytes
-            result = str(res)
-            self.debug("fdisk result: %s" % result)
-
-            self.assertEqual(
-                             str(list_volume_response[0].size) in result,
-                             True,
-                             "Check if promised disk size actually available"
-                             )
+            ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
+            self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))                 
             self.virtual_machine.detach_volume(self.apiClient, volume)
+            self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
+            time.sleep(self.services["sleep"])
 
     def tearDown(self):
         #Clean up, terminate the created volumes
