@@ -32,7 +32,7 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd{
 
     public static final Logger s_logger = Logger.getLogger(RemoveCertFromLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "removeCertFromLoadBalancer";
+    private static final String s_name = "removecertfromloadbalancerresponse";
 
 
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
