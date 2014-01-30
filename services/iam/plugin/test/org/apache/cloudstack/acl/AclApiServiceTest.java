@@ -63,6 +63,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.network.dao.NetworkDomainDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -272,13 +273,13 @@ public class AclApiServiceTest {
         when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(clz);
         when(
                 _iamSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
-                        AccessType.ListEntry.toString(), Permission.Allow)).thenReturn(policy);
-        _aclSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow);
+                        AccessType.ListEntry.toString(), Permission.Allow, false)).thenReturn(policy);
+        _aclSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false);
         Pair<List<AclPolicy>, Integer> policyList = new Pair<List<AclPolicy>, Integer>(policies, 1);
         List<AclPolicyPermission> policyPerms = new ArrayList<AclPolicyPermission>();
         AclPolicyPermission perm = new AclPolicyPermissionVO(policyId, "listVirtualMachines", AclEntityType.VirtualMachine.toString(), AccessType.ListEntry.toString(),
                 PermissionScope.RESOURCE.toString(),
-                resId, Permission.Allow);
+                resId, Permission.Allow, false);
         policyPerms.add(perm);
         when(_iamSrv.listAclPolicies(null, "policy1", callerDomainPath, 0L, 20L)).thenReturn(policyList);
         when(_iamSrv.listPolicyPermissions(policyId)).thenReturn(policyPerms);
@@ -321,6 +322,11 @@ public class AclApiServiceTest {
         @Bean
         public AccountDao accountDao() {
             return Mockito.mock(AccountDao.class);
+        }
+
+        @Bean
+        public NetworkDomainDao networkDomainDao() {
+            return Mockito.mock(NetworkDomainDao.class);
         }
 
         @Bean

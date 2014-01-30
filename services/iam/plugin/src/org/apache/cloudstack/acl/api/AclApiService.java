@@ -59,7 +59,8 @@ public interface AclApiService extends PluggableService {
 
     void removeAclPolicyFromAccounts(Long policyId, List<Long> accountIds);
 
-    AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm);
+    AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId,
+            String action, Permission perm, Boolean recursive);
 
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action);
 

@@ -122,7 +122,8 @@ public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl policy Id: " + getId());
         // Only explicit ALLOW is supported for this release, no explicit deny
-        AclPolicy result = _aclApiSrv.addAclPermissionToAclPolicy(id, entityType, PermissionScope.valueOf(scope), scopeId, action, Permission.Allow);
+        AclPolicy result = _aclApiSrv.addAclPermissionToAclPolicy(id, entityType, PermissionScope.valueOf(scope),
+                scopeId, action, Permission.Allow, false);
         if (result != null) {
             AclPolicyResponse response = _aclApiSrv.createAclPolicyResponse(result);
             response.setResponseName(getCommandName());

@@ -36,6 +36,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -43,6 +44,8 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.log4j.Logger;
@@ -253,6 +256,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected IPAddressDao _publicIpAddressDao;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    MessageBus _messageBus;
 
     List<NetworkGuru> networkGurus;
 
@@ -664,6 +669,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
+                            //send event for storing the domain wide resource access
+                            // remove its related ACL permission
+                            Pair<AclEntityType, Long> network = new Pair<AclEntityType, Long>(AclEntityType.Network, id);
+                            _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT,
+                                    PublishScope.LOCAL, network);
                         }
                     }
                 });

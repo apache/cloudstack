@@ -67,6 +67,8 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -103,6 +105,9 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     @Inject
     MessageBus _messageBus;
 
+    @Inject
+    NetworkDomainDao _networkDomainDao;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
@@ -118,10 +123,10 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     AccountVO account = _accountDao.findById(accountId);
                     Domain domain = _domainDao.findById(account.getDomainId());
                     if (domain != null) {
-                        ListResponse<AclGroupResponse> domainGroups = listAclGroups(null,
-                                "DomainGrp-" + domain.getUuid(), domain.getId(), null, null);
-                        if (domainGroups.getResponses() != null) {
-                            for (AclGroupResponse group : domainGroups.getResponses()) {
+                        List<AclGroup> domainGroups = listDomainGroup(domain);
+
+                        if (domainGroups != null) {
+                            for (AclGroup group : domainGroups) {
                                 addAccountToAclGroup(accountId, new Long(group.getId()));
                             }
                         }
@@ -161,9 +166,9 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                 if (templateId != null) {
                     s_logger.debug("MessageBus message: new public template registered: " + templateId + ", grant permission to domain admin and normal user policies");
                     _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
-                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
                     _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
-                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                            PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
                 }
             }
         });
@@ -181,6 +186,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             }
         });
 
+
         _messageBus.subscribe(EntityManager.MESSAGE_GRANT_ENTITY_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
@@ -197,7 +203,56 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             }
         });
 
+        _messageBus.subscribe(EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Pair<AclEntityType, Long> entity = (Pair<AclEntityType, Long>) obj;
+                if (entity != null) {
+                    addDomainWideResourceAccess(entity);
+                }
+            }
+        });
+
         return super.configure(name, params);
+    }
+
+    private void addDomainWideResourceAccess(Pair<AclEntityType, Long> entity) {
+
+        String entityType = entity.first().toString();
+        Long entityId = entity.second();
+
+        if (AclEntityType.Network.toString().equals(entityType)) {
+            NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(entityId);
+            if (networkDomainMap != null) {
+                createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType,
+                        entityId, "listNetworks", AccessType.UseEntry, networkDomainMap.getDomainId(),
+                        networkDomainMap.isSubdomainAccess());
+            }
+        } else if (AclEntityType.AffinityGroup.toString().equals(entityType)) {
+
+        }
+
+    }
+
+    private void createPolicyAndAddToDomainGroup(String policyName, String description, String entityType,
+            Long entityId, String action, AccessType accessType, Long domainId, Boolean recursive) {
+
+        AclPolicy policy = _iamSrv.createAclPolicy(policyName, description, null);
+       _iamSrv.addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE.toString(),
+               entityId, action, accessType.toString(), Permission.Allow, recursive);
+
+       List<Long> policyList = new ArrayList<Long>();
+       policyList.add(new Long(policy.getId()));
+
+       Domain domain = _domainDao.findById(domainId);
+       if (domain != null) {
+           List<AclGroup> domainGroups = listDomainGroup(domain);
+           if (domainGroups != null) {
+               for (AclGroup group : domainGroups) {
+                   _iamSrv.attachAclPoliciesToGroup(policyList, group.getId());
+               }
+           }
+       }
     }
 
     @DB
@@ -309,13 +364,15 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting acl permission to Acl Policy")
-    public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm) {
+    public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope,
+            Long scopeId, String action, Permission perm, Boolean recursive) {
         Class<?> cmdClass = _apiServer.getCmdClass(action);
         AccessType accessType = null;
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
             accessType = AccessType.ListEntry;
         }
-        return _iamSrv.addAclPermissionToAclPolicy(aclPolicyId, entityType, scope.toString(), scopeId, action, accessType.toString(), perm);
+        return _iamSrv.addAclPermissionToAclPolicy(aclPolicyId, entityType, scope.toString(), scopeId, action,
+                accessType.toString(), perm, recursive);
     }
 
     @DB
@@ -426,6 +483,19 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     }
 
+    public List<AclGroup> listDomainGroup(Domain domain) {
+
+        if (domain != null) {
+            String domainPath = domain.getPath();
+            // search for groups
+            Pair<List<AclGroup>, Integer> result = _iamSrv.listAclGroups(null, "DomainGrp-" + domain.getUuid(),
+                    domainPath, null, null);
+            return result.first();
+        }
+        return new ArrayList<AclGroup>();
+
+    }
+
     @Override
     public ListResponse<AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName, Long domainId, Long startIndex, Long pageSize) {
         // acl check
@@ -498,7 +568,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             String description = "Policy to grant permission to " + entityType + entityId;
             policy = createAclPolicy(caller, aclPolicyName, description, null);
             // add permission to this policy
-            addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE, entityId, action, Permission.Allow);
+            addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE, entityId, action, Permission.Allow, false);
         }
         // attach this policy to list of accounts if not attached already
         Long policyId = policy.getId();

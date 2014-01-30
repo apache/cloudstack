@@ -120,19 +120,19 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // add the system-domain capability
 
         _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), null, null, null,
-                "SystemCapability", null, Permission.Allow);
+                "SystemCapability", null, Permission.Allow, false);
         _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), null, null, null,
-                "DomainCapability", null, Permission.Allow);
+                "DomainCapability", null, Permission.Allow, false);
         _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1), null, null, null,
-                "DomainResourceCapability", null, Permission.Allow);
+                "DomainResourceCapability", null, Permission.Allow, false);
 
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
             _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
-                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
             _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
-                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow);
+                    PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
         }
 
         for (PluggableService service : _services) {
@@ -256,11 +256,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
         if (entityTypes == null || entityTypes.length == 0) {
             _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
-                    apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
+                    apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
         } else {
             for (AclEntityType entityType : entityTypes) {
                 _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
-                        apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
+                        apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
             }
          }
 

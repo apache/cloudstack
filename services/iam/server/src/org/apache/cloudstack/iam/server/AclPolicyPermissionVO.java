@@ -60,9 +60,9 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     @Column(name = "permission")
     @Enumerated(value = EnumType.STRING)
     private Permission permission;
-    
+
     @Column(name = "recursive")
-    private Boolean recursive;  
+    private Boolean recursive;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -173,9 +173,9 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     public Date getCreated() {
         return created;
     }
-    
+
     public Boolean isRecursive() {
         return recursive;
     }
-    
+
 }

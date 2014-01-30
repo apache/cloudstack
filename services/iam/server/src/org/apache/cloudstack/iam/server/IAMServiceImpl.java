@@ -543,7 +543,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @DB
     @Override
     public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
-            String action, String accessType, Permission perm) {
+            String action, String accessType, Permission perm, Boolean recursive) {
         // get the Acl Policy entity
         AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
         if (policy == null) {
@@ -555,7 +555,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         AclPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, perm);
         if (permit == null) {
             // not there already
-            permit = new AclPolicyPermissionVO(aclPolicyId, action, entityType, accessType, scope, scopeId, perm, false);
+            permit = new AclPolicyPermissionVO(aclPolicyId, action, entityType, accessType, scope, scopeId, perm,
+                    recursive);
             _policyPermissionDao.persist(permit);
         }
         return policy;

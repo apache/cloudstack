@@ -59,7 +59,7 @@ public interface IAMService {
     void removeAclPolicyFromAccounts(Long policyId, List<Long> acctIds);
 
     AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
-            String action, String accessType, Permission perm);
+            String action, String accessType, Permission perm, Boolean recursive);
 
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action);
