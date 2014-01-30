@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -125,7 +126,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
 			final SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
 			final byte bytes[] = new byte[20];
 			randomGen.nextBytes(bytes);
-			return Base64.encode(bytes).toString();
+            return Arrays.toString(Base64.encode(bytes));
 		} catch (final NoSuchAlgorithmException e) {
 			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
 					"Failed to generate random password");
