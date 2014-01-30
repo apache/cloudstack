@@ -58,7 +58,7 @@ public class MockServerTest extends TestCase {
 
         Socket socket = SocketFactory.getDefault().createSocket();
         try {
-            socket.connect(server.getAddress());
+            socket.connect(new InetSocketAddress("127.0.0.1", server.getAddress().getPort()));
 
             InputStream is = socket.getInputStream();
             OutputStream os = socket.getOutputStream();
@@ -127,7 +127,7 @@ public class MockServerTest extends TestCase {
 
         Socket socket = SocketFactory.getDefault().createSocket();
         try {
-            InetSocketAddress address = server.getAddress();
+            InetSocketAddress address = new InetSocketAddress("127.0.0.1", server.getAddress().getPort());
             socket.connect(address);
 
             // Send hello data over plain connection
