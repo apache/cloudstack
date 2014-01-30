@@ -1089,6 +1089,5 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
-INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'network.router.EnableServiceMonitoring', 'false', 'service monitoring in router enable/disable option, default false', 'false') ON DUPLICATE KEY UPDATE category='NetworkManager';
 
 INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'network.router.EnableServiceMonitoring', 'true', 'service monitoring in router enable/disable option, default true', 'true') ON DUPLICATE KEY UPDATE category='NetworkManager';
