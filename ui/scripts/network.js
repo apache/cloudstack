@@ -539,35 +539,47 @@
                                     },
                                     domain: {
                                         label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
                                         select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
-                                                success: function(json) {
-                                                    var items = [];
-                                                    items.push({
-                                                        id: "",
-                                                        description: ""
-                                                    });
-                                                    var domainObjs = json.listdomainsresponse.domain;
-                                                    $(domainObjs).each(function() {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
                                                         items.push({
-                                                            id: this.id,
-                                                            description: this.path
+                                                            id: "",
+                                                            description: ""
                                                         });
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
-                                            });
-                                            args.$select.change(function() {
-                                                var $form = $(this).closest('form');
-                                                if ($(this).val() == "") {
-                                                    $form.find('.form-item[rel=account]').hide();
-                                                } else {
-                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                                }
-                                            });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                data: null
+                                                });
+                                            }
                                         },
                                     },
                                     account: {
@@ -575,6 +587,12 @@
                                         validation: {
                                             required: true
                                         },
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        }
                                     }
                                 }
                             },
@@ -1133,6 +1151,16 @@
                                         label: 'label.state'
                                     },
 
+                                    vpcid: {
+                                        label: 'label.vpc.id',
+                                        converter: function(args) {
+                                            if (args != null)
+                                                return args;
+                                            else
+                                                return 'N/A';
+                                        }
+                                    },
+                                    
                                     ispersistent: {
                                         label: 'Persistent ',
                                         converter: cloudStack.converters.toBooleanText
@@ -1242,16 +1270,6 @@
                                     },
                                     account: {
                                         label: 'label.account'
-                                    },
-
-                                    vpcid: {
-                                        label: 'label.vpc.id',
-                                        converter: function(args) {
-                                            if (args != null)
-                                                return args;
-                                            else
-                                                return 'N/A';
-                                        }
                                     }
                                 }],
 
@@ -1597,6 +1615,10 @@
                                             'add-vm': {
                                                 label: 'label.add.vms',
                                                 addButton: true
+                                            },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
@@ -2204,12 +2226,18 @@
                                 }
                             }
 
-                            if (ipAddress.vpcid && ipAddress.issourcenat) {
+                            if (ipAddress.vpcid != null && ipAddress.issourcenat) { //don't show Configuration(ipRules) tab on VPC sourceNAT IP
+                                disableIpRules = true;
+                            }
+                            
+                            if (('vpc' in args.context) == false && ipAddress.vpcid != null) { //from Guest Network section, don't show Configuration(ipRules) tab on VPC IP
                                 disableIpRules = true;
                             }
 
-                            if (disableVpn) disabledTabs.push('vpn');
-                            if (disableIpRules) disabledTabs.push('ipRules');
+                            if (disableVpn) 
+                            	disabledTabs.push('vpn');
+                            if (disableIpRules) 
+                            	disabledTabs.push('ipRules');
 
                             return disabledTabs;
                         },
@@ -2354,6 +2382,7 @@
 
                                         listView: $.extend(true, {}, cloudStack.sections.instances, {
                                             listView: {
+                                                advSearchFields: null, // Not supported in dialogs right now due to display issues
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
@@ -2365,6 +2394,10 @@
                                                         pageSize: pageSize,
                                                         listAll: true
                                                     };
+
+                                                    if (args.filterBy.search.value) {
+                                                        data.keyword = args.filterBy.search.value;
+                                                    }
 
                                                     var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
 
@@ -2932,6 +2965,10 @@
                                             'add-rule': {
                                                 label: 'label.add.rule',
                                                 addButton: true
+                                            },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
@@ -3411,6 +3448,11 @@
                                             'add-vm': {
                                                 label: 'label.add.vms',
                                                 addButton: true
+                                            },
+                                            
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
@@ -3913,6 +3955,10 @@
                                                     });
                                                 }
                                             },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
+                                            },
                                             'add-vm': {
                                                 label: 'label.add.vm',
                                                 addButton: true
@@ -3973,7 +4019,10 @@
                                                     success: function(data) {
                                                         args.response.success({
                                                             _custom: {
-                                                                jobId: data.createportforwardingruleresponse.jobid
+                                                                jobId: data.createportforwardingruleresponse.jobid,
+                                                                getUpdatedItem: function(json) {                                                        	        
+                                                                    return json.queryasyncjobresultresponse.jobresult.portforwardingrule;
+                                                                }
                                                             },
                                                             notification: {
                                                                 label: 'label.add.port.forwarding.rule',

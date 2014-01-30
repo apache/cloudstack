@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {SystemIntegrityChecker.class})
 public class DatabaseIntegrityChecker extends AdapterBase implements SystemIntegrityChecker {
-    private final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
+    private static final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 
     @Inject
     VersionDao _dao;

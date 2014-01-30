@@ -23,8 +23,8 @@ import java.util.Map;
 
 public class LibvirtVMDef {
     private String _hvsType;
-    private static long _libvirtVersion;
-    private static long _qemuVersion;
+    private static long s_libvirtVersion;
+    private static long s_qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -162,6 +162,8 @@ public class LibvirtVMDef {
             }
             if (_memBalloning) {
                 resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
+            } else {
+                resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
                 resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
@@ -665,8 +667,8 @@ public class LibvirtVMDef {
             diskBuilder.append("/>\n");
 
             if ((_deviceType != deviceType.CDROM) &&
-                (_libvirtVersion >= 9008) &&
-                (_qemuVersion >= 1001000) &&
+                (s_libvirtVersion >= 9008) &&
+                (s_qemuVersion >= 1001000) &&
                 (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
                     ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 diskBuilder.append("<iotune>\n");
@@ -866,7 +868,7 @@ public class LibvirtVMDef {
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
             }
-            if ((_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
+            if ((s_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
                 netBuilder.append("<bandwidth>\n");
                 netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
                 netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
@@ -949,6 +951,8 @@ public class LibvirtVMDef {
     public static class CpuModeDef {
         private String _mode;
         private String _model;
+        private int _coresPerSocket = -1;
+        private int _sockets = -1;
 
         public void setMode(String mode) {
             _mode = mode;
@@ -958,17 +962,34 @@ public class LibvirtVMDef {
             _model = model;
         }
 
+        public void setTopology(int coresPerSocket, int sockets) {
+            _coresPerSocket = coresPerSocket;
+            _sockets = sockets;
+        }
+
         @Override
         public String toString() {
-            StringBuilder modeBuidler = new StringBuilder();
-            if ("custom".equalsIgnoreCase(_mode) && _model != null) {
-                modeBuidler.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model></cpu>");
+            StringBuilder modeBuilder = new StringBuilder();
+
+            // start cpu def, adding mode, model
+            if ("custom".equalsIgnoreCase(_mode) && _model != null){
+                modeBuilder.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model>");
             } else if ("host-model".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-model'><model fallback='allow'></model></cpu>");
+                modeBuilder.append("<cpu mode='host-model'><model fallback='allow'></model>");
             } else if ("host-passthrough".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-passthrough'></cpu>");
+                modeBuilder.append("<cpu mode='host-passthrough'>");
+            } else {
+                modeBuilder.append("<cpu>");
             }
-            return modeBuidler.toString();
+
+            // add topology
+            if (_sockets > 0 && _coresPerSocket > 0) {
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+            }
+
+            // close cpu def
+            modeBuilder.append("</cpu>");
+            return modeBuilder.toString();
         }
     }
 
@@ -1113,11 +1134,11 @@ public class LibvirtVMDef {
     }
 
     public void setLibvirtVersion(long libvirtVersion) {
-        _libvirtVersion = libvirtVersion;
+        s_libvirtVersion = libvirtVersion;
     }
 
     public void setQemuVersion(long qemuVersion) {
-        _qemuVersion = qemuVersion;
+        s_qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class PortForwardingUsageParser {
     public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsagePortForwardingRuleDao m_usagePFRuleDao;
+    private static UsageDao s_usageDao;
+    private static UsagePortForwardingRuleDao s_usagePFRuleDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class PortForwardingUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usagePFRuleDao = _usagePFRuleDao;
+        s_usageDao = _usageDao;
+        s_usagePFRuleDao = _usagePFRuleDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class PortForwardingUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsagePortForwardingRuleVO> usagePFs = m_usagePFRuleDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsagePortForwardingRuleVO> usagePFs = s_usagePFRuleDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usagePFs.isEmpty()) {
             s_logger.debug("No port forwarding usage events for this period");
@@ -152,7 +152,7 @@ public class PortForwardingUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, pfId, null,
                 startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class PFInfo {

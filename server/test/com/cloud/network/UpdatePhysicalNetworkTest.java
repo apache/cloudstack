@@ -38,7 +38,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 public class UpdatePhysicalNetworkTest {
     private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
-    private DataCenterVnetDao _DatacenterVnetDao = mock(DataCenterVnetDao.class);
+    private DataCenterVnetDao _datacenterVnetDao = mock(DataCenterVnetDao.class);
     private DataCenterDao _datacenterDao = mock(DataCenterDao.class);
     private DataCenterVO datacentervo = mock(DataCenterVO.class);
     private PhysicalNetworkVO physicalNetworkVO = mock(PhysicalNetworkVO.class);
@@ -49,7 +49,7 @@ public class UpdatePhysicalNetworkTest {
         NetworkServiceImpl networkService = new NetworkServiceImpl();
         networkService._dcDao = _datacenterDao;
         networkService._physicalNetworkDao = _physicalNetworkDao;
-        networkService._datacneter_vnet = _DatacenterVnetDao;
+        networkService._datacneterVnet = _datacenterVnetDao;
         return networkService;
     }
 
@@ -61,7 +61,7 @@ public class UpdatePhysicalNetworkTest {
         when(_physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
         when(_datacenterDao.findById(anyLong())).thenReturn(datacentervo);
         when(_physicalNetworkDao.update(anyLong(), any(physicalNetworkVO.getClass()))).thenReturn(true);
-        when(_DatacenterVnetDao.listVnetsByPhysicalNetworkAndDataCenter(anyLong(), anyLong())).thenReturn(existingRange);
+        when(_datacenterVnetDao.listVnetsByPhysicalNetworkAndDataCenter(anyLong(), anyLong())).thenReturn(existingRange);
         networkService.updatePhysicalNetwork(1l, null, null, "524-524,525-530", null);
         txn.close("updatePhysicalNetworkTest");
         verify(physicalNetworkVO).setVnet(argumentCaptor.capture());

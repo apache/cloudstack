@@ -39,7 +39,7 @@ import com.cloud.user.Account;
             since = "3.0.0")
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
-    private static final String _name = "listsupportednetworkservicesresponse";
+    private static final String Name = "listsupportednetworkservicesresponse";
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "network service provider name")
     private String providerName;
@@ -72,7 +72,7 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

@@ -175,7 +175,8 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         }
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        protected void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+        protected void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException,
+            UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
                 podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
@@ -249,7 +250,6 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
 
     }
 
-
     @Override
     public boolean generateAlert(AlertType alertType, long dataCenterId, Long podId, String msg) {
         try {
@@ -258,6 +258,6 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         } catch (Exception ex) {
             s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
-        }    
+        }
     }
 }

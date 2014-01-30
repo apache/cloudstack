@@ -66,11 +66,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     String _cidr;
     String _gateway;
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Control};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Control};
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -80,7 +80,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     protected boolean canHandle(NetworkOffering offering) {
@@ -173,8 +173,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
-
-        if (vm.getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
+        HypervisorType hType = vm.getHypervisorType();
+        if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {
@@ -224,12 +224,12 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
 
-        _cidr = dbParams.get(Config.ControlCidr);
+        _cidr = dbParams.get(Config.ControlCidr.toString());
         if (_cidr == null) {
             _cidr = "169.254.0.0/16";
         }
 
-        _gateway = dbParams.get(Config.ControlGateway);
+        _gateway = dbParams.get(Config.ControlGateway.toString());
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }

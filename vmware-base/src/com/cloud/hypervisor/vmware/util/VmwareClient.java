@@ -27,7 +27,10 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
+
+import org.apache.log4j.Logger;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -59,6 +62,7 @@ import com.vmware.vim25.VimService;
  *
  */
 public class VmwareClient {
+    private static final Logger s_logger = Logger.getLogger(VmwareClient.class);
 
     private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
 
@@ -79,19 +83,19 @@ public class VmwareClient {
     }
 
     static {
-    	try {
-			trustAllHttpsCertificates();
-	        HostnameVerifier hv = new HostnameVerifier() {
-	            @Override
-	            public boolean verify(String urlHostName, SSLSession session) {
-	                return true;
-	            }
-	        };
-	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-	        
-        	vimService = new VimService();
-		} catch (Exception e) {
-		}   	
+        try {
+            trustAllHttpsCertificates();
+            HostnameVerifier hv = new HostnameVerifier() {
+                @Override
+                public boolean verify(String urlHostName, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(hv);
+
+            vimService = new VimService();
+        } catch (Exception e) {
+        }
     }
 
     private static void trustAllHttpsCertificates() throws Exception {
@@ -106,11 +110,11 @@ public class VmwareClient {
         javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
     }
 
-    private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
+    private final ManagedObjectReference svcInstRef = new ManagedObjectReference();
     private static VimService vimService;
     private VimPortType vimPort;
     private String serviceCookie;
-    private final String SVC_INST_NAME = "ServiceInstance";
+    private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
     private boolean isConnected = false;
@@ -125,8 +129,8 @@ public class VmwareClient {
      *             the exception
      */
     public void connect(String url, String userName, String password) throws Exception {
-        SVC_INST_REF.setType(SVC_INST_NAME);
-        SVC_INST_REF.setValue(SVC_INST_NAME);
+        svcInstRef.setType(SVC_INST_NAME);
+        svcInstRef.setValue(SVC_INST_NAME);
 
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider)vimPort).getRequestContext();
@@ -137,9 +141,10 @@ public class VmwareClient {
         ctxt.put("com.sun.xml.internal.ws.request.timeout", vCenterSessionTimeout);
         ctxt.put("com.sun.xml.internal.ws.connect.timeout", vCenterSessionTimeout);
 
-        ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
+        ServiceContent serviceContent = vimPort.retrieveServiceContent(svcInstRef);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
+        @SuppressWarnings("unchecked")
         Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
         List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
@@ -177,7 +182,7 @@ public class VmwareClient {
     public ServiceContent getServiceContent() {
 
         try {
-            return vimPort.retrieveServiceContent(SVC_INST_REF);
+            return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
         }
         return null;
@@ -252,7 +257,8 @@ public class VmwareClient {
      * @throws Exception
      *             in case of error.
      */
-    public Object getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
+    @SuppressWarnings("unchecked")
+    public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
         List<String> props = new ArrayList<String>();
         props.add(propertyName);
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
@@ -280,7 +286,7 @@ public class VmwareClient {
                 }
             }
         }
-        return propertyValue;
+        return (T)propertyValue;
     }
 
     private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws Exception {
@@ -313,20 +319,25 @@ public class VmwareClient {
      * @throws RuntimeFaultFaultMsg
      * @throws InvalidPropertyFaultMsg
      */
-    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg, Exception {
 
         boolean retVal = false;
 
-        // info has a property - state for state of the task
-        Object[] result =
-            waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"}, new Object[][] {new Object[] {TaskInfoState.SUCCESS,
-                TaskInfoState.ERROR}});
+        try {
+            // info has a property - state for state of the task
+            Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
+                    TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
 
-        if (result[0].equals(TaskInfoState.SUCCESS)) {
-            retVal = true;
-        }
-        if (result[1] instanceof LocalizedMethodFault) {
-            throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
+            if (result[0].equals(TaskInfoState.SUCCESS)) {
+                retVal = true;
+            }
+            if (result[1] instanceof LocalizedMethodFault) {
+                throw new RuntimeException(((LocalizedMethodFault) result[1]).getLocalizedMessage());
+            }
+        } catch(WebServiceException we) {
+            s_logger.debug("Cancelling vCenter task because task failed with " + we.getLocalizedMessage());
+            getService().cancelTask(task);
+            throw new RuntimeException("vCenter task failed due to " + we.getLocalizedMessage());
         }
         return retVal;
     }
@@ -350,7 +361,7 @@ public class VmwareClient {
      * @throws InvalidCollectorVersionFaultMsg
      */
     private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
-        RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];

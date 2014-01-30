@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.vm.Nic;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Nic.class)
@@ -95,6 +94,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "the Secondary ipv4 addr of nic")
     private List<NicSecondaryIpResponse> secondaryIps;
 
+    @SerializedName(ApiConstants.DEVICE_ID)
+    @Param(description = "device id for the network when plugged into the virtual machine", since = "4.4")
+    private String deviceId;
+
     public String getId() {
         return id;
     }
@@ -157,6 +160,10 @@ public class NicResponse extends BaseResponse {
 
     public void setIp6Address(String ip6Address) {
         this.ip6Address = ip6Address;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     @Override

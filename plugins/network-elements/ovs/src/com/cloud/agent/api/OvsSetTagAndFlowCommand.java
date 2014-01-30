@@ -16,46 +16,45 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsSetTagAndFlowCommand extends Command {
-	String vlans;
-	String vmName;
-	String seqno;
-	String tag;
-	Long vmId;
+    String vlans;
+    String vmName;
+    String seqno;
+    String tag;
+    Long vmId;
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public String getSeqNo() {
-		return seqno;
-	}
+    public String getSeqNo() {
+        return seqno;
+    }
 
-	public String getVlans() {
-		return vlans;
-	}
+    public String getVlans() {
+        return vlans;
+    }
 
-	public String getVmName() {
-		return vmName;
-	}
+    public String getVmName() {
+        return vmName;
+    }
 
-	public Long getVmId() {
-		return vmId;
-	}
+    public Long getVmId() {
+        return vmId;
+    }
 
-	public String getTag() {
-		return tag;
-	}
+    public String getTag() {
+        return tag;
+    }
 
-	public OvsSetTagAndFlowCommand(String vmName, String tag, String vlans,
-			String seqno, Long vmId) {
-		this.vmName = vmName;
-		this.tag = tag;
-		this.vlans = vlans;
-		this.seqno = seqno;
-		this.vmId = vmId;
-	}
+    public OvsSetTagAndFlowCommand(String vmName, String tag, String vlans,
+            String seqno, Long vmId) {
+        this.vmName = vmName;
+        this.tag = tag;
+        this.vlans = vlans;
+        this.seqno = seqno;
+        this.vmId = vmId;
+    }
 }

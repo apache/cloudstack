@@ -44,7 +44,7 @@ public class SystemVmLoadScanner<T> {
     private final SystemVmLoadScanHandler<T> _scanHandler;
     private final ScheduledExecutorService _capacityScanScheduler;
     private final GlobalLock _capacityScanLock;
-    
+
     public SystemVmLoadScanner(SystemVmLoadScanHandler<T> scanHandler) {
         _scanHandler = scanHandler;
         _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory(scanHandler.getScanHandlerName()));
@@ -71,15 +71,15 @@ public class SystemVmLoadScanner<T> {
 
             @Override
             protected void runInContext() {
-            	try {
-                	CallContext callContext = CallContext.current();
-                	assert(callContext != null);
-                	
-                	AsyncJobExecutionContext.registerPseudoExecutionContext(
-                		callContext.getCallingAccountId(), callContext.getCallingUserId());
-            		
+                try {
+                    CallContext callContext = CallContext.current();
+                    assert (callContext != null);
+
+                    AsyncJobExecutionContext.registerPseudoExecutionContext(
+                        callContext.getCallingAccountId(), callContext.getCallingUserId());
+
                     reallyRun();
-                    
+
                     AsyncJobExecutionContext.unregister();
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception " + e.getMessage(), e);

@@ -48,6 +48,8 @@ public interface Pipeline extends Element {
      * so when pipeline will be connected with other elements, outside of this
      * pipeline, they will be connected to IN and OUT elements.
      *
+     * Empty names are skipped.
+     *
      * Example:
      *
      * <pre>

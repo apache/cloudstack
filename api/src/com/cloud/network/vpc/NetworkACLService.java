@@ -47,7 +47,7 @@ public interface NetworkACLService {
      * @param cmd
      * @return
      */
-    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(ListNetworkACLListsCmd cmd);
+    Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(ListNetworkACLListsCmd cmd);
 
     /**
      * Delete specified network ACL. Deletion fails if the list is not empty

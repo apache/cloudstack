@@ -30,4 +30,6 @@ public interface SnapshotDataFactory {
     SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role);
 
     List<SnapshotInfo> listSnapshotOnCache(long snapshotId);
+
+    SnapshotInfo getReadySnapshotOnCache(long snapshotId);
 }

@@ -424,14 +424,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<VpcOfferingServiceMapVO> map = _vpcOffSvcMapDao.listByVpcOffId(vpcOffId);
 
         for (VpcOfferingServiceMapVO instance : map) {
-            String service = instance.getService();
+            Service service = Service.getService(instance.getService());
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(Service.getService(service), providers);
+            serviceProviderMap.put(service, providers);
         }
 
         return serviceProviderMap;
@@ -1474,7 +1474,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (!success) {
                 if (destroyOnFailure) {
                     s_logger.debug("Destroying private gateway " + vo + " that failed to start");
-                    if (deleteVpcPrivateGateway(gatewayId)) {
+                    // calling deleting from db because on createprivategateway fail, destroyPrivateGateway is already called
+                    if (deletePrivateGatewayFromTheDB(getVpcPrivateGateway(gatewayId))) {
                         s_logger.warn("Successfully destroyed vpc " + vo + " that failed to start");
                     } else {
                         s_logger.warn("Failed to destroy vpc " + vo + " that failed to start");
@@ -1518,6 +1519,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
                 } else {
                     s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                    gatewayVO.setState(VpcGateway.State.Ready);
+                    _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
+                    s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
+
                     return false;
                 }
             }
@@ -1560,7 +1565,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                     Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
                     ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
-                    _ntwkMgr.destroyNetwork(networkId, context);
+                    _ntwkMgr.destroyNetwork(networkId, context, false);
                     s_logger.debug("Deleted private network id=" + networkId);
                 }
 

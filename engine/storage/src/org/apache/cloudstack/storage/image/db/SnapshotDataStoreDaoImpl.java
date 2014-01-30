@@ -54,8 +54,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
+
     private final String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? "
         + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
+    private final String findLatestSnapshot = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where " +
+            " store_role = ? and volume_id = ? and state = 'Ready'" +
+            " order by created DESC " +
+            " limit 1";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -98,6 +103,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_role", storeSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("state", storeSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.done();
 
         snapshotIdSearch = createSearchBuilder();
@@ -204,6 +210,33 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = txn.prepareStatement(findLatestSnapshot);
+            pstmt.setString(1, role.toString());
+            pstmt.setLong(2, volumeId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long sid = rs.getLong(1);
+                long snid = rs.getLong(3);
+                return findByStoreSnapshot(role, sid, snid);
+            }
+        } catch (SQLException e) {
+            s_logger.debug("Failed to find parent snapshot: " + e.toString());
+        } finally {
+            try {
+                if (pstmt != null)
+                    pstmt.close();
+            } catch (SQLException e) {
+            }
+        }
+        return null;
+    }
+
+    @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -300,6 +333,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             }
         }
 
+    }
+
+    @Override
+    public SnapshotDataStoreVO findReadyOnCache(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override

@@ -345,7 +345,7 @@ public class Permission implements org.apache.axis2.databinding.ADBBean {
         public static Permission fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             Permission enumeration = (Permission)
 
-            _table_.get(value);
+                _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

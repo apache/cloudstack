@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class VIF extends XenAPIObject {
      * For internal use only.
      */
     VIF(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class VIF extends XenAPIObject {
     {
         if (obj != null && obj instanceof VIF)
         {
-            VIF other = (VIF) obj;
+            VIF other = (VIF)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -127,8 +126,8 @@ public class VIF extends XenAPIObject {
         /**
          * Convert a VIF.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("allowed_operations", this.allowedOperations == null ? new LinkedHashSet<Types.VifOperations>() : this.allowedOperations);
             map.put("current_operations", this.currentOperations == null ? new HashMap<String, Types.VifOperations>() : this.currentOperations);
@@ -245,15 +244,15 @@ public class VIF extends XenAPIObject {
      * @return all fields from the object
      */
     public VIF.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVIFRecord(result);
+        return Types.toVIFRecord(result);
     }
 
     /**
@@ -263,15 +262,15 @@ public class VIF extends XenAPIObject {
      * @return reference to the object
      */
     public static VIF getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVIF(result);
+        return Types.toVIF(result);
     }
 
     /**
@@ -281,9 +280,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, VIF.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -300,16 +299,16 @@ public class VIF extends XenAPIObject {
      * @return reference to the newly created object
      */
     public static VIF create(Connection c, VIF.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVIF(result);
+        return Types.toVIF(result);
     }
 
     /**
@@ -318,9 +317,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -334,9 +333,9 @@ public class VIF extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -350,15 +349,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -367,15 +366,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<Types.VifOperations> getAllowedOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_allowed_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVifOperations(result);
+        return Types.toSetOfVifOperations(result);
     }
 
     /**
@@ -384,15 +383,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, Types.VifOperations> getCurrentOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_current_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringVifOperations(result);
+        return Types.toMapOfStringVifOperations(result);
     }
 
     /**
@@ -401,15 +400,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public String getDevice(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_device";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -418,15 +417,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Network getNetwork(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_network";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toNetwork(result);
+        return Types.toNetwork(result);
     }
 
     /**
@@ -435,15 +434,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public VM getVM(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_VM";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVM(result);
+        return Types.toVM(result);
     }
 
     /**
@@ -452,15 +451,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public String getMAC(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_MAC";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -469,15 +468,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Long getMTU(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_MTU";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -486,15 +485,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -503,15 +502,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getCurrentlyAttached(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_currently_attached";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -520,15 +519,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Long getStatusCode(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_status_code";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -537,15 +536,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public String getStatusDetail(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_status_detail";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -554,15 +553,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getRuntimeProperties(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_runtime_properties";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -571,15 +570,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public String getQosAlgorithmType(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_qos_algorithm_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -588,15 +587,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getQosAlgorithmParams(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_qos_algorithm_params";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -605,15 +604,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getQosSupportedAlgorithms(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_qos_supported_algorithms";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -622,15 +621,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public VIFMetrics getMetrics(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_metrics";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVIFMetrics(result);
+        return Types.toVIFMetrics(result);
     }
 
     /**
@@ -639,15 +638,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getMACAutogenerated(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_MAC_autogenerated";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -656,15 +655,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Types.VifLockingMode getLockingMode(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_locking_mode";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVifLockingMode(result);
+        return Types.toVifLockingMode(result);
     }
 
     /**
@@ -673,15 +672,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getIpv4Allowed(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -690,15 +689,15 @@ public class VIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getIpv6Allowed(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -707,9 +706,9 @@ public class VIF extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -724,9 +723,9 @@ public class VIF extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -740,9 +739,9 @@ public class VIF extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -756,9 +755,9 @@ public class VIF extends XenAPIObject {
      * @param algorithmType New value to set
      */
     public void setQosAlgorithmType(Connection c, String algorithmType) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_qos_algorithm_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(algorithmType)};
@@ -772,9 +771,9 @@ public class VIF extends XenAPIObject {
      * @param algorithmParams New value to set
      */
     public void setQosAlgorithmParams(Connection c, Map<String, String> algorithmParams) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_qos_algorithm_params";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(algorithmParams)};
@@ -789,9 +788,9 @@ public class VIF extends XenAPIObject {
      * @param value Value to add
      */
     public void addToQosAlgorithmParams(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.add_to_qos_algorithm_params";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -805,9 +804,9 @@ public class VIF extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromQosAlgorithmParams(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.remove_from_qos_algorithm_params";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -821,9 +820,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task plugAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -837,9 +836,9 @@ public class VIF extends XenAPIObject {
      *
      */
     public void plug(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -853,9 +852,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task unplugAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -869,9 +868,9 @@ public class VIF extends XenAPIObject {
      *
      */
     public void unplug(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -885,9 +884,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task unplugForceAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.unplug_force";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -901,9 +900,9 @@ public class VIF extends XenAPIObject {
      *
      */
     public void unplugForce(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.unplug_force";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -918,9 +917,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task setLockingModeAsync(Connection c, Types.VifLockingMode value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.set_locking_mode";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -935,9 +934,9 @@ public class VIF extends XenAPIObject {
      * @param value The new locking mode for the VIF
      */
     public void setLockingMode(Connection c, Types.VifLockingMode value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_locking_mode";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -952,9 +951,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task setIpv4AllowedAsync(Connection c, Set<String> value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.set_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -969,9 +968,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP addresses which will be associated with the VIF
      */
     public void setIpv4Allowed(Connection c, Set<String> value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -986,9 +985,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task addIpv4AllowedAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.add_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1003,9 +1002,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP address which will be associated with the VIF
      */
     public void addIpv4Allowed(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.add_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1020,9 +1019,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task removeIpv4AllowedAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.remove_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1037,9 +1036,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP address which will be removed from the VIF
      */
     public void removeIpv4Allowed(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.remove_ipv4_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1054,9 +1053,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task setIpv6AllowedAsync(Connection c, Set<String> value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.set_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1071,9 +1070,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP addresses which will be associated with the VIF
      */
     public void setIpv6Allowed(Connection c, Set<String> value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.set_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1088,9 +1087,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task addIpv6AllowedAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.add_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1105,9 +1104,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP address which will be associated with the VIF
      */
     public void addIpv6Allowed(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.add_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1122,9 +1121,9 @@ public class VIF extends XenAPIObject {
      * @return Task
      */
     public Task removeIpv6AllowedAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VIF.remove_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1139,9 +1138,9 @@ public class VIF extends XenAPIObject {
      * @param value The IP address which will be removed from the VIF
      */
     public void removeIpv6Allowed(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.remove_ipv6_allowed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1155,15 +1154,15 @@ public class VIF extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<VIF> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVIF(result);
+        return Types.toSetOfVIF(result);
     }
 
     /**
@@ -1172,15 +1171,15 @@ public class VIF extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<VIF, VIF.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VIF.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfVIFVIFRecord(result);
+        return Types.toMapOfVIFVIFRecord(result);
     }
 
 }

@@ -243,11 +243,11 @@ public class TrafficSentinelResource implements ServerResource {
         return answer;
     }
 
-    private String getScript(List<String> Ips, Date start, Date end) {
+    private String getScript(List<String> ips, Date start, Date end) {
         String IpAddresses = "";
-        for (int i = 0; i < Ips.size(); i++) {
-            IpAddresses += Ips.get(i);
-            if (i != (Ips.size() - 1)) {
+        for (int i = 0; i < ips.size(); i++) {
+            IpAddresses += ips.get(i);
+            if (i != (ips.size() - 1)) {
                 // Append comma for all Ips except the last Ip
                 IpAddresses += ",";
             }

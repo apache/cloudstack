@@ -69,7 +69,7 @@ public class LibvirtComputingResourceTest {
         int id = _random.nextInt(65534);
         String name = "test-instance-1";
 
-        int cpus = _random.nextInt(7) + 1;
+        int cpus = _random.nextInt(2) + 1;
         int speed = 1024;
         int minRam = 256 * 1024;
         int maxRam = 512 * 1024;
@@ -124,10 +124,151 @@ public class LibvirtComputingResourceTest {
         //vmStr += "<cputune>\n";
         //vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
         //vmStr += "</cputune>\n";
+        vmStr += "<cpu></cpu>";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
         vmStr += "</domain>\n";
+        assertEquals(vmStr, vm.toString());
+    }
+
+    /**
+        This test verifies that CPU topology is properly set for hex-core
+    */
+    @Test
+    public void testCreateVMFromSpecWithTopology6() {
+        int id = _random.nextInt(65534);
+        String name = "test-instance-1";
+
+        int cpus = 12;
+        int minSpeed = 1024;
+        int maxSpeed = 2048;
+        int minRam = 256 * 1024;
+        int maxRam = 512 * 1024;
+
+        String os = "Ubuntu";
+        boolean haEnabled = false;
+        boolean limitCpuUse = false;
+
+        String vncAddr = "";
+        String vncPassword = "mySuperSecretPassword";
+
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+
+        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        vm.setHvsType(_hyperVisorType);
+
+        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
+        vmStr += "<name>" + name + "</name>\n";
+        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
+        vmStr += "<description>" + os + "</description>\n";
+        vmStr += "<clock offset='utc'>\n";
+        vmStr += "</clock>\n";
+        vmStr += "<features>\n";
+        vmStr += "<pae/>\n";
+        vmStr += "<apic/>\n";
+        vmStr += "<acpi/>\n";
+        vmStr += "</features>\n";
+        vmStr += "<devices>\n";
+        vmStr += "<serial type='pty'>\n";
+        vmStr += "<target port='0'/>\n";
+        vmStr += "</serial>\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
+        vmStr += "<console type='pty'>\n";
+        vmStr += "<target port='0'/>\n";
+        vmStr += "</console>\n";
+        vmStr += "<input type='tablet' bus='usb'/>\n";
+        vmStr += "</devices>\n";
+        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
+        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
+        vmStr += "<devices>\n";
+        vmStr += "<memballoon model='virtio'/>\n";
+        vmStr += "</devices>\n";
+        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
+        vmStr += "<os>\n";
+        vmStr += "<type  machine='pc'>hvm</type>\n";
+        vmStr += "<boot dev='cdrom'/>\n";
+        vmStr += "<boot dev='hd'/>\n";
+        vmStr += "</os>\n";
+        vmStr += "<cpu><topology sockets='2' cores='6' threads='1' /></cpu>";
+        vmStr += "<on_reboot>restart</on_reboot>\n";
+        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
+        vmStr += "<on_crash>destroy</on_crash>\n";
+        vmStr += "</domain>\n";
+
+        assertEquals(vmStr, vm.toString());
+    }
+
+    /**
+        This test verifies that CPU topology is properly set for quad-core
+    */
+    @Test
+    public void testCreateVMFromSpecWithTopology4() {
+        int id = _random.nextInt(65534);
+        String name = "test-instance-1";
+
+        int cpus = 8;
+        int minSpeed = 1024;
+        int maxSpeed = 2048;
+        int minRam = 256 * 1024;
+        int maxRam = 512 * 1024;
+
+        String os = "Ubuntu";
+        boolean haEnabled = false;
+        boolean limitCpuUse = false;
+
+        String vncAddr = "";
+        String vncPassword = "mySuperSecretPassword";
+
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+
+        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        vm.setHvsType(_hyperVisorType);
+
+        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
+        vmStr += "<name>" + name + "</name>\n";
+        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
+        vmStr += "<description>" + os + "</description>\n";
+        vmStr += "<clock offset='utc'>\n";
+        vmStr += "</clock>\n";
+        vmStr += "<features>\n";
+        vmStr += "<pae/>\n";
+        vmStr += "<apic/>\n";
+        vmStr += "<acpi/>\n";
+        vmStr += "</features>\n";
+        vmStr += "<devices>\n";
+        vmStr += "<serial type='pty'>\n";
+        vmStr += "<target port='0'/>\n";
+        vmStr += "</serial>\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
+        vmStr += "<console type='pty'>\n";
+        vmStr += "<target port='0'/>\n";
+        vmStr += "</console>\n";
+        vmStr += "<input type='tablet' bus='usb'/>\n";
+        vmStr += "</devices>\n";
+        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
+        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
+        vmStr += "<devices>\n";
+        vmStr += "<memballoon model='virtio'/>\n";
+        vmStr += "</devices>\n";
+        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
+        vmStr += "<os>\n";
+        vmStr += "<type  machine='pc'>hvm</type>\n";
+        vmStr += "<boot dev='cdrom'/>\n";
+        vmStr += "<boot dev='hd'/>\n";
+        vmStr += "</os>\n";
+        vmStr += "<cpu><topology sockets='2' cores='4' threads='1' /></cpu>";
+        vmStr += "<on_reboot>restart</on_reboot>\n";
+        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
+        vmStr += "<on_crash>destroy</on_crash>\n";
+        vmStr += "</domain>\n";
+
         assertEquals(vmStr, vm.toString());
     }
 
@@ -143,7 +284,7 @@ public class LibvirtComputingResourceTest {
         int id = _random.nextInt(65534);
         String name = "test-instance-1";
 
-        int cpus = _random.nextInt(7) + 1;
+        int cpus = _random.nextInt(2) + 1;
         int minSpeed = 1024;
         int maxSpeed = 2048;
         int minRam = 256 * 1024;
@@ -200,6 +341,7 @@ public class LibvirtComputingResourceTest {
         //vmStr += "<cputune>\n";
         //vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
         //vmStr += "</cputune>\n";
+        vmStr += "<cpu></cpu>";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
@@ -250,14 +392,14 @@ public class LibvirtComputingResourceTest {
         Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new Answer<DomainInterfaceStats>() {
             // increment with less than a KB, so this should be less than 1 KB
             final static int increment = 1000;
-            int rx_bytes = 1000;
-            int tx_bytes = 1000;
+            int rxBytes = 1000;
+            int txBytes = 1000;
 
             @Override
             public DomainInterfaceStats answer(InvocationOnMock invocation) throws Throwable {
                 DomainInterfaceStats domainInterfaceStats = new DomainInterfaceStats();
-                domainInterfaceStats.rx_bytes = (this.rx_bytes += increment);
-                domainInterfaceStats.tx_bytes = (this.tx_bytes += increment);
+                domainInterfaceStats.rx_bytes = (rxBytes += increment);
+                domainInterfaceStats.tx_bytes = (txBytes += increment);
                 return domainInterfaceStats;
 
             }
@@ -268,15 +410,15 @@ public class LibvirtComputingResourceTest {
             // a little less than a KB
             final static int increment = 1000;
 
-            int rd_bytes = 0;
-            int wr_bytes = 1024;
+            int rdBytes = 0;
+            int wrBytes = 1024;
 
             @Override
             public DomainBlockStats answer(InvocationOnMock invocation) throws Throwable {
                 DomainBlockStats domainBlockStats = new DomainBlockStats();
 
-                domainBlockStats.rd_bytes = (rd_bytes += increment);
-                domainBlockStats.wr_bytes = (wr_bytes += increment);
+                domainBlockStats.rd_bytes = (rdBytes += increment);
+                domainBlockStats.wr_bytes = (wrBytes += increment);
                 return domainBlockStats;
             }
 

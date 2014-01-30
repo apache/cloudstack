@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class SR extends XenAPIObject {
      * For internal use only.
      */
     SR(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class SR extends XenAPIObject {
     {
         if (obj != null && obj instanceof SR)
         {
-            SR other = (SR) obj;
+            SR other = (SR)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -125,8 +124,8 @@ public class SR extends XenAPIObject {
         /**
          * Convert a SR.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
@@ -233,15 +232,15 @@ public class SR extends XenAPIObject {
      * @return all fields from the object
      */
     public SR.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSRRecord(result);
+        return Types.toSRRecord(result);
     }
 
     /**
@@ -251,15 +250,15 @@ public class SR extends XenAPIObject {
      * @return reference to the object
      */
     public static SR getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
     /**
@@ -269,15 +268,15 @@ public class SR extends XenAPIObject {
      * @return references to objects with matching names
      */
     public static Set<SR> getByNameLabel(Connection c, String label) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_by_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(label)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfSR(result);
+        return Types.toSetOfSR(result);
     }
 
     /**
@@ -286,15 +285,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -303,15 +302,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public String getNameLabel(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -320,15 +319,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public String getNameDescription(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -337,15 +336,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Set<Types.StorageOperations> getAllowedOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_allowed_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfStorageOperations(result);
+        return Types.toSetOfStorageOperations(result);
     }
 
     /**
@@ -354,15 +353,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, Types.StorageOperations> getCurrentOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_current_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringStorageOperations(result);
+        return Types.toMapOfStringStorageOperations(result);
     }
 
     /**
@@ -371,15 +370,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Set<VDI> getVDIs(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_VDIs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVDI(result);
+        return Types.toSetOfVDI(result);
     }
 
     /**
@@ -388,15 +387,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Set<PBD> getPBDs(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_PBDs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfPBD(result);
+        return Types.toSetOfPBD(result);
     }
 
     /**
@@ -405,15 +404,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Long getVirtualAllocation(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_virtual_allocation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -422,15 +421,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Long getPhysicalUtilisation(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_physical_utilisation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -439,15 +438,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Long getPhysicalSize(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_physical_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -456,15 +455,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public String getType(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -473,15 +472,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public String getContentType(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_content_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -490,15 +489,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getShared(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_shared";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -507,15 +506,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -524,15 +523,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getTags(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -541,15 +540,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getSmConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -558,15 +557,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, Blob> getBlobs(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_blobs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringBlob(result);
+        return Types.toMapOfStringBlob(result);
     }
 
     /**
@@ -575,15 +574,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getLocalCacheEnabled(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_local_cache_enabled";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -592,15 +591,15 @@ public class SR extends XenAPIObject {
      * @return value of the field
      */
     public DRTask getIntroducedBy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_introduced_by";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toDRTask(result);
+        return Types.toDRTask(result);
     }
 
     /**
@@ -609,9 +608,9 @@ public class SR extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -626,9 +625,9 @@ public class SR extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -642,9 +641,9 @@ public class SR extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -658,9 +657,9 @@ public class SR extends XenAPIObject {
      * @param tags New value to set
      */
     public void setTags(Connection c, Set<String> tags) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(tags)};
@@ -674,9 +673,9 @@ public class SR extends XenAPIObject {
      * @param value New value to add
      */
     public void addTags(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.add_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -690,9 +689,9 @@ public class SR extends XenAPIObject {
      * @param value Value to remove
      */
     public void removeTags(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.remove_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -706,9 +705,9 @@ public class SR extends XenAPIObject {
      * @param smConfig New value to set
      */
     public void setSmConfig(Connection c, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(smConfig)};
@@ -723,9 +722,9 @@ public class SR extends XenAPIObject {
      * @param value Value to add
      */
     public void addToSmConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.add_to_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -739,9 +738,9 @@ public class SR extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromSmConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.remove_from_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -763,15 +762,16 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return Task
      */
-    public static Task createAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrUnknownDriver {
+    public static Task createAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Boolean shared, Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrUnknownDriver {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioCreateAsync(c, host, deviceConfig, physicalSize, nameLabel, nameDescription, type, contentType, shared);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -781,29 +781,33 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
-    private static Task rioCreateAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException,
-       Types.SrUnknownDriver {
+    private static Task rioCreateAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription,
+        String type, String contentType, Boolean shared) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException,
+        Types.SrUnknownDriver {
         String method_call = "Async.SR.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(shared)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
     }
 
-    private static Task miamiCreateAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException,
-       Types.SrUnknownDriver {
+    private static Task miamiCreateAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription,
+        String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException,
+        Types.SrUnknownDriver {
         String method_call = "Async.SR.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -823,15 +827,16 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return The reference of the newly created Storage Repository.
      */
-    public static SR create(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrUnknownDriver {
+    public static SR create(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Boolean shared, Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrUnknownDriver {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioCreate(c, host, deviceConfig, physicalSize, nameLabel, nameDescription, type, contentType, shared);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -841,32 +846,36 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
-    private static SR rioCreate(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException,
-       Types.SrUnknownDriver {
+    private static SR rioCreate(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Boolean shared) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException,
+        Types.SrUnknownDriver {
         String method_call = "SR.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(shared)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
-    private static SR miamiCreate(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException,
-       Types.SrUnknownDriver {
+    private static SR miamiCreate(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Boolean shared, Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException,
+        Types.SrUnknownDriver {
         String method_call = "SR.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
     /**
@@ -881,14 +890,15 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return Task
      */
-    public static Task introduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+    public static Task introduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared,
+        Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioIntroduceAsync(c, uuid, nameLabel, nameDescription, type, contentType, shared);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -898,27 +908,28 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
     private static Task rioIntroduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.SR.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
     }
 
-    private static Task miamiIntroduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    private static Task miamiIntroduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared,
+        Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.SR.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -936,14 +947,15 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return The reference of the newly introduced Storage Repository.
      */
-    public static SR introduce(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+    public static SR introduce(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared,
+        Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioIntroduce(c, uuid, nameLabel, nameDescription, type, contentType, shared);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -953,30 +965,31 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
     private static SR rioIntroduce(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "SR.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
-    private static SR miamiIntroduce(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    private static SR miamiIntroduce(Connection c, String uuid, String nameLabel, String nameDescription, String type, String contentType, Boolean shared,
+        Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "SR.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(shared), Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
     /**
@@ -993,14 +1006,16 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return Task
      */
-   @Deprecated public static Task makeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public static Task makeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioMakeAsync(c, host, deviceConfig, physicalSize, nameLabel, nameDescription, type, contentType);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -1010,27 +1025,32 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
-   @Deprecated private static Task rioMakeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    @Deprecated
+    private static Task rioMakeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.SR.make";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
     }
 
-   @Deprecated private static Task miamiMakeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    @Deprecated
+    private static Task miamiMakeAsync(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription,
+        String type, String contentType, Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.SR.make";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1050,14 +1070,16 @@ public class SR extends XenAPIObject {
      * @param smConfig Storage backend specific configuration options
      * @return The uuid of the newly created Storage Repository.
      */
-   @Deprecated public static String make(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Map<String, String> smConfig) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public static String make(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Map<String, String> smConfig) throws
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (smConfig.isEmpty()){
+        if (c.rioConnection) {
+            if (smConfig.isEmpty()) {
                 return rioMake(c, host, deviceConfig, physicalSize, nameLabel, nameDescription, type, contentType);
             } else {
                 throw new Types.VersionException("smConfig parameter must be empty map for Rio (legacy XenServer) host");
@@ -1067,30 +1089,35 @@ public class SR extends XenAPIObject {
         }
     }
 
-
-
-   @Deprecated private static String rioMake(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    @Deprecated
+    private static String rioMake(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "SR.make";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
-   @Deprecated private static String miamiMake(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type, String contentType, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+    @Deprecated
+    private static String miamiMake(Connection c, Host host, Map<String, String> deviceConfig, Long physicalSize, String nameLabel, String nameDescription, String type,
+        String contentType, Map<String, String> smConfig) throws
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "SR.make";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(physicalSize),
+            Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(contentType),
+            Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -1099,10 +1126,10 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrHasPbd {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrHasPbd {
         String method_call = "Async.SR.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1116,10 +1143,10 @@ public class SR extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrHasPbd {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrHasPbd {
         String method_call = "SR.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1133,10 +1160,10 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task forgetAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrHasPbd {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrHasPbd {
         String method_call = "Async.SR.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1150,10 +1177,10 @@ public class SR extends XenAPIObject {
      *
      */
     public void forget(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrHasPbd {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrHasPbd {
         String method_call = "SR.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1167,9 +1194,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task updateAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.update";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1183,9 +1210,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void update(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.update";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1199,15 +1226,15 @@ public class SR extends XenAPIObject {
      * @return the supported SR types
      */
     public static Set<String> getSupportedTypes(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_supported_types";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -1216,9 +1243,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task scanAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.scan";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1232,9 +1259,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void scan(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.scan";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1252,12 +1279,13 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public static Task probeAsync(Connection c, Host host, Map<String, String> deviceConfig, String type, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.probe";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(type),
+            Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1273,15 +1301,16 @@ public class SR extends XenAPIObject {
      * @return An XML fragment containing the scan results.  These are specific to the scan being performed, and the backend.
      */
     public static String probe(Connection c, Host host, Map<String, String> deviceConfig, String type, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.probe";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(smConfig)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(deviceConfig), Marshalling.toXMLRPC(type),
+            Marshalling.toXMLRPC(smConfig)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -1291,9 +1320,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task setSharedAsync(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.set_shared";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1308,9 +1337,9 @@ public class SR extends XenAPIObject {
      * @param value True if the SR is shared
      */
     public void setShared(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_shared";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1325,9 +1354,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task setNameLabelAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.set_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1342,9 +1371,9 @@ public class SR extends XenAPIObject {
      * @param value The name label for the SR
      */
     public void setNameLabel(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1359,9 +1388,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task setNameDescriptionAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.set_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1376,9 +1405,9 @@ public class SR extends XenAPIObject {
      * @param value The name description for the SR
      */
     public void setNameDescription(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1395,12 +1424,13 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task createNewBlobAsync(Connection c, String name, String mimeType, Boolean _public) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType),
+            Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1415,15 +1445,16 @@ public class SR extends XenAPIObject {
      * @return The reference of the blob, needed for populating its data
      */
     public Blob createNewBlob(Connection c, String name, String mimeType, Boolean _public) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.create_new_blob";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType), Marshalling.toXMLRPC(_public)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(mimeType),
+            Marshalling.toXMLRPC(_public)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBlob(result);
+        return Types.toBlob(result);
     }
 
     /**
@@ -1432,9 +1463,9 @@ public class SR extends XenAPIObject {
      * @param value The new value of the SR's physical_size
      */
     public void setPhysicalSize(Connection c, Long value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_physical_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1448,9 +1479,9 @@ public class SR extends XenAPIObject {
      * @param value The new value of the SR's virtual_allocation
      */
     public void setVirtualAllocation(Connection c, Long value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_virtual_allocation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1464,9 +1495,9 @@ public class SR extends XenAPIObject {
      * @param value The new value of the SR's physical utilisation
      */
     public void setPhysicalUtilisation(Connection c, Long value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.set_physical_utilisation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1480,9 +1511,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task assertCanHostHaStatefileAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.assert_can_host_ha_statefile";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1496,9 +1527,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void assertCanHostHaStatefile(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.assert_can_host_ha_statefile";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1512,9 +1543,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task assertSupportsDatabaseReplicationAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.assert_supports_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1528,9 +1559,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void assertSupportsDatabaseReplication(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.assert_supports_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1544,9 +1575,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task enableDatabaseReplicationAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.enable_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1560,9 +1591,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void enableDatabaseReplication(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.enable_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1576,9 +1607,9 @@ public class SR extends XenAPIObject {
      * @return Task
      */
     public Task disableDatabaseReplicationAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.SR.disable_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1592,9 +1623,9 @@ public class SR extends XenAPIObject {
      *
      */
     public void disableDatabaseReplication(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.disable_database_replication";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1608,15 +1639,15 @@ public class SR extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<SR> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfSR(result);
+        return Types.toSetOfSR(result);
     }
 
     /**
@@ -1625,15 +1656,15 @@ public class SR extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<SR, SR.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "SR.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfSRSRRecord(result);
+        return Types.toMapOfSRSRRecord(result);
     }
 
 }

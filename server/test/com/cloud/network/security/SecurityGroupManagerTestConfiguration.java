@@ -71,12 +71,12 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses = {SecurityGroupRulesDaoImpl.class, UserVmDaoImpl.class, AccountDaoImpl.class, ConfigurationDaoImpl.class,
-                   SecurityGroupWorkDaoImpl.class, VmRulesetLogDaoImpl.class, VMInstanceDaoImpl.class, DomainDaoImpl.class, UsageEventDaoImpl.class,
-                   ResourceTagsDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class,
-                   DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, HostTransferMapDaoImpl.class, SecurityGroupManagerImpl2.class, SecurityGroupDaoImpl.class,
-                   SecurityGroupVMMapDaoImpl.class, UserVmDetailsDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
-                   DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, SecurityGroupRuleDaoImpl.class, NicDaoImpl.class,
-                   SecurityGroupJoinDaoImpl.class},
+    SecurityGroupWorkDaoImpl.class, VmRulesetLogDaoImpl.class, VMInstanceDaoImpl.class, DomainDaoImpl.class, UsageEventDaoImpl.class,
+    ResourceTagsDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class,
+    DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, HostTransferMapDaoImpl.class, SecurityGroupManagerImpl2.class, SecurityGroupDaoImpl.class,
+    SecurityGroupVMMapDaoImpl.class, UserVmDetailsDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
+    DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, SecurityGroupRuleDaoImpl.class, NicDaoImpl.class,
+    SecurityGroupJoinDaoImpl.class},
                includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class SecurityGroupManagerTestConfiguration {

@@ -55,25 +55,25 @@ public class ListCfgsByCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                description = "the ID of the Zone to update the parameter value for corresponding zone")
-    private Long zone_id;
+    private Long zoneId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
                description = "the ID of the Cluster to update the parameter value for corresponding cluster")
-    private Long cluster_id;
+    private Long clusterId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
                description = "the ID of the Storage pool to update the parameter value for corresponding storage pool")
-    private Long storagepool_id;
+    private Long storagePoolId;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
                type = CommandType.UUID,
                entityType = AccountResponse.class,
                description = "the ID of the Account to update the parameter value for corresponding account")
-    private Long account_id;
+    private Long accountId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -88,19 +88,19 @@ public class ListCfgsByCmd extends BaseListCmd {
     }
 
     public Long getZoneId() {
-        return zone_id;
+        return zoneId;
     }
 
     public Long getClusterId() {
-        return cluster_id;
+        return clusterId;
     }
 
     public Long getStoragepoolId() {
-        return storagepool_id;
+        return storagePoolId;
     }
 
     public Long getAccountId() {
-        return account_id;
+        return accountId;
     }
 
     @Override
@@ -108,7 +108,7 @@ public class ListCfgsByCmd extends BaseListCmd {
         Long defaultPageSize = 500L;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
-            if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
+            if (pageSizeInt.longValue() == s_pageSizeUnlimited) {
                 defaultPageSize = null;
             } else {
                 defaultPageSize = pageSizeInt.longValue();
@@ -151,6 +151,6 @@ public class ListCfgsByCmd extends BaseListCmd {
 
         response.setResponses(configResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

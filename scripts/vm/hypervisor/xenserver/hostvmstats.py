@@ -21,8 +21,17 @@ import XenAPI
 import urllib
 import time
 import logging
-logging.basicConfig(filename='/tmp/xapilog',level=logging.DEBUG)
-                      
+import logging.handlers
+
+LOG_FILENAME = '/tmp/xapilog'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+stats_logger = logging.getLogger('statsLogger')
+stats_logger.setLevel(logging.DEBUG)
+
+#handler with maxBytes=10MiB
+handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=10*1024*1024, backupCount=5)
+stats_logger.addHandler(handler)
+
 def get_stats(session, collect_host_stats, consolidation_function, interval, start_time):
   try:
     
@@ -41,12 +50,12 @@ def get_stats(session, collect_host_stats, consolidation_function, interval, sta
     	url += "&interval=" + str(interval)
     	url += "&start=" + str(int(time.time())-100)
 
-    logging.debug("Calling URL: %s",url)
+    stats_logger.debug("Calling URL: %s",url)
     sock = urllib.URLopener().open(url)
     xml = sock.read()
     sock.close()
-    logging.debug("Size of returned XML: %s",len(xml))
+    stats_logger.debug("Size of returned XML: %s",len(xml))
     return xml
   except Exception,e:
-    logging.exception("get_stats() failed")
+    stats_logger.exception("get_stats() failed")
     raise

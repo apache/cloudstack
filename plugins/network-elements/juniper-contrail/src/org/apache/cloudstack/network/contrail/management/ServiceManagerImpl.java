@@ -27,12 +27,13 @@ import javax.inject.Inject;
 
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.ServiceInstance;
-import net.juniper.contrail.api.types.VirtualNetwork;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
+import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -96,7 +97,7 @@ public class ServiceManagerImpl implements ServiceManager {
      */
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "createServiceInstance", create = true)
     private ServiceVirtualMachine createServiceVM(DataCenter zone, Account owner, VirtualMachineTemplate template, ServiceOffering serviceOffering, String name,
-            ServiceInstance siObj, Network left, Network right) {
+        ServiceInstance siObj, Network left, Network right) {
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
@@ -109,8 +110,8 @@ public class ServiceManagerImpl implements ServiceManager {
 
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
         ServiceVirtualMachine svm =
-                new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        zone.getId(), owner.getDomainId(), owner.getAccountId(), false);
+            new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                zone.getId(), owner.getDomainId(), owner.getAccountId(), false);
 
         // database synchronization code must be able to distinguish service instance VMs.
         Map<String, String> kvmap = new HashMap<String, String>();
@@ -130,7 +131,7 @@ public class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public ServiceVirtualMachine createServiceInstance(DataCenter zone, Account owner, VirtualMachineTemplate template, ServiceOffering serviceOffering, String name,
-            Network left, Network right) {
+        Network left, Network right) {
         s_logger.debug("createServiceInstance by " + owner.getAccountName());
         // TODO: permission model.
         // service instances need to be able to access the public network.
@@ -142,17 +143,15 @@ public class ServiceManagerImpl implements ServiceManager {
         }
 
         final ApiConnector api = _manager.getApiConnector();
-        final VirtualNetwork netLeft;
-        try {
-            netLeft = (VirtualNetwork)api.findById(VirtualNetwork.class, left.getUuid());
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Unable to read virtual-network object", ex);
+        VirtualNetworkModel leftModel = _manager.getDatabase().lookupVirtualNetwork(left.getUuid(),
+                _manager.getCanonicalName(left), left.getTrafficType());
+        if (leftModel == null) {
+            throw new CloudRuntimeException("Unable to read virtual-network object");
         }
-        final VirtualNetwork netRight;
-        try {
-            netRight = (VirtualNetwork)api.findById(VirtualNetwork.class, right.getUuid());
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Unable to read virtual-network object", ex);
+        VirtualNetworkModel rightModel = _manager.getDatabase().lookupVirtualNetwork(right.getUuid(),
+                _manager.getCanonicalName(right), right.getTrafficType());
+        if (rightModel == null) {
+            throw new CloudRuntimeException("Unable to read virtual-network object");
         }
 
         net.juniper.contrail.api.types.Project project;
@@ -174,7 +173,8 @@ public class ServiceManagerImpl implements ServiceManager {
         }
 
         // 1. Create service-instance.
-        ServiceInstanceModel serviceModel = new ServiceInstanceModel(project, name, template, serviceOffering, netLeft, netRight);
+        ServiceInstanceModel serviceModel = new ServiceInstanceModel(project, name, template, serviceOffering,
+                leftModel, rightModel);
 
         try {
             serviceModel.update(_manager.getModelController());

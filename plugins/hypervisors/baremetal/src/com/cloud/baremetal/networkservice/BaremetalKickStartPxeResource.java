@@ -42,7 +42,7 @@ import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalKickStartPxeResource.class);
-    private static final String _name = "BaremetalKickStartPxeResource";
+    private static final String Name = "BaremetalKickStartPxeResource";
     String _tftpDir;
 
     @Override

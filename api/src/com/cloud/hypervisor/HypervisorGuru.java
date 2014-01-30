@@ -75,4 +75,6 @@ public interface HypervisorGuru extends Adapter {
      *
      */
     List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics);
+
+    List<Command> finalizeExpungeVolumes(VirtualMachine vm);
 }

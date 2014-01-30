@@ -1118,7 +1118,7 @@ cloudStack.converters = {
 
 //data parameter passed to API call in listView
 
-function listViewDataProvider(args, data) {
+function listViewDataProvider(args, data, options) {
     //search
     if (args.filterBy != null) {
         if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
@@ -1139,9 +1139,13 @@ function listViewDataProvider(args, data) {
             switch (args.filterBy.search.by) {
                 case "name":
                     if (args.filterBy.search.value.length > 0) {
-                        $.extend(data, {
-                            keyword: args.filterBy.search.value
-                        });
+                        if (options && options.searchBy) {
+                            data[options.searchBy] = args.filterBy.search.value;
+                        } else {
+                            $.extend(data, {
+                                keyword: args.filterBy.search.value
+                            });
+                        }
                     }
                     break;
             }
@@ -1154,6 +1158,8 @@ function listViewDataProvider(args, data) {
         page: args.page,
         pagesize: pageSize
     });
+
+    return data;
 }
 
 //used by infrastructure page and network page
@@ -1193,7 +1199,9 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 		var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
 		var passwordIndex = url.indexOf('&password='); //38
 		var domainIndex = url.indexOf('&domain=');    //51
-		jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
+		if (passwordIndex >= 0) {
+			jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
+		}
 	}	
 }
 
@@ -2064,6 +2072,11 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
+            	args.response.success({
+                    data: args.jsonObj.tags
+                });
+            	
+            	/*
                 var resourceId = args.context[contextId][0].id;
                 var data = {
                     resourceId: resourceId,
@@ -2094,6 +2107,7 @@ cloudStack.api = {
                         args.response.error(parseXMLHttpResponse(json));
                     }
                 });
+                */
             }
         };
     }

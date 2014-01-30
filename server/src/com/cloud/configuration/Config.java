@@ -41,7 +41,6 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public enum Config {
 
-
     // Alert
 
     AlertEmailAddresses(
@@ -65,7 +64,14 @@ public enum Config {
     AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
     AlertSMTPConnectionTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.connectiontimeout", "30000",
             "Socket connection timeout value in milliseconds. -1 for infinite timeout.", null),
-    AlertSMTPTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.", null),
+    AlertSMTPTimeout(
+            "Alert",
+            ManagementServer.class,
+            Integer.class,
+            "alert.smtp.timeout",
+            "30000",
+            "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
+            null),
     AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
@@ -396,6 +402,10 @@ public enum Config {
             "10",
             "The maximum number of subnets per customer gateway",
             null),
+    MaxNumberOfSecondaryIPsPerNIC(
+            "Network", ManagementServer.class, Integer.class,
+            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "Specify the number of secondary ip addresses per nic per vm", null),
 
     // Console Proxy
     ConsoleProxyCapacityStandby(
@@ -975,7 +985,6 @@ public enum Config {
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
             null),
-    EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", null),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,
@@ -1103,6 +1112,13 @@ public enum Config {
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61"),
+    XenServerHotFix("Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "xen.hotfix.enabled",
+            "false",
+            "Enable/Disable xenserver hot fix",
+            null),
 
     // VMware
     VmwareUseNexusVSwitch(
@@ -1359,9 +1375,6 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
-    EncryptionKey("Hidden", ManagementServer.class, String.class, "security.encryption.key", null, "base64 encoded key data", null),
-    EncryptionIV("Hidden", ManagementServer.class, String.class, "security.encryption.iv", null, "base64 encoded IV data", null),
     RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
@@ -1699,8 +1712,6 @@ public enum Config {
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
-    CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
-    CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
     ConsoleProxyServiceOffering(
             "Advanced",
             ManagementServer.class,
@@ -1892,49 +1903,49 @@ public enum Config {
     private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
 
-    private static final HashMap<String, List<Config>> _scopeLevelConfigsMap = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
     static {
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
             StringTokenizer tokens = new StringTokenizer(c.getScope(), ",");
             while (tokens.hasMoreTokens()) {
                 String scope = tokens.nextToken().trim();
-                List<Config> currentConfigs = _scopeLevelConfigsMap.get(scope);
+                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope);
                 currentConfigs.add(c);
-                _scopeLevelConfigsMap.put(scope, currentConfigs);
+                s_scopeLevelConfigsMap.put(scope, currentConfigs);
             }
         }
     }
 
-    private static final HashMap<String, List<Config>> _configs = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> Configs = new HashMap<String, List<Config>>();
     static {
         // Add categories
-        _configs.put("Alert", new ArrayList<Config>());
-        _configs.put("Storage", new ArrayList<Config>());
-        _configs.put("Snapshots", new ArrayList<Config>());
-        _configs.put("Network", new ArrayList<Config>());
-        _configs.put("Usage", new ArrayList<Config>());
-        _configs.put("Console Proxy", new ArrayList<Config>());
-        _configs.put("Advanced", new ArrayList<Config>());
-        _configs.put("Usage", new ArrayList<Config>());
-        _configs.put("Developer", new ArrayList<Config>());
-        _configs.put("Hidden", new ArrayList<Config>());
-        _configs.put("Account Defaults", new ArrayList<Config>());
-        _configs.put("Project Defaults", new ArrayList<Config>());
-        _configs.put("Secure", new ArrayList<Config>());
+        Configs.put("Alert", new ArrayList<Config>());
+        Configs.put("Storage", new ArrayList<Config>());
+        Configs.put("Snapshots", new ArrayList<Config>());
+        Configs.put("Network", new ArrayList<Config>());
+        Configs.put("Usage", new ArrayList<Config>());
+        Configs.put("Console Proxy", new ArrayList<Config>());
+        Configs.put("Advanced", new ArrayList<Config>());
+        Configs.put("Usage", new ArrayList<Config>());
+        Configs.put("Developer", new ArrayList<Config>());
+        Configs.put("Hidden", new ArrayList<Config>());
+        Configs.put("Account Defaults", new ArrayList<Config>());
+        Configs.put("Project Defaults", new ArrayList<Config>());
+        Configs.put("Secure", new ArrayList<Config>());
 
         // Add values into HashMap
         for (Config c : Config.values()) {
             String category = c.getCategory();
-            List<Config> currentConfigs = _configs.get(category);
+            List<Config> currentConfigs = Configs.get(category);
             currentConfigs.add(c);
-            _configs.put(category, currentConfigs);
+            Configs.put(category, currentConfigs);
         }
     }
 
@@ -2026,7 +2037,7 @@ public enum Config {
     }
 
     public static List<Config> getConfigs(String category) {
-        return _configs.get(category);
+        return Configs.get(category);
     }
 
     public static Config getConfig(String name) {
@@ -2044,7 +2055,7 @@ public enum Config {
     }
 
     public static List<String> getCategories() {
-        Object[] keys = _configs.keySet().toArray();
+        Object[] keys = Configs.keySet().toArray();
         List<String> categories = new ArrayList<String>();
         for (Object key : keys) {
             categories.add((String)key);
@@ -2053,6 +2064,6 @@ public enum Config {
     }
 
     public static List<Config> getConfigListByScope(String scope) {
-        return _scopeLevelConfigsMap.get(scope);
+        return s_scopeLevelConfigsMap.get(scope);
     }
 }

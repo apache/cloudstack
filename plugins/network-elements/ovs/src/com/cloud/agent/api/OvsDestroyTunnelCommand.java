@@ -16,35 +16,34 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsDestroyTunnelCommand extends Command {
 
-	Long networkId;
-	Integer key;
-	String inPortName;
+    Long networkId;
+    Integer key;
+    String inPortName;
 
-	public OvsDestroyTunnelCommand(Long networkId, Integer key,
-			String inPortName) {
-		this.networkId = networkId;
-		this.inPortName = inPortName;
-		this.key = key;
-	}
+    public OvsDestroyTunnelCommand(Long networkId, Integer key,
+            String inPortName) {
+        this.networkId = networkId;
+        this.inPortName = inPortName;
+        this.key = key;
+    }
 
-	public Long getNetworkId() {
-		return networkId;
-	}
+    public Long getNetworkId() {
+        return networkId;
+    }
 
-	public String getInPortName() {
-		return inPortName;
-	}
+    public String getInPortName() {
+        return inPortName;
+    }
 
-	public Integer getKey() {
-		return key;
-	}
+    public Integer getKey() {
+        return key;
+    }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

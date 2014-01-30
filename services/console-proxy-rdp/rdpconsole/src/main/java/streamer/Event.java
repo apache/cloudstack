@@ -17,7 +17,8 @@
 package streamer;
 
 public enum Event {
-    STREAM_START, STREAM_CLOSE,
+    STREAM_START,
+    STREAM_CLOSE,
 
     /**
      * Upgrade socket to SSL.

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,12 +18,13 @@ package org.apache.cloudstack.resourcedetail.dao;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+
 @Component
-@Local(value = { VpcDetailsDao.class })
+@Local(value = {VpcDetailsDao.class})
 public class VpcDetailsDaoImpl extends ResourceDetailsDaoBase<VpcDetailVO> implements VpcDetailsDao {
 
     @Override

@@ -23,6 +23,7 @@ import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -49,6 +50,7 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -436,9 +438,33 @@ public class Request {
         }
         buf.append(", Ver: ").append(_ver.toString());
         buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
-        buf.append(content);
+        String cleanContent = content.toString();
+        if(cleanContent.contains("password")) {
+            buf.append(cleanPassword(cleanContent));
+        } else {
+            buf.append(content);
+        }
         buf.append(" }");
         return buf.toString();
+    }
+
+    public static String cleanPassword(String logString) {
+        String cleanLogString = null;
+        if (logString != null) {
+            cleanLogString = logString;
+            String[] temp = logString.split(",");
+            int i = 0;
+            if (temp != null) {
+                while (i < temp.length) {
+                    temp[i] = StringUtils.cleanString(temp[i]);
+                    i++;
+                }
+                List<String> stringList = new ArrayList<String>();
+                Collections.addAll(stringList, temp);
+                cleanLogString = StringUtils.join(stringList, ",");
+            }
+        }
+        return cleanLogString;
     }
 
     /**

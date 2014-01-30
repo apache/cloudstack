@@ -45,7 +45,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     @Inject
     protected NetworkDao _networkDao;
 
-    protected static EventBus _eventBus = null;
+    protected static EventBus s_eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
 
@@ -69,7 +69,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
 
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
@@ -88,7 +88,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
 
         eventMsg.setDescription(eventDescription);
         try {
-            _eventBus.publish(eventMsg);
+            s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish state change event on the the event bus.");
         }

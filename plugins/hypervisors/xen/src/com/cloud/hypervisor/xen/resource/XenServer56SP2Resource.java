@@ -34,8 +34,8 @@ public class XenServer56SP2Resource extends XenServer56FP1Resource {
 
     public XenServer56SP2Resource() {
         super();
-        _xs_memory_used = 128 * 1024 * 1024L;
-        _xs_virtualization_factor = 62.0 / 64.0;
+        _xsMemoryUsed = 128 * 1024 * 1024L;
+        _xsVirtualizationFactor = 62.0 / 64.0;
     }
 
     @Override

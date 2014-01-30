@@ -90,11 +90,11 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
     }
 
     @Override
-    public boolean archiveAlert(List<Long> Ids, String type, Date startDate, Date endDate, Long zoneId) {
+    public boolean archiveAlert(List<Long> ids, String type, Date startDate, Date endDate, Long zoneId) {
         SearchCriteria<AlertVO> sc = AlertSearchByIdsAndType.create();
 
-        if (Ids != null) {
-            sc.setParameters("id", Ids.toArray(new Object[Ids.size()]));
+        if (ids != null) {
+            sc.setParameters("id", ids.toArray(new Object[ids.size()]));
         }
         if (type != null) {
             sc.setParameters("type", type);
@@ -112,7 +112,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         boolean result = true;
         ;
         List<AlertVO> alerts = listBy(sc);
-        if (Ids != null && alerts.size() < Ids.size()) {
+        if (ids != null && alerts.size() < ids.size()) {
             result = false;
             return result;
         }

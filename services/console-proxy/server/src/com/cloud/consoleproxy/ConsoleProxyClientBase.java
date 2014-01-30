@@ -287,11 +287,11 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         }
 
         return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, updateUrl, width, height, tileWidth, tileHeight, title,
-            ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages, guest);
+            ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages, guest, this.clientParam.getLocale());
     }
 
     private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width, int height, int tileWidth, int tileHeight, String title,
-        boolean rawKeyboard, List<String> languages, String guest) {
+        boolean rawKeyboard, List<String> languages, String guest, String locale) {
 
         StringBuffer sbLanguages = new StringBuffer("");
         if (languages != null) {
@@ -323,7 +323,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>", "</ul>", "</li>", "</ul>",
                 "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>",
                 "<script language=\"javascript\">", "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
-                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ",
+                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', tileMap, ",
                 String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
                 "$(function() {", "ajaxViewer.start();", "});",

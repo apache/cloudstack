@@ -332,7 +332,7 @@ KeyboardMapper.prototype = {
 /////////////////////////////////////////////////////////////////////////////
 // class AjaxViewer
 //
-function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWidth, tileHeight) {
+function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height, tileWidth, tileHeight) {
 	// logging is disabled by default so that it won't have negative impact on performance
 	// however, a back door key-sequence can trigger to open the logger window, it is designed to help
 	// trouble-shooting
@@ -358,8 +358,12 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	this.tileWidth = tileWidth;
 	this.tileHeight = tileHeight;
 	this.maxTileZIndex = 1;
-	
-	this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
+
+	if (locale == AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH || locale == AjaxViewer.KEYBOARD_TYPE_JAPANESE)
+		this.currentKeyboard = locale;
+	else
+		this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
+
 	this.keyboardMappers = [];
 	
 	this.timer = 0;

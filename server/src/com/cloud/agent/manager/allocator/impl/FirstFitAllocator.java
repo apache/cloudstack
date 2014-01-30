@@ -296,7 +296,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
             boolean hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
             boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                    considerReservedCapacity);
+                considerReservedCapacity);
 
             if (hostHasCpuCapability && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
@@ -305,7 +305,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability +  ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }

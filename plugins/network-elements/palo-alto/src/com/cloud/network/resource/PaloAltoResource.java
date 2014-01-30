@@ -29,11 +29,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 // for prettyFormat()
 import javax.xml.transform.stream.StreamSource;
@@ -111,10 +111,10 @@ public class PaloAltoResource implements ServerResource {
     private String _threatProfile;
     private String _logProfile;
     private String _pingManagementProfile;
-    private final Logger s_logger = Logger.getLogger(PaloAltoResource.class);
+    private static final Logger s_logger = Logger.getLogger(PaloAltoResource.class);
 
-    private static String _apiUri = "/api";
-    private static HttpClient _httpclient;
+    private static String s_apiUri = "/api";
+    private static HttpClient s_httpclient;
 
     protected enum PaloAltoMethod {
         GET, POST;
@@ -127,7 +127,7 @@ public class PaloAltoResource implements ServerResource {
     private enum InterfaceType {
         AGGREGATE("aggregate-ethernet"), ETHERNET("ethernet");
 
-        private String type;
+        private final String type;
 
         private InterfaceType(String type) {
             this.type = type;
@@ -142,7 +142,7 @@ public class PaloAltoResource implements ServerResource {
     private enum Protocol {
         TCP("tcp"), UDP("udp"), ICMP("icmp"), ALL("all");
 
-        private String protocol;
+        private final String protocol;
 
         private Protocol(String protocol) {
             this.protocol = protocol;
@@ -365,14 +365,14 @@ public class PaloAltoResource implements ServerResource {
      * Login
      */
     private void openHttpConnection() {
-        _httpclient = new DefaultHttpClient();
+        s_httpclient = new DefaultHttpClient();
 
         // Allows you to connect via SSL using unverified certs
-        _httpclient = HttpClientWrapper.wrapClient(_httpclient);
+        s_httpclient = HttpClientWrapper.wrapClient(s_httpclient);
     }
 
     private boolean refreshPaloAltoConnection() {
-        if (_httpclient == null) {
+        if (s_httpclient == null) {
             openHttpConnection();
         }
 
@@ -1191,8 +1191,9 @@ public class PaloAltoResource implements ServerResource {
     private String genFirewallRuleName(long id) { // ingress
         return "policy_" + Long.toString(id);
     }
+
     private String genFirewallRuleName(long id, String vlan) { // egress
-        return "policy_"+Long.toString(id)+"_"+vlan;
+        return "policy_" + Long.toString(id) + "_" + vlan;
     }
 
     public boolean manageFirewallRule(ArrayList<IPaloAltoCommand> cmdList, PaloAltoPrimative prim, FirewallRuleTO rule) throws ExecutionException {
@@ -1311,7 +1312,7 @@ public class PaloAltoResource implements ServerResource {
                 xml += "<destination>" + dstAddressXML + "</destination>";
                 xml += "<application>" + appXML + "</application>";
                 xml += "<service>" + serviceXML + "</service>";
-                xml += "<action>"+action+"</action>";
+                xml += "<action>" + action + "</action>";
                 xml += "<negate-source>no</negate-source>";
                 xml += "<negate-destination>no</negate-destination>";
                 if (_threatProfile != null && action.equals("allow")) { // add the threat profile if it exists
@@ -1328,34 +1329,35 @@ public class PaloAltoResource implements ServerResource {
                     Map<String, String> e_params = new HashMap<String, String>();
                     e_params.put("type", "config");
                     e_params.put("action", "get");
-                    e_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                    e_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_" + rule.getSrcVlanTag() + "']");
                     String e_response = request(PaloAltoMethod.GET, e_params);
                     has_default = (validResponse(e_response) && responseNotEmpty(e_response));
-    
+
                     // there is an existing default rule, so we need to remove it and add it back after the new rule is added.
                     if (has_default) {
-                        s_logger.debug("Moving the default egress rule after the new rule: "+ruleName);
+                        s_logger.debug("Moving the default egress rule after the new rule: " + ruleName);
                         NodeList response_body;
                         Document doc = getDocument(e_response);
                         XPath xpath = XPathFactory.newInstance().newXPath();
                         try {
                             XPathExpression expr = xpath.compile("/response[@status='success']/result/entry/node()");
-                            response_body = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                            response_body = (NodeList)expr.evaluate(doc, XPathConstants.NODESET);
                         } catch (XPathExpressionException e) {
                             throw new ExecutionException(e.getCause().getMessage());
                         }
-                        for (int i=0; i<response_body.getLength(); i++) {
+                        for (int i = 0; i < response_body.getLength(); i++) {
                             Node n = response_body.item(i);
                             defaultEgressRule += nodeToString(n);
                         }
                         Map<String, String> dd_params = new HashMap<String, String>();
                         dd_params.put("type", "config");
                         dd_params.put("action", "delete");
-                        dd_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                        dd_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_" + rule.getSrcVlanTag() +
+                            "']");
                         cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, dd_params));
                     }
                 }
-    
+
                 // add the new rule...
                 Map<String, String> a_params = new HashMap<String, String>();
                 a_params.put("type", "config");
@@ -1369,10 +1371,10 @@ public class PaloAltoResource implements ServerResource {
                     Map<String, String> da_params = new HashMap<String, String>();
                     da_params.put("type", "config");
                     da_params.put("action", "set");
-                    da_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                    da_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_" + rule.getSrcVlanTag() + "']");
                     da_params.put("element", defaultEgressRule);
                     cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, da_params));
-                    s_logger.debug("Completed move of the default egress rule after rule: "+ruleName);
+                    s_logger.debug("Completed move of the default egress rule after rule: " + ruleName);
                 }
 
                 return true;
@@ -1401,7 +1403,8 @@ public class PaloAltoResource implements ServerResource {
         Map<String, String> params = new HashMap<String, String>();
         params.put("type", "config");
         params.put("action", "get");
-        params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '"+Long.toString(vlan)+"')]");
+        params.put("xpath",
+            "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '" + Long.toString(vlan) + "')]");
         String response = request(PaloAltoMethod.GET, params);
         boolean has_orphans = (validResponse(response) && responseNotEmpty(response));
 
@@ -1409,11 +1412,12 @@ public class PaloAltoResource implements ServerResource {
             Map<String, String> d_params = new HashMap<String, String>();
             d_params.put("type", "config");
             d_params.put("action", "delete");
-            d_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '"+Long.toString(vlan)+"')]");
+            d_params.put("xpath",
+                "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '" + Long.toString(vlan) +
+                    "')]");
             cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, d_params));
         }
     }
-
 
     /*
      * Usage
@@ -1664,15 +1668,15 @@ public class PaloAltoResource implements ServerResource {
             }
 
             try {
-                debug_msg = debug_msg + "GET request: https://" + _ip + _apiUri + URLDecoder.decode(queryString, "UTF-8") + "\n";
+                debug_msg = debug_msg + "GET request: https://" + _ip + s_apiUri + URLDecoder.decode(queryString, "UTF-8") + "\n";
             } catch (UnsupportedEncodingException e) {
-                debug_msg = debug_msg + "GET request: https://" + _ip + _apiUri + queryString + "\n";
+                debug_msg = debug_msg + "GET request: https://" + _ip + s_apiUri + queryString + "\n";
             }
 
-            HttpGet get_request = new HttpGet("https://" + _ip + _apiUri + queryString);
+            HttpGet get_request = new HttpGet("https://" + _ip + s_apiUri + queryString);
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             try {
-                responseBody = _httpclient.execute(get_request, responseHandler);
+                responseBody = s_httpclient.execute(get_request, responseHandler);
             } catch (IOException e) {
                 throw new ExecutionException(e.getMessage());
             }
@@ -1688,12 +1692,12 @@ public class PaloAltoResource implements ServerResource {
                 nvps.add(new BasicNameValuePair("key", _key));
             }
 
-            debug_msg = debug_msg + "POST request: https://" + _ip + _apiUri + "\n";
+            debug_msg = debug_msg + "POST request: https://" + _ip + s_apiUri + "\n";
             for (NameValuePair nvp : nvps) {
                 debug_msg = debug_msg + "param: " + nvp.getName() + ", " + nvp.getValue() + "\n";
             }
 
-            HttpPost post_request = new HttpPost("https://" + _ip + _apiUri);
+            HttpPost post_request = new HttpPost("https://" + _ip + s_apiUri);
             try {
                 post_request.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             } catch (UnsupportedEncodingException e) {
@@ -1701,7 +1705,7 @@ public class PaloAltoResource implements ServerResource {
             }
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             try {
-                responseBody = _httpclient.execute(post_request, responseHandler);
+                responseBody = s_httpclient.execute(post_request, responseHandler);
             } catch (IOException e) {
                 throw new ExecutionException(e.getMessage());
             }
@@ -1965,13 +1969,13 @@ public class PaloAltoResource implements ServerResource {
     }
 
     /* Get the type of interface from the PA device. */
-    private String getInterfaceType(String interface_name) throws ExecutionException {
+    private String getInterfaceType(String interfaceName) throws ExecutionException {
         String[] types = {InterfaceType.ETHERNET.toString(), InterfaceType.AGGREGATE.toString()};
         for (String type : types) {
             Map<String, String> params = new HashMap<String, String>();
             params.put("type", "config");
             params.put("action", "get");
-            params.put("xpath", "/config/devices/entry/network/interface/" + type + "/entry[@name='" + interface_name + "']");
+            params.put("xpath", "/config/devices/entry/network/interface/" + type + "/entry[@name='" + interfaceName + "']");
             String ethernet_response = request(PaloAltoMethod.GET, params);
             if (validResponse(ethernet_response) && responseNotEmpty(ethernet_response)) {
                 return type;
@@ -2081,7 +2085,7 @@ public class PaloAltoResource implements ServerResource {
             t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             t.transform(new DOMSource(node), new StreamResult(sw));
         } catch (Throwable t) {
-            throw new ExecutionException("XML convert error when modifying PA config: "+t.getMessage());
+            throw new ExecutionException("XML convert error when modifying PA config: " + t.getMessage());
         }
         return sw.toString();
     }

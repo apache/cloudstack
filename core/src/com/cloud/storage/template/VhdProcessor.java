@@ -45,11 +45,11 @@ public class VhdProcessor extends AdapterBase implements Processor {
 
     private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
     StorageLayer _storage;
-    private int vhd_footer_size = 512;
-    private int vhd_footer_creator_app_offset = 28;
-    private int vhd_footer_creator_ver_offset = 32;
-    private int vhd_footer_current_size_offset = 48;
-    private byte[][] citrix_creator_app = { {0x74, 0x61, 0x70, 0x00}, {0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
+    private int vhdFooterSize = 512;
+    private int vhdFooterCreatorAppOffset = 28;
+    private int vhdFooterCreatorVerOffset = 32;
+    private int vhdFooterCurrentSizeOffset = 48;
+    private byte[][] citrixCreatorApp = { {0x74, 0x61, 0x70, 0x00}, {0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
@@ -77,9 +77,9 @@ public class VhdProcessor extends AdapterBase implements Processor {
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(vhdFile);
-            strm.skip(info.size - vhd_footer_size + vhd_footer_creator_app_offset);
+            strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
             strm.read(creatorApp);
-            strm.skip(vhd_footer_current_size_offset - vhd_footer_creator_ver_offset);
+            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
             strm.read(currentSize);
         } catch (Exception e) {
             s_logger.warn("Unable to read vhd file " + vhdPath, e);
@@ -108,9 +108,9 @@ public class VhdProcessor extends AdapterBase implements Processor {
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(file);
-            strm.skip(file.length() - vhd_footer_size + vhd_footer_creator_app_offset);
+            strm.skip(file.length() - vhdFooterSize + vhdFooterCreatorAppOffset);
             strm.read(creatorApp);
-            strm.skip(vhd_footer_current_size_offset - vhd_footer_creator_ver_offset);
+            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
             strm.read(currentSize);
         } catch (Exception e) {
             s_logger.warn("Unable to read vhd file " + file.getAbsolutePath(), e);
@@ -141,8 +141,8 @@ public class VhdProcessor extends AdapterBase implements Processor {
 
     private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
         boolean findKnownCreator = false;
-        for (int i = 0; i < citrix_creator_app.length; i++) {
-            if (Arrays.equals(creatorApp, citrix_creator_app[i])) {
+        for (int i = 0; i < citrixCreatorApp.length; i++) {
+            if (Arrays.equals(creatorApp, citrixCreatorApp[i])) {
                 findKnownCreator = true;
                 break;
             }

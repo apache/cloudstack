@@ -116,10 +116,10 @@ public class ManagementServerMock {
     private DataCenterVO _zone;
     private PhysicalNetwork _znet;
 
-    private long _host_id = -1L;
+    private long _hostId = -1L;
 
     // TODO: Use the name parameter to retrieve the @Parameter annotation.
-    static void setParameter(BaseCmd cmd, String name, BaseCmd.CommandType field_type, Object value) {
+    static void setParameter(BaseCmd cmd, String name, BaseCmd.CommandType fieldType, Object value) {
         Class<?> cls = cmd.getClass();
         Field field;
         try {
@@ -129,7 +129,7 @@ public class ManagementServerMock {
             return;
         }
         field.setAccessible(true);
-        switch (field_type) {
+        switch (fieldType) {
             case STRING:
                 try {
                     field.set(cmd, value);
@@ -169,11 +169,11 @@ public class ManagementServerMock {
 
     private void createHost() {
         HostVO host =
-            new HostVO(_host_id, "aa01", Type.BaremetalDhcp, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
+            new HostVO(_hostId, "aa01", Type.BaremetalDhcp, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
                 UUID.randomUUID().toString(), Status.Up, "1.0", null, null, _zone.getId(), null, 0, 0, "aa", 0, StoragePoolType.NetworkFilesystem);
         host.setResourceState(ResourceState.Enabled);
         _hostDao.persist(host);
-        _host_id = host.getId();
+        _hostId = host.getId();
     }
 
     private void createPublicVlanIpRange() {
@@ -241,7 +241,7 @@ public class ManagementServerMock {
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
                 small.getId(), null, name, null);
         vm.setState(com.cloud.vm.VirtualMachine.State.Running);
-        vm.setHostId(_host_id);
+        vm.setHostId(_hostId);
         vm.setDataCenterId(network.getDataCenterId());
         _userVmDao.persist(vm);
 
@@ -256,7 +256,7 @@ public class ManagementServerMock {
     }
 
     private void deleteHost() {
-        _hostDao.remove(_host_id);
+        _hostDao.remove(_hostId);
 
     }
 
@@ -327,17 +327,17 @@ public class ManagementServerMock {
             _znet = _networkService.getPhysicalNetwork(id);
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), "vlan", null, null, null, null, null, null);
             }
         } catch (InvalidParameterValueException e) {
             List<String> isolationMethods = new ArrayList<String>();
-            isolationMethods.add("GRE");
+            isolationMethods.add("L3VPN");
             _znet =
                 _networkService.createPhysicalNetwork(_zone.getId(), null, null, isolationMethods, BroadcastDomainRange.ZONE.toString(), _zone.getDomainId(), null,
                     "znet");
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), "vlan", null, null, null, null, null, null);
             }
         }
         if (_znet.getState() != PhysicalNetwork.State.Enabled) {
@@ -353,14 +353,14 @@ public class ManagementServerMock {
             }
         }
         if (!found) {
-            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(), null, null, null, null, null, null);
+            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(), "vlan", null, null, null, null, null, null);
         }
 
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
-            _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrail.getName(), null, null, null);
+            _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null, null);
         if (providers.second() == 0) {
-            s_logger.debug("Add " + Provider.JuniperContrail.getName() + " to network " + _znet.getName());
-            PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrail.getName(), null, null);
+            s_logger.debug("Add " + Provider.JuniperContrailRouter.getName() + " to network " + _znet.getName());
+            PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null);
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
         } else {
             PhysicalNetworkServiceProvider provider = providers.first().get(0);
@@ -372,7 +372,7 @@ public class ManagementServerMock {
         providers = _networkService.listNetworkServiceProviders(_znet.getId(), null, PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
         s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
         for (PhysicalNetworkServiceProvider provider : providers.first()) {
-            if (provider.getProviderName().equals(Provider.JuniperContrail.getName())) {
+            if (provider.getProviderName().equals(Provider.JuniperContrailRouter.getName())) {
                 continue;
             }
             s_logger.debug("Disabling " + provider.getProviderName());

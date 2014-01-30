@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.lb.LoadBalancingRule;
 
 public interface LoadBalancerValidator {
@@ -24,7 +23,6 @@ public interface LoadBalancerValidator {
      * Validate rules
      * @param rule
      * @return true/false. If there are no validation then true should be return.
-     * @throws ResourceUnavailableException
      */
     public boolean validateLBRule(LoadBalancingRule rule);
 }

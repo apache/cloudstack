@@ -16,9 +16,15 @@
 // under the License.
 package com.cloud.api.doc;
 
-public class Alert {
-    private String type;
-    private int value;
+import java.io.Serializable;
+
+public class Alert implements Serializable{
+    /**
+     *
+     */
+    private static final long serialVersionUID = 960408026527837920L;
+    private final String type;
+    private final int value;
 
     public Alert(String type, int value) {
         this.type = type;

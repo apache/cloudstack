@@ -19,15 +19,15 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.as.AutoScaleVmProfile;
 
@@ -47,6 +47,9 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the templateid of the autoscale vm profile")
     private Long templateId;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list profiles by service offering id")
+    private Long serviceOffId;
+
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "the otherdeployparameters of the autoscale vm profile")
     private String otherDeployParams;
 
@@ -64,6 +67,10 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
 
     public String getOtherDeployParams() {
         return otherDeployParams;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOffId;
     }
 
     // ///////////////////////////////////////////////////

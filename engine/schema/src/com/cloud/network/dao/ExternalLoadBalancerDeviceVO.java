@@ -103,11 +103,11 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         Provider   // This state is set only for device that can dynamically provision LB appliances
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated,
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String providerName, String deviceName, long capacity, boolean dedicated,
             boolean gslbProvider) {
         this.physicalNetworkId = physicalNetworkId;
-        this.providerName = provider_name;
-        this.deviceName = device_name;
+        this.providerName = providerName;
+        this.deviceName = deviceName;
         this.hostId = hostId;
         this.state = LBDeviceState.Disabled;
         this.allocationState = LBDeviceAllocationState.Free;
@@ -119,14 +119,14 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         this.gslbProvider = gslbProvider;
         this.gslbSitePublicIP = null;
         this.gslbSitePrivateIP = null;
-        if (device_name.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
+        if (deviceName.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
             this.allocationState = LBDeviceAllocationState.Provider;
         }
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated, boolean managed,
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String providerName, String deviceName, long capacity, boolean dedicated, boolean managed,
             long parentHostId) {
-        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated, false);
+        this(hostId, physicalNetworkId, providerName, deviceName, capacity, dedicated, false);
         this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
     }

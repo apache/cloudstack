@@ -65,8 +65,10 @@ public class BitmapRectangle {
 
     @Override
     public String toString() {
-        return String.format("BitmapUpdateRectangle [x=%s, y=%s, width=%s, height=%s, bitsPerPixel=%s, bitmapDataStream=%s]", x, y, width, height, colorDepth,
-            bitmapDataStream);
+        return String
+                .format(
+                        "BitmapUpdateRectangle [x=%s, y=%s, width=%s, height=%s, bitsPerPixel=%s, bitmapDataStream=%s]",
+                        x, y, width, height, colorDepth, bitmapDataStream);
     }
 
 }

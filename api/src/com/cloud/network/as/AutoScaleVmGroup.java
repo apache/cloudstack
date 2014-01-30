@@ -47,7 +47,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
 
     int getInterval();
 
-	Date getLastInterval();
+    Date getLastInterval();
 
     String getState();
 

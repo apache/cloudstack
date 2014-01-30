@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -145,7 +144,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
         }

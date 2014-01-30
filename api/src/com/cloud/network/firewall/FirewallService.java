@@ -44,7 +44,7 @@ public interface FirewallService {
 
     boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException;
 
-    boolean applyIngressFirewallRules(long Ipid, Account caller) throws ResourceUnavailableException;
+    boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException;
 
     FirewallRule getFirewallRule(long ruleId);
 

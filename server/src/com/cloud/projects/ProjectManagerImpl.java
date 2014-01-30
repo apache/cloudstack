@@ -624,6 +624,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 domainUuid = domain.getUuid();
             }
             ex.addProxyObject(domainUuid, "domainId");
+            throw ex;
         }
 
         //verify permissions

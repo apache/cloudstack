@@ -20,7 +20,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.dao.VpcDao;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -58,8 +57,10 @@ import com.cloud.network.vpc.NetworkACLServiceImpl;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -89,6 +90,8 @@ public class NetworkACLServiceTest extends TestCase {
     EntityManager _entityMgr;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    VpcService _vpcSrv;
 
     private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
@@ -185,7 +188,9 @@ public class NetworkACLServiceTest extends TestCase {
     @Test
     public void testDeleteACLItem() throws Exception {
         Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.revokeNetworkACLItem(Matchers.anyLong())).thenReturn(true);
+        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         assertTrue(_aclService.revokeNetworkACLItem(1L));
     }
 
@@ -250,8 +255,13 @@ public class NetworkACLServiceTest extends TestCase {
         }
 
         @Bean
-        public VpcDao vpcDao () {
+        public VpcDao vpcDao() {
             return Mockito.mock(VpcDao.class);
+        }
+
+        @Bean
+        public VpcService vpcService() {
+            return Mockito.mock(VpcService.class);
         }
 
         public static class Library implements TypeFilter {

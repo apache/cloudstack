@@ -35,13 +35,13 @@ public enum ZoneConfig {
     private final String _description;
     private final String _range;
 
-    private static final List<String> _zoneConfigKeys = new ArrayList<String>();
+    private static final List<String> ZoneConfigKeys = new ArrayList<String>();
 
     static {
         // Add keys into List
         for (ZoneConfig c : ZoneConfig.values()) {
             String key = c.key();
-            _zoneConfigKeys.add(key);
+            ZoneConfigKeys.add(key);
         }
     }
 
@@ -79,7 +79,7 @@ public enum ZoneConfig {
     }
 
     public static boolean doesKeyExist(String key) {
-        return _zoneConfigKeys.contains(key);
+        return ZoneConfigKeys.contains(key);
     }
 
 }

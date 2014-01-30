@@ -57,11 +57,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     StorageNetworkManager _sNwMgr;
     Random _rand = new Random(System.currentTimeMillis());
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Management};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Management};
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -71,7 +71,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     @Override

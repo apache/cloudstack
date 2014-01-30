@@ -29,7 +29,7 @@ import com.cloud.utils.script.Script;
 
 public class SwiftUtil {
     private static Logger logger = Logger.getLogger(SwiftUtil.class);
-    private static long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
+    private static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
 
     public interface SwiftClientCfg {
         String getAccount();

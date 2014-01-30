@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class Console extends XenAPIObject {
      * For internal use only.
      */
     Console(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class Console extends XenAPIObject {
     {
         if (obj != null && obj instanceof Console)
         {
-            Console other = (Console) obj;
+            Console other = (Console)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -111,8 +110,8 @@ public class Console extends XenAPIObject {
         /**
          * Convert a console.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("protocol", this.protocol == null ? Types.ConsoleProtocol.UNRECOGNIZED : this.protocol);
             map.put("location", this.location == null ? "" : this.location);
@@ -149,15 +148,15 @@ public class Console extends XenAPIObject {
      * @return all fields from the object
      */
     public Console.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toConsoleRecord(result);
+        return Types.toConsoleRecord(result);
     }
 
     /**
@@ -167,15 +166,15 @@ public class Console extends XenAPIObject {
      * @return reference to the object
      */
     public static Console getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toConsole(result);
+        return Types.toConsole(result);
     }
 
     /**
@@ -185,9 +184,9 @@ public class Console extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, Console.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.console.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -204,16 +203,16 @@ public class Console extends XenAPIObject {
      * @return reference to the newly created object
      */
     public static Console create(Connection c, Console.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toConsole(result);
+        return Types.toConsole(result);
     }
 
     /**
@@ -222,9 +221,9 @@ public class Console extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.console.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -238,9 +237,9 @@ public class Console extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -254,15 +253,15 @@ public class Console extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -271,15 +270,15 @@ public class Console extends XenAPIObject {
      * @return value of the field
      */
     public Types.ConsoleProtocol getProtocol(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_protocol";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toConsoleProtocol(result);
+        return Types.toConsoleProtocol(result);
     }
 
     /**
@@ -288,15 +287,15 @@ public class Console extends XenAPIObject {
      * @return value of the field
      */
     public String getLocation(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_location";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -305,15 +304,15 @@ public class Console extends XenAPIObject {
      * @return value of the field
      */
     public VM getVM(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_VM";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVM(result);
+        return Types.toVM(result);
     }
 
     /**
@@ -322,15 +321,15 @@ public class Console extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -339,9 +338,9 @@ public class Console extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -356,9 +355,9 @@ public class Console extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -372,9 +371,9 @@ public class Console extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -388,15 +387,15 @@ public class Console extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<Console> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfConsole(result);
+        return Types.toSetOfConsole(result);
     }
 
     /**
@@ -405,15 +404,15 @@ public class Console extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<Console, Console.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "console.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfConsoleConsoleRecord(result);
+        return Types.toMapOfConsoleConsoleRecord(result);
     }
 
 }

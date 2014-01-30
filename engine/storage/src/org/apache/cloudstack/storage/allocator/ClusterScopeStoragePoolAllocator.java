@@ -77,12 +77,20 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         }
 
         List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
+        s_logger.debug("Found pools matching tags: " + pools);
 
         // add remaining pools in cluster, that did not match tags, to avoid set
         List<StoragePoolVO> allPools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
+            s_logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
             avoid.addPool(pool.getId());
+        }
+
+        // make sure our matching pool was not in avoid set
+        for (StoragePoolVO pool : pools) {
+            s_logger.debug("Removing pool " + pool + " from avoid set, must have been inserted when searching for another disk's tag");
+            avoid.removePool(pool.getId());
         }
 
         if (pools.size() == 0) {

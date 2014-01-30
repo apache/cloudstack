@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class User extends XenAPIObject {
      * For internal use only.
      */
     User(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class User extends XenAPIObject {
     {
         if (obj != null && obj instanceof User)
         {
-            User other = (User) obj;
+            User other = (User)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -110,8 +109,8 @@ public class User extends XenAPIObject {
         /**
          * Convert a user.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("short_name", this.shortName == null ? "" : this.shortName);
             map.put("fullname", this.fullname == null ? "" : this.fullname);
@@ -143,16 +142,17 @@ public class User extends XenAPIObject {
      *
      * @return all fields from the object
      */
-   @Deprecated public User.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public User.Record getRecord(Connection c) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toUserRecord(result);
+        return Types.toUserRecord(result);
     }
 
     /**
@@ -162,16 +162,17 @@ public class User extends XenAPIObject {
      * @param uuid UUID of object to return
      * @return reference to the object
      */
-   @Deprecated public static User getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public static User getByUuid(Connection c, String uuid) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toUser(result);
+        return Types.toUser(result);
     }
 
     /**
@@ -181,10 +182,11 @@ public class User extends XenAPIObject {
      * @param record All constructor arguments
      * @return Task
      */
-   @Deprecated public static Task createAsync(Connection c, User.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public static Task createAsync(Connection c, User.Record record) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.user.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -201,17 +203,18 @@ public class User extends XenAPIObject {
      * @param record All constructor arguments
      * @return reference to the newly created object
      */
-   @Deprecated public static User create(Connection c, User.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public static User create(Connection c, User.Record record) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toUser(result);
+        return Types.toUser(result);
     }
 
     /**
@@ -220,10 +223,11 @@ public class User extends XenAPIObject {
      *
      * @return Task
      */
-   @Deprecated public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public Task destroyAsync(Connection c) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.user.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -237,10 +241,11 @@ public class User extends XenAPIObject {
      * @deprecated
      *
      */
-   @Deprecated public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    @Deprecated
+    public void destroy(Connection c) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -254,15 +259,15 @@ public class User extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -271,15 +276,15 @@ public class User extends XenAPIObject {
      * @return value of the field
      */
     public String getShortName(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_short_name";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -288,15 +293,15 @@ public class User extends XenAPIObject {
      * @return value of the field
      */
     public String getFullname(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_fullname";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -305,15 +310,15 @@ public class User extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -322,9 +327,9 @@ public class User extends XenAPIObject {
      * @param fullname New value to set
      */
     public void setFullname(Connection c, String fullname) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.set_fullname";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(fullname)};
@@ -338,9 +343,9 @@ public class User extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -355,9 +360,9 @@ public class User extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -371,9 +376,9 @@ public class User extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "user.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};

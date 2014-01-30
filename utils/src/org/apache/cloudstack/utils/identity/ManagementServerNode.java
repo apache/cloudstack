@@ -28,7 +28,7 @@ import com.cloud.utils.net.MacAddress;
 
 @Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
-    private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
+    private static final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
 
     private static final long s_nodeId = MacAddress.getMacAddress().toLong();
 

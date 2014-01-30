@@ -16,55 +16,54 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsCreateTunnelCommand extends Command {
-	Integer key;
-	String remoteIp;
-	Long from;
-	Long to;
-	long networkId;
+    Integer key;
+    String remoteIp;
+    Long from;
+    Long to;
+    long networkId;
 
-	// for debug info
-	String fromIp;
+    // for debug info
+    String fromIp;
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public OvsCreateTunnelCommand(String remoteIp, Integer key, Long from,
-			Long to, long networkId, String fromIp) {
-		this.remoteIp = remoteIp;
-		this.key = key;
-		this.from = from;
-		this.to = to;
-		this.networkId = networkId;
-		this.fromIp = fromIp;
-	}
+    public OvsCreateTunnelCommand(String remoteIp, Integer key, Long from,
+            Long to, long networkId, String fromIp) {
+        this.remoteIp = remoteIp;
+        this.key = key;
+        this.from = from;
+        this.to = to;
+        this.networkId = networkId;
+        this.fromIp = fromIp;
+    }
 
-	public Integer getKey() {
-		return key;
-	}
+    public Integer getKey() {
+        return key;
+    }
 
-	public String getRemoteIp() {
-		return remoteIp;
-	}
+    public String getRemoteIp() {
+        return remoteIp;
+    }
 
-	public Long getFrom() {
-		return from;
-	}
+    public Long getFrom() {
+        return from;
+    }
 
-	public Long getTo() {
-		return to;
-	}
+    public Long getTo() {
+        return to;
+    }
 
-	public long getNetworkId() {
-		return networkId;
-	}
+    public long getNetworkId() {
+        return networkId;
+    }
 
-	public String getFromIp() {
-		return fromIp;
-	}
+    public String getFromIp() {
+        return fromIp;
+    }
 
 }

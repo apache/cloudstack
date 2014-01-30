@@ -159,7 +159,6 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
         if (name == null) {
             for (String part : beanName.replaceAll("([A-Z])", " $1").split("\\s+")) {
                 part = StringUtils.capitalize(part.toLowerCase());
-                ;
 
                 name = name == null ? part : name + " " + part;
             }
@@ -219,7 +218,7 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
 
     @Override
     public void setBeanName(String name) {
-        this.beanName = name;
+        beanName = name;
     }
 
     public List<Object> getPreRegistered() {

@@ -479,8 +479,8 @@ public class NetworkOfferingVO implements NetworkOffering {
         return this.concurrentConnections;
     }
 
-    public void setConcurrentConnections(Integer concurrent_connections) {
-        this.concurrentConnections = concurrent_connections;
+    public void setConcurrentConnections(Integer concurrentConnections) {
+        this.concurrentConnections = concurrentConnections;
     }
 
     public void setPublicLb(boolean publicLb) {

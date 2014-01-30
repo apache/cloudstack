@@ -50,7 +50,7 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
 
     List<String> getAliasIpAddressesForNic(long nicId);
 
-    Integer countAliasIps(long NicId);
+    Integer countAliasIps(long nicId);
 
     public NicIpAliasVO findByIp4AddressAndVmId(String ip4Address, long vmId);
 

@@ -17,22 +17,21 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsFetchInterfaceCommand extends Command {
-	String label;
+    String label;
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public OvsFetchInterfaceCommand(String label) {
-		this.label = label;
-	}
+    public OvsFetchInterfaceCommand(String label) {
+        this.label = label;
+    }
 
-	public String getLabel() {
-		return label;
-	}
+    public String getLabel() {
+        return label;
+    }
 
 }

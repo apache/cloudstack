@@ -80,7 +80,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {SystemIntegrityChecker.class})
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
-    private final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
+    private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
 
     protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 

@@ -18,7 +18,6 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
@@ -434,8 +433,8 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 } else {
                     pstmt.setNull(15, Types.BIGINT);
                 }
-                pstmt.setTimestamp(16, new Timestamp(usageRecord.getStartDate().getTime()));
-                pstmt.setTimestamp(17, new Timestamp(usageRecord.getEndDate().getTime()));
+                pstmt.setString(16, DateUtil.getDateDisplayString(s_gmtTimeZone, usageRecord.getStartDate()));
+                pstmt.setString(17, DateUtil.getDateDisplayString(s_gmtTimeZone, usageRecord.getEndDate()));
                 if (usageRecord.getVirtualSize() != null) {
                     pstmt.setLong(18, usageRecord.getSize());
                 } else {

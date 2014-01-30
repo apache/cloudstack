@@ -34,5 +34,5 @@ public interface Counter extends InternalIdentity, Identity {
     String getValue();
 
     Source getSource();
-    
+
 }

@@ -95,7 +95,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
                description = "comma separated list of host details requested, "
-                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp]."
+                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp]."
                    + " If no parameter is passed in, the details will be defaulted to all")
     private List<String> viewDetails;
 

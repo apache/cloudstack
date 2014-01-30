@@ -33,7 +33,7 @@ from marvin.integration.lib.utils import random_gen
                        Server. Retrieved from configuration file.
          asyncTimeout :
          defaultWorkerThreads :
-         logging :
+         logger : provides logging facilities for this library 
 '''
 
 
@@ -41,12 +41,12 @@ class cloudstackTestClient(object):
     def __init__(self, mgmtDetails,
                  dbSvrDetails, asyncTimeout=3600,
                  defaultWorkerThreads=10,
-                 logging=None):
+                 logger=None):
         self.mgmtDetails = mgmtDetails
         self.connection = \
             cloudstackConnection.cloudConnection(self.mgmtDetails,
                                                  asyncTimeout,
-                                                 logging)
+                                                 logger)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
@@ -157,7 +157,7 @@ class cloudstackTestClient(object):
         newUserConnection =\
             cloudstackConnection.cloudConnection(mgtDetails,
                                                  self.connection.asyncTimeout,
-                                                 self.connection.logging)
+                                                 self.connection.logger)
         self.userApiClient =\
             cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
         self.userApiClient.connection = newUserConnection

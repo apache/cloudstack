@@ -262,8 +262,8 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         return _apiAccessCheckers;
     }
 
-    public void setApiAccessCheckers(List<APIChecker> _apiAccessCheckers) {
-        this._apiAccessCheckers = _apiAccessCheckers;
+    public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
+        this._apiAccessCheckers = apiAccessCheckers;
     }
 
     public List<PluggableService> getServices() {
@@ -271,7 +271,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     }
 
     @Inject
-    public void setServices(List<PluggableService> _services) {
-        this._services = _services;
+    public void setServices(List<PluggableService> services) {
+        this._services = services;
     }
 }

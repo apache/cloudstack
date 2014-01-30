@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class Message extends XenAPIObject {
      * For internal use only.
      */
     Message(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class Message extends XenAPIObject {
     {
         if (obj != null && obj instanceof Message)
         {
-            Message other = (Message) obj;
+            Message other = (Message)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -113,8 +112,8 @@ public class Message extends XenAPIObject {
         /**
          * Convert a message.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name", this.name == null ? "" : this.name);
             map.put("priority", this.priority == null ? 0 : this.priority);
@@ -166,15 +165,16 @@ public class Message extends XenAPIObject {
      * @return The reference of the created message
      */
     public static Message create(Connection c, String name, Long priority, Types.Cls cls, String objUuid, String body) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(priority), Marshalling.toXMLRPC(cls), Marshalling.toXMLRPC(objUuid), Marshalling.toXMLRPC(body)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(name), Marshalling.toXMLRPC(priority), Marshalling.toXMLRPC(cls),
+            Marshalling.toXMLRPC(objUuid), Marshalling.toXMLRPC(body)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMessage(result);
+        return Types.toMessage(result);
     }
 
     /**
@@ -182,9 +182,9 @@ public class Message extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -201,15 +201,15 @@ public class Message extends XenAPIObject {
      * @return The relevant messages
      */
     public static Map<Message, Message.Record> get(Connection c, Types.Cls cls, String objUuid, Date since) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(cls), Marshalling.toXMLRPC(objUuid), Marshalling.toXMLRPC(since)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfMessageMessageRecord(result);
+        return Types.toMapOfMessageMessageRecord(result);
     }
 
     /**
@@ -218,15 +218,15 @@ public class Message extends XenAPIObject {
      * @return The references to the messages
      */
     public static Set<Message> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfMessage(result);
+        return Types.toSetOfMessage(result);
     }
 
     /**
@@ -236,15 +236,15 @@ public class Message extends XenAPIObject {
      * @return The relevant messages
      */
     public static Map<Message, Message.Record> getSince(Connection c, Date since) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_since";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(since)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfMessageMessageRecord(result);
+        return Types.toMapOfMessageMessageRecord(result);
     }
 
     /**
@@ -253,15 +253,15 @@ public class Message extends XenAPIObject {
      * @return The message record
      */
     public Message.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMessageRecord(result);
+        return Types.toMessageRecord(result);
     }
 
     /**
@@ -271,15 +271,15 @@ public class Message extends XenAPIObject {
      * @return The message reference
      */
     public static Message getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMessage(result);
+        return Types.toMessage(result);
     }
 
     /**
@@ -288,15 +288,15 @@ public class Message extends XenAPIObject {
      * @return The messages
      */
     public static Map<Message, Message.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfMessageMessageRecord(result);
+        return Types.toMapOfMessageMessageRecord(result);
     }
 
     /**
@@ -306,15 +306,15 @@ public class Message extends XenAPIObject {
      * @return The messages
      */
     public static Map<Message, Message.Record> getAllRecordsWhere(Connection c, String expr) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "message.get_all_records_where";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(expr)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfMessageMessageRecord(result);
+        return Types.toMapOfMessageMessageRecord(result);
     }
 
 }

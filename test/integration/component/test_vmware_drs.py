@@ -29,7 +29,7 @@ from marvin.integration.lib.base import (Account,
                                          VirtualMachine,
                                          ServiceOffering)
 
-from marvin.integration.lib.commom import (get_zone,
+from marvin.integration.lib.common import (get_zone,
                                            get_template,
                                            get_domain,
                                            get_pod

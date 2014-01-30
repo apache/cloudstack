@@ -37,7 +37,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = ProviderResponse.class, since = "3.0.0")
 public class ListTrafficTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
-    private static final String _name = "listtraffictypesresponse";
+    private static final String Name = "listtraffictypesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,7 +66,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

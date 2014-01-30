@@ -30,7 +30,7 @@ public class BufferedImageCanvas extends Canvas {
     private static final long serialVersionUID = 1L;
 
     // Offline screen buffer
-    private BufferedImage offlineImage;
+    protected BufferedImage offlineImage;
 
     // Cached Graphics2D object for offline screen buffer
     private Graphics2D graphics;
@@ -49,7 +49,7 @@ public class BufferedImageCanvas extends Canvas {
     }
 
     public void setCanvasSize(int width, int height) {
-        this.offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         graphics = offlineImage.createGraphics();
 
         setSize(offlineImage.getWidth(), offlineImage.getHeight());
@@ -74,6 +74,10 @@ public class BufferedImageCanvas extends Canvas {
 
     public Graphics2D getOfflineGraphics() {
         return graphics;
+    }
+
+    public void updateFrameBuffer(int x, int y, int w, int h) {
+        //this method will be used to mark the dirty tiles
     }
 
 }

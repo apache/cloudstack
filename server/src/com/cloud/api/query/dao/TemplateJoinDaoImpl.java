@@ -44,9 +44,12 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
 
 @Component
 @Local(value = {TemplateJoinDao.class})
@@ -68,6 +71,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
+        tmpltIdPairSearch.and("templateState", tmpltIdPairSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
         tmpltIdPairSearch.and("tempZonePairIN", tmpltIdPairSearch.entity().getTempZonePair(), SearchCriteria.Op.IN);
         tmpltIdPairSearch.done();
 
@@ -84,10 +88,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         activeTmpltSearch = createSearchBuilder();
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
-        this._count = "select count(distinct temp_zone_pair) from template_view WHERE ";
+        _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
     private String getTemplateStatus(TemplateJoinVO template) {
@@ -371,7 +376,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     }
 
     @Override
-    public List<TemplateJoinVO> searchByTemplateZonePair(String... idPairs) {
+    public List<TemplateJoinVO> searchByTemplateZonePair(Boolean showRemoved, String... idPairs) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
@@ -379,6 +384,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
@@ -389,8 +397,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                     labels[k] = idPairs[j];
                 }
                 SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
+                if (!showRemoved) {
+                    sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+                }
                 sc.setParameters("tempZonePairIN", labels);
-                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
                 if (vms != null) {
                     uvList.addAll(vms);
                 }
@@ -404,8 +415,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                 labels[k] = idPairs[j];
             }
             SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
+            if (!showRemoved) {
+                sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+            }
             sc.setParameters("tempZonePairIN", labels);
-            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
             if (vms != null) {
                 uvList.addAll(vms);
             }
@@ -418,7 +432,15 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         SearchCriteria<TemplateJoinVO> sc = activeTmpltSearch.create();
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
+        sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
         return searchIncludingRemoved(sc, null, null, false);
+    }
+
+    @Override
+    public Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter) {
+        List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
+        Integer count = getCount(sc);
+        return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
     }
 
 }

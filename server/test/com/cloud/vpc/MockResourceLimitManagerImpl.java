@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.Resource;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceType;

@@ -33,7 +33,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
-import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentMethodInterceptor;
@@ -42,7 +41,7 @@ import com.cloud.utils.component.ComponentMethodInterceptor;
 public class EventUtils {
     private static final Logger s_logger = Logger.getLogger(EventUtils.class);
 
-    protected static MessageBus _messageBus = null;
+    protected static MessageBus s_messageBus = null;
 
     public EventUtils() {
     }
@@ -54,7 +53,7 @@ public class EventUtils {
         }
 
         try {
-            _messageBus = ComponentContext.getComponent(MessageBusBase.class);
+            s_messageBus = ComponentContext.getComponent(MessageBusBase.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
@@ -68,7 +67,7 @@ public class EventUtils {
         eventDescription.put("details", details);
         event.setDescription(eventDescription);
         try {
-            _messageBus.publish(EventTypes.getEntityForEvent(eventType), eventType, null, event);
+            s_messageBus.publish(EventTypes.getEntityForEvent(eventType), eventType, null, event);
         } catch (Exception e) {
             s_logger.warn("Failed to publish action event on the the event bus.");
         }

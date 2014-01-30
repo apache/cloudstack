@@ -37,14 +37,14 @@ public interface IpAddrAllocator extends Adapter {
         }
     }
 
-    public class networkInfo {
+    public class NetworkInfo {
         public String _ipAddr;
         public String _netMask;
         public String _gateWay;
         public Long _vlanDbId;
         public String _vlanid;
 
-        public networkInfo(String ip, String netMask, String gateway, Long vlanDbId, String vlanId) {
+        public NetworkInfo(String ip, String netMask, String gateway, Long vlanDbId, String vlanId) {
             _ipAddr = ip;
             _netMask = netMask;
             _gateWay = gateway;

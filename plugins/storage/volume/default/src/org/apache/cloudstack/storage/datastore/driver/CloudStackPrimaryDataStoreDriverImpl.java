@@ -24,8 +24,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -37,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -51,6 +50,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -61,6 +61,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.configuration.Config;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
@@ -68,6 +69,7 @@ import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -146,6 +148,17 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null;
+    }
+
+    @Override
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) { return false; }
+
+    @Override
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {}
+
+    @Override
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        return volume.getSize();
     }
 
     @Override
@@ -269,10 +282,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             }
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-            EndPoint ep = epSelector.select(snapshot);
+            EndPoint ep = this.epSelector.select(snapshot, StorageAction.TAKESNAPSHOT);
             Answer answer = null;
-            if (ep == null) {
-                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+
+            if ( ep == null ){
+                String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {

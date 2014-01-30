@@ -37,7 +37,7 @@ import com.cloud.user.Account;
 @APICommand(name = "restartVPC", description = "Restarts a VPC", responseObject = VpcResponse.class)
 public class RestartVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartVPCCmd.class.getName());
-    private static final String _name = "restartvpcresponse";
+    private static final String Name = "restartvpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,7 +59,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

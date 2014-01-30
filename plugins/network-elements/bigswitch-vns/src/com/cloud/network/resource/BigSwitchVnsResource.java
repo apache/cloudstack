@@ -187,7 +187,7 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
 
     private Answer executeRequest(CreateVnsNetworkCommand cmd, int numRetries) {
         NetworkData network = new NetworkData();
-        network.getNetwork().setTenant_id(cmd.getTenantUuid());
+        network.getNetwork().setTenantId(cmd.getTenantUuid());
         network.getNetwork().setUuid(cmd.getNetworkUuid());
         network.getNetwork().setDisplay_name(truncate("vns-cloudstack-" + cmd.getName(), 64));
         network.getNetwork().setVlan(cmd.getVlan());
@@ -222,7 +222,7 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
         PortData port = new PortData();
         port.getPort().setId(cmd.getPortUuid());
         port.getPort().setName(cmd.getPortName());
-        port.getPort().setTenant_id(cmd.getTenantUuid());
+        port.getPort().setTenantId(cmd.getTenantUuid());
 
         try {
             _bigswitchVnsApi.createPort(cmd.getNetworkUuid(), port);
@@ -270,7 +270,7 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
         PortData port = new PortData();
         port.getPort().setId(cmd.getPortUuid());
         port.getPort().setName(cmd.getPortName());
-        port.getPort().setTenant_id(cmd.getTenantUuid());
+        port.getPort().setTenantId(cmd.getTenantUuid());
 
         try {
             _bigswitchVnsApi.modifyPort(cmd.getNetworkUuid(), port);

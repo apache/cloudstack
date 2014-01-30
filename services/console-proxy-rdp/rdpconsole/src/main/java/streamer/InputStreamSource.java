@@ -20,13 +20,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import streamer.debug.FakeSink;
+
 /**
  * Source element, which reads data from InputStream.
  */
 public class InputStreamSource extends BaseElement {
 
     protected InputStream is;
-    protected SocketWrapper socketWrapper;
+    protected SocketWrapperImpl socketWrapper;
 
     public InputStreamSource(String id) {
         super(id);
@@ -37,7 +39,7 @@ public class InputStreamSource extends BaseElement {
         this.is = is;
     }
 
-    public InputStreamSource(String id, SocketWrapper socketWrapper) {
+    public InputStreamSource(String id, SocketWrapperImpl socketWrapper) {
         super(id);
         this.socketWrapper = socketWrapper;
     }
@@ -45,27 +47,27 @@ public class InputStreamSource extends BaseElement {
     @Override
     public void handleEvent(Event event, Direction direction) {
         switch (event) {
-            case SOCKET_UPGRADE_TO_SSL:
-                socketWrapper.upgradeToSsl();
-                break;
-            default:
-                super.handleEvent(event, direction);
+        case SOCKET_UPGRADE_TO_SSL:
+            socketWrapper.upgradeToSsl();
+            break;
+        default:
+            super.handleEvent(event, direction);
         }
     }
 
     @Override
     public void setLink(String padName, Link link, Direction direction) {
         switch (direction) {
-            case OUT:
-                super.setLink(padName, link, direction);
+        case OUT:
+            super.setLink(padName, link, direction);
 
-                if (is == null) {
-                    // Pause links until data stream will be ready
-                    link.pause();
-                }
-                break;
-            case IN:
-                throw new RuntimeException("Cannot assign link to input pad in source element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+            if (is == null) {
+                // Pause links until data stream will be ready
+                link.pause();
+            }
+            break;
+        case IN:
+            throw new RuntimeException("Cannot assign link to input pad in source element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
         }
     }
 

@@ -33,7 +33,7 @@ public class VncScreenDescription {
 
     // Indicates that screen uses format which we want to use:
     // RGB 24bit packed into 32bit little-endian int.
-    private boolean rgb888_32_le = false;
+    private boolean rgb888Bit32le = false;
 
     public VncScreenDescription() {
     }
@@ -46,7 +46,7 @@ public class VncScreenDescription {
 
         bytesPerPixel = (bitsPerPixel + 7) / 8;
 
-        rgb888_32_le =
+        rgb888Bit32le =
             (depth == 24 && bitsPerPixel == 32 && redShift == 16 && greenShift == 8 && blueShift == 0 && redMax == 255 && greenMax == 255 && blueMax == 255 &&
                 bigEndianFlag == RfbConstants.LITTLE_ENDIAN && trueColorFlag == RfbConstants.TRUE_COLOR);
     }
@@ -85,7 +85,7 @@ public class VncScreenDescription {
     }
 
     public boolean isRGB888_32_LE() {
-        return rgb888_32_le;
+        return rgb888Bit32le;
     }
 
 }

@@ -82,4 +82,8 @@ public class ServerApiException extends CloudRuntimeException {
         _description = description;
     }
 
+    @Override
+    public String getMessage() {
+        return _description;
+    }
 }

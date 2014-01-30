@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,9 +27,11 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -55,6 +55,9 @@ public class ListNicsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of the vm")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list nic of the specific vm's network")
+    private Long networkId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,6 +80,10 @@ public class ListNicsCmd extends BaseListCmd {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     @Override

@@ -218,13 +218,12 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }
 
-        if (rules != null && rules.size() == 1 ) {
+        if (rules != null && rules.size() == 1) {
             // for SRX no need to add default egress rule to DENY traffic
             if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                    ! _networkManager.getNetworkEgressDefaultPolicy(config.getId()))
+                !_networkManager.getNetworkEgressDefaultPolicy(config.getId()))
                 return true;
         }
-
 
         return applyFirewallRules(config, rules);
     }

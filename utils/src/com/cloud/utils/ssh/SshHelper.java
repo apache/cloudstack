@@ -27,8 +27,8 @@ import com.trilead.ssh2.ChannelCondition;
 import com.cloud.utils.Pair;
 
 public class SshHelper {
-    private static int DEFAULT_CONNECT_TIMEOUT = 60000;
-    private static int DEFAULT_KEX_TIMEOUT = 60000;
+    private static final int DEFAULT_CONNECT_TIMEOUT = 60000;
+    private static final int DEFAULT_KEX_TIMEOUT = 60000;
 
     private static final Logger s_logger = Logger.getLogger(SshHelper.class);
 

@@ -90,7 +90,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.12</version>
         <configuration>
           <!-- Exclude tests that require an agent, they appear under a different profile -->
             <excludes>

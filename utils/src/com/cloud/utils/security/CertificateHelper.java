@@ -114,7 +114,7 @@ public class CertificateHelper {
         return kf.generatePrivate(keysp);
     }
 
-   public static List<Certificate> parseChain(String chain) throws IOException {
+    public static List<Certificate> parseChain(String chain) throws IOException {
 
         List<Certificate> certs = new ArrayList<Certificate>();
         PEMReader reader = new PEMReader(new StringReader(chain));
@@ -159,7 +159,5 @@ public class CertificateHelper {
 
         return buffer.toString();
     }
-
-
 
 }

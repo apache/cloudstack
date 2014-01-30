@@ -40,7 +40,7 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
     protected long _start;
     protected StorageLayer _storage;
     protected boolean _inited = false;
-    private long MAX_TEMPLATE_SIZE_IN_BYTES;
+    private long maxTemplateSizeInBytes;
 
     public TemplateDownloaderBase(StorageLayer storage, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         _storage = storage;
@@ -49,7 +49,7 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
         _callback = callback;
         _inited = true;
 
-        this.MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
+        this.maxTemplateSizeInBytes = maxTemplateSizeInBytes;
     }
 
     @Override
@@ -122,7 +122,7 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
 
     @Override
     public long getMaxTemplateSizeInBytes() {
-        return this.MAX_TEMPLATE_SIZE_IN_BYTES;
+        return this.maxTemplateSizeInBytes;
     }
 
     @Override

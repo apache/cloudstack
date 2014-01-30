@@ -31,6 +31,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Web.Http;
@@ -141,7 +142,7 @@ namespace HypervResource
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
 
         private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
-        private static string systemVmIso;
+        private string systemVmIso  = "";
         Dictionary<String, String> contextMap = new Dictionary<String, String>();
 
         public static void Initialize()
@@ -179,19 +180,6 @@ namespace HypervResource
 
                 try
                 {
-                    NFSTO share = new NFSTO();
-                    String uriStr = (String)cmd.secondaryStorage;
-                    share.uri = new Uri(uriStr);
-
-                    string systemVmIso = (string)cmd.systemVmIso;
-                    string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
-                    string isoPath = Path.Combine(defaultDataPath, Path.GetFileName(systemVmIso));
-                    if (!File.Exists(isoPath))
-                    {
-                        logger.Info("File " + isoPath + " not found. Copying it from the secondary share.");
-                        Utils.DownloadCifsFileToLocalFile(systemVmIso, share, isoPath);
-                    }
-                    HypervResourceController.systemVmIso = isoPath;
                     result = true;
                 }
                 catch (Exception sysEx)
@@ -219,7 +207,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.AttachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.AttachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -228,17 +216,31 @@ namespace HypervResource
                 {
                     string vmName = (string)cmd.vmName;
                     DiskTO disk = DiskTO.ParseJson(cmd.disk);
-                    TemplateObjectTO dataStore = disk.templateObjectTO;
 
-                    if (dataStore.nfsDataStoreTO != null)
+                    if (disk.type.Equals("ISO"))
                     {
+                        TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
                         Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
-
-                        // The share is mapped, now attach the iso
-                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), dataStore.path);
-                        wmiCallsV2.AttachIso(vmName, isoPath);
+                        string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
+                        wmiCallsV2.AttachIso(vmName, diskPath);
                         result = true;
+                    }
+                    else if (disk.type.Equals("DATADISK"))
+                    {
+                        VolumeObjectTO volume = disk.volumeObjectTO;
+                        PrimaryDataStoreTO primary = volume.primaryDataStore;
+                        if (!primary.isLocal)
+                        {
+                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        }
+                        string diskPath = Utils.NormalizePath(volume.FullFileName);
+                        wmiCallsV2.AttachDisk(vmName, diskPath, disk.diskSequence);
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Invalid disk type to be attached to vm " + vmName;
                     }
                 }
                 catch (Exception sysEx)
@@ -251,6 +253,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
+                    disk = cmd.disk,
                     contextMap = contextMap
                 };
 
@@ -265,7 +268,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DettachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DettachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -274,16 +277,26 @@ namespace HypervResource
                 {
                     string vmName = (string)cmd.vmName;
                     DiskTO disk = DiskTO.ParseJson(cmd.disk);
-                    TemplateObjectTO dataStore = disk.templateObjectTO;
 
-                    if (dataStore.nfsDataStoreTO != null)
+                    if (disk.type.Equals("ISO"))
                     {
+                        TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
-                        // The share is mapped, now attach the iso
-                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar),
-                            dataStore.path.Replace('/', Path.DirectorySeparatorChar));
-                        wmiCallsV2.DetachDisk(vmName, isoPath);
+                        string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
+                        wmiCallsV2.DetachDisk(vmName, diskPath);
                         result = true;
+                    }
+                    else if (disk.type.Equals("DATADISK"))
+                    {
+                        VolumeObjectTO volume = disk.volumeObjectTO;
+                        PrimaryDataStoreTO primary = volume.primaryDataStore;
+                        string diskPath = Utils.NormalizePath(volume.FullFileName);
+                        wmiCallsV2.DetachDisk(vmName, diskPath);
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Invalid disk type to be dettached from vm " + vmName;
                     }
                 }
                 catch (Exception sysEx)
@@ -410,11 +423,69 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/DeleteCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.DeleteCommand)]
+        public JContainer DeleteCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.DestroyCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    // Assert
+                    String errMsg = "No 'volume' details in " + CloudStackTypes.DestroyCommand + " " + cmd.ToString();
+                    VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.data);
+
+                    if (destVolumeObjectTO.name == null)
+                    {
+                        logger.Error(errMsg);
+                        throw new ArgumentException(errMsg);
+                    }
+
+                    String path = destVolumeObjectTO.FullFileName;
+                    if (!File.Exists(path))
+                    {
+                        logger.Info(CloudStackTypes.DestroyCommand + ", but volume at pass already deleted " + path);
+                    }
+
+                    string vmName = (string)cmd.vmName;
+                    if (!string.IsNullOrEmpty(vmName) && File.Exists(path))
+                    {
+                        // Make sure that this resource is removed from the VM
+                        wmiCallsV2.DetachDisk(vmName, path);
+                    }
+
+                    File.Delete(path);
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.DestroyCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
+            }
+        }
+
+        
         private static JArray ReturnCloudStackTypedJArray(object ansContent, string ansType)
         {
             JObject ansObj = Utils.CreateCloudStackObject(ansType, ansContent);
             JArray answer = new JArray(ansObj);
-            logger.Info(ansObj.ToString());
+            logger.Info(Utils.CleanString(ansObj.ToString()));
             return answer;
         }
 
@@ -425,7 +496,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -532,7 +603,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
                 long size = 0;
@@ -679,7 +750,6 @@ namespace HypervResource
         }
 
         // POST api/HypervResource/CheckHealthCommand
-        // TODO: create test
         [HttpPost]
         [ActionName(CloudStackTypes.CheckHealthCommand)]
         public JContainer CheckHealthCommand([FromBody]dynamic cmd)
@@ -694,6 +764,24 @@ namespace HypervResource
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckHealthAnswer);
+            }
+        }
+
+        // POST api/HypervResource/CheckOnHostCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.CheckOnHostCommand)]
+        public JContainer CheckOnHostCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.CheckOnHostCommand + cmd.ToString());
+                object ansContent = new
+                {
+                    result = true,
+                    details = "resource is alive",
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckOnHostAnswer);
             }
         }
 
@@ -783,7 +871,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -801,7 +889,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 string localPath;
                 StoragePoolType poolType;
@@ -822,18 +910,23 @@ namespace HypervResource
                 var tInfo = new Dictionary<string, string>();
                 long capacityBytes = 0;
                 long availableBytes = 0;
+                string hostPath = null;
                 if (poolType == StoragePoolType.Filesystem)
                 {
                     GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                    hostPath = localPath;
                 }
                 else if (poolType == StoragePoolType.NetworkFilesystem)
                 {
                     NFSTO share = new NFSTO();
                     String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
                     share.uri = new Uri(uriStr);
+                    hostPath = Utils.NormalizePath(share.UncPath);
+
                     // Check access to share.
                     Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
+                    config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
                 }
                 else
                 {
@@ -845,8 +938,8 @@ namespace HypervResource
                 {
                     uuid = uuid,
                     host = cmd.pool.host,
-                    localPath = cmd.pool.host,
-                    hostPath = cmd.localPath,
+                    hostPath = cmd.pool.path,
+                    localPath = hostPath,
                     poolType = cmd.pool.type,
                     capacityBytes = capacityBytes,
                     availableBytes = availableBytes
@@ -856,6 +949,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
+                    localPath = hostPath,
                     templateInfo = tInfo,
                     poolInfo = poolInfo,
                     contextMap = contextMap
@@ -886,6 +980,24 @@ namespace HypervResource
             }
 
             return true;
+        }
+
+        // POST api/HypervResource/PlugNicCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.PlugNicCommand)]
+        public JContainer PlugNicCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.PlugNicCommand + cmd.ToString());
+                object ansContent = new
+                {
+                    result = true,
+                    details = "instead of plug, change he network settings",
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PlugNicAnswer);
+            }
         }
 
 
@@ -951,13 +1063,46 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.StartCommand + cmd.ToString()); // TODO: Security hole? VM data printed to log
+                logger.Info(CloudStackTypes.StartCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
 
                 try
                 {
-                    wmiCallsV2.DeployVirtualMachine(cmd, systemVmIso);
+                    string systemVmIsoPath = systemVmIso;
+                    lock (systemVmIso)
+                    {
+                        systemVmIsoPath = systemVmIso;
+                        String uriStr = (String)cmd.secondaryStorage;
+                        if (!String.IsNullOrEmpty(uriStr))
+                        {
+                            if (String.IsNullOrEmpty(systemVmIsoPath) || !File.Exists(systemVmIsoPath))
+                            {
+                                NFSTO share = new NFSTO();
+                                share.uri = new Uri(uriStr);
+                                string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
+
+                                string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
+                                string[] choices = choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
+                                if (choices.Length != 1)
+                                {
+                                    String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
+                                    logger.Debug(errMsg);
+                                }
+                                else
+                                {
+                                    systemVmIsoPath = Utils.NormalizePath(Path.Combine(defaultDataPath, Path.GetFileName(choices[0])));
+                                    if (!File.Exists(systemVmIsoPath))
+                                    {
+                                        Utils.DownloadCifsFileToLocalFile(choices[0], share, systemVmIsoPath);
+                                    }
+                                    systemVmIso = systemVmIsoPath;
+                                }
+                            }
+                        }
+                    }
+
+                    wmiCallsV2.DeployVirtualMachine(cmd, systemVmIsoPath);
                     result = true;
                 }
                 catch (Exception wmiEx)
@@ -1017,7 +1162,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateObjectCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateObjectCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
@@ -1027,7 +1172,7 @@ namespace HypervResource
                     VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
                     PrimaryDataStoreTO primary = volume.primaryDataStore;
                     ulong volumeSize = volume.size;
-                    string volumeName = volume.name + ".vhdx";
+                    string volumeName = volume.name + ".vhd";
                     string volumePath = null;
 
                     if (primary.isLocal)
@@ -1037,7 +1182,7 @@ namespace HypervResource
                     else
                     {
                         volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
-                        volumePath = volumePath.Replace('/', '\\');
+                        volumePath = Utils.NormalizePath(volumePath);
                         Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
                     }
 
@@ -1083,6 +1228,7 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
+                    willMigrate = true,
                     details = "success - NOP for MaintainCommand",
                     _reconnect = false,
                     contextMap = contextMap
@@ -1136,6 +1282,88 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/ModifyVmVnicVlanCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.ModifyVmNicConfigCommand)]
+        public JContainer ModifyVmNicConfigCommand([FromBody]dynamic cmd)
+        {
+
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.ModifyVmNicConfigCommand + cmd.ToString());
+                bool result = false;
+                String vmName = cmd.vmName;
+                uint vlan = (uint)cmd.vlan;
+                string macAddress = cmd.macAddress;
+                wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
+
+                result = true;
+
+                object ansContent = new
+                {
+                    vmName = vmName,
+                    result = result,
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyVmNicConfigAnswer);
+            }
+
+        }
+
+        // POST api/HypervResource/GetVmConfigCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVmConfigCommand)]
+        public JContainer GetVmConfigCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVmConfigCommand + cmd.ToString());
+                bool result = false;
+                String vmName = cmd.vmName;
+                ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
+                List<NicDetails> nicDetails = new List<NicDetails>();
+                var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
+                NicDetails nic = null;
+                String[] macAddress = new String[nicSettingsViaVm.Length];
+                int index = 0;
+                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+                {
+                    macAddress[index++] = item.Address;
+                }
+
+                index = 0;
+                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
+                int vlanid = 1;
+                foreach (EthernetPortAllocationSettingData item in ethernetConnections)
+                {
+                    EthernetSwitchPortVlanSettingData vlanSettings = wmiCallsV2.GetVlanSettings(item);
+                    if (vlanSettings == null)
+                    {
+                        vlanid = -1;
+                    }
+                    else
+                    {
+                        vlanid = vlanSettings.AccessVlanId;
+                    }
+                    nic = new NicDetails(macAddress[index++], vlanid);
+                    nicDetails.Add(nic);
+                }
+
+                result = true;
+
+                object ansContent = new
+                {
+                    vmName = vmName,
+                    nics = nicDetails,
+                    result = result,
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmConfigAnswer);
+            }
+        }
+
+
+
         // POST api/HypervResource/GetVmStatsCommand
         [HttpPost]
         [ActionName(CloudStackTypes.GetVmStatsCommand)]
@@ -1187,39 +1415,58 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 // Log command *after* we've removed security details from the command.
+                logger.Info(CloudStackTypes.CopyCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
                 object newData = null;
+                TemplateObjectTO destTemplateObjectTO = null;
+                VolumeObjectTO destVolumeObjectTO = null;
+                VolumeObjectTO srcVolumeObjectTO = null;
+                TemplateObjectTO srcTemplateObjectTO = null;
 
                 try
                 {
                     dynamic timeout = cmd.wait;  // TODO: Useful?
 
-                    TemplateObjectTO srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
-                    TemplateObjectTO destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
-                    VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
-
-                    logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
+                    srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
+                    destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
+                    srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
+                    destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
 
                     string destFile = null;
-                    if (destTemplateObjectTO != null && destTemplateObjectTO.primaryDataStore != null)
+                    if (destTemplateObjectTO != null)
                     {
-                        destFile = destTemplateObjectTO.FullFileName;
-                        if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                        if (destTemplateObjectTO.primaryDataStore != null)
                         {
-                            PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
-                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                            destFile = destTemplateObjectTO.FullFileName;
+                            if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                            {
+                                PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
+                                Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                            }
+                        }
+                        else if (destTemplateObjectTO.nfsDataStoreTO != null)
+                        {
+                            destFile = destTemplateObjectTO.FullFileName;
+                            NFSTO store = destTemplateObjectTO.nfsDataStoreTO;
+                            Utils.ConnectToRemote(store.UncPath, store.Domain, store.User, store.Password);
                         }
                     }
 
-                    // Already exists?
+                    // Template already downloaded?
                     if (destFile != null && File.Exists(destFile) &&
                         !String.IsNullOrEmpty(destTemplateObjectTO.checksum))
                     {
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
+                        logger.Debug(CloudStackTypes.CopyCommand + " calling VerifyChecksum to see if we already have the file at " + destFile);
                         result = VerifyChecksum(destFile, destTemplateObjectTO.checksum);
+                        if (!result)
+                        {
+                            result = true;
+                            logger.Debug(CloudStackTypes.CopyCommand + " existing file has different checksum " + destFile);
+                        }
                     }
 
                     // Do we have to create a new one?
@@ -1301,28 +1548,116 @@ namespace HypervResource
                         // Create volume from a template?
                         else if (srcTemplateObjectTO != null && destVolumeObjectTO != null)
                         {
-                            if (destVolumeObjectTO.format == null)
+                            // VolumeObjectTO guesses file extension based on existing files
+                            // this can be wrong if the previous file had a different file type
+                            var guessedDestFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
                             {
-                                destVolumeObjectTO.format = srcTemplateObjectTO.format;
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
                             }
-                            destFile = destVolumeObjectTO.FullFileName;
-                            string srcFile = srcTemplateObjectTO.FullFileName;
 
+                            destVolumeObjectTO.format = srcTemplateObjectTO.format;
+                            destFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcTemplateObjectTO.FullFileName;
                             if (!File.Exists(srcFile))
                             {
                                 details = "Local template file missing from " + srcFile;
                             }
                             else
                             {
-                                if (File.Exists(destFile))
-                                {
-                                    logger.Info("Deleting existing file " + destFile);
-                                    File.Delete(destFile);
-                                }
-
                                 // TODO: thin provision instead of copying the full file.
                                 File.Copy(srcFile, destFile);
-                                newData = cmd.destTO;
+                                destVolumeObjectTO.path = destFile;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
+                                newData = ansObj;
+                                result = true;
+                            }
+                        }
+                        else if (srcVolumeObjectTO != null && destVolumeObjectTO != null)
+                        {
+                            var guessedDestFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
+                            {
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
+                            }
+
+                            destVolumeObjectTO.format = srcVolumeObjectTO.format;
+                            destFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcVolumeObjectTO.FullFileName;
+                            if (!File.Exists(srcFile))
+                            {
+                                details = "Local template file missing from " + srcFile;
+                            }
+                            else
+                            {
+                                // Create the directory before copying the files. CreateDirectory
+                                // doesn't do anything if the directory is already present.
+                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                                File.Copy(srcFile, destFile);
+                                // Create volumeto object deserialize and send it
+                                destVolumeObjectTO.path = destFile;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
+                                newData = ansObj;
+                                result = true;
+                            }
+                        }
+                        else if (srcVolumeObjectTO != null && destTemplateObjectTO != null)
+                        {
+                            var guessedDestFile = destTemplateObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
+                            {
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
+                            }
+
+                            destTemplateObjectTO.format = srcVolumeObjectTO.format;
+                            destFile = destTemplateObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcVolumeObjectTO.FullFileName;
+                            if (!File.Exists(srcFile))
+                            {
+                                details = "Local template file missing from " + srcFile;
+                            }
+                            else
+                            {
+                                // Create the directory before copying the files. CreateDirectory
+                                // doesn't do anything if the directory is already present.
+                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                                File.Copy(srcFile, destFile);
+
+                                FileInfo destFileInfo = new FileInfo(destFile);
+                                // Write the template.properties file
+                                PostCreateTemplate(Path.GetDirectoryName(destFile), destTemplateObjectTO.id, destTemplateObjectTO.name,
+                                    destFileInfo.Length.ToString(), srcVolumeObjectTO.size.ToString(), destTemplateObjectTO.format);
+
+                                TemplateObjectTO destTemplateObject = new TemplateObjectTO();
+                                destTemplateObject.size = srcVolumeObjectTO.size.ToString();
+                                destTemplateObject.format = srcVolumeObjectTO.format;
+                                destTemplateObject.path = destFile;
+                                destTemplateObject.nfsDataStoreTO = destTemplateObjectTO.nfsDataStoreTO;
+                                destTemplateObject.checksum = destTemplateObjectTO.checksum;
+                                newData = destTemplateObject;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObject);
+                                newData = ansObj;
                                 result = true;
                             }
                         }
@@ -1343,10 +1678,34 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    newData = cmd.destTO,
+                    newData = newData,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
+            }
+        }
+
+        private static void PostCreateTemplate(string path, string templateId, string templateUuid, string physicalSize, string virtualSize, string format)
+        {
+            string templatePropFile = Path.Combine(path, "template.properties");
+            using (StreamWriter sw = new StreamWriter(File.Open(templatePropFile, FileMode.Create), Encoding.GetEncoding("iso-8859-1")))
+            {
+                if (format != null)
+                {
+                    format = format.ToLower();
+                }
+
+                sw.NewLine = "\n";
+                sw.WriteLine("id=" + templateId);
+                sw.WriteLine("filename=" + templateUuid + "." + format);
+                sw.WriteLine(format + ".filename=" + templateUuid + "." + format);
+                sw.WriteLine("uniquename=" + templateUuid);
+                sw.WriteLine(format + "=true");
+                sw.WriteLine("virtualsize=" + virtualSize);
+                sw.WriteLine(format + ".virtualsize=" + virtualSize);
+                sw.WriteLine("size=" + physicalSize);
+                sw.WriteLine(format + ".size=" + physicalSize);
+                sw.WriteLine("public=false");
             }
         }
 
@@ -1358,7 +1717,7 @@ namespace HypervResource
             {
                 return true;
             }
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -1432,7 +1791,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetStorageStatsCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetStorageStatsCommand + Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 string details = null;
                 long capacity = 0;
@@ -1440,11 +1799,42 @@ namespace HypervResource
                 long used = 0;
                 try
                 {
-                    string localPath = (string)cmd.localPath;
-                    GetCapacityForLocalPath(localPath, out capacity, out available);
-                    used = capacity - available;
-                    result = true;
-                    logger.Debug(CloudStackTypes.GetStorageStatsCommand + " set used bytes to " + used);
+                    StoragePoolType poolType;
+                    string poolId = (string)cmd.id;
+                    string hostPath = null;
+                    if (!Enum.TryParse<StoragePoolType>((string)cmd.pooltype, out poolType))
+                    {
+                        details = "Request to get unsupported pool type: " + ((string)cmd.pooltype == null ? "NULL" : (string)cmd.pooltype) + "in cmd " +
+                            JsonConvert.SerializeObject(cmd);
+                        logger.Error(details);
+                    }
+                    else if (poolType == StoragePoolType.Filesystem)
+                    {
+                        hostPath = (string)cmd.localPath;;
+                        GetCapacityForLocalPath(hostPath, out capacity, out available);
+                        used = capacity - available;
+                        result = true;
+                    }
+                    else if (poolType == StoragePoolType.NetworkFilesystem)
+                    {
+                        string sharePath = config.getPrimaryStorage((string)cmd.id);
+                        if (sharePath != null)
+                        {
+                            hostPath = sharePath;
+                            Utils.GetShareDetails(sharePath, out capacity, out available);
+                            used = capacity - available;
+                            result = true;
+                        }
+                    }
+                    else
+                    {
+                        result = false;
+                    }
+
+                    if (result)
+                    {
+                        logger.Debug(CloudStackTypes.GetStorageStatsCommand + " set used bytes for " + hostPath + " to " + used);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1609,21 +1999,39 @@ namespace HypervResource
                 dynamic strtRouteCmd = cmdArray[0][CloudStackTypes.StartupRoutingCommand];
 
                 // Insert networking details
-                strtRouteCmd.privateIpAddress = config.PrivateIpAddress;
-                strtRouteCmd.privateNetmask = config.PrivateNetmask;
-                strtRouteCmd.privateMacAddress = config.PrivateMacAddress;
-                strtRouteCmd.storageIpAddress = config.PrivateIpAddress;
-                strtRouteCmd.storageNetmask = config.PrivateNetmask;
-                strtRouteCmd.storageMacAddress = config.PrivateMacAddress;
-                strtRouteCmd.gatewayIpAddress = config.GatewayIpAddress;
+                string privateIpAddress = strtRouteCmd.privateIpAddress;
+                string subnet;
+                System.Net.NetworkInformation.NetworkInterface privateNic = GetNicInfoFromIpAddress(privateIpAddress, out subnet);
+                strtRouteCmd.privateIpAddress = privateIpAddress;
+                strtRouteCmd.privateNetmask = subnet;
+                strtRouteCmd.privateMacAddress = privateNic.GetPhysicalAddress().ToString();
+                string storageip = strtRouteCmd.storageIpAddress;
+                System.Net.NetworkInformation.NetworkInterface storageNic = GetNicInfoFromIpAddress(storageip, out subnet);
+
+                strtRouteCmd.storageIpAddress = storageip;
+                strtRouteCmd.storageNetmask = subnet;
+                strtRouteCmd.storageMacAddress = storageNic.GetPhysicalAddress().ToString();
+                strtRouteCmd.gatewayIpAddress = storageNic.GetPhysicalAddress().ToString();
+
                 strtRouteCmd.caps = "hvm";
+
+                dynamic details = strtRouteCmd.hostDetails;
+                if (details != null)
+                {
+                    string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
+                        System.Environment.OSVersion.Version.Minor.ToString();
+                    details.Add("product_version", productVersion);
+                    details.Add("rdp.server.port", 2179);
+                }
 
                 // Detect CPUs, speed, memory
                 uint cores;
                 uint mhz;
-                wmiCallsV2.GetProcessorResources(out cores, out mhz);
+                uint sockets;
+                wmiCallsV2.GetProcessorResources(out sockets, out cores, out mhz);
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
+                strtRouteCmd.cpuSockets = sockets;
                 ulong memoryKBs;
                 ulong freeMemoryKBs;
                 wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
@@ -1693,12 +2101,53 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/GetVncPortCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVncPortCommand)]
+        public JContainer GetVncPortCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVncPortCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+                string address = null;
+                int port = -9;
+
+                try
+                {
+                    string vmName = (string)cmd.name;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    address = "instanceId=" + sys.Name ;
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.GetVncPortAnswer + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    address = address,
+                    port = port
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVncPortAnswer);
+            }
+        }
+
         public static System.Net.NetworkInformation.NetworkInterface GetNicInfoFromIpAddress(string ipAddress, out string subnet)
         {
             System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+            System.Net.NetworkInformation.NetworkInterface defaultnic = null;
             foreach (var nic in nics)
             {
                 subnet = null;
+                defaultnic = nic;
                 // TODO: use to remove NETMASK and MAC from the config file, and to validate the IPAddress.
                 var nicProps = nic.GetIPProperties();
                 bool found = false;
@@ -1716,7 +2165,9 @@ namespace HypervResource
                 }
                 return nic;
             }
-            throw new ArgumentException("No NIC for ipAddress " + ipAddress);
+            var defaultSubnet = defaultnic.GetIPProperties().UnicastAddresses[0];
+            subnet = defaultSubnet.IPv4Mask.ToString();
+            return defaultnic;
         }
 
         public static void GetCapacityForLocalPath(string localStoragePath, out long capacityBytes, out long availableBytes)

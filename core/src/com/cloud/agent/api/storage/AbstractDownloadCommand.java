@@ -18,7 +18,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.storage.Storage.ImageFormat;
 
-public abstract class AbstractDownloadCommand extends ssCommand {
+public abstract class AbstractDownloadCommand extends SsCommand {
 
     private String url;
     private ImageFormat format;

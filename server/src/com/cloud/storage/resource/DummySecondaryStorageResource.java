@@ -159,8 +159,8 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         return true;
     }
 
-    public void setUseServiceVm(boolean _useServiceVm) {
-        this._useServiceVm = _useServiceVm;
+    public void setUseServiceVm(boolean useServiceVm) {
+        this._useServiceVm = useServiceVm;
     }
 
     public boolean useServiceVm() {

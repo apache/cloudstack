@@ -32,12 +32,11 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import com.cloud.deploy.HAPlanner;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -123,25 +122,35 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Inject
     ManagedContext _managedContext;
 
-    List<Investigator> _investigators;
+    List<Investigator> investigators;
 
     public List<Investigator> getInvestigators() {
-        return _investigators;
+        return investigators;
     }
 
-    public void setInvestigators(List<Investigator> _investigators) {
-        this._investigators = _investigators;
+    public void setInvestigators(List<Investigator> investigators) {
+        this.investigators = investigators;
     }
 
-    List<FenceBuilder> _fenceBuilders;
+    List<FenceBuilder> fenceBuilders;
 
     public List<FenceBuilder> getFenceBuilders() {
-        return _fenceBuilders;
+        return fenceBuilders;
     }
 
-    public void setFenceBuilders(List<FenceBuilder> _fenceBuilders) {
-        this._fenceBuilders = _fenceBuilders;
+    public void setFenceBuilders(List<FenceBuilder> fenceBuilders) {
+        this.fenceBuilders = fenceBuilders;
     }
+
+    List<HAPlanner> _haPlanners;
+    public List<HAPlanner> getHaPlanners() {
+        return _haPlanners;
+    }
+
+    public void setHaPlanners(List<HAPlanner> haPlanners) {
+        this._haPlanners = haPlanners;
+    }
+
 
     @Inject
     AgentManager _agentMgr;
@@ -190,7 +199,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         }
 
         Status hostState = null;
-        for (Investigator investigator : _investigators) {
+        for (Investigator investigator : investigators) {
             hostState = investigator.isAgentAlive(host);
             if (hostState != null) {
                 if (s_logger.isDebugEnabled()) {
@@ -245,7 +254,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         HostPodVO podVO = _podDao.findById(host.getPodId());
         String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
-        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host is down, " + hostDesc, "Host [" + hostDesc + "] is down." +
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host is down, " + hostDesc, "Host [" + hostDesc +
+            "] is down." +
             ((sb != null) ? sb.toString() : ""));
 
         for (final VMInstanceVO vm : vms) {
@@ -341,6 +351,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             try {
                 _itMgr.advanceStop(vm.getUuid(), true);
+                vm = _instanceDao.findByUuid(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -449,7 +460,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 }
 
                 Investigator investigator = null;
-                for (Investigator it : _investigators) {
+                for (Investigator it : investigators) {
                     investigator = it;
                     alive = investigator.isVmAlive(vm, host);
                     s_logger.info(investigator.getName() + " found " + vm + "to be alive? " + alive);
@@ -461,7 +472,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 boolean fenced = false;
                 if (alive == null) {
                     s_logger.debug("Fencing off VM that we don't know the state of");
-                    for (FenceBuilder fb : _fenceBuilders) {
+                    for (FenceBuilder fb : fenceBuilders) {
                         Boolean result = fb.fenceOff(vm, host);
                         s_logger.info("Fencer " + fb.getName() + " returned " + result);
                         if (result != null && result) {
@@ -549,7 +560,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
-            _itMgr.advanceStart(vm.getUuid(), params);
+
+            try{
+                // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+                _itMgr.advanceStart(vm.getUuid(), params, null);
+            }catch (InsufficientCapacityException e){
+                s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                _itMgr.advanceStart(vm.getUuid(), params, _haPlanners.get(0));
+            }
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
@@ -592,8 +610,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             _haDao.update(work.getId(), work);
 
             VMInstanceVO vm = _instanceDao.findById(vmId);
-
-            _itMgr.migrateAway(vm.getUuid(), srcHostId);
+            // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+            boolean result = false;
+            try {
+                _itMgr.migrateAway(vm.getUuid(), srcHostId, null);
+            }catch (InsufficientServerCapacityException e) {
+                s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                _itMgr.migrateAway(vm.getUuid(), srcHostId, _haPlanners.get(0));
+            }
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");

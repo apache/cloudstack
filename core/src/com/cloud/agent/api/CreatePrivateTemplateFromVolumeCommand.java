@@ -79,8 +79,8 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     }
 
     @Override
-    public void setVolumePath(String _volumePath) {
-        this._volumePath = _volumePath;
+    public void setVolumePath(String volumePath) {
+        this._volumePath = volumePath;
     }
 
     @Override

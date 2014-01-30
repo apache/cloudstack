@@ -174,4 +174,14 @@ public class NetUtilsTest extends TestCase {
     public void testGetLocalIPString() {
         assertNotNull(NetUtils.getLocalIPString());
     }
+
+    @Test
+    public void testSameIsolationId() {
+        assertTrue(NetUtils.isSameIsolationId("1", "vlan://1"));
+        assertTrue(NetUtils.isSameIsolationId("", null));
+        assertTrue(NetUtils.isSameIsolationId("UnTagged", "vlan://uNtAGGED"));
+        assertFalse(NetUtils.isSameIsolationId("2", "vlan://uNtAGGED"));
+        assertFalse(NetUtils.isSameIsolationId("2", "vlan://3"));
+        assertFalse(NetUtils.isSameIsolationId("bla", null));
+    }
 }

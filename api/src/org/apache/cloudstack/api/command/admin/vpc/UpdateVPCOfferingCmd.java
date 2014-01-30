@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateVPCOffering", description = "Updates VPC offering", responseObject = VpcOfferingResponse.class)
 public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCOfferingCmd.class.getName());
-    private static final String _name = "updatevpcofferingresponse";
+    private static final String Name = "updatevpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,7 +76,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

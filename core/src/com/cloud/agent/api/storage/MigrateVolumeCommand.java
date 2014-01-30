@@ -25,11 +25,19 @@ public class MigrateVolumeCommand extends Command {
     long volumeId;
     String volumePath;
     StorageFilerTO pool;
+    String attachedVmName;
 
     public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
+    }
+
+    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName) {
+        this.volumeId = volumeId;
+        this.volumePath = volumePath;
+        this.pool = new StorageFilerTO(pool);
+        this.attachedVmName = attachedVmName;
     }
 
     @Override
@@ -47,5 +55,9 @@ public class MigrateVolumeCommand extends Command {
 
     public StorageFilerTO getPool() {
         return pool;
+    }
+
+    public String getAttachedVmName() {
+        return attachedVmName;
     }
 }

@@ -244,10 +244,17 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public List<NicVO> listByVmIdAndNicId(Long vmId, Long nicId) {
+    public List<NicVO> listByVmIdAndNicIdAndNtwkId(long vmId, Long nicId, Long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", vmId);
-        sc.setParameters("nicid", nicId);
+
+        if (nicId != null) {
+            sc.setParameters("nicid", nicId);
+        }
+
+        if (networkId != null) {
+            sc.setParameters("network", networkId);
+        }
         return listBy(sc);
     }
 

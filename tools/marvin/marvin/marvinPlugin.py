@@ -80,17 +80,22 @@ class MarvinPlugin(Plugin):
         Register command line options
         """
         parser.add_option("--marvin-config", action="store",
-                          default=env.get('MARVIN_CONFIG', './datacenter.cfg'),
+                          default=env.get('MARVIN_CONFIG',
+                                          './datacenter.cfg'),
                           dest="config_file",
                           help="Marvin's configuration file where the " +
-                               "datacenter information is specified " +
-                               "[MARVIN_CONFIG]")
-        parser.add_option("--load", action="store_true", default=False,
+                               "datacenter information is specified" +
+                               " [MARVIN_CONFIG]")
+        parser.add_option("--load", action="store_true",
+                          default=False,
                           dest="load",
                           help="Only load the deployment configuration given")
-        parser.add_option("--log-folder-path", action="store", default=None,
+        parser.add_option("--log-folder-path",
+                          action="store",
+                          default=None,
                           dest="log_folder_path",
-                          help="Path to the folder where log files will be stored")
+                          help="Path to the folder "
+                               "where log files will be stored")
         Plugin.options(self, parser, env)
 
     def wantClass(self, cls):
@@ -169,7 +174,9 @@ class MarvinPlugin(Plugin):
         Creates a debugstream for tc debug log
         '''
         try:
-            obj_marvininit = MarvinInit(self.configFile, self.loadFlag, self.logFolderPath)
+            obj_marvininit = MarvinInit(self.configFile,
+                                        self.loadFlag,
+                                        self.logFolderPath)
             if obj_marvininit.init() == SUCCESS:
                 self.testClient = obj_marvininit.getTestClient()
                 self.tcRunLogger = obj_marvininit.getLogger()

@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.inject.Inject;
@@ -145,7 +144,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -259,7 +257,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
@@ -270,7 +267,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
@@ -288,7 +284,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -389,8 +384,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
         resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().getOrdinal()).toString());
+
         if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
-            resourceLimitResponse.setMax((long)Math.ceil(limit.getMax() / ResourceType.bytesToGiB));
+            resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
         } else {
             resourceLimitResponse.setMax(limit.getMax());
         }
@@ -465,10 +461,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            throw new CloudRuntimeException("Unable to find info for image store snapshot with uuid '" + snapshot.getUuid() + "'");
+            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            snapshotResponse.setRevertable(false);
+        } else {
+            snapshotResponse.setRevertable(snapshotInfo.isRevertable());
         }
-
-        snapshotResponse.setRevertable(snapshotInfo.isRevertable());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Snapshot, snapshot.getId());
@@ -1015,7 +1012,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
-        
+
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
 
@@ -1671,152 +1668,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
-    private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
-        Map<String, Long> totalCapacityMap = new HashMap<String, Long>();
-        Map<String, Long> usedCapacityMap = new HashMap<String, Long>();
-
-        Set<Long> poolIdsToIgnore = new HashSet<Long>();
-        Criteria c = new Criteria();
-        // TODO: implement
-        List<? extends StoragePoolVO> allStoragePools = ApiDBUtils.searchForStoragePools(c);
-        for (StoragePoolVO pool : allStoragePools) {
-            StoragePoolType poolType = pool.getPoolType();
-            if (!(poolType.isShared())) {// All the non shared storages
-                // shouldn't show up in the capacity
-                // calculation
-                poolIdsToIgnore.add(pool.getId());
-            }
-        }
-
-        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-
-        // collect all the capacity types, sum allocated/used and sum
-        // total...get one capacity number for each
-        for (Capacity capacity : hostCapacities) {
-
-            // check if zone exist
-            DataCenter zone = ApiDBUtils.findZoneById(capacity.getDataCenterId());
-            if (zone == null) {
-                continue;
-            }
-
-            short capacityType = capacity.getCapacityType();
-
-            // If local storage then ignore
-            if ((capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE) &&
-                poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
-                continue;
-            }
-
-            String key = capacity.getCapacityType() + "_" + capacity.getDataCenterId();
-            String keyForPodTotal = key + "_-1";
-
-            boolean sumPodCapacity = false;
-            if (capacity.getPodId() != null) {
-                key += "_" + capacity.getPodId();
-                sumPodCapacity = true;
-            }
-
-            Long totalCapacity = totalCapacityMap.get(key);
-            Long usedCapacity = usedCapacityMap.get(key);
-
-            // reset overprovisioning factor to 1
-            float overprovisioningFactor = 1;
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                overprovisioningFactor = cpuOverprovisioningFactor;
-            }
-
-            if (totalCapacity == null) {
-                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
-            } else {
-                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-            }
-
-            if (usedCapacity == null) {
-                usedCapacity = new Long(capacity.getUsedCapacity());
-            } else {
-                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-            }
-
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                // Capacity
-                // accounts
-                // for
-                // stopped
-                // vms
-                // that
-                // have been
-                // stopped
-                // within
-                // an
-                // interval
-                usedCapacity += capacity.getReservedCapacity();
-            }
-
-            totalCapacityMap.put(key, totalCapacity);
-            usedCapacityMap.put(key, usedCapacity);
-
-            if (sumPodCapacity) {
-                totalCapacity = totalCapacityMap.get(keyForPodTotal);
-                usedCapacity = usedCapacityMap.get(keyForPodTotal);
-
-                overprovisioningFactor = 1;
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                    overprovisioningFactor = cpuOverprovisioningFactor;
-                }
-
-                if (totalCapacity == null) {
-                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
-                } else {
-                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-                }
-
-                if (usedCapacity == null) {
-                    usedCapacity = new Long(capacity.getUsedCapacity());
-                } else {
-                    usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-                }
-
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                    // Capacity
-                    // accounts
-                    // for
-                    // stopped
-                    // vms
-                    // that
-                    // have
-                    // been
-                    // stopped
-                    // within
-                    // an
-                    // interval
-                    usedCapacity += capacity.getReservedCapacity();
-                }
-
-                totalCapacityMap.put(keyForPodTotal, totalCapacity);
-                usedCapacityMap.put(keyForPodTotal, usedCapacity);
-            }
-        }
-
-        List<CapacityVO> summedCapacities = new ArrayList<CapacityVO>();
-        for (String key : totalCapacityMap.keySet()) {
-            CapacityVO summedCapacity = new CapacityVO();
-
-            StringTokenizer st = new StringTokenizer(key, "_");
-            summedCapacity.setCapacityType(Short.parseShort(st.nextToken()));
-            summedCapacity.setDataCenterId(Long.parseLong(st.nextToken()));
-            if (st.hasMoreTokens()) {
-                summedCapacity.setPodId(Long.parseLong(st.nextToken()));
-            }
-
-            summedCapacity.setTotalCapacity(totalCapacityMap.get(key));
-            summedCapacity.setUsedCapacity(usedCapacityMap.get(key));
-
-            summedCapacities.add(summedCapacity);
-        }
-        return summedCapacities;
-    }
-
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
@@ -1954,8 +1805,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     public SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules) {
         SecurityGroupResponse response = new SecurityGroupResponse();
         Map<Long, Account> securiytGroupAccounts = new HashMap<Long, Account>();
-        Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
-        Map<Long, Account> allowedSecuriytGroupAccounts = new HashMap<Long, Account>();
 
         if ((securityRules != null) && !securityRules.isEmpty()) {
             SecurityGroupJoinVO securityGroup = ApiDBUtils.findSecurityGroupViewById(securityRules.get(0).getSecurityGroupId()).get(0);
@@ -2197,8 +2046,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 reservation = (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1));
             }
             if (startVmIp > startGuestIp + 1 && endVmIp < endGuestIp - 1) {
-                reservation =
-                    (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1) + " ,  " + NetUtils.long2Ip(endVmIp + 1) + "-" + NetUtils.long2Ip(endGuestIp));
+                reservation = (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1) + " ,  " + NetUtils.long2Ip(endVmIp + 1) + "-" + NetUtils.long2Ip(endGuestIp));
             }
         }
         response.setReservedIpRange(reservation);
@@ -2209,10 +2057,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
             switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())) {
-                case Vlan:
-                case Vxlan:
-                    vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
-                    break;
+            case Vlan:
+            case Vxlan:
+                vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+                break;
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
@@ -2380,10 +2228,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setPublicIpAddressId(ip.getUuid());
             response.setPublicIpAddress(ip.getAddress().addr());
         }
-        
+
         Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(network.getUuid());
-        
+
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
@@ -2625,8 +2473,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CapabilityResponse capabilityResponse = new CapabilityResponse();
             capabilityResponse.setName(cap.getName());
             capabilityResponse.setObjectName("capability");
-            if (cap.getName().equals(Capability.SupportedLBIsolation.getName()) || cap.getName().equals(Capability.SupportedSourceNatTypes.getName()) ||
-                cap.getName().equals(Capability.RedundantRouter.getName())) {
+            if (cap.getName().equals(Capability.SupportedLBIsolation.getName()) || cap.getName().equals(Capability.SupportedSourceNatTypes.getName())
+                    || cap.getName().equals(Capability.RedundantRouter.getName())) {
                 capabilityResponse.setCanChoose(true);
             } else {
                 capabilityResponse.setCanChoose(false);
@@ -2640,8 +2488,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (Network.Provider serviceProvider : serviceProviders) {
             // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
-            if (service == Service.Firewall &&
-                !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto)) {
+            if (service == Service.Firewall
+                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto)) {
                 continue;
             }
 
@@ -2684,6 +2532,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             services.add(service.getName());
         }
         response.setServices(services);
+
+        Provider serviceProvider = Provider.getProvider(result.getProviderName());
+        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+        response.setCanEnableIndividualServices(canEnableIndividualServices);
 
         response.setObjectName("networkserviceprovider");
         return response;
@@ -2728,21 +2580,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-	@Override
-	public OvsProviderResponse createOvsProviderResponse(OvsProvider result) {
+    @Override
+    public OvsProviderResponse createOvsProviderResponse(OvsProvider result) {
 
-		OvsProviderResponse response = new OvsProviderResponse();
-		response.setId(result.getUuid());
-		PhysicalNetworkServiceProvider nsp = ApiDBUtils
-				.findPhysicalNetworkServiceProviderById(result.getNspId());
-		if (nsp != null) {
-			response.setNspId(nsp.getUuid());
-		}
-		response.setEnabled(result.isEnabled());
+        OvsProviderResponse response = new OvsProviderResponse();
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
+        response.setEnabled(result.isEnabled());
 
-		response.setObjectName("ovselement");
-		return response;
-	}
+        response.setObjectName("ovselement");
+        return response;
+    }
 
     @Override
     public LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb) {
@@ -3013,7 +2864,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
 
-        NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
         }
@@ -3156,11 +3007,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCidr(result.getCidr());
 
         StaticRoute.State state = result.getState();
-        String stateToSet = state.toString();
-        if (state.equals(FirewallRule.State.Revoke)) {
-            stateToSet = "Deleting";
+        if (state.equals(StaticRoute.State.Revoke)) {
+            state = StaticRoute.State.Deleting;
         }
-        response.setState(stateToSet);
+        response.setState(state.toString());
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
 
@@ -3372,8 +3222,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkVO network = _entityMgr.findById(NetworkVO.class, usageRecord.getNetworkId().toString());
             usageRecResponse.setNetworkId(network.getUuid());
 
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE ||
-            usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
+                || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             //VM Instance Id
@@ -3613,6 +3463,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIp6Address(result.getIp6Address());
         }
 
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+
         response.setIsDefault(result.isDefaultNic());
         return response;
     }
@@ -3647,11 +3499,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
         ruleResponse.setInstancePort(lb.getDefaultPortStart());
         ruleResponse.setSourcePort(lb.getSourcePortStart());
-        String stateToSet = lb.getState().toString();
+        FirewallRule.State stateToSet = lb.getState();
         if (stateToSet.equals(FirewallRule.State.Revoke)) {
-            stateToSet = "Deleting";
+            stateToSet = FirewallRule.State.Deleting;
         }
-        ruleResponse.setState(stateToSet);
+        ruleResponse.setState(stateToSet.toString());
         ruleResponse.setObjectName("loadbalancerrule");
         ruleResponses.add(ruleResponse);
         lbResponse.setLbRules(ruleResponses);
@@ -3736,7 +3588,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public PortableIpResponse createPortableIPResponse(PortableIp portableIp) {
         PortableIpResponse response = new PortableIpResponse();
         response.setAddress(portableIp.getAddress());
-        Long accountId =  portableIp.getAllocatedInDomainId();
+        Long accountId = portableIp.getAllocatedInDomainId();
         if (accountId != null) {
             Account account = ApiDBUtils.findAccountById(accountId);
             response.setAllocatedToAccountId(account.getAccountName());

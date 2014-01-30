@@ -304,7 +304,7 @@ public class AgentShell implements IAgentShell, Daemon {
         // For KVM agent, do it specially here
 
         File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
-        if(!file.exists()) {
+        if (!file.exists()) {
             file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
         }
 

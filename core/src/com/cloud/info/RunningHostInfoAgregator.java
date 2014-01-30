@@ -24,9 +24,9 @@ import com.cloud.host.Host;
 public class RunningHostInfoAgregator {
 
     public static class ZoneHostInfo {
-        public static int ROUTING_HOST_MASK = 2;
-        public static int STORAGE_HOST_MASK = 4;
-        public static int ALL_HOST_MASK = ROUTING_HOST_MASK | STORAGE_HOST_MASK;
+        public static final int ROUTING_HOST_MASK = 2;
+        public static final int STORAGE_HOST_MASK = 4;
+        public static final int ALL_HOST_MASK = ROUTING_HOST_MASK | STORAGE_HOST_MASK;
 
         private long dcId;
 
@@ -51,7 +51,7 @@ public class RunningHostInfoAgregator {
         }
     }
 
-    private Map<Long, ZoneHostInfo> zoneHostInfoMap = new HashMap<Long, ZoneHostInfo>();
+    private final Map<Long, ZoneHostInfo> zoneHostInfoMap = new HashMap<Long, ZoneHostInfo>();
 
     public RunningHostInfoAgregator() {
     }

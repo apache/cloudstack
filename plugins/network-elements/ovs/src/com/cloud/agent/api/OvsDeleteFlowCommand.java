@@ -16,21 +16,20 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsDeleteFlowCommand extends Command {
-	String vmName;
+    String vmName;
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public String getVmName() {
-		return vmName;
-	}
+    public String getVmName() {
+        return vmName;
+    }
 
-	public OvsDeleteFlowCommand(String vmName) {
-		this.vmName = vmName;
-	}
+    public OvsDeleteFlowCommand(String vmName) {
+        this.vmName = vmName;
+    }
 }

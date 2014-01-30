@@ -95,9 +95,13 @@
         },
         tagItem: function(title, onRemove, data) {
             var $li = $('<li>');
-            var $label = $('<span>').addClass('label').html(_s(title));
+            var $label = $('<span>').addClass('label');
             var $remove = $('<span>').addClass('remove').html('X');
+            var $key = $('<span>').addClass('key').html(_s(data.key));
+            var $value = $('<span>').addClass('value').html(_s(data.value));
 
+            $label.append($key, '<span>=</span>', $value);
+            $label.attr('title', title);
             $remove.click(function() {
                 if (onRemove) onRemove($li, data);
             });

@@ -44,8 +44,8 @@ public class NfsTO implements DataStoreTO {
         return _url;
     }
 
-    public void setUrl(String _url) {
-        this._url = _url;
+    public void setUrl(String url) {
+        this._url = url;
     }
 
     @Override
@@ -53,8 +53,8 @@ public class NfsTO implements DataStoreTO {
         return _role;
     }
 
-    public void setRole(DataStoreRole _role) {
-        this._role = _role;
+    public void setRole(DataStoreRole role) {
+        this._role = role;
     }
 
     @Override

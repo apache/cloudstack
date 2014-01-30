@@ -250,7 +250,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String SSHPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

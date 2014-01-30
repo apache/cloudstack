@@ -64,8 +64,8 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     protected final SearchBuilder<VMTemplateHostVO> TemplateStatusSearch;
     protected final SearchBuilder<VMTemplateHostVO> TemplateStatesSearch;
     protected final SearchBuilder<VMTemplateHostVO> updateStateSearch;
-    protected SearchBuilder<VMTemplateHostVO> ZONE_TEMPLATE_SEARCH;
-    protected SearchBuilder<VMTemplateHostVO> LOCAL_SECONDARY_STORAGE_SEARCH;
+    protected SearchBuilder<VMTemplateHostVO> ZoneTemplateSearch;
+    protected SearchBuilder<VMTemplateHostVO> LocalSecondaryStorageSearch;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
         + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE host_id = ? and type_id = ?";
@@ -131,25 +131,25 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         boolean result = super.configure(name, params);
-        ZONE_TEMPLATE_SEARCH = createSearchBuilder();
-        ZONE_TEMPLATE_SEARCH.and("template_id", ZONE_TEMPLATE_SEARCH.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        ZONE_TEMPLATE_SEARCH.and("state", ZONE_TEMPLATE_SEARCH.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        ZoneTemplateSearch = createSearchBuilder();
+        ZoneTemplateSearch.and("template_id", ZoneTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        ZoneTemplateSearch.and("state", ZoneTemplateSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("zone_id", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ZONE_TEMPLATE_SEARCH.join("tmplHost", hostSearch, hostSearch.entity().getId(), ZONE_TEMPLATE_SEARCH.entity().getHostId(), JoinBuilder.JoinType.INNER);
-        ZONE_TEMPLATE_SEARCH.done();
+        ZoneTemplateSearch.join("tmplHost", hostSearch, hostSearch.entity().getId(), ZoneTemplateSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        ZoneTemplateSearch.done();
 
-        LOCAL_SECONDARY_STORAGE_SEARCH = createSearchBuilder();
-        LOCAL_SECONDARY_STORAGE_SEARCH.and("template_id", LOCAL_SECONDARY_STORAGE_SEARCH.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        LOCAL_SECONDARY_STORAGE_SEARCH.and("state", LOCAL_SECONDARY_STORAGE_SEARCH.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        LocalSecondaryStorageSearch = createSearchBuilder();
+        LocalSecondaryStorageSearch.and("template_id", LocalSecondaryStorageSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        LocalSecondaryStorageSearch.and("state", LocalSecondaryStorageSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         SearchBuilder<HostVO> localSecondaryHost = _hostDao.createSearchBuilder();
         localSecondaryHost.and("private_ip_address", localSecondaryHost.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
         localSecondaryHost.and("state", localSecondaryHost.entity().getStatus(), SearchCriteria.Op.EQ);
         localSecondaryHost.and("data_center_id", localSecondaryHost.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         localSecondaryHost.and("type", localSecondaryHost.entity().getType(), SearchCriteria.Op.EQ);
-        LOCAL_SECONDARY_STORAGE_SEARCH.join("host", localSecondaryHost, localSecondaryHost.entity().getId(), LOCAL_SECONDARY_STORAGE_SEARCH.entity().getHostId(),
+        LocalSecondaryStorageSearch.join("host", localSecondaryHost, localSecondaryHost.entity().getId(), LocalSecondaryStorageSearch.entity().getHostId(),
             JoinBuilder.JoinType.INNER);
-        LOCAL_SECONDARY_STORAGE_SEARCH.done();
+        LocalSecondaryStorageSearch.done();
 
         return result;
     }
@@ -330,7 +330,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
     @Override
     public List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId, boolean readyOnly) {
-        SearchCriteria<VMTemplateHostVO> sc = ZONE_TEMPLATE_SEARCH.create();
+        SearchCriteria<VMTemplateHostVO> sc = ZoneTemplateSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setJoinParameters("tmplHost", "zone_id", dcId);
         if (readyOnly) {
@@ -365,7 +365,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     @Override
     public VMTemplateHostVO findLocalSecondaryStorageByHostTemplate(long hostId, long templateId) {
         HostVO computingHost = _hostDao.findById(hostId);
-        SearchCriteria<VMTemplateHostVO> sc = LOCAL_SECONDARY_STORAGE_SEARCH.create();
+        SearchCriteria<VMTemplateHostVO> sc = LocalSecondaryStorageSearch.create();
         sc.setJoinParameters("host", "private_ip_address", computingHost.getPrivateIpAddress());
         sc.setJoinParameters("host", "state", com.cloud.host.Status.Up);
         sc.setJoinParameters("host", "data_center_id", computingHost.getDataCenterId());

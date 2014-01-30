@@ -118,7 +118,8 @@ class MarvinInit:
                 log_config = self.__parsedConfig.logger
                 if log_config is not None:
                     if log_config.LogFolderPath is not None:
-                        self.logFolderPath = log_config.LogFolderPath + '/' + temp_path
+                        self.logFolderPath = log_config.LogFolderPath + '/' \
+                            + temp_path
                     else:
                         self.logFolderPath = temp_path
                 else:
@@ -126,8 +127,9 @@ class MarvinInit:
             else:
                 self.logFolderPath = self.__logFolderPath + '/' + temp_path
             if os.path.exists(self.logFolderPath):
-                self.logFolderPath = self.logFolderPath \
-                                     + ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(3))
+                self.logFolderPath += ''.join(random.choice(
+                    string.ascii_uppercase +
+                    string.digits for x in range(3)))
             os.makedirs(self.logFolderPath)
             '''
             Log File Paths

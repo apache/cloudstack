@@ -29,6 +29,7 @@
             },
             dataProvider: function(args) {
                 var data = {};
+                listViewDataProvider(args, data);
                 if (args.context != null) {
                     if ("instances" in args.context) {
                         $.extend(data, {
@@ -37,7 +38,7 @@
                     }
                 }
                 $.ajax({
-                    url: createURL('listAffinityGroups&listAll=true'),
+                    url: createURL('listAffinityGroups'),
                     data: data,
                     success: function(json) {
                         var items = json.listaffinitygroupsresponse.affinitygroup;

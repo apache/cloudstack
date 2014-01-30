@@ -173,7 +173,7 @@ public class ApiDispatcher {
                 pageSize = Long.valueOf((String)pageSizeObj);
             }
 
-            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && !pageSize.equals(BaseListCmd.PAGESIZE_UNLIMITED))) {
+            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && !pageSize.equals(BaseListCmd.s_pageSizeUnlimited))) {
                 ServerApiException ex = new ServerApiException(ApiErrorCode.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
                 ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
                 throw ex;
@@ -427,8 +427,8 @@ public class ApiDispatcher {
                         }
                     } else {
                         DateFormat format = BaseCmd.INPUT_FORMAT;
-                        format.setLenient(false);
                         synchronized (format) {
+                        format.setLenient(false);
                             field.set(cmdObj, format.parse(paramObj.toString()));
                         }
                     }

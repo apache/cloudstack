@@ -16,9 +16,9 @@
 // under the License.
 package rdpclient;
 
-import static rdpclient.MockServer.Packet.PacketType.CLIENT;
-import static rdpclient.MockServer.Packet.PacketType.SERVER;
-import static rdpclient.MockServer.Packet.PacketType.UPGRADE_TO_SSL;
+import static streamer.debug.MockServer.Packet.PacketType.CLIENT;
+import static streamer.debug.MockServer.Packet.PacketType.SERVER;
+import static streamer.debug.MockServer.Packet.PacketType.UPGRADE_TO_SSL;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +30,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import junit.framework.TestCase;
-import rdpclient.MockServer.Packet;
+import streamer.debug.MockServer;
+import streamer.debug.MockServer.Packet;
 
 public class MockServerTest extends TestCase {
 

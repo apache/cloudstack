@@ -39,6 +39,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
     protected FirewallRulesCidrsDaoImpl() {
         CidrsSearch = createSearchBuilder();
         CidrsSearch.and("firewallRuleId", CidrsSearch.entity().getFirewallRuleId(), SearchCriteria.Op.EQ);
+        CidrsSearch.and("firewallRuleId", CidrsSearch.entity().getId(), SearchCriteria.Op.EQ);
         CidrsSearch.done();
     }
 
@@ -55,6 +56,16 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         }
 
         return cidrs;
+    }
+
+    @Override @DB
+    public List<FirewallRulesCidrsVO> listByFirewallRuleId(long firewallRuleId) {
+        SearchCriteria<FirewallRulesCidrsVO> sc = CidrsSearch.create();
+        sc.setParameters("firewallRuleId", firewallRuleId);
+
+        List<FirewallRulesCidrsVO> results = search(sc, null);
+
+        return results;
     }
 
     @Override

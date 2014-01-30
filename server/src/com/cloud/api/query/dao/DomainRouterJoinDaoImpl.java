@@ -80,7 +80,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         if (router.getTemplateVersion() != null) {
             String routerVersion = Version.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);
-            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService._minVRVersion) < 0));
+            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService.MinVRVersion) < 0));
+        } else {
+            routerResponse.setVersion("UNKNOWN");
+            routerResponse.setRequiresUpgrade(true);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {

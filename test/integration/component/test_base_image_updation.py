@@ -100,7 +100,7 @@ class Services:
                         "name": "Public template - Xen",
                         "ostype": "CentOS 5.3 (64-bit)",
                         "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                        "hypervisor": "XenServer",
+                        "hypervisor": "xenserver",
                         "format": "VHD",
                         "isfeatured": True,
                         "ispublic": True,
@@ -111,7 +111,7 @@ class Services:
                         "name": "Public template -KVM",
                         "ostype": "CentOS 5.3 (64-bit)",
                         "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2",
-                        "hypervisor": "KVM",
+                        "hypervisor": "kvm",
                         "format": "qcow2",
                         "isfeatured": True,
                         "ispublic": True,
@@ -409,7 +409,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         hypervisor = host_list_validation_result[1].hypervisor
 
         for k, v in self.services["templates"].items():
-            if k == hypervisor:
+            if k.lower() == hypervisor.lower():
                 # Register new template
                 template = Template.register(
                                         self.apiclient,

@@ -27,12 +27,20 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
-    public Logger s_logger = getLogger();
-    protected String s_name = getResponseName();
+    public Logger _logger = getLogger();
+    protected String _name = getResponseName();
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
+
+    protected Logger getLogger() {
+        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class);
+    }
+
+    protected String getResponseName() {
+        return "updatetemplateorisopermissionsresponse";
+    }
 
     @Parameter(name = ApiConstants.ACCOUNTS,
                type = CommandType.LIST,
@@ -109,15 +117,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
-    }
-
-    protected String getResponseName() {
-        return "updatetemplateorisopermissionsresponse";
-    }
-
-    protected Logger getLogger() {
-        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
+        return _name;
     }
 
     @Override
@@ -125,7 +125,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
         boolean result = _templateService.updateTemplateOrIsoPermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update template/iso permissions");
         }

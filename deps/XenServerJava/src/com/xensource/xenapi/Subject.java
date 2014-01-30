@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class Subject extends XenAPIObject {
      * For internal use only.
      */
     Subject(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class Subject extends XenAPIObject {
     {
         if (obj != null && obj instanceof Subject)
         {
-            Subject other = (Subject) obj;
+            Subject other = (Subject)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -110,8 +109,8 @@ public class Subject extends XenAPIObject {
         /**
          * Convert a subject.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("subject_identifier", this.subjectIdentifier == null ? "" : this.subjectIdentifier);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
@@ -143,15 +142,15 @@ public class Subject extends XenAPIObject {
      * @return all fields from the object
      */
     public Subject.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSubjectRecord(result);
+        return Types.toSubjectRecord(result);
     }
 
     /**
@@ -161,15 +160,15 @@ public class Subject extends XenAPIObject {
      * @return reference to the object
      */
     public static Subject getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSubject(result);
+        return Types.toSubject(result);
     }
 
     /**
@@ -179,9 +178,9 @@ public class Subject extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, Subject.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.subject.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -198,16 +197,16 @@ public class Subject extends XenAPIObject {
      * @return reference to the newly created object
      */
     public static Subject create(Connection c, Subject.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSubject(result);
+        return Types.toSubject(result);
     }
 
     /**
@@ -216,9 +215,9 @@ public class Subject extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.subject.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -232,9 +231,9 @@ public class Subject extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -248,15 +247,15 @@ public class Subject extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -265,15 +264,15 @@ public class Subject extends XenAPIObject {
      * @return value of the field
      */
     public String getSubjectIdentifier(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_subject_identifier";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -282,15 +281,15 @@ public class Subject extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -299,15 +298,15 @@ public class Subject extends XenAPIObject {
      * @return value of the field
      */
     public Set<Role> getRoles(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_roles";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfRole(result);
+        return Types.toSetOfRole(result);
     }
 
     /**
@@ -316,9 +315,9 @@ public class Subject extends XenAPIObject {
      * @param role The unique role reference
      */
     public void addToRoles(Connection c, Role role) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.add_to_roles";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(role)};
@@ -332,9 +331,9 @@ public class Subject extends XenAPIObject {
      * @param role The unique role reference in the subject's roles field
      */
     public void removeFromRoles(Connection c, Role role) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.remove_from_roles";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(role)};
@@ -348,15 +347,15 @@ public class Subject extends XenAPIObject {
      * @return a list of permission names
      */
     public Set<String> getPermissionsNameLabel(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_permissions_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -365,15 +364,15 @@ public class Subject extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<Subject> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfSubject(result);
+        return Types.toSetOfSubject(result);
     }
 
     /**
@@ -382,15 +381,15 @@ public class Subject extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<Subject, Subject.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "subject.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfSubjectSubjectRecord(result);
+        return Types.toMapOfSubjectSubjectRecord(result);
     }
 
 }

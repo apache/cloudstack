@@ -94,7 +94,7 @@ public class KVMStoragePoolManager {
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new iScsiAdmStorageAdaptor());
+        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
@@ -170,6 +170,11 @@ public class KVMStoragePoolManager {
                 PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
 
                 KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
+
+                if (pool == null) {
+                    s_logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
+                    continue;
+                }
 
                 StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 

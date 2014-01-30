@@ -380,13 +380,7 @@
                 }
             });
         },
-
-        prepareObjectStoreMigration: function($detailView, args) {        	
-            var tab = args.tabs[args.activeTab];
-            var isMultiple = tab.multiple;
-            uiActions.remove($detailView, args);
-        },            
-               
+            
         destroy: function($detailView, args) {
             var tab = args.tabs[args.activeTab];
             var isMultiple = tab.multiple;
@@ -754,15 +748,16 @@
         viewAllPath = viewAllID.split('.');
 
         if (viewAllPath.length == 2) {
-            if (viewAllPath[0] != '_zone')
-                listViewArgs = cloudStackArgs.sections[viewAllPath[0]].sections[viewAllPath[1]];
-            else {
+            if (viewAllPath[0] != '_zone') {
+                listViewArgs = $.extend(true, {}, cloudStackArgs.sections[viewAllPath[0]].sections[viewAllPath[1]]);
+            } else {
                 // Sub-section of the zone chart
-                listViewArgs = cloudStackArgs.sections.system
-                    .subsections[viewAllPath[1]];
+                listViewArgs = $.extend(true, {}, cloudStackArgs.sections.system
+                    .subsections[viewAllPath[1]]);
             }
-        } else
-            listViewArgs = cloudStackArgs.sections[viewAllPath[0]];
+        } else {
+            listViewArgs = $.extend(true, {}, cloudStackArgs.sections[viewAllPath[0]]);
+        }
 
         // Make list view
         listViewArgs.$browser = $browser;

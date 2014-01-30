@@ -82,10 +82,10 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     private String hostTag;
 
     @Column(name = "default_use")
-    private boolean default_use;
+    private boolean defaultUse;
 
     @Column(name = "vm_type")
-    private String vm_type;
+    private String vmType;
 
     @Column(name = "sort_key")
     int sortKey;
@@ -217,11 +217,11 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     public boolean isDefaultUse() {
-        return default_use;
+        return defaultUse;
     }
 
     public String getSystemVmType() {
-        return vm_type;
+        return vmType;
     }
 
     public String getDeploymentPlanner() {

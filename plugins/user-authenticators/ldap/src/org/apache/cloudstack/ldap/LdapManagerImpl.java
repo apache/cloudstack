@@ -28,6 +28,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.LdapValidator;
+import org.apache.cloudstack.api.command.LDAPConfigCmd;
+import org.apache.cloudstack.api.command.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapCreateAccountCmd;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
@@ -153,6 +155,8 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         cmdList.add(LdapListConfigurationCmd.class);
         cmdList.add(LdapCreateAccountCmd.class);
         cmdList.add(LdapImportUsersCmd.class);
+        cmdList.add(LDAPConfigCmd.class);
+        cmdList.add(LDAPRemoveCmd.class);
         return cmdList;
     }
 

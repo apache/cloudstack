@@ -27,6 +27,7 @@ import com.cloud.utils.exception.CSExceptionErrorCode;
  */
 
 public class CloudException extends Exception {
+    private static final long serialVersionUID = 8784427323859682503L;
 
     // This holds a list of uuids and their names. Add uuid:fieldname pairs
     protected ArrayList<String> idList = new ArrayList<String>();
@@ -58,10 +59,10 @@ public class CloudException extends Exception {
     }
 
     public void setCSErrorCode(int cserrcode) {
-        this.csErrorCode = cserrcode;
+        csErrorCode = cserrcode;
     }
 
     public int getCSErrorCode() {
-        return this.csErrorCode;
+        return csErrorCode;
     }
 }

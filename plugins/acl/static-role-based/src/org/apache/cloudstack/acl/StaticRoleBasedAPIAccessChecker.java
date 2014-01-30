@@ -125,8 +125,8 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     }
 
     @Inject
-    public void setServices(List<PluggableService> _services) {
-        this._services = _services;
+    public void setServices(List<PluggableService> services) {
+        this._services = services;
     }
 
 }

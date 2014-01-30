@@ -25,6 +25,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -57,8 +60,6 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
@@ -155,6 +156,26 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return null;
+    }
+
+    @Override
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)dataStoreDriver).connectVolumeToHost(volumeInfo, host, dataStore);
+        }
+
+        return false;
+    }
+
+    @Override
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            ((PrimaryDataStoreDriver)dataStoreDriver).disconnectVolumeFromHost(volumeInfo, host, dataStore);
+        }
     }
 
     @Override
@@ -1203,7 +1224,8 @@ public class VolumeServiceImpl implements VolumeService {
                                             com.cloud.configuration.Resource.ResourceType.secondary_storage, volInfo.getSize() - volInfo.getPhysicalSize());
                                     } catch (ResourceAllocationException e) {
                                         s_logger.warn(e.getMessage());
-                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(), volume.getPodId(), e.getMessage(),
+                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(), volume.getPodId(),
+                                            e.getMessage(),
                                             e.getMessage());
                                     } finally {
                                         _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
@@ -1228,6 +1250,17 @@ public class VolumeServiceImpl implements VolumeService {
                                 s_logger.info("Skip downloading volume " + volumeHost.getVolumeId() + " since no download url is specified.");
                                 continue;
                             }
+
+                            // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
+                            // means that this is a duplicate entry from migration of previous NFS to staging.
+                            if (store.getScope().getScopeType() == ScopeType.REGION) {
+                                if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                        && volumeHost.getInstallPath() == null) {
+                                    s_logger.info("Skip sync volume for migration of previous NFS to object store");
+                                    continue;
+                                }
+                            }
+
                             s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
                             // TODO: pass a callback later
                             VolumeInfo vol = volFactory.getVolume(volumeHost.getVolumeId());

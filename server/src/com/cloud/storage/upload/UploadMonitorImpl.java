@@ -269,7 +269,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + ans.getDetails();
+                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + (ans == null ? "" : ans.getDetails());
                 s_logger.error(errorString);
                 throw new CloudRuntimeException(errorString);
             }
@@ -325,7 +325,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)secStore).getMountPoint(), path, uuid, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + entityId + "," + ans.getDetails();
+                errorString = "Unable to create a link for " + type + " id:" + entityId + "," + (ans == null ? "" : ans.getDetails());
                 s_logger.warn(errorString);
                 throw new CloudRuntimeException(errorString);
             }

@@ -47,8 +47,8 @@ import com.google.gson.reflect.TypeToken;
 
 public class BigSwitchVnsApi {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsApi.class);
-    private final static String _protocol = "http";
-    private final static String _nsBaseUri = "/networkService/v1.1";
+    private final static String s_protocol = "http";
+    private final static String s_nsBaseUri = "/networkService/v1.1";
     private final static String CONTENT_TYPE = "Content-Type";
     private final static String ACCEPT = "Accept";
     private final static String CONTENT_JSON = "application/json";
@@ -70,7 +70,7 @@ public class BigSwitchVnsApi {
     protected HttpMethod createMethod(String type, String uri, int port) throws BigSwitchVnsApiException {
         String url;
         try {
-            url = new URL(_protocol, _host, port, uri).toString();
+            url = new URL(s_protocol, _host, port, uri).toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build BigSwitch API URL", e);
             throw new BigSwitchVnsApiException("Unable to build v API URL", e);
@@ -109,44 +109,44 @@ public class BigSwitchVnsApi {
     }
 
     public void createNetwork(NetworkData network) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + network.getNetwork().getTenant_id() + "/networks";
+        String uri = s_nsBaseUri + "/tenants/" + network.getNetwork().getTenantId() + "/networks";
         executeCreateObject(network, new TypeToken<NetworkData>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteNetwork(String tenantId, String networkId) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId;
+        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId;
         executeDeleteObject(uri);
     }
 
     public void createPort(String networkUuid, PortData port) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkUuid + "/ports";
+        String uri = s_nsBaseUri + "/tenants/" + port.getPort().getTenantId() + "/networks/" + networkUuid + "/ports";
         executeCreateObject(port, new TypeToken<PortData>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void modifyPort(String networkId, PortData port) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkId + "/ports";
+        String uri = s_nsBaseUri + "/tenants/" + port.getPort().getTenantId() + "/networks/" + networkId + "/ports";
         executeUpdateObject(port, uri, Collections.<String, String> emptyMap());
     }
 
     public void deletePort(String tenantId, String networkId, String portId) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId;
+        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId;
         executeDeleteObject(uri);
     }
 
     public void modifyPortAttachment(String tenantId, String networkId, String portId, AttachmentData attachment) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
+        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
         executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
     public void deletePortAttachment(String tenantId, String networkId, String portId) throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
+        String uri = s_nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
         executeDeleteObject(uri);
     }
 
     public ControlClusterStatus getControlClusterStatus() throws BigSwitchVnsApiException {
-        String uri = _nsBaseUri + "/health";
+        String uri = s_nsBaseUri + "/health";
         ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
         }.getType(), uri, 80, null);
         ccs.setStatus(true);

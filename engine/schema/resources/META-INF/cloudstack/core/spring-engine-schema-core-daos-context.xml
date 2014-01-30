@@ -36,7 +36,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
@@ -45,7 +45,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="dataCenterDaoImpl" class="com.cloud.dc.dao.DataCenterDaoImpl">
@@ -54,7 +54,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="hostPodDaoImpl" class="com.cloud.dc.dao.HostPodDaoImpl">
@@ -63,7 +63,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="vlanDaoImpl" class="com.cloud.dc.dao.VlanDaoImpl">
@@ -72,7 +72,7 @@
         <entry key="cache.size" value="30" />
         <entry key="cache.time.to.live" value="3600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="userDaoImpl" class="com.cloud.user.dao.UserDaoImpl">
@@ -81,7 +81,7 @@
         <entry key="cache.size" value="5000" />
         <entry key="cache.time.to.live" value="300" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="VMTemplateDaoImpl" class="com.cloud.storage.dao.VMTemplateDaoImpl">
@@ -90,7 +90,7 @@
         <entry key="cache.size" value="100" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="hypervisorCapabilitiesDaoImpl" class="com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl">
@@ -99,7 +99,7 @@
         <entry key="cache.size" value="100" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
   <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl">
     <property name="configParams">
@@ -109,7 +109,7 @@
       </map>
     </property>
   </bean>
-  
+
   <!--
     DAOs with default configuration
   -->
@@ -171,20 +171,18 @@
   <bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
   <bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
   <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
-  <bean id="identityDaoImpl" class="com.cloud.uuididentity.dao.IdentityDaoImpl" />
   <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl" />
-  <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl" /> 
-  <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />   
-  <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" /> 
-  <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" /> 
+  <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl" />
+  <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />
+  <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" />
+  <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" />
   <bean id="templateJoinDaoImpl" class="com.cloud.api.query.dao.TemplateJoinDaoImpl" />
-  <bean id="volumeDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.VolumeDataStoreDaoImpl" />   
+  <bean id="volumeDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.VolumeDataStoreDaoImpl" />
   <bean id="inlineLoadBalancerNicMapDaoImpl" class="com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl" />
   <bean id="instanceGroupDaoImpl" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
-  <bean id="keystoreDaoImpl" class="com.cloud.keystore.KeystoreDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
   <bean id="lBStickinessPolicyDaoImpl" class="com.cloud.network.dao.LBStickinessPolicyDaoImpl" />
   <bean id="launchPermissionDaoImpl" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />
@@ -251,6 +249,7 @@
   <bean id="site2SiteVpnConnectionDaoImpl" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" />
   <bean id="site2SiteVpnGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" />
   <bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+  <bean id="snapshotDetailsDaoImpl" class="com.cloud.storage.dao.SnapshotDetailsDaoImpl" />
   <bean id="snapshotPolicyDaoImpl" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" />
   <bean id="snapshotScheduleDaoImpl" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl" />
   <bean id="sslCertDao" class="com.cloud.network.dao.SslCertDaoImpl" />
@@ -327,7 +326,12 @@
   <bean id="VpcGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDaoImpl" />
   <bean id="NetworkACLListDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDaoImpl" />
   <bean id="NetworkACLItemDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDaoImpl" />
-
+  <bean id="Site2SiteVpnGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDaoImpl" />
+  <bean id="Site2SiteCustomerGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDaoImpl" />
+  <bean id="Site2SiteVpnConnectionDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDaoImpl" />
+  <bean id="DiskOfferingDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDaoImpl" />
+  <bean id="UserDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.UserDetailsDaoImpl" />
+  <bean id="AutoScaleVmProfileDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.AutoScaleVmProfileDetailsDaoImpl" />
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
 </beans>

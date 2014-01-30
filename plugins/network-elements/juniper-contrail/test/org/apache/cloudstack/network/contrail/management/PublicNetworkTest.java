@@ -67,10 +67,10 @@ public class PublicNetworkTest extends TestCase {
     @Inject
     public NetworkDao _networksDao;
 
-    private static boolean _initDone = false;
-    private static int _mysql_server_port;
-    private static long _msId;
-    private static Merovingian2 _lockMaster;
+    private static boolean s_initDone = false;
+    private static int s_mysqlServerPort;
+    private static long s_msId;
+    private static Merovingian2 s_lockMaster;
     private ManagementServerMock _server;
     private ApiConnector _spy;
 
@@ -78,17 +78,17 @@ public class PublicNetworkTest extends TestCase {
     public static void globalSetUp() throws Exception {
         ApiConnectorFactory.setImplementation(ApiConnectorMockito.class);
         s_logger.info("mysql server is getting launched ");
-        _mysql_server_port = TestDbSetup.init(null);
-        s_logger.info("mysql server launched on port " + _mysql_server_port);
-        _msId = ManagementServerNode.getManagementServerId();
-        _lockMaster = Merovingian2.createLockMaster(_msId);
+        s_mysqlServerPort = TestDbSetup.init(null);
+        s_logger.info("mysql server launched on port " + s_mysqlServerPort);
+        s_msId = ManagementServerNode.getManagementServerId();
+        s_lockMaster = Merovingian2.createLockMaster(s_msId);
     }
 
     @AfterClass
     public static void globalTearDown() throws Exception {
-        _lockMaster.cleanupForServer(_msId);
+        s_lockMaster.cleanupForServer(s_msId);
         JmxUtil.unregisterMBean("Locks", "Locks");
-        _lockMaster = null;
+        s_lockMaster = null;
 
         AbstractApplicationContext ctx = (AbstractApplicationContext)ComponentContext.getApplicationContext();
         Map<String, ComponentLifecycle> lifecycleComponents = ctx.getBeansOfType(ComponentLifecycle.class);
@@ -97,8 +97,8 @@ public class PublicNetworkTest extends TestCase {
         }
         ctx.close();
 
-        s_logger.info("destroying mysql server instance running at port <" + _mysql_server_port + ">");
-        TestDbSetup.destroy(_mysql_server_port, null);
+        s_logger.info("destroying mysql server instance running at port <" + s_mysqlServerPort + ">");
+        TestDbSetup.destroy(s_mysqlServerPort, null);
     }
 
     @Override
@@ -112,8 +112,8 @@ public class PublicNetworkTest extends TestCase {
         }
         _server = ComponentContext.inject(new ManagementServerMock());
 
-        _server.initialize(!_initDone);
-        _initDone = false;
+        _server.initialize(!s_initDone);
+        s_initDone = false;
         _spy = ((ApiConnectorMockito)_contrailMgr.getApiConnector()).getSpy();
     }
 

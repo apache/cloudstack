@@ -302,6 +302,23 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public TemplateDataStoreVO findByTemplateZoneStagingDownloadStatus(long templateId, Long zoneId, Status... status) {
+        // get all elgible image stores
+        List<DataStore> cacheStores = _storeMgr.getImageCacheStores(new ZoneScope(zoneId));
+        if (cacheStores != null) {
+            for (DataStore store : cacheStores) {
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(),
+                        status);
+                if (sRes != null && sRes.size() > 0) {
+                    Collections.shuffle(sRes);
+                    return sRes.get(0);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
     public TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = storeTemplateSearch.create();
         sc.setParameters("store_id", storeId);
@@ -333,13 +350,18 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
-    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+    public TemplateDataStoreVO findReadyByTemplate(long templateId, DataStoreRole role) {
         SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
         sc.setParameters("template_id", templateId);
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("store_role", role);
         sc.setParameters("destroyed", false);
         sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+        return findReadyByTemplate(templateId, DataStoreRole.ImageCache);
     }
 
     @Override

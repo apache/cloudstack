@@ -71,9 +71,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Column(name = "interval")
     private int interval;
 
-	@Column(name = "last_interval", updatable = true)
-	@Temporal(value = TemporalType.TIMESTAMP)
-	private Date lastInterval;
+    @Column(name = "last_interval", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastInterval;
 
     @Column(name = "profile_id")
     private long profileId;
@@ -90,9 +90,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     public AutoScaleVmGroupVO() {
     }
 
-	public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId,
-			long accountId, int minMembers, int maxMembers, int memberPort,
-			int interval, Date lastInterval, long profileId, String state) {
+    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId,
+            long accountId, int minMembers, int maxMembers, int memberPort,
+            int interval, Date lastInterval, long profileId, String state) {
 
         this.uuid = UUID.randomUUID().toString();
         this.loadBalancerId = lbRuleId;
@@ -105,7 +105,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         this.zoneId = zoneId;
         this.state = state;
         this.interval = interval;
-		this.lastInterval = lastInterval;
+        this.lastInterval = lastInterval;
     }
 
     @Override
@@ -157,10 +157,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         return interval;
     }
 
-	@Override
-	public Date getLastInterval() {
-		return lastInterval;
-	}
+    @Override
+    public Date getLastInterval() {
+        return lastInterval;
+    }
 
     @Override
     public long getProfileId() {
@@ -196,9 +196,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         this.interval = interval;
     }
 
-	public void setLastInterval(Date lastInterval) {
-		this.lastInterval = lastInterval;
-	}
+    public void setLastInterval(Date lastInterval) {
+        this.lastInterval = lastInterval;
+    }
 
     public void setLoadBalancerId(Long loadBalancerId) {
         this.loadBalancerId = loadBalancerId;

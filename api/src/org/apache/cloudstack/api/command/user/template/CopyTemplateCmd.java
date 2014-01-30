@@ -59,8 +59,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SOURCE_ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               required = true,
-               description = "ID of the zone the template is currently hosted on.")
+            description = "ID of the zone the template is currently hosted on. If not specified and template is cross-zone, then we will sync this template to region wide image store.")
     private Long sourceZoneId;
 
     /////////////////////////////////////////////////////
@@ -137,7 +136,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
                 }
 
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to copy template");
             }

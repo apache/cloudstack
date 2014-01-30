@@ -36,6 +36,6 @@ public class NetworkMO extends BaseMO {
     }
 
     public List<ManagedObjectReference> getVMsOnNetwork() throws Exception {
-        return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "vm");
+        return _context.getVimClient().getDynamicProperty(_mor, "vm");
     }
 }

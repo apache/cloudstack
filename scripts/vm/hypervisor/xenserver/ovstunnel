@@ -82,6 +82,10 @@ def setup_ovs_bridge(session, args):
     # TODO: Make sure xs-network-uuid is set into external_ids
     lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge,
                             "external_ids:xs-network-uuid=%s" % xs_nw_uuid])
+
+    # enable stp
+    lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge, "stp_enable=true"])
+
     # Non empty result means something went wrong
     if res:
         result = "FAILURE:%s" % res

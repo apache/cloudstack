@@ -69,7 +69,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param podId id of the pod.  null if to get all.
      * @return list of DomainRouterVO
      */
-    public List<DomainRouterVO> listByPodId(Long podId);
+    public List<DomainRouterVO> listRunningByPodId(Long podId);
 
     /**
      * list virtual machine routers by pod id.  pass in null to get all
@@ -94,7 +94,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param id
      * @return
      */
-    public List<DomainRouterVO> listByDomain(Long id);
+    public List<DomainRouterVO> listRunningByDomain(Long id);
 
     List<DomainRouterVO> findBy(long accountId, long dcId, Role role);
 
@@ -147,5 +147,9 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      */
     void removeRouterFromGuestNetwork(long routerId, long guestNetworkId);
 
-    List<DomainRouterVO> listByClusterId(Long clusterId);
+    List<DomainRouterVO> listRunningByClusterId(Long clusterId);
+
+    List<DomainRouterVO> listRunningByAccountId(long accountId);
+
+    List<DomainRouterVO> listRunningByDataCenter(long dcId);
 }

@@ -18,8 +18,6 @@
  */
 package com.cloud.storage;
 
-import java.net.URISyntaxException;
-
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -29,8 +27,6 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
@@ -42,7 +38,6 @@ public interface VolumeApiService {
      *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
      *            name)
      * @return the volume object
-     * @throws PermissionDeniedException
      */
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
@@ -96,9 +91,6 @@ public interface VolumeApiService {
      *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
      *            exists),
      *            id (the id of the volume)
-     * @throws URISyntaxException
-     * @throws InternalErrorException
-     * @throws PermissionDeniedException
      *
      */
     String extractVolume(ExtractVolumeCmd cmd);

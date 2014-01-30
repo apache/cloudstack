@@ -59,7 +59,6 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;

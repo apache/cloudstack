@@ -65,6 +65,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list templates by zoneId")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description="show removed templates as well")
+    private Boolean showRemoved;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -87,6 +90,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Boolean getShowRemoved() {
+        return (showRemoved != null ? showRemoved : false);
     }
 
     public boolean listInReadyState() {

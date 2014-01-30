@@ -166,7 +166,7 @@ public class UploadListener implements Listener {
     private final Map<String, UploadState> stateMap = new HashMap<String, UploadState>();
     private Long uploadId;
 
-    public UploadListener(DataStore host, Timer _timer, UploadDao uploadDao, UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd, Long accountId,
+    public UploadListener(DataStore host, Timer timerInput, UploadDao uploadDao, UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd, Long accountId,
             String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
         sserver = host;
         this.uploadDao = uploadDao;
@@ -178,7 +178,7 @@ public class UploadListener implements Listener {
         this.type = type;
         initStateMachine();
         currState = getState(Status.NOT_UPLOADED.toString());
-        timer = _timer;
+        timer = timerInput;
         timeoutTask = new TimeoutTask(this);
         timer.schedule(timeoutTask, 3 * STATUS_POLL_INTERVAL);
         this.eventId = eventId;
@@ -215,12 +215,12 @@ public class UploadListener implements Listener {
         return false;
     }
 
-    public void setCommand(UploadCommand _cmd) {
-        cmd = _cmd;
+    public void setCommand(UploadCommand cmd) {
+        this.cmd = cmd;
     }
 
-    public void setJobId(String _jobId) {
-        jobId = _jobId;
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
     }
 
     public String getJobId() {

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -41,8 +42,8 @@ public interface AsyncJobManager extends Manager {
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-
-    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String journalText, String journalObjJson);
+    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
+            journalText, String journalObjJson);
 
     /**
      * A running thread inside management server can have a 1:1 linked pseudo job.
@@ -81,8 +82,8 @@ public interface AsyncJobManager extends Manager {
      * @param wakeupIntervalInMilliSeconds
      * @param timeoutInMilliSeconds
      */
-    void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakupDispatcher, String[] wakeupTopicsOnMessageBus, long wakeupIntervalInMilliSeconds,
-        long timeoutInMilliSeconds);
+    void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakupDispatcher,
+            String[] wakeupTopicsOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds);
 
     /**
      * Dis-join two related jobs
@@ -124,4 +125,7 @@ public interface AsyncJobManager extends Manager {
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);
 
+    String marshallResultObject(Serializable obj);
+
+    Object unmarshallResultObject(AsyncJob job);
 }

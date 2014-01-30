@@ -28,7 +28,6 @@ if os.path.exists("/usr/lib/xcp/sm"):
     sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import util
 import socket
-import perfmon
 import cloudstack_pluginlib as lib
 import logging
 
@@ -149,8 +148,12 @@ def heartbeat(session, args):
 
 @echo
 def asmonitor(session, args):
-    result = perfmon.get_vm_group_perfmon(args)
-    return result
+    try:
+        perfmod = __import__("perfmon")
+        result = perfmod.get_vm_group_perfmon(args)
+        return result
+    except:
+        return 'fail'
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat, "asmonitor": asmonitor})

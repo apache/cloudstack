@@ -23,7 +23,7 @@ import com.cloud.usage.UsageStorageVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageStorageDao extends GenericDao<UsageStorageVO, Long> {
-    public void removeBy(long userId, long id, int storage_type);
+    public void removeBy(long userId, long id, int storageType);
 
     public void update(UsageStorageVO usage);
 

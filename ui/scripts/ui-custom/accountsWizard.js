@@ -16,16 +16,19 @@
 // under the License.
 
 (function($, cloudStack) {
-    cloudStack.uiCustom.accountsWizard = function(args) {
+    cloudStack.uiCustom.accountsWizard = function(args, isLdap) {
         return function(listViewArgs) {
             var context = listViewArgs.context;
-            var ldapStatus = isLdapEnabled();
+            var ldapStatus = isLdap;
             var accountsWizard = function(data) {
                 var $wizard = $('#template').find('div.accounts-wizard').clone();
                 var $form = $wizard.find('form');
 
                 var close = function() {
-                    $wizard.dialog('destroy');
+                    $wizard.remove();
+                    $('div.overlay').fadeOut(function() {
+                        $('div.overlay').remove();
+                    });
                 };
 
                 var completeAction = function() {
@@ -35,6 +38,7 @@
                         args.action({
                             context: context,
                             data: data,
+                            isLdap: isLdap,
                             groupname: groupname,
                             response: {
                                 error: function(message) {
@@ -54,6 +58,7 @@
                                 args.action({
                                     context: context,
                                     data: data,
+                                    isLdap: isLdap,
                                     username: username[i],
                                     response: {
                                         error: function(message) {
@@ -70,6 +75,7 @@
                             args.action({
                                 context: context,
                                 data: data,
+                                isLdap: isLdap,
                                 username: username,
                                 response: {
                                     error: function(message) {

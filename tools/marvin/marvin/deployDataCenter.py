@@ -510,7 +510,7 @@ class deployDataCenters(object):
             cloudstackTestClient.\
             cloudstackTestClient(mgtDetails,
                                  dbSvrDetails,
-                                 logging=self.tcRunLogger)
+                                 logger=self.tcRunLogger)
 
         if mgtDetails.apiKey is None:
             mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
@@ -519,7 +519,7 @@ class deployDataCenters(object):
                 cloudstackTestClient.cloudstackTestClient(
                     mgtDetails,
                     dbSvrDetails,
-                    logging=self.tcRunLogger)
+                    logger=self.tcRunLogger)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""

@@ -20,8 +20,8 @@ import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
 
-    private static Long MAX_PAGESIZE = null;
-    public static Long PAGESIZE_UNLIMITED = -1L;
+    private static Long s_maxPageSize = null;
+    public static Long s_pageSizeUnlimited = -1L;
 
     // ///////////////////////////////////////////////////
     // ///////// BaseList API parameters /////////////////
@@ -53,11 +53,11 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Integer getPageSize() {
-        if (pageSize != null && MAX_PAGESIZE.longValue() != PAGESIZE_UNLIMITED && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
-            throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
+        if (pageSize != null && s_maxPageSize.longValue() != s_pageSizeUnlimited && pageSize.longValue() > s_maxPageSize.longValue()) {
+            throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + s_maxPageSize.longValue());
         }
 
-        if (pageSize != null && pageSize.longValue() == PAGESIZE_UNLIMITED && page != null) {
+        if (pageSize != null && pageSize.longValue() == s_pageSizeUnlimited && page != null) {
             throw new InvalidParameterValueException("Can't specify page parameter when pagesize is -1 (Unlimited)");
         }
 
@@ -66,11 +66,11 @@ public abstract class BaseListCmd extends BaseCmd {
 
     @Override
     public void configure() {
-        if (MAX_PAGESIZE == null) {
-            if (_configService.getDefaultPageSize().longValue() != PAGESIZE_UNLIMITED) {
-                MAX_PAGESIZE = _configService.getDefaultPageSize();
+        if (s_maxPageSize == null) {
+            if (_configService.getDefaultPageSize().longValue() != s_pageSizeUnlimited) {
+                s_maxPageSize = _configService.getDefaultPageSize();
             } else {
-                MAX_PAGESIZE = PAGESIZE_UNLIMITED;
+                s_maxPageSize = s_pageSizeUnlimited;
             }
         }
     }
@@ -82,12 +82,12 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Long getPageSizeVal() {
-        Long defaultPageSize = MAX_PAGESIZE;
+        Long defaultPageSize = s_maxPageSize;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
             defaultPageSize = pageSizeInt.longValue();
         }
-        if (defaultPageSize.longValue() == PAGESIZE_UNLIMITED) {
+        if (defaultPageSize.longValue() == s_pageSizeUnlimited) {
             defaultPageSize = null;
         }
 

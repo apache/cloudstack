@@ -72,7 +72,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     boolean inited = true;
 
     private String toDir;
-    private long MAX_TEMPLATE_SIZE_IN_BYTES;
+    private long maxTemplateSizeInBytes;
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
 
@@ -83,7 +83,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         setToDir(toDir);
         status = TemplateDownloader.Status.NOT_STARTED;
         this.resourceType = resourceType;
-        MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
+        this.maxTemplateSizeInBytes = maxTemplateSizeInBytes;
 
         totalBytes = 0;
         client = new HttpClient(s_httpClientManager);
@@ -217,15 +217,15 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 remoteSize = remoteSize2;
             }
 
-            if (remoteSize > MAX_TEMPLATE_SIZE_IN_BYTES) {
-                s_logger.info("Remote size is too large: " + remoteSize + " , max=" + MAX_TEMPLATE_SIZE_IN_BYTES);
+            if (remoteSize > maxTemplateSizeInBytes) {
+                s_logger.info("Remote size is too large: " + remoteSize + " , max=" + maxTemplateSizeInBytes);
                 status = Status.UNRECOVERABLE_ERROR;
                 errorString = "Download file size is too large";
                 return 0;
             }
 
             if (remoteSize == 0) {
-                remoteSize = MAX_TEMPLATE_SIZE_IN_BYTES;
+                remoteSize = maxTemplateSizeInBytes;
             }
 
             InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream()) : new ChunkedInputStream(request.getResponseBodyAsStream());
@@ -233,7 +233,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             RandomAccessFile out = new RandomAccessFile(file, "rwd");
             out.seek(localFileSize);
 
-            s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + MAX_TEMPLATE_SIZE_IN_BYTES);
+            s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
 
             byte[] block = new byte[CHUNK_SIZE];
             long offset = 0;
@@ -387,7 +387,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
 
     @Override
     public long getMaxTemplateSizeInBytes() {
-        return MAX_TEMPLATE_SIZE_IN_BYTES;
+        return maxTemplateSizeInBytes;
     }
 
     public static void main(String[] args) {

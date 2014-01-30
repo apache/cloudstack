@@ -174,7 +174,7 @@ isCifs() {
    #then check if the template file is from cifs using df -P filename
    #Currently only cifs is supported in hyperv zone.
    mount | grep "type cifs" > /dev/null
-   return $?
+   echo $?
 }
 
 if [ "$tflag$nflag$fflag$sflag" != "1111" ]
@@ -204,7 +204,7 @@ rollback_if_needed $tmpltfs $? "tar archives not supported\n"
 
 if [ ${tmpltname%.vhd} != ${tmpltname} ]
 then
-  if [ isCifs -ne 0 ] ;
+  if [ $(isCifs) -ne 0 ] ;
   then
       if  which  vhd-util &>/dev/null
       then

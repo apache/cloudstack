@@ -30,9 +30,9 @@ from marvin.integration.lib.base import (
                                         )
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
-                                        get_template,
-                                        cleanup_resources
+                                        get_template
                                         )
+from marvin.integration.lib.utils import cleanup_resources
 
 class Services:
     """Test resource limit services

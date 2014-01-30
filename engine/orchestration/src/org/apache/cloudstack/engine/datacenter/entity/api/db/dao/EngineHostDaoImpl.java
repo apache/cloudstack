@@ -776,7 +776,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
     @Override
     public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
-        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean enable_query_cache) {
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean enableQueryCache) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -789,7 +789,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public List<EngineHostVO> searchIncludingRemoved(SearchCriteria<EngineHostVO> sc, Filter filter, Boolean lock, boolean cache, boolean enable_query_cache) {
+    public List<EngineHostVO> searchIncludingRemoved(SearchCriteria<EngineHostVO> sc, Filter filter, Boolean lock, boolean cache, boolean enableQueryCache) {
         // TODO Auto-generated method stub
         return null;
     }

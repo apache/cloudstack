@@ -17,33 +17,32 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 
 public class OvsSetupBridgeCommand extends Command {
-	Integer key;
-	Long hostId;
-	Long networkId;
+    Integer key;
+    Long hostId;
+    Long networkId;
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public OvsSetupBridgeCommand(Integer key, Long hostId, Long networkId) {
-		this.key = key;
-		this.hostId = hostId;
-		this.networkId = networkId;
-	}
+    public OvsSetupBridgeCommand(Integer key, Long hostId, Long networkId) {
+        this.key = key;
+        this.hostId = hostId;
+        this.networkId = networkId;
+    }
 
-	public Integer getKey() {
-		return key;
-	}
+    public Integer getKey() {
+        return key;
+    }
 
-	public Long getHostId() {
-		return hostId;
-	}
+    public Long getHostId() {
+        return hostId;
+    }
 
-	public Long getNetworkId() {
-		return networkId;
-	}
+    public Long getNetworkId() {
+        return networkId;
+    }
 }

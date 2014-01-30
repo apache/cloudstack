@@ -59,29 +59,29 @@ public class LdapImportUsersCmd extends BaseListCmd {
     private static final String s_name = "ldapuserresponse";
 
     @Parameter(name = ApiConstants.TIMEZONE,
-            type = CommandType.STRING,
-            description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+               type = CommandType.STRING,
+               description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-            type = CommandType.SHORT,
-            required = true,
-            description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+               type = CommandType.SHORT,
+               required = true,
+               description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
 
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-            type = CommandType.UUID,
-            entityType = DomainResponse.class,
-            description = "Specifies the domain to which the ldap users are to be "
-                    + "imported. If no domain is specified, a domain will created using group parameter. If the group is also not specified, a domain name based on the OU information will be "
-                    + "created. If no OU hierarchy exists, will be defaulted to ROOT domain")
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "Specifies the domain to which the ldap users are to be "
+                   + "imported. If no domain is specified, a domain will created using group parameter. If the group is also not specified, a domain name based on the OU information will be "
+                   + "created. If no OU hierarchy exists, will be defaulted to ROOT domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Specifies the group name from which the ldap users are to be imported. "
-            + "If no group is specified, all the users will be imported.")
+        + "If no group is specified, all the users will be imported.")
     private String groupName;
 
     private Domain _domain;
@@ -102,7 +102,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException, NetworkRuleConflictException {
+        ResourceAllocationException, NetworkRuleConflictException {
 
         List<LdapUser> users;
         try {
@@ -122,7 +122,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
             Domain domain = getDomain(user);
             try {
                 _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone,
-                        user.getUsername(), accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                    user.getUsername(), accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
                 addedUsers.add(user);
             } catch (InvalidParameterValueException ex) {
                 s_logger.error("Failed to create user with username: " + user.getUsername() + " ::: " + ex.getMessage());

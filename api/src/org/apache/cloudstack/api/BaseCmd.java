@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.domain.Domain;
@@ -94,7 +95,7 @@ public abstract class BaseCmd {
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
-    private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private Object _responseObject = null;
     private Map<String, String> fullUrlParams;
@@ -153,8 +154,6 @@ public abstract class BaseCmd {
     @Inject
     public ResourceLimitService _resourceLimitService;
     @Inject
-    public IdentityService _identityService;
-    @Inject
     public StorageNetworkService _storageNetworkService;
     @Inject
     public TaggedResourceService _taggedResourceService;
@@ -191,12 +190,11 @@ public abstract class BaseCmd {
     public InternalLoadBalancerVMService _internalLbSvc;
     @Inject
     public NetworkModel _ntwkModel;
-    @Inject 
+    @Inject
     public AlertService _alertSvc;
-    
-    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException, NetworkRuleConflictException;
 
+    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException;
 
     public void configure() {
     }
@@ -258,8 +256,8 @@ public abstract class BaseCmd {
             return "";
         }
         String formattedString = null;
-        synchronized (_outputFormat) {
-            formattedString = _outputFormat.format(date);
+        synchronized (s_outputFormat) {
+            formattedString = s_outputFormat.format(date);
         }
         return formattedString;
     }
@@ -359,11 +357,11 @@ public abstract class BaseCmd {
     }
 
     public void setFullUrlParams(Map<String, String> map) {
-        this.fullUrlParams = map;
+        fullUrlParams = map;
     }
 
     public Map<String, String> getFullUrlParams() {
-        return this.fullUrlParams;
+        return fullUrlParams;
     }
 
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {

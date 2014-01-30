@@ -42,9 +42,9 @@ public class LibvirtVifDriverTest {
 
     private Map<TrafficType, VifDriver> assertions;
 
-    final String LIBVIRT_VIF_DRIVER = "libvirt.vif.driver";
-    final String FAKE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.FakeVifDriver";
-    final String NONEXISTENT_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.NonExistentVifDriver";
+    final String LibVirtVifDriver = "libvirt.vif.driver";
+    final String FakeVifDriverClassName = "com.cloud.hypervisor.kvm.resource.FakeVifDriver";
+    final String NonExistentVifDriverClassName = "com.cloud.hypervisor.kvm.resource.NonExistentVifDriver";
 
     private VifDriver fakeVifDriver, bridgeVifDriver, ovsVifDriver;
 
@@ -64,7 +64,7 @@ public class LibvirtVifDriverTest {
 
             doReturn(bridgeVifDriver).when(res).getVifDriverClass(eq(LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME), anyMap());
             doReturn(ovsVifDriver).when(res).getVifDriverClass(eq(LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME), anyMap());
-            doReturn(fakeVifDriver).when(res).getVifDriverClass(eq(FAKE_VIF_DRIVER_CLASS_NAME), anyMap());
+            doReturn(fakeVifDriver).when(res).getVifDriverClass(eq(FakeVifDriverClassName), anyMap());
 
         } catch (final ConfigurationException ex) {
             fail("Unexpected ConfigurationException while configuring VIF drivers: " + ex.getMessage());
@@ -120,13 +120,13 @@ public class LibvirtVifDriverTest {
         Map<String, Object> params = new HashMap<String, Object>();
 
         // Switch res' bridge type for test purposes
-        params.put(LIBVIRT_VIF_DRIVER, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
         checkAllSame(bridgeVifDriver);
 
         params.clear();
-        params.put(LIBVIRT_VIF_DRIVER, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.OPENVSWITCH;
         configure(params);
         checkAllSame(ovsVifDriver);
@@ -139,13 +139,13 @@ public class LibvirtVifDriverTest {
         Map<String, Object> params = new HashMap<String, Object>();
 
         // Switch res' bridge type for test purposes
-        params.put(LIBVIRT_VIF_DRIVER, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
         checkAllSame(ovsVifDriver);
 
         params.clear();
-        params.put(LIBVIRT_VIF_DRIVER, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.OPENVSWITCH;
         configure(params);
         checkAllSame(bridgeVifDriver);
@@ -155,8 +155,8 @@ public class LibvirtVifDriverTest {
     public void testOverrideSomeTrafficTypes() throws ConfigurationException {
 
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(LIBVIRT_VIF_DRIVER + "." + "Public", FAKE_VIF_DRIVER_CLASS_NAME);
-        params.put(LIBVIRT_VIF_DRIVER + "." + "Guest", LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver + "." + "Public", FakeVifDriverClassName);
+        params.put(LibVirtVifDriver + "." + "Guest", LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
 
@@ -174,7 +174,7 @@ public class LibvirtVifDriverTest {
     @Test
     public void testBadTrafficType() throws ConfigurationException {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(LIBVIRT_VIF_DRIVER + "." + "NonExistentTrafficType", FAKE_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver + "." + "NonExistentTrafficType", FakeVifDriverClassName);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
 
@@ -189,7 +189,7 @@ public class LibvirtVifDriverTest {
     @Test
     public void testEmptyTrafficType() throws ConfigurationException {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(LIBVIRT_VIF_DRIVER + ".", FAKE_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver + ".", FakeVifDriverClassName);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
 
@@ -204,7 +204,7 @@ public class LibvirtVifDriverTest {
     @Test(expected = ConfigurationException.class)
     public void testBadVifDriverClassName() throws ConfigurationException {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(LIBVIRT_VIF_DRIVER + "." + "Public", NONEXISTENT_VIF_DRIVER_CLASS_NAME);
+        params.put(LibVirtVifDriver + "." + "Public", NonExistentVifDriverClassName);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
     }

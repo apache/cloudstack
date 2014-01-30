@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -240,6 +241,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                 if (resultObject != null) {
                     job.setResult(resultObject);
+                } else {
+                    job.setResult(null);
                 }
 
                 job.setLastUpdated(DateUtil.currentGMTTime());
@@ -472,7 +475,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         if (jobDispatcher != null) {
                             jobDispatcher.runJob(job);
                         } else {
-                            s_logger.error("Unable to find a wakeup dispatcher from the joined job: " + job);
+                            // TODO, job wakeup is not in use yet
+                            if (s_logger.isTraceEnabled())
+                                s_logger.trace("Unable to find a wakeup dispatcher from the joined job: " + job);
                         }
                     } else {
                         AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
@@ -593,7 +598,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         msgDetector.open(_messageBus, topics);
         try {
             long startTick = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
+            while (timeoutInMiliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
                 msgDetector.waitAny(checkIntervalInMilliSeconds);
                 job = _jobDao.findById(job.getId());
                 if (job.getStatus().done()) {
@@ -609,6 +614,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         return false;
+    }
+
+    @Override
+    public String marshallResultObject(Serializable obj) {
+        if (obj != null)
+            return JobSerializerHelper.toObjectSerializedString(obj);
+
+        return null;
+    }
+
+    @Override
+    public Object unmarshallResultObject(AsyncJob job) {
+        if(job.getResult() != null)
+            return JobSerializerHelper.fromObjectSerializedString(job.getResult());
+        return null;
     }
 
     private void checkQueue(long queueId) {

@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -37,6 +38,7 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
+import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.log4j.Logger;
 
@@ -57,10 +59,10 @@ import com.cloud.utils.ActionDelegate;
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
 
-    private static int MAX_CONNECT_RETRY = 5;
-    private static int CONNECT_RETRY_INTERVAL = 1000;
+    private static final int MAX_CONNECT_RETRY = 5;
+    private static final int CONNECT_RETRY_INTERVAL = 1000;
 
-    private final int _CHUNKSIZE = 1 * 1024 * 1024;        // 1M
+    private static final int ChunkSize = 1 * 1024 * 1024;        // 1M
 
     private final VmwareClient _vimClient;
     private final String _serverAddress;
@@ -327,7 +329,7 @@ public class VmwareContext {
 
         InputStream in = conn.getInputStream();
         OutputStream out = new FileOutputStream(new File(localFileFullName));
-        byte[] buf = new byte[_CHUNKSIZE];
+        byte[] buf = new byte[ChunkSize];
         int len = 0;
         while ((len = in.read(buf)) > 0) {
             out.write(buf, 0, len);
@@ -349,7 +351,7 @@ public class VmwareContext {
         try {
             out = conn.getOutputStream();
             in = new FileInputStream(localFile);
-            byte[] buf = new byte[_CHUNKSIZE];
+            byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
@@ -374,14 +376,14 @@ public class VmwareContext {
         }
     }
 
-    public void uploadVmdkFile(String httpMethod, String urlString, String localFileName, long totalBytesUpdated, ActionDelegate progressUpdater) throws Exception {
+    public void uploadVmdkFile(String httpMethod, String urlString, String localFileName, long totalBytesUpdated, ActionDelegate<Long> progressUpdater) throws Exception {
 
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         conn.setDoOutput(true);
         conn.setUseCaches(false);
 
-        conn.setChunkedStreamingMode(_CHUNKSIZE);
+        conn.setChunkedStreamingMode(ChunkSize);
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
         conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");
@@ -393,7 +395,7 @@ public class VmwareContext {
         try {
             bos = new BufferedOutputStream(conn.getOutputStream());
             is = new BufferedInputStream(new FileInputStream(localFileName));
-            int bufferSize = _CHUNKSIZE;
+            int bufferSize = ChunkSize;
             byte[] buffer = new byte[bufferSize];
             while (true) {
                 int bytesRead = is.read(buffer, 0, bufferSize);
@@ -417,7 +419,7 @@ public class VmwareContext {
         }
     }
 
-    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate progressUpdater) throws Exception {
+    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         String cookie = _vimClient.getServiceCookie();
@@ -438,7 +440,7 @@ public class VmwareContext {
             in = conn.getInputStream();
             out = new FileOutputStream(new File(localFileName));
 
-            byte[] buf = new byte[_CHUNKSIZE];
+            byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
@@ -464,7 +466,7 @@ public class VmwareContext {
         InputStream in = conn.getInputStream();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buf = new byte[_CHUNKSIZE];
+        byte[] buf = new byte[ChunkSize];
         int len = 0;
         while ((len = in.read(buf)) > 0) {
             out.write(buf, 0, len);
@@ -546,7 +548,7 @@ public class VmwareContext {
         </table>
           </body>
         </html>
-    */
+     */
     public String[] listDatastoreDirContent(String urlString) throws Exception {
         List<String> fileList = new ArrayList<String>();
         String content = new String(getResourceContent(urlString));
@@ -582,8 +584,12 @@ public class VmwareContext {
         sb.append(_serverAddress);
         sb.append("/folder/");
         sb.append(relativePath);
-        sb.append("?dcPath=").append(URLEncoder.encode(dcName)).append("&dsName=");
-        sb.append(URLEncoder.encode(datastoreName));
+        try {
+            sb.append("?dcPath=").append(URLEncoder.encode(dcName, "UTF-8"));
+            sb.append("&dsName=").append(URLEncoder.encode(datastoreName, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            s_logger.error("Unable to encode URL. dcPath : " + dcName + ", dsName :" + datastoreName, e);
+        }
         return sb.toString();
     }
 
@@ -638,16 +644,18 @@ public class VmwareContext {
     public void close() {
         clearStockObjects();
         try {
+            s_logger.info("Disconnecting VMware session");
             _vimClient.disconnect();
+        } catch(SOAPFaultException sfe) {
+            s_logger.debug("Tried to disconnect a session that is no longer valid");
         } catch (Exception e) {
             s_logger.warn("Unexpected exception: ", e);
+        } finally {
+            if (_pool != null) {
+                _pool.unregisterOutstandingContext(this);
+            }
+            unregisterOutstandingContext();
         }
-
-        if (_pool != null) {
-            _pool.unregisterOutstandingContext(this);
-        }
-
-        unregisterOutstandingContext();
     }
 
     public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {

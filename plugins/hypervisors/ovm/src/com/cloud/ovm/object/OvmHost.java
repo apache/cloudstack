@@ -53,7 +53,7 @@ public class OvmHost extends OvmObject {
     }
 
     public static Details getDetails(Connection c) throws XmlRpcException {
-        String res = (String)c.call("OvmHost.getDetails", Coder.EMPTY_PARAMS);
+        String res = (String)c.call("OvmHost.getDetails", Coder.s_emptyParams);
         return Coder.fromJson(res, OvmHost.Details.class);
     }
 
@@ -69,7 +69,7 @@ public class OvmHost extends OvmObject {
     }
 
     public static Map<String, String> getAllVms(Connection c) throws XmlRpcException {
-        String res = (String)c.call("OvmHost.getAllVms", Coder.EMPTY_PARAMS);
+        String res = (String)c.call("OvmHost.getAllVms", Coder.s_emptyParams);
         return Coder.mapFromJson(res);
     }
 

@@ -25,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -57,21 +58,30 @@ public class RemoteHostEndPoint implements EndPoint {
     AgentManager agentMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected SecondaryStorageVmDao vmDao;
     private ScheduledExecutorService executor;
 
     public RemoteHostEndPoint() {
         executor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("RemoteHostEndPoint"));
     }
 
-    private void configure(long hostId, String hostAddress, String publicAddress) {
-        this.hostId = hostId;
-        this.hostAddress = hostAddress;
-        this.publicAddress = publicAddress;
+    private void configure(Host host) {
+        this.hostId = host.getId();
+        this.hostAddress = host.getPrivateIpAddress();
+        this.publicAddress = host.getPublicIpAddress();
+        if (Host.Type.SecondaryStorageVM == host.getType()) {
+            String vmName = host.getName();
+            SecondaryStorageVmVO ssvm = vmDao.findByInstanceName(vmName);
+            if (ssvm != null) {
+                this.publicAddress = ssvm.getPublicIpAddress();
+            }
+        }
     }
 
-    public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress, String publicAddress) {
+    public static RemoteHostEndPoint getHypervisorHostEndPoint(Host host) {
         RemoteHostEndPoint ep = ComponentContext.inject(RemoteHostEndPoint.class);
-        ep.configure(hostId, hostAddress, publicAddress);
+        ep.configure(host);
         return ep;
     }
 

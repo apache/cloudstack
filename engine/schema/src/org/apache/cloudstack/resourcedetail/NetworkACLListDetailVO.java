@@ -79,4 +79,3 @@ public class NetworkACLListDetailVO implements ResourceDetail {
         return display;
     }
 }
-

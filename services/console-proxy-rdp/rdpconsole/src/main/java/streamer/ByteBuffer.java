@@ -19,7 +19,9 @@ package streamer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class represents a slice in a buffer.
@@ -45,9 +47,9 @@ public class ByteBuffer {
      */
     public ByteBuffer(int minLength) {
         // Get buffer of acceptable size from buffer pool
-        this.data = BufferPool.allocateNewBuffer(minLength);
-        this.offset = 0;
-        this.length = minLength;
+        data = BufferPool.allocateNewBuffer(minLength);
+        offset = 0;
+        length = minLength;
     }
 
     public ByteBuffer(byte data[]) {
@@ -55,8 +57,8 @@ public class ByteBuffer {
             throw new NullPointerException("Data must be non-null.");
 
         this.data = data;
-        this.offset = 0;
-        this.length = data.length;
+        offset = 0;
+        length = data.length;
     }
 
     public ByteBuffer(byte[] data, int offset, int length) {
@@ -74,9 +76,9 @@ public class ByteBuffer {
      */
     public ByteBuffer(int minLength, boolean reserveSpaceForHeader) {
         // Get buffer of acceptable size from buffer pool
-        this.data = BufferPool.allocateNewBuffer(128 + minLength);
-        this.offset = 128; // 100 bytes should be enough for headers
-        this.length = minLength;
+        data = BufferPool.allocateNewBuffer(128 + minLength);
+        offset = 128; // 100 bytes should be enough for headers
+        length = minLength;
     }
 
     /**
@@ -96,7 +98,7 @@ public class ByteBuffer {
 
     @Override
     public String toString() {
-        return toString(100);
+        return toString(length);
     }
 
     /**
@@ -106,8 +108,8 @@ public class ByteBuffer {
      *          number of bytes to show in string
      */
     public String toString(int maxLength) {
-        return "ByteRange(){offset=" + offset + ", length=" + length + ", cursor=" + cursor + ", data=" + ((data == null) ? "null" : toHexString(maxLength)) +
-            ((metadata == null || metadata.size() == 0) ? "" : ", metadata=" + metadata) + "}";
+        return "ByteRange(){offset=" + offset + ", length=" + length + ", cursor=" + cursor + ", data=" + ((data == null) ? "null" : toHexString(maxLength))
+                + ((metadata == null || metadata.size() == 0) ? "" : ", metadata=" + metadata) + "}";
     }
 
     /**
@@ -143,13 +145,68 @@ public class ByteBuffer {
             if (i > 0)
                 builder.append(" ");
             int b = data[offset + i] & 0xff;
-            builder.append(((b < 16) ? "0" : "") + Integer.toString(b, 16));
+            builder.append(String.format("%02x", b));
         }
         return builder.toString();
     }
 
-    public void dump() {
-        System.out.println(toString(length));
+    /**
+     * Return string representation of this byte buffer as dump, e.g.
+     * "0000  01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 .................".
+     *
+     * @param maxLength
+     *          number of bytes to show in string
+     */
+    public String dump() {
+        StringBuilder builder = new StringBuilder(length * 4);
+        int i = 0;
+        for (; i < length && i < length; i++) {
+            if (i % 16 == 0) {
+                builder.append(String.format("%04x", i));
+            }
+
+            builder.append(' ');
+            int b = data[offset + i] & 0xff;
+            builder.append(String.format("%02x", b));
+
+            if (i % 16 == 15) {
+                builder.append(' ');
+                builder.append(toASCIIString(i - 15, i));
+                builder.append('\n');
+            }
+        }
+        int end = i - 1;
+        if (end % 16 != 15) {
+            int begin = end & ~0xf;
+            for (int j = 0; j < (15 - (end % 16)); j++) {
+                builder.append("   ");
+            }
+            builder.append(' ');
+            builder.append(toASCIIString(begin, end));
+            builder.append('\n');
+        }
+        return builder.toString();
+    }
+
+    private String toASCIIString(int start, int finish) {
+        StringBuffer sb = new StringBuffer(16);
+        for (int i = start; i <= finish; i++) {
+            char ch = (char)data[offset + i];
+            if (ch < ' ' || ch >= 0x7f) {
+                sb.append('.');
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Return string representation of this byte buffer as hexadecimal numbers,
+     * e.g. "01 02".
+     */
+    public String toPlainHexString() {
+        return toPlainHexString(length);
     }
 
     public void extend(int newLength) {
@@ -190,12 +247,12 @@ public class ByteBuffer {
         ref();
 
         if (this.length < (offset + length))
-            throw new RuntimeException("Length of region is larger that length of this buffer. Buffer length: " + this.length + ", offset: " + offset +
-                ", new region length: " + length + ".");
+            throw new RuntimeException("Length of region is larger that length of this buffer. Buffer length: " + this.length + ", offset: " + offset
+                    + ", new region length: " + length + ".");
 
         ByteBuffer slice = new ByteBuffer(data, this.offset + offset, length);
 
-        if (copyMetadata && this.metadata != null)
+        if (copyMetadata && metadata != null)
             slice.metadata = new HashMap<String, Object>(metadata);
 
         return slice;
@@ -251,8 +308,8 @@ public class ByteBuffer {
 
     public short[] toShortArray() {
         if (length % 2 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 2 without remainder. Array length: " + length + ", remainder: " +
-                (length % 2) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 2 without remainder. Array length: " + length + ", remainder: "
+                    + (length % 2) + ".");
 
         short[] buf = new short[length / 2];
 
@@ -267,8 +324,8 @@ public class ByteBuffer {
      */
     public int[] toIntLEArray() {
         if (length % 4 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 4 without remainder. Array length: " + length + ", remainder: " +
-                (length % 4) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 4 without remainder. Array length: " + length + ", remainder: "
+                    + (length % 4) + ".");
 
         int[] buf = new int[length / 4];
 
@@ -279,12 +336,13 @@ public class ByteBuffer {
     }
 
     /**
-     * Return array of int's in little endian order, but use only 3 bytes per int (3RGB).
+     * Return array of int's in little endian order, but use only 3 bytes per int
+     * (3RGB).
      */
     public int[] toInt3LEArray() {
         if (length % 3 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 3 without remainder. Array length: " + length + ", remainder: " +
-                (length % 3) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 3 without remainder. Array length: " + length + ", remainder: "
+                    + (length % 3) + ".");
 
         int[] buf = new int[length / 3];
 
@@ -315,8 +373,8 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        int result =
-            (((data[offset + cursor] & 0xff) << 24) + ((data[offset + cursor + 1] & 0xff) << 16) + ((data[offset + cursor + 2] & 0xff) << 8) + (data[offset + cursor + 3] & 0xff));
+        int result = (((data[offset + cursor] & 0xff) << 24) + ((data[offset + cursor + 1] & 0xff) << 16) + ((data[offset + cursor + 2] & 0xff) << 8) + (data[offset
+                                                                                                                                                              + cursor + 3] & 0xff));
         cursor += 4;
         return result;
     }
@@ -328,8 +386,8 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        int result =
-            (((data[offset + cursor + 3] & 0xff) << 24) + ((data[offset + cursor + 2] & 0xff) << 16) + ((data[offset + cursor + 1] & 0xff) << 8) + (data[offset + cursor] & 0xff));
+        int result = (((data[offset + cursor + 3] & 0xff) << 24) + ((data[offset + cursor + 2] & 0xff) << 16) + ((data[offset + cursor + 1] & 0xff) << 8) + (data[offset
+                                                                                                                                                                  + cursor] & 0xff));
         cursor += 4;
         return result;
     }
@@ -341,9 +399,21 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        long result =
-            (((long)(data[offset + cursor + 3] & 0xff) << 24) + ((long)(data[offset + cursor + 2] & 0xff) << 16) + ((long)(data[offset + cursor + 1] & 0xff) << 8) + (data[offset +
-                cursor] & 0xff));
+        long result = (((long)(data[offset + cursor + 3] & 0xff) << 24) + ((long)(data[offset + cursor + 2] & 0xff) << 16)
+                + ((long)(data[offset + cursor + 1] & 0xff) << 8) + (data[offset + cursor + 0] & 0xff));
+        cursor += 4;
+        return result;
+    }
+
+    /**
+     * Read unsigned int in network order. Cursor is advanced by 4.
+     */
+    public long readUnsignedInt() {
+        if (cursor + 4 > length)
+            throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
+
+        long result = (((long)(data[offset + cursor + 0] & 0xff) << 24) + ((long)(data[offset + cursor + 1] & 0xff) << 16)
+                + ((long)(data[offset + cursor + 2] & 0xff) << 8) + (data[offset + cursor + 3] & 0xff));
         cursor += 4;
         return result;
     }
@@ -379,19 +449,19 @@ public class ByteBuffer {
         int firstByte = readUnsignedByte();
         int result;
         switch (firstByte & 0xc0) {
-            default:
-            case 0x00:
-                result = firstByte & 0x3f;
-                break;
-            case 0x40:
-                result = (firstByte & 0x3f << 8) | readUnsignedByte();
-                break;
-            case 0x80:
-                result = (((firstByte & 0x3f << 8) | readUnsignedByte()) << 8) | readUnsignedByte();
-                break;
-            case 0xc0:
-                result = ((((firstByte & 0x3f << 8) | readUnsignedByte()) << 8) | readUnsignedByte() << 8) | readUnsignedByte();
-                break;
+        default:
+        case 0x00:
+            result = firstByte & 0x3f;
+            break;
+        case 0x40:
+            result = (firstByte & 0x3f << 8) | readUnsignedByte();
+            break;
+        case 0x80:
+            result = (((firstByte & 0x3f << 8) | readUnsignedByte()) << 8) | readUnsignedByte();
+            break;
+        case 0xc0:
+            result = ((((firstByte & 0x3f << 8) | readUnsignedByte()) << 8) | readUnsignedByte() << 8) | readUnsignedByte();
+            break;
         }
 
         return result;
@@ -446,6 +516,18 @@ public class ByteBuffer {
     }
 
     /**
+     * Read signed short in network order. Cursor is advanced by 2.
+     */
+    public short readSignedShort() {
+        if (cursor + 2 > length)
+            throw new ArrayIndexOutOfBoundsException("Cannot read 2 bytes from this buffer: " + this + ".");
+
+        short result = (short)(((data[offset + cursor + 0] & 0xff) << 8) | (data[offset + cursor + 1] & 0xff));
+        cursor += 2;
+        return result;
+    }
+
+    /**
      * Read unsigned short in network order in variable length format. Cursor is
      * advanced by 1 or 2 bytes.
      *
@@ -456,14 +538,182 @@ public class ByteBuffer {
         int firstByte = readUnsignedByte();
 
         int result;
-        if ((firstByte & 0x80) == 0)
+        if ((firstByte & 0x80) == 0) {
             result = firstByte & 0x7f;
-        else {
+        } else {
             int secondByte = readUnsignedByte();
             result = (((firstByte & 0x7f) << 8) | secondByte);
         }
 
         return result;
+    }
+
+    /**
+     * Read integer in BER format.
+     *
+     * Most significant bit of first byte indicates type of date in first byte: if
+     * 0, then byte contains length (up to 7f), if 1, then byte contains number of
+     * following bytes with value in network order. Value 0x80 means unlimited
+     * length, which ends with two zero bytes (0x00 0x00) sequence.
+     *
+     * If -1 is returned by this method, then caller must seek two consecutive
+     * zeroes in buffer and consume all that data from buffer, including these two
+     * zeroes, but caller should not parse these two zeroes.
+     *
+     * @return length or -1, for unlimited length
+     */
+    public long readBerLength() {
+        int firstByte = readUnsignedByte();
+
+        long result;
+        if ((firstByte & 0x80) == 0) {
+            result = firstByte & 0x7f;
+        } else {
+            int intLength = firstByte & 0x7f;
+            if (intLength != 0)
+                result = readUnsignedVarInt(intLength);
+            else
+                return -1;
+        }
+
+        return result;
+    }
+
+    /**
+     * Read integer in BER format.
+     *
+     * Most significant bit of first byte indicates type of date in first byte: if
+     * 0, then byte contains length (up to 7f), if 1, then byte contains number of
+     * following bytes with value in network order.
+     */
+    public void writeBerLength(long length) {
+        if (length < 0)
+            throw new RuntimeException("Length cannot be less than zero: " + length + ". Data: " + this + ".");
+
+        if (length < 0x80) {
+            writeByte((int)length);
+        } else {
+            if (length < 0xff) {
+                writeByte(0x81);
+                writeByte((int)length);
+            } else if (length <= 0xffFF) {
+                writeByte(0x82);
+                writeShort((int)length);
+            } else if (length <= 0xffFFff) {
+                writeByte(0x83);
+                writeByte((int)(length >> 16));
+                writeShort((int)length);
+            } else if (length <= 0xffFFffFFL) {
+                writeByte(0x84);
+                writeInt((int)length);
+            } else if (length <= 0xffFFffFFffL) {
+                writeByte(0x85);
+                writeByte((int)(length >> 32));
+                writeInt((int)length);
+            } else if (length <= 0xffFFffFFffFFL) {
+                writeByte(0x86);
+                writeShort((int)(length >> 32));
+                writeInt((int)length);
+            } else if (length <= 0xffFFffFFffFFffL) {
+                writeByte(0x87);
+                writeByte((int)(length >> (32 + 16)));
+                writeShort((int)(length >> 32));
+                writeInt((int)length);
+            } else {
+                writeByte(0x88);
+                writeInt((int)(length >> 32));
+                writeInt((int)length);
+            }
+        }
+
+    }
+
+    /**
+     * Read signed variable length integers in network order.
+     *
+     * @param len
+     *          length of integer
+     */
+    public long readSignedVarInt(int len) {
+        long value = 0;
+        switch (len) {
+        case 0:
+            value = 0;
+            break;
+        case 1:
+            value = readSignedByte();
+            break;
+        case 2:
+            value = readSignedShort();
+            break;
+        case 3:
+            value = (readSignedByte() << 16) | readUnsignedShort();
+            break;
+        case 4:
+            value = readSignedInt();
+            break;
+        case 5:
+            value = (readSignedByte() << 32) | readUnsignedInt();
+            break;
+        case 6:
+            value = (readSignedShort() << 32) | readUnsignedInt();
+            break;
+        case 7:
+            value = (readSignedByte() << 32 + 24) | (readUnsignedShort() << 32) | readUnsignedInt();
+            break;
+        case 8:
+            value = readSignedLong();
+            break;
+        default:
+            throw new RuntimeException("Cannot read integers which are more than 8 bytes long. Length: " + len + ". Data: " + this + ".");
+        }
+
+        return value;
+    }
+
+    /**
+     * Read unsigned variable length integers in network order. Values, which are
+     * larger than 0x7FffFFffFFffFFff cannot be parsed by this method.
+     */
+    public long readUnsignedVarInt(int len) {
+        long value = 0;
+        switch (len) {
+        case 0:
+            value = 0;
+            break;
+        case 1:
+            value = readUnsignedByte();
+            break;
+        case 2:
+            value = readUnsignedShort();
+            break;
+        case 3:
+            value = (readUnsignedByte() << 16) | readUnsignedShort();
+            break;
+        case 4:
+            value = readUnsignedInt();
+            break;
+        case 5:
+            value = (readUnsignedByte() << 32) | readUnsignedInt();
+            break;
+        case 6:
+            value = (readUnsignedShort() << 32) | readUnsignedInt();
+            break;
+        case 7:
+            value = (readUnsignedByte() << 32 + 16) | (readUnsignedShort() << 32) | readUnsignedInt();
+            break;
+        case 8:
+            value = readSignedLong();
+            if (value < 0)
+                throw new RuntimeException(
+                        "Cannot read 64 bit integers which are larger than 0x7FffFFffFFffFFff, because of lack of unsinged long type in Java. Value: " + value + ". Data: "
+                                + this + ".");
+            break;
+        default:
+            throw new RuntimeException("Cannot read integers which are more than 8 bytes long. Length: " + len + ". Data: " + this + ".");
+        }
+
+        return value;
     }
 
     /**
@@ -536,6 +786,13 @@ public class ByteBuffer {
     }
 
     /**
+     * Read signed long in network order. Cursor is advanced by 8 bytes.
+     */
+    public long readSignedLong() {
+        return (((long)readSignedInt()) << 32) | ((readSignedInt()) & 0xffFFffFFL);
+    }
+
+    /**
      * Read string from buffer. Cursor is advanced by string length.
      */
     public String readString(int length, Charset charset) {
@@ -544,6 +801,38 @@ public class ByteBuffer {
 
         String string = new String(data, offset + cursor, length, charset);
         cursor += length;
+        return string;
+    }
+
+    /**
+     * Read string with '\0' character at end.
+     */
+    public String readVariableString(Charset charset) {
+
+        int start = cursor;
+
+        // Find end of string
+        while (readUnsignedByte() != 0) {
+        }
+
+        String string = new String(data, offset + start, cursor - start - 1, charset);
+
+        return string;
+    }
+
+    /**
+     * Read wide string with wide '\0' character at end.
+     */
+    public String readVariableWideString(Charset charset) {
+
+        int start = cursor;
+
+        // Find end of string
+        while (readUnsignedShortLE() != 0) {
+        }
+
+        String string = new String(data, offset + start, cursor - start - 2, charset);
+
         return string;
     }
 
@@ -682,8 +971,8 @@ public class ByteBuffer {
      */
     public void prepend(byte[] data, int offset, int length) {
         if (!isSoleOwner()) {
-            throw new RuntimeException("Create full copy of this byte buffer data for modification. refCount: " + refCount + ", parentByteBuffer: " + parentByteBuffer +
-                ".");
+            throw new RuntimeException("Create full copy of this byte buffer data for modification. refCount: " + refCount + ", parentByteBuffer: "
+                    + parentByteBuffer + ".");
         }
 
         // If there is no enough space for header to prepend
@@ -697,9 +986,13 @@ public class ByteBuffer {
         // Extend byte range to include header
         this.offset -= length;
         this.length += length;
-        this.cursor += length;
+        cursor += length;
     }
 
+    /**
+     * Write byte representation of given string, without string terminators (zero
+     * or zeroes at end of string).
+     */
     public void writeString(String str, Charset charset) {
         writeBytes(str.getBytes(charset));
     }
@@ -725,43 +1018,9 @@ public class ByteBuffer {
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) {
-        System.arraycopy(bytes, offset, this.data, this.offset + this.cursor, length);
+        System.arraycopy(bytes, offset, data, this.offset + cursor, length);
         cursor += length;
     }
-
-    // /**
-    // * Write BER encoded definite long variant of the ASN.1 length field.
-    // */
-    // public void writeBerLength(int value) {
-    // int fieldLength;
-    // if (value > 0xFFffFF)
-    // fieldLength = 4;
-    // else if (value > 0xFFff)
-    // fieldLength = 3;
-    // else if (value > 0xFF)
-    // fieldLength = 2;
-    // else
-    // fieldLength = 1;
-    //
-    // if (cursor + fieldLength + 1 > length)
-    // throw new ArrayIndexOutOfBoundsException("Cannot write " + (fieldLength +
-    // 1) + " byte(s) to this buffer: " + this + ".");
-    //
-    // // Write length of length field itself
-    // writeByte(0x80 | fieldLength);
-    //
-    // switch (fieldLength) {
-    // case 4:
-    // data[offset + cursor++] = (byte) (value >> 24);
-    // case 3:
-    // data[offset + cursor++] = (byte) (value >> 16);
-    // case 2:
-    // data[offset + cursor++] = (byte) (value >> 8);
-    // case 1:
-    // data[offset + cursor++] = (byte) value;
-    // }
-    //
-    // }
 
     /**
      * Reduce length of buffer to cursor position.
@@ -771,7 +1030,7 @@ public class ByteBuffer {
     }
 
     /**
-     * Rewind cursor to beginning of buffer.
+     * Rewind cursor to beginning of the buffer.
      */
     public void rewindCursor() {
         cursor = 0;
@@ -808,8 +1067,11 @@ public class ByteBuffer {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
+
         if (obj == null)
             return false;
+
+        // Does not work in case of anonymous type(s)
         if (getClass() != obj.getClass())
             return false;
 
@@ -822,6 +1084,40 @@ public class ByteBuffer {
                 return false;
 
         return true;
+    }
+
+    /**
+     * Return length of data left after cursor.
+     */
+    public int remainderLength() {
+        if (length >= cursor)
+            return length - cursor;
+        else
+            throw new RuntimeException("Inconsistent state of buffer: cursor is after end of buffer: " + this + ".");
+    }
+
+    public Set<String> getMetadataKeys() {
+        if (metadata != null)
+            return metadata.keySet();
+        else
+            return new HashSet<String>(0);
+    }
+
+    /**
+     * Return unsigned value of byte at given position relative to cursor. Cursor
+     * is not advanced.
+     */
+    public int peekUnsignedByte(int i) {
+        return data[offset + cursor + i] & 0xff;
+    }
+
+    /**
+     * Trim few first bytes.
+     */
+    public void trimHeader(int length) {
+        offset += length;
+        this.length -= length;
+        rewindCursor();
     }
 
 }

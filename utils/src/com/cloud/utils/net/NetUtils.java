@@ -72,10 +72,10 @@ public class NetUtils {
     public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
     public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
-    private final static Random _rand = new Random(System.currentTimeMillis());
+    private final static Random s_rand = new Random(System.currentTimeMillis());
 
     public static long createSequenceBasedMacAddress(long macAddress) {
-        return macAddress | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+        return macAddress | 0x060000000000l | (((long)s_rand.nextInt(32768) << 25) & 0x00fffe000000l);
     }
 
     public static String getHostName() {
@@ -458,7 +458,7 @@ public class NetUtils {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
         formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
-            (macAddress >> 8) & 0xff, (macAddress & 0xff));
+                (macAddress >> 8) & 0xff, (macAddress & 0xff));
 
         return result.toString();
     }
@@ -702,7 +702,7 @@ public class NetUtils {
         //e.g., cidr = 192.168.10.0, size = /24, avoid = 192.168.10.1, 192.168.10.20, 192.168.10.254
         // range = 2^8 - 1 - 3 = 252
         range = range - avoid.size();
-        int next = _rand.nextInt(range); //note: nextInt excludes last value
+        int next = s_rand.nextInt(range); //note: nextInt excludes last value
         long ip = startIp + next;
         for (Long avoidable : avoid) {
             if (ip >= avoidable) {
@@ -768,6 +768,14 @@ public class NetUtils {
     }
 
     public static String ipAndNetMaskToCidr(String ip, String netmask) {
+        if (!isValidIp(ip)) {
+            return null;
+        }
+
+        if (!isValidNetmask(netmask)) {
+            return null;
+        }
+
         long ipAddr = ip2Long(ip);
         long subnet = ip2Long(netmask);
         long result = ipAddr & subnet;
@@ -825,7 +833,7 @@ public class NetUtils {
             if (cidrALong[1] < cidrBLong[1]) {
                 //this implies cidrA is super set of cidrB
                 return supersetOrSubset.isSuperset;
-            } else if (cidrALong[1] == cidrBLong[1]) {
+            } else if (cidrALong[1].equals(cidrBLong[1])) {
                 //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }
@@ -1202,7 +1210,7 @@ public class NetUtils {
 
     public static boolean isValidIpv6(String ip) {
         try {
-            IPv6Address address = IPv6Address.fromString(ip);
+            IPv6Address.fromString(ip);
         } catch (IllegalArgumentException ex) {
             return false;
         }
@@ -1211,7 +1219,7 @@ public class NetUtils {
 
     public static boolean isValidIp6Cidr(String ip6Cidr) {
         try {
-            IPv6Network network = IPv6Network.fromString(ip6Cidr);
+            IPv6Network.fromString(ip6Cidr);
         } catch (IllegalArgumentException ex) {
             return false;
         }
@@ -1234,9 +1242,9 @@ public class NetUtils {
         String startIp = ips[0];
         IPv6Address start = IPv6Address.fromString(startIp);
         BigInteger gap = countIp6InRange(ip6Range);
-        BigInteger next = new BigInteger(gap.bitLength(), _rand);
+        BigInteger next = new BigInteger(gap.bitLength(), s_rand);
         while (next.compareTo(gap) >= 0) {
-            next = new BigInteger(gap.bitLength(), _rand);
+            next = new BigInteger(gap.bitLength(), s_rand);
         }
         BigInteger startInt = convertIPv6AddressToBigInteger(start);
         BigInteger resultInt = startInt.add(next);
@@ -1367,16 +1375,53 @@ public class NetUtils {
         return resultIp;
     }
 
+    static final String VLAN_PREFIX = "vlan://";
+    static final int VLAN_PREFIX_LENGTH = VLAN_PREFIX.length();
+
     public static boolean isValidVlan(String vlan) {
+        if (null == vlan || "".equals(vlan))
+            return false;
+        if (vlan.startsWith(VLAN_PREFIX))
+            vlan = vlan.substring(VLAN_PREFIX_LENGTH);
         try {
             int vnet = Integer.parseInt(vlan);
-            if (vnet < 0 || vnet > 4096) {
+            if (vnet <= 0 || vnet >= 4095) { // the valid range is 1- 4094
                 return false;
             }
             return true;
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    static final String VLAN_UNTAGGED = "untagged";
+
+    public static boolean isSameIsolationId(String one, String other) {
+        // check nulls
+        // check empty strings
+        if ((one == null || one.equals("")) && (other == null || other.equals(""))) {
+            return true;
+        }
+        if ((one == null || other == null) && !(one == null && other == null)) {
+            return false;
+        }
+        // check 'untagged'
+        if (one.contains(VLAN_UNTAGGED) && other.contains(VLAN_UNTAGGED)) {
+            return true;
+        }
+        // if one is a number check the other as number and as 'vlan://' + number
+        if (one.startsWith(VLAN_PREFIX)) {
+            one = one.substring(VLAN_PREFIX_LENGTH);
+        }
+        if (other.startsWith(VLAN_PREFIX)) {
+            other = other.substring(VLAN_PREFIX_LENGTH);
+        }
+        // check valid uris or numbers
+        if (one.equalsIgnoreCase(other)) {
+            return true;
+        }
+
+        return false;
     }
 
     // Attention maintainers: these pvlan functions should take into account code

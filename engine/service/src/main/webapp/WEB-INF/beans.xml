@@ -42,7 +42,7 @@
       <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
     </jaxrs:providers>
   </jaxrs:server>
-  
+
   <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
     init-method="scan" >
     <property name="packages">
@@ -51,7 +51,7 @@
       </list>
     </property>
   </bean>
-  
+
   <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
     <property name="onwireClassRegistry" ref="onwireRegistry" />
   </bean>
@@ -61,7 +61,7 @@
     <property name="nodeId" value="Node1" />
     <property name="messageSerializer" ref="messageSerializer" />
   </bean>
-  
+
   <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
     <constructor-arg ref="transportProvider" />
     <property name="messageSerializer" ref="messageSerializer" />

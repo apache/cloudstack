@@ -39,8 +39,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.utils.db.EntityManager;
 
 public class ConfigDepotAdminTest extends TestCase {
-    private final ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
-    private final ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
+    private final static ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
+    private final static ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
 
     @Mock
     Configurable _configurable;

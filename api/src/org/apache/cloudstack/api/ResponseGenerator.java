@@ -290,7 +290,7 @@ public interface ResponseGenerator {
 
     //ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
 
-    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
+    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
@@ -355,7 +355,7 @@ public interface ResponseGenerator {
 
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
-	OvsProviderResponse createOvsProviderResponse(OvsProvider result);
+    OvsProviderResponse createOvsProviderResponse(OvsProvider result);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 

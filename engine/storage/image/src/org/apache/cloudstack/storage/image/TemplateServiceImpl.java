@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -74,9 +75,10 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -392,9 +394,16 @@ public class TemplateServiceImpl implements TemplateService {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId +
                                 ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {
-                                s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
-                                // remove those leftover entries
-                                _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                if (_storeMgr.isRegionStore(store) && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                        && tmpltStore.getState() == State.Ready
+                                        && tmpltStore.getInstallPath() == null) {
+                                    s_logger.info("Keep fake entry in template store table for migration of previous NFS to object store");
+                                }
+                                else {
+                                    s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
+                                    // remove those leftover entries
+                                    _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                }
                             }
                         }
                     }
@@ -422,6 +431,17 @@ public class TemplateServiceImpl implements TemplateService {
                             if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
                                 s_logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
+                            }
+
+                            // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
+                            // means that this is a duplicate entry from migration of previous NFS to staging.
+                            if (_storeMgr.isRegionStore(store)) {
+                                TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+                                if (tmpltStore != null && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED && tmpltStore.getState() == State.Ready
+                                        && tmpltStore.getInstallPath() == null) {
+                                    s_logger.info("Skip sync template for migration of previous NFS to object store");
+                                    continue;
+                                }
                             }
 
                             if (availHypers.contains(tmplt.getHypervisorType())) {
@@ -665,18 +685,14 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-    private boolean isRegionStore(DataStore store) {
-        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
-            return true;
-        else
-            return false;
-    }
-
     // This routine is used to push templates currently on cache store, but not in region store to region store.
     // used in migrating existing NFS secondary storage to S3.
     @Override
     public void syncTemplateToRegionStore(long templateId, DataStore store) {
-        if (isRegionStore(store)) {
+        if (_storeMgr.isRegionStore(store)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sync template " + templateId + " from cache to object store...");
+            }
             // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
             // wide store if it is not there physically.
             TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);
@@ -706,6 +722,13 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore) {
+        // for vmware template, we need to check if ova packing is needed, since template created from snapshot does not have .ova file
+        // we invoke createEntityExtractURL to trigger ova packing. Ideally, we can directly use extractURL to pass to following createTemplate.
+        // Need to understand what is the background to use two different urls for copy and extract.
+        if (srcTemplate.getFormat() == ImageFormat.OVA){
+            ImageStoreEntity tmpltStore = (ImageStoreEntity)srcTemplate.getDataStore();
+            tmpltStore.createEntityExtractUrl(srcTemplate.getInstallPath(), srcTemplate.getFormat(), srcTemplate);
+        }
         // generate a URL from source template ssvm to download to destination data store
         String url = generateCopyUrl(srcTemplate);
         if (url == null) {

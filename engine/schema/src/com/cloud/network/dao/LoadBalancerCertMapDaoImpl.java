@@ -55,9 +55,9 @@ public class LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCertM
     }
 
     @Override
-    public LoadBalancerCertMapVO findByLbRuleId(Long LbId) {
+    public LoadBalancerCertMapVO findByLbRuleId(Long lbId) {
         SearchCriteria<LoadBalancerCertMapVO> sc = findByLbRuleId.create();
-        sc.setParameters("loadBalancerId", LbId);
+        sc.setParameters("loadBalancerId", lbId);
         return findOneBy(sc);
     }
 

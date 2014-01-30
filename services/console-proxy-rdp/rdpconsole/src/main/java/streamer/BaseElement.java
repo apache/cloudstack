@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import streamer.debug.FakeSink;
+import streamer.debug.FakeSource;
+
 public class BaseElement implements Element {
 
     protected String id;
@@ -78,11 +81,11 @@ public class BaseElement implements Element {
     @Override
     public Set<String> getPads(Direction direction) {
         switch (direction) {
-            case IN:
-                return inputPads.keySet();
+        case IN:
+            return inputPads.keySet();
 
-            case OUT:
-                return outputPads.keySet();
+        case OUT:
+            return outputPads.keySet();
         }
         return null;
     }
@@ -103,24 +106,24 @@ public class BaseElement implements Element {
     @Override
     public void setLink(String padName, Link link, Direction direction) {
         switch (direction) {
-            case IN:
-                if (inputPads.get(padName) != null)
-                    throw new RuntimeException("Cannot link more than one wire to same pad. Element: " + this + ", pad: " + padName + ":" + direction + ", new link: " +
-                        link + ", existing link: " + inputPads.get(padName) + ".");
-                inputPads.put(padName, link);
-                link.setSink(this);
+        case IN:
+            if (inputPads.get(padName) != null)
+                throw new RuntimeException("Cannot link more than one wire to same pad. Element: " + this + ", pad: " + padName + ":" + direction + ", new link: "
+                        + link + ", existing link: " + inputPads.get(padName) + ".");
+            inputPads.put(padName, link);
+            link.setSink(this);
 
-                break;
+            break;
 
-            case OUT:
-                if (outputPads.get(padName) != null)
-                    throw new RuntimeException("Cannot link more than one wire to same pad. Element: " + this + ", pad: " + padName + ":" + direction + ", new link: " +
-                        link + ", existing link: " + outputPads.get(padName) + ".");
+        case OUT:
+            if (outputPads.get(padName) != null)
+                throw new RuntimeException("Cannot link more than one wire to same pad. Element: " + this + ", pad: " + padName + ":" + direction + ", new link: "
+                        + link + ", existing link: " + outputPads.get(padName) + ".");
 
-                outputPads.put(padName, link);
-                link.setSource(this);
+            outputPads.put(padName, link);
+            link.setSource(this);
 
-                break;
+            break;
         }
     }
 
@@ -162,9 +165,6 @@ public class BaseElement implements Element {
      */
     @Override
     public void handleData(ByteBuffer buf, Link link) {
-        if (buf == null)
-            return;
-
         if (verbose)
             System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
@@ -177,7 +177,8 @@ public class BaseElement implements Element {
     protected final void pushDataToAllOuts(ByteBuffer buf) {
 
         if (buf == null)
-            return;
+            throw new NullPointerException();
+        //return;
 
         if (outputPads.size() == 0)
             throw new RuntimeException("Number of outgoing connection is zero. Cannot send data to output. Data: " + buf + ".");
@@ -218,18 +219,19 @@ public class BaseElement implements Element {
      * By default, do nothing with incoming event and retransmit event to all
      * pads.
      */
+    @SuppressWarnings("incomplete-switch")
     @Override
     public void handleEvent(Event event, Direction direction) {
         if (verbose)
             System.out.println("[" + this + "] INFO: Event " + event + ":" + direction + " is received.");
 
         switch (event) {
-            case STREAM_CLOSE:
-                onClose();
-                break;
-            case STREAM_START:
-                onStart();
-                break;
+        case STREAM_CLOSE:
+            onClose();
+            break;
+        case STREAM_START:
+            onStart();
+            break;
         }
 
         sendEventToAllPads(event, direction);
@@ -261,18 +263,18 @@ public class BaseElement implements Element {
             System.out.println("[" + this + "] INFO: Sending event " + event + ":" + direction + ".");
 
         switch (direction) {
-            case IN:
-                // Send event to all pads with IN direction
-                for (DataSource in : inputPads.values()) {
-                    in.sendEvent(event, direction);
-                }
-                break;
-            case OUT:
-                // Send event to all pads with OUT direction
-                for (DataSink out : outputPads.values()) {
-                    out.sendEvent(event, direction);
-                }
-                break;
+        case IN:
+            // Send event to all pads with IN direction
+            for (DataSource in : inputPads.values()) {
+                in.sendEvent(event, direction);
+            }
+            break;
+        case OUT:
+            // Send event to all pads with OUT direction
+            for (DataSink out : outputPads.values()) {
+                out.sendEvent(event, direction);
+            }
+            break;
         }
     }
 
@@ -290,7 +292,7 @@ public class BaseElement implements Element {
      *          source link, to push unnecessary data back
      * @param fromCursor
      *          if true, then position will be included into calculation
-     * @return true,
+     * @return true, if buffer is long enough, false otherwise
      */
     public boolean cap(ByteBuffer buf, int minLength, int maxLength, Link link, boolean fromCursor) {
 
@@ -384,16 +386,16 @@ public class BaseElement implements Element {
     public static void main(String args[]) {
         Element source = new FakeSource("source") {
             {
-                this.verbose = true;
-                this.numBuffers = 10;
-                this.incommingBufLength = 3;
-                this.delay = 100;
+                verbose = true;
+                numBuffers = 10;
+                incommingBufLength = 3;
+                delay = 100;
             }
         };
 
         Element sink = new FakeSink("sink") {
             {
-                this.verbose = true;
+                verbose = true;
             }
         };
 
@@ -411,7 +413,9 @@ public class BaseElement implements Element {
         // Links between t3-t4-sink will operate in push mode.
         // Link between t2-t3 will run main loop (pull from source and push to
         // sink).
-        pipeline.getLink("t3", STDOUT).run();
+        Link link = pipeline.getLink("t3", STDOUT);
+        link.sendEvent(Event.STREAM_START, Direction.IN);
+        link.run();
     }
 
 }

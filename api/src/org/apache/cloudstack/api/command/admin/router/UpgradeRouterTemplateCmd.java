@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -65,11 +64,9 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "upgrades all routers within the specified zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID,
-               type = CommandType.UUID,
-               entityType = AccountResponse.class,
-               description = "upgrades all routers owned by the specified account")
-    private Long accountId;
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING,
+            description="upgrades all routers owned by the specified account")
+    private String account;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
@@ -97,8 +94,8 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
         return zoneId;
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public String getAccount() {
+        return account;
     }
 
     public Long getDomainId() {
@@ -134,7 +131,7 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
         if (result != null) {
             ListResponse<UpgradeRouterTemplateResponse> response = _responseGenerator.createUpgradeRouterTemplateResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade router template");
         }

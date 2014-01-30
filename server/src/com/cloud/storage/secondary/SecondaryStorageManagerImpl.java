@@ -30,18 +30,19 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,6 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
-import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
@@ -81,7 +81,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
-import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -92,7 +91,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -168,7 +166,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     private static final int STARTUP_DELAY = 60000; // 60 seconds
 
-    private int _mgmt_port = 8250;
+    private int _mgmtPort = 8250;
 
     private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
@@ -259,7 +257,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
         try {
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
-            _itMgr.advanceStart(secStorageVm.getUuid(), null);
+            _itMgr.advanceStart(secStorageVm.getUuid(), null, null);
             return _secStorageVmDao.findById(secStorageVm.getId());
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
@@ -305,7 +303,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 if (!_useSSlCopy) {
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, null);
                 } else {
-                    Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
+                    KeystoreManager.Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
@@ -825,7 +823,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
         value = agentMgrConfigs.get("port");
-        _mgmt_port = NumbersUtil.parseInt(value, 8250);
+        _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
         _listener = new SecondaryStorageListener(this, _agentMgr);
         _agentMgr.registerForHostEvents(_listener, true, false, true);
@@ -1016,8 +1014,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
-        buf.append(" port=").append(_mgmt_port);
+        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+        buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
         buf.append(" zone=").append(dest.getDataCenter().getId());
@@ -1139,6 +1137,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 s_logger.error("Management network doesn't exist for the secondaryStorageVm " + profile.getVirtualMachine());
                 return false;
             }
+            controlNic = managementNic;
+        }
+
+        // verify ssh access on management nic for system vm running on HyperV
+        if(profile.getHypervisorType() == HypervisorType.Hyperv) {
             controlNic = managementNic;
         }
 
@@ -1381,6 +1384,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Inject
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
-        this._ssVmAllocators = ssVmAllocators;
+        _ssVmAllocators = ssVmAllocators;
     }
 }

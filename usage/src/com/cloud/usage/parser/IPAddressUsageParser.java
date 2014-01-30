@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class IPAddressUsageParser {
     public static final Logger s_logger = Logger.getLogger(IPAddressUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageIPAddressDao m_usageIPAddressDao;
+    private static UsageDao s_usageDao;
+    private static UsageIPAddressDao s_usageIPAddressDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class IPAddressUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageIPAddressDao = _usageIPAddressDao;
+        s_usageDao = _usageDao;
+        s_usageIPAddressDao = _usageIPAddressDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class IPAddressUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageIPAddressVO> usageIPAddress = m_usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
+        List<UsageIPAddressVO> usageIPAddress = s_usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageIPAddress.isEmpty()) {
             s_logger.debug("No IP Address usage for this period");
@@ -132,7 +132,7 @@ public class IPAddressUsageParser {
         usageDataMap.put(key, ipUsageInfo);
     }
 
-    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long IpId, String IPAddress,
+    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long ipId, String ipAddress,
         boolean isSourceNat, boolean isSystem) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total usage time " + runningTime + "ms");
@@ -144,31 +144,31 @@ public class IPAddressUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating IP usage record with id: " + IpId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+            s_logger.debug("Creating IP usage record with id: " + ipId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
                 ", for account: " + account.getId());
         }
 
-        String usageDesc = "IPAddress: " + IPAddress;
+        String usageDesc = "IPAddress: " + ipAddress;
 
         // Create the usage record
 
         UsageVO usageRecord =
-            new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), IpId,
+            new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), ipId,
                 (isSystem ? 1 : 0), (isSourceNat ? "SourceNat" : ""), startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class IpInfo {
         private long zoneId;
-        private long IpId;
-        private String IPAddress;
+        private long ipId;
+        private String ipAddress;
         private boolean isSourceNat;
         private boolean isSystem;
 
-        public IpInfo(long zoneId, long IpId, String IPAddress, boolean isSourceNat, boolean isSystem) {
+        public IpInfo(long zoneId, long ipId, String ipAddress, boolean isSourceNat, boolean isSystem) {
             this.zoneId = zoneId;
-            this.IpId = IpId;
-            this.IPAddress = IPAddress;
+            this.ipId = ipId;
+            this.ipAddress = ipAddress;
             this.isSourceNat = isSourceNat;
             this.isSystem = isSystem;
         }
@@ -178,11 +178,11 @@ public class IPAddressUsageParser {
         }
 
         public long getIpId() {
-            return IpId;
+            return ipId;
         }
 
         public String getIPAddress() {
-            return IPAddress;
+            return ipAddress;
         }
 
         public boolean isSourceNat() {

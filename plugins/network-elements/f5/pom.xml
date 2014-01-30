@@ -36,5 +36,10 @@
       <groupId>org.apache.axis</groupId>
       <artifactId>axis</artifactId>
     </dependency>
+   <dependency>
+      <groupId>commons-discovery</groupId>
+       <artifactId>commons-discovery</artifactId>
+       <version>0.5</version>
+   </dependency>
   </dependencies>
 </project>

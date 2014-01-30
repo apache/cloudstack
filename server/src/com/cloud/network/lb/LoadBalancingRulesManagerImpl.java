@@ -30,11 +30,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -44,14 +39,15 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleI
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -168,6 +164,8 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Local(value = {LoadBalancingRulesManager.class, LoadBalancingRulesService.class})
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
@@ -305,7 +303,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         User user = _userDao.findByIdIncludingRemoved(autoscaleUserId);
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
-        String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         String zoneId = _dcDao.findById(autoScaleVmProfile.getZoneId()).getUuid();
         String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
         String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
@@ -915,8 +913,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (provider == null || provider.size() == 0) {
             return false;
         }
-        if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp || 
-        		provider.get(0) == Provider.VirtualRouter) {
+        if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp ||
+            provider.get(0) == Provider.VirtualRouter) {
             return true;
         }
         return false;

@@ -46,8 +46,8 @@ public class ListAlertsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "list by alert type")
     private String type;
-    
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list by alert name", since="4.3")
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list by alert name", since = "4.3")
     private String name;
 
     // ///////////////////////////////////////////////////
@@ -61,7 +61,7 @@ public class ListAlertsCmd extends BaseListCmd {
     public String getType() {
         return type;
     }
-    
+
     public String getName() {
         return name;
     }

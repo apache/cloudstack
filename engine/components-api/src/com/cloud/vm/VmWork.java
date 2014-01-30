@@ -19,27 +19,34 @@ package com.cloud.vm;
 import java.io.Serializable;
 
 public class VmWork implements Serializable {
-	private static final long serialVersionUID = -6946320465729853589L;
+    private static final long serialVersionUID = -6946320465729853589L;
 
-	long userId;
-	long accountId;
-	long vmId;
+    long userId;
+    long accountId;
+    long vmId;
 
-    public VmWork(long userId, long accountId, long vmId) {
+    String handlerName;
+
+    public VmWork(long userId, long accountId, long vmId, String handlerName) {
         this.userId = userId;
         this.accountId = accountId;
         this.vmId = vmId;
-	}
+        this.handlerName = handlerName;
+    }
 
-	public long getUserId() {
-		return userId;
-	}
+    public long getUserId() {
+        return userId;
+    }
 
-	public long getAccountId() {
-		return accountId;
-	}
+    public long getAccountId() {
+        return accountId;
+    }
 
-	public long getVmId() {
-		return vmId;
-	}
+    public long getVmId() {
+        return vmId;
+    }
+
+    public String getHandlerName() {
+        return handlerName;
+    }
 }

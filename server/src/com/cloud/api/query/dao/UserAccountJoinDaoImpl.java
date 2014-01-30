@@ -107,7 +107,7 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
     public List<UserAccountJoinVO> searchByAccountId(Long accountId) {
         SearchCriteria<UserAccountJoinVO> sc = vrAcctIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return searchIncludingRemoved(sc, null, null, false);
+        return search(sc, null, null, false);
     }
 
 }

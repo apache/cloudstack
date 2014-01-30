@@ -54,6 +54,7 @@ import com.cloud.vm.VirtualMachine.State;
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
 
     protected SearchBuilder<DomainRouterVO> AllFieldsSearch;
+    protected SearchBuilder<DomainRouterVO> RunningSearch;
     protected SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
     protected SearchBuilder<DomainRouterVO> HostUpSearch;
     protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
@@ -139,10 +140,19 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         OutsidePodSearch.done();
 
         clusterSearch = createSearchBuilder();
+        clusterSearch.and("state", clusterSearch.entity().getState(), Op.EQ);
         SearchBuilder<HostVO> clusterHost = _hostsDao.createSearchBuilder();
         clusterHost.and("clusterId", clusterHost.entity().getClusterId(), Op.EQ);
         clusterSearch.join("host", clusterHost, clusterSearch.entity().getHostId(), clusterHost.entity().getId(), JoinType.INNER);
         clusterSearch.done();
+
+        RunningSearch = createSearchBuilder();
+        RunningSearch.and("dc", RunningSearch.entity().getDataCenterId(), Op.EQ);
+        RunningSearch.and("account", RunningSearch.entity().getAccountId(), Op.EQ);
+        RunningSearch.and("domainId", RunningSearch.entity().getDomainId(), Op.EQ);
+        RunningSearch.and("state", RunningSearch.entity().getState(), Op.EQ);
+        RunningSearch.and("podId", RunningSearch.entity().getPodIdToDeployIn(), Op.EQ);
+        RunningSearch.done();
     }
 
     @Override
@@ -200,15 +210,17 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByPodId(Long podId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+    public List<DomainRouterVO> listRunningByPodId(Long podId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
         sc.setParameters("podId", podId);
         return listBy(sc);
     }
 
     @Override
-    public List<DomainRouterVO> listByClusterId(Long clusterId) {
+    public List<DomainRouterVO> listRunningByClusterId(Long clusterId) {
         SearchCriteria<DomainRouterVO> sc = clusterSearch.create();
+        sc.setParameters("state", State.Running);
         sc.setJoinParameters("host", "clusterId", clusterId);
         return listBy(sc);
     }
@@ -237,8 +249,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByDomain(Long domainId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+    public List<DomainRouterVO> listRunningByDomain(Long domainId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
         sc.setParameters("domainId", domainId);
         return listBy(sc);
     }
@@ -379,4 +392,19 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return listBy(sc);
     }
 
+    @Override
+    public List<DomainRouterVO> listRunningByAccountId(long accountId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
+        sc.setParameters("account", accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listRunningByDataCenter(long dcId) {
+        SearchCriteria<DomainRouterVO> sc = RunningSearch.create();
+        sc.setParameters("state", State.Running);
+        sc.setParameters("dc", dcId);
+        return listBy(sc);
+    }
 }

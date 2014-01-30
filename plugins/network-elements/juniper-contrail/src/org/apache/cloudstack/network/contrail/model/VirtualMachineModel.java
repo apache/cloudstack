@@ -29,6 +29,7 @@ import net.juniper.contrail.api.types.VirtualMachine;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
@@ -101,22 +102,27 @@ public class VirtualMachineModel extends ModelObjectBase {
         ApiConnector api = controller.getApiAccessor();
         _serviceUuid = serviceUuid;
 
-        ServiceInstanceModel siModel = manager.getDatabase().lookupServiceInstance(serviceUuid);
-        if (siModel == null) {
-            ServiceInstance siObj;
-            try {
-                siObj = (ServiceInstance)api.findById(ServiceInstance.class, serviceUuid);
-            } catch (IOException ex) {
-                s_logger.warn("service-instance read", ex);
-                throw new CloudRuntimeException("Unable to read service-instance object", ex);
-            }
-            if (siObj == null) {
-                //If the ServiceInstance object is null, do not call build. It will break in many places. Instead, call update passing the controller as parameter.
-                //It will then create a new ServiceInstance is that's null.
-                siModel = new ServiceInstanceModel(serviceUuid);
-                siModel.update(controller);
-
-                siObj = siModel.getServiceInstance();
+        ServiceInstance siObj;
+        try {
+            siObj = (ServiceInstance) api.findById(ServiceInstance.class, serviceUuid);
+        } catch (IOException ex) {
+            s_logger.warn("service-instance read", ex);
+            throw new CloudRuntimeException("Unable to read service-instance object", ex);
+        }
+        ServiceInstanceModel siModel;
+        if (siObj == null) {
+            siModel = new ServiceInstanceModel(serviceUuid);
+            siModel.build(controller, siObj);
+            manager.getDatabase().getServiceInstances().add(siModel);
+        } else {
+            String fqn = StringUtils.join(siObj.getQualifiedName(), ':');
+            siModel = manager.getDatabase().lookupServiceInstance(fqn);
+            if (siModel == null) {
+                if (siObj == null) {
+                    siModel = new ServiceInstanceModel(serviceUuid);
+                    siModel.build(controller, siObj);
+                    manager.getDatabase().getServiceInstances().add(siModel);
+                }
             }
         }
         _serviceModel = siModel;
@@ -199,21 +205,21 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     boolean isActiveInstance(VMInstanceVO instance) {
         switch (instance.getState()) {
-        case Migrating:
-        case Starting:
-        case Running:
-        case Shutdowned:
-        case Stopped:
-        case Stopping:
-            return true;
+            case Migrating:
+            case Starting:
+            case Running:
+            case Shutdowned:
+            case Stopped:
+            case Stopping:
+                return true;
 
-        case Destroyed:
-        case Error:
-        case Expunging:
-            return false;
+            case Destroyed:
+            case Error:
+            case Expunging:
+                return false;
 
-        default:
-            s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
+            default:
+                s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
         }
         return true;
     }
@@ -257,17 +263,17 @@ public class VirtualMachineModel extends ModelObjectBase {
             String tag;
 
             switch (nic.getDeviceId()) {
-            case 0:
-                tag = "management";
-                break;
-            case 1:
-                tag = "left";
-                break;
-            case 2:
-                tag = "right";
-                break;
-            default:
-                tag = null;
+                case 0:
+                    tag = "management";
+                    break;
+                case 1:
+                    tag = "left";
+                    break;
+                case 2:
+                    tag = "right";
+                    break;
+                default:
+                    tag = null;
             }
 
             VMInterfaceModel vmiModel = getVMInterface(nic.getUuid());
@@ -337,8 +343,27 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     @Override
     public boolean verify(ModelController controller) {
-        // TODO Auto-generated method stub
-        return false;
+        assert _initialized : "initialized is false";
+        assert _uuid != null : "uuid is not set";
+
+        ApiConnector api = controller.getApiAccessor();
+
+        try {
+            _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
+        } catch (IOException e) {
+            s_logger.error("virtual-machine verify", e);
+        }
+
+        if (_vm == null) {
+            return false;
+        }
+
+        for (ModelObject successor: successors()) {
+            if (!successor.verify(controller)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

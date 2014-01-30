@@ -29,7 +29,7 @@ import com.trilead.ssh2.Session;
 
 public class WgetTest {
 
-    public static int MAX_RETRY_LINUX = 1;
+    public static final int MAX_RETRY_LINUX = 1;
     public static final Logger s_logger = Logger.getLogger(WgetTest.class.getName());
     public static String host = "";
     public static String password = "rs-ccb35ea5";

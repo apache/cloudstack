@@ -353,6 +353,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
                 return false;
             }
+        } else {
+            s_logger.debug ("Failed to setup private gateway  "+ gateway);
+            return false;
         }
         return true;
     }
@@ -413,10 +416,15 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return true;
             }
 
-            if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, false)) {
-                throw new CloudRuntimeException("Failed to apply network acl rules in network " + config.getId());
-            } else {
-                return true;
+            try {
+                if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, false)) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } catch (Exception ex) {
+                s_logger.debug("Failed to apply network acl in network " + config.getId());
+                return false;
             }
         } else {
             return true;

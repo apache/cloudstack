@@ -74,9 +74,9 @@ public class StoragePoolMonitor implements Listener {
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
             StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() == HypervisorType.KVM ||
-                scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() == HypervisorType.Simulator ||
-                scCmd.getHypervisorType() == HypervisorType.Ovm) {
+            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
+                scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator ||
+                scCmd.getHypervisorType() == HypervisorType.Ovm || scCmd.getHypervisorType() == HypervisorType.Hyperv) {
                 List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
                 List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null);
                 List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());

@@ -122,7 +122,7 @@ public class DownloadListener implements Listener {
     private StatusTask _statusTask;
     private TimeoutTask _timeoutTask;
     private Date _lastUpdated = new Date();
-    private String _jobId;
+    private String jobId;
 
     private final Map<String, DownloadState> _stateMap = new HashMap<String, DownloadState>();
     private AsyncCompletionCallback<DownloadAnswer> _callback;
@@ -137,7 +137,7 @@ public class DownloadListener implements Listener {
     private VolumeService _volumeSrv;
 
     // TODO: this constructor should be the one used for template only, remove other template constructor later
-    public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer _timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
+    public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
             AsyncCompletionCallback<DownloadAnswer> callback) {
         _ssAgent = ssAgent;
         this.object = object;
@@ -145,7 +145,7 @@ public class DownloadListener implements Listener {
         _cmd = cmd;
         initStateMachine();
         _currState = getState(Status.NOT_DOWNLOADED.toString());
-        this._timer = _timer;
+        this._timer = timer;
         _timeoutTask = new TimeoutTask(this);
         this._timer.schedule(_timeoutTask, 3 * STATUS_POLL_INTERVAL);
         _callback = callback;
@@ -306,8 +306,8 @@ public class DownloadListener implements Listener {
         }
     }
 
-    public void setCommand(DownloadCommand _cmd) {
-        this._cmd = _cmd;
+    public void setCommand(DownloadCommand cmd) {
+        this._cmd = cmd;
     }
 
     public DownloadCommand getCommand() {
@@ -318,12 +318,12 @@ public class DownloadListener implements Listener {
         transition(DownloadEvent.ABANDON_DOWNLOAD, null);
     }
 
-    public void setJobId(String _jobId) {
-        this._jobId = _jobId;
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
     }
 
     public String getJobId() {
-        return _jobId;
+        return jobId;
     }
 
     public void scheduleStatusCheck(RequestType request) {

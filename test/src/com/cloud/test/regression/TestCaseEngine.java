@@ -38,20 +38,20 @@ import org.w3c.dom.NodeList;
 public class TestCaseEngine {
 
     public static final Logger s_logger = Logger.getLogger(TestCaseEngine.class.getName());
-    public static String fileName = "../metadata/adapter.xml";
-    public static HashMap<String, String> globalParameters = new HashMap<String, String>();
-    protected static HashMap<String, String> _componentMap = new HashMap<String, String>();
-    protected static HashMap<String, ArrayList<String>> _inputFile = new HashMap<String, ArrayList<String>>();
-    protected static String testCaseName = new String();
-    protected static ArrayList<String> _keys = new ArrayList<String>();
-    private static ThreadLocal<Object> result = new ThreadLocal<Object>();
-    public static int _numThreads = 1;
-    public static boolean _repeat = false;
-    public static boolean _printUrl = false;
-    public static String type = "All";
-    public static boolean isSanity = false;
-    public static boolean isRegression = false;
-    private static int failure = 0;
+    public static String s_fileName = "../metadata/adapter.xml";
+    public static HashMap<String, String> s_globalParameters = new HashMap<String, String>();
+    protected static HashMap<String, String> s_componentMap = new HashMap<String, String>();
+    protected static HashMap<String, ArrayList<String>> s_inputFile = new HashMap<String, ArrayList<String>>();
+    protected static String s_testCaseName = new String();
+    protected static ArrayList<String> s_keys = new ArrayList<String>();
+    private static ThreadLocal<Object> s_result = new ThreadLocal<Object>();
+    public static int s_numThreads = 1;
+    public static boolean s_repeat = false;
+    public static boolean s_printUrl = false;
+    public static String s_type = "All";
+    public static boolean s_isSanity = false;
+    public static boolean s_isRegression = false;
+    private static int s_failure = 0;
 
     public static void main(String args[]) {
 
@@ -62,35 +62,35 @@ public class TestCaseEngine {
             String arg = iter.next();
             // is stress?
             if (arg.equals("-t")) {
-                _numThreads = Integer.parseInt(iter.next());
+                s_numThreads = Integer.parseInt(iter.next());
             }
             // do you want to print url for all commands?
             if (arg.equals("-p")) {
-                _printUrl = true;
+                s_printUrl = true;
             }
 
             //type of the test: sanity, regression, all (default)
             if (arg.equals("-type")) {
-                type = iter.next();
+                s_type = iter.next();
             }
 
             if (arg.equals("-repeat")) {
-                _repeat = Boolean.valueOf(iter.next());
+                s_repeat = Boolean.valueOf(iter.next());
             }
 
             if (arg.equals("-filename")) {
-                fileName = iter.next();
+                s_fileName = iter.next();
             }
         }
 
-        if (type.equalsIgnoreCase("sanity"))
-            isSanity = true;
-        else if (type.equalsIgnoreCase("regression"))
-            isRegression = true;
+        if (s_type.equalsIgnoreCase("sanity"))
+            s_isSanity = true;
+        else if (s_type.equalsIgnoreCase("regression"))
+            s_isRegression = true;
 
         try {
             // parse adapter.xml file to get list of tests to execute
-            File file = new File(fileName);
+            File file = new File(s_fileName);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(file);
@@ -106,9 +106,9 @@ public class TestCaseEngine {
             // set error to 0 by default
 
             // execute test
-            for (int i = 0; i < _numThreads; i++) {
-                if (_numThreads > 1) {
-                    s_logger.info("STARTING STRESS TEST IN " + _numThreads + " THREADS");
+            for (int i = 0; i < s_numThreads; i++) {
+                if (s_numThreads > 1) {
+                    s_logger.info("STARTING STRESS TEST IN " + s_numThreads + " THREADS");
                 } else {
                     s_logger.info("STARTING FUNCTIONAL TEST");
                 }
@@ -116,33 +116,33 @@ public class TestCaseEngine {
                     @Override
                     public void run() {
                         do {
-                            if (_numThreads == 1) {
+                            if (s_numThreads == 1) {
                                 try {
-                                    for (String key : _keys) {
-                                        Class<?> c = Class.forName(_componentMap.get(key));
+                                    for (String key : s_keys) {
+                                        Class<?> c = Class.forName(s_componentMap.get(key));
                                         TestCase component = (TestCase)c.newInstance();
                                         executeTest(key, c, component);
                                     }
                                 } catch (Exception ex1) {
                                     s_logger.error(ex1);
                                 } finally {
-                                    if (failure > 0) {
+                                    if (s_failure > 0) {
                                         System.exit(1);
                                     }
                                 }
                             } else {
                                 Random ran = new Random();
-                                Integer randomNumber = Math.abs(ran.nextInt(_keys.size()));
+                                Integer randomNumber = Math.abs(ran.nextInt(s_keys.size()));
                                 try {
-                                    String key = _keys.get(randomNumber);
-                                    Class<?> c = Class.forName(_componentMap.get(key));
+                                    String key = s_keys.get(randomNumber);
+                                    Class<?> c = Class.forName(s_componentMap.get(key));
                                     TestCase component = (TestCase)c.newInstance();
                                     executeTest(key, c, component);
                                 } catch (Exception e) {
                                     s_logger.error("Error in thread ", e);
                                 }
                             }
-                        } while (_repeat);
+                        } while (s_repeat);
                     }
                 }).start();
             }
@@ -166,7 +166,7 @@ public class TestCaseEngine {
                 Element itemNameElement = (Element)itemName.item(0);
                 NodeList itemVariable = itemElement.getElementsByTagName("variable");
                 Element itemVariableElement = (Element)itemVariable.item(0);
-                globalParameters.put(itemVariableElement.getTextContent(), itemNameElement.getTextContent());
+                s_globalParameters.put(itemVariableElement.getTextContent(), itemNameElement.getTextContent());
             }
         }
     }
@@ -182,51 +182,51 @@ public class TestCaseEngine {
                 // get test case name
                 NodeList testCaseNameList = itemElement.getElementsByTagName("testname");
                 if (testCaseNameList != null) {
-                    testCaseName = ((Element)testCaseNameList.item(0)).getTextContent();
+                    s_testCaseName = ((Element)testCaseNameList.item(0)).getTextContent();
                 }
 
-                if (isSanity == true && !testCaseName.equals("SANITY TEST"))
+                if (s_isSanity == true && !s_testCaseName.equals("SANITY TEST"))
                     continue;
-                else if (isRegression == true && !(testCaseName.equals("SANITY TEST") || testCaseName.equals("REGRESSION TEST")))
+                else if (s_isRegression == true && !(s_testCaseName.equals("SANITY TEST") || s_testCaseName.equals("REGRESSION TEST")))
                     continue;
 
                 // set class name
                 NodeList className = itemElement.getElementsByTagName("class");
                 if ((className.getLength() == 0) || (className == null)) {
-                    _componentMap.put(testCaseName, "com.cloud.test.regression.VMApiTest");
+                    s_componentMap.put(s_testCaseName, "com.cloud.test.regression.VMApiTest");
                 } else {
                     String name = ((Element)className.item(0)).getTextContent();
-                    _componentMap.put(testCaseName, name);
+                    s_componentMap.put(s_testCaseName, name);
                 }
 
                 // set input file name
                 NodeList inputFileNameLst = itemElement.getElementsByTagName("filename");
-                _inputFile.put(testCaseName, new ArrayList<String>());
+                s_inputFile.put(s_testCaseName, new ArrayList<String>());
                 for (int k = 0; k < inputFileNameLst.getLength(); k++) {
                     String inputFileName = ((Element)inputFileNameLst.item(k)).getTextContent();
-                    _inputFile.get(testCaseName).add(inputFileName);
+                    s_inputFile.get(s_testCaseName).add(inputFileName);
                 }
             }
         }
 
         //If sanity test required, make sure that SANITY TEST componennt got loaded
-        if (isSanity == true && _componentMap.size() == 0) {
+        if (s_isSanity == true && s_componentMap.size() == 0) {
             s_logger.error("FAILURE!!! Failed to load SANITY TEST component. Verify that the test is uncommented in adapter.xml");
             System.exit(1);
         }
 
-        if (isRegression == true && _componentMap.size() != 2) {
+        if (s_isRegression == true && s_componentMap.size() != 2) {
             s_logger.error("FAILURE!!! Failed to load SANITY TEST or REGRESSION TEST components. Verify that these tests are uncommented in adapter.xml");
             System.exit(1);
         }
 
         // put all keys from _componentMap to the ArrayList
-        Set<?> set = _componentMap.entrySet();
+        Set<?> set = s_componentMap.entrySet();
         Iterator<?> it = set.iterator();
         while (it.hasNext()) {
             Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
             String key = (String)me.getKey();
-            _keys.add(key);
+            s_keys.add(key);
         }
 
     }
@@ -238,30 +238,30 @@ public class TestCaseEngine {
 
             // set global parameters
             HashMap<String, String> updateParam = new HashMap<String, String>();
-            updateParam.putAll(globalParameters);
+            updateParam.putAll(s_globalParameters);
             component.setParam(updateParam);
 
             // set DB ip address
-            component.setConn(globalParameters.get("dbPassword"));
+            component.setConn(s_globalParameters.get("dbPassword"));
 
             // set commands list
             component.setCommands();
 
             // set input file
-            if (_inputFile.get(key) != null) {
-                component.setInputFile(_inputFile.get(key));
+            if (s_inputFile.get(key) != null) {
+                component.setInputFile(s_inputFile.get(key));
             }
 
             // set test case name
             if (key != null) {
-                component.setTestCaseName(testCaseName);
+                component.setTestCaseName(s_testCaseName);
             }
 
             // execute method
-            result.set(component.executeTest());
-            if (result.get().toString().equals("false")) {
+            s_result.set(component.executeTest());
+            if (s_result.get().toString().equals("false")) {
                 s_logger.error("FAILURE!!! Test \"" + key + "\" failed\n\n\n");
-                failure++;
+                s_failure++;
             } else {
                 finalResult = true;
                 s_logger.info("SUCCESS!!! Test \"" + key + "\" passed\n\n\n");

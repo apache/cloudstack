@@ -29,6 +29,11 @@ import javax.persistence.Table;
 @Table(name = "dedicated_resources")
 public class DedicatedResourceVO implements DedicatedResources {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = -6659510127145101917L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -59,7 +64,7 @@ public class DedicatedResourceVO implements DedicatedResources {
     private long affinityGroupId;
 
     public DedicatedResourceVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId, Long accountId, long affinityGroupId) {
@@ -69,7 +74,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.hostId = hostId;
         this.domainId = domainId;
         this.accountId = accountId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.affinityGroupId = affinityGroupId;
     }
 
@@ -115,7 +120,7 @@ public class DedicatedResourceVO implements DedicatedResources {
     }
 
     public DedicatedResourceVO(long dedicatedResourceId) {
-        this.id = dedicatedResourceId;
+        id = dedicatedResourceId;
     }
 
     @Override
@@ -138,7 +143,7 @@ public class DedicatedResourceVO implements DedicatedResources {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -153,7 +158,7 @@ public class DedicatedResourceVO implements DedicatedResources {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DedicatedResourceVO) {
-            return ((DedicatedResourceVO)obj).getId() == this.getId();
+            return ((DedicatedResourceVO)obj).getId() == getId();
         } else {
             return false;
         }

@@ -41,8 +41,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class NetworkUsageParser {
     public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageNetworkDao m_usageNetworkDao;
+    private static UsageDao s_usageDao;
+    private static UsageNetworkDao s_usageNetworkDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class NetworkUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageNetworkDao = _usageNetworkDao;
+        s_usageDao = _usageDao;
+        s_usageNetworkDao = _usageNetworkDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -66,10 +66,10 @@ public class NetworkUsageParser {
 
         // - query usage_network table for all entries for userId with
         // event_date in the given range
-        SearchCriteria<UsageNetworkVO> sc = m_usageNetworkDao.createSearchCriteria();
+        SearchCriteria<UsageNetworkVO> sc = s_usageNetworkDao.createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
         sc.addAnd("eventTimeMillis", SearchCriteria.Op.BETWEEN, startDate.getTime(), endDate.getTime());
-        List<UsageNetworkVO> usageNetworkVOs = m_usageNetworkDao.search(sc, null);
+        List<UsageNetworkVO> usageNetworkVOs = s_usageNetworkDao.search(sc, null);
 
         Map<String, NetworkInfo> networkUsageByZone = new HashMap<String, NetworkInfo>();
 
@@ -136,7 +136,7 @@ public class NetworkUsageParser {
             }
         }
 
-        m_usageDao.saveUsageRecords(usageRecords);
+        s_usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }

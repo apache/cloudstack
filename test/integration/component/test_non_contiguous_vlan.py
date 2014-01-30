@@ -25,12 +25,22 @@
 """
 
 #Import local modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account
-from marvin.integration.lib.base import PhysicalNetwork
-from marvin.integration.lib.common import *
+
+
+from marvin.cloudstackTestCase import (cloudstackTestCase,unittest)
+from marvin.integration.lib.base import (Account,
+                                         ServiceOffering,
+                                         PhysicalNetwork,
+                                         VirtualMachine,
+                                         )
+from marvin.integration.lib.common import (get_zone,
+                                           get_pod,
+                                           get_domain,
+                                           get_template,
+                                           setNonContiguousVlanIds)
+from marvin.integration.lib.utils import (cleanup_resources,
+                                          xsplit)
+
 from nose.plugins.attrib import attr
 
 class Services():
@@ -116,8 +126,14 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         self.vlan = self.services["vlan"]
         self.apiClient = self.testClient.getApiClient()
 
-        self.setNonContiguousVlanIds(self.apiclient, self.zone.id)
+        self.physicalnetwork, self.vlan = setNonContiguousVlanIds(self.apiclient, self.zone.id)
 
+        self.physicalnetworkid = self.physicalnetwork.id
+        self.existingvlan = self.physicalnetwork.vlan
+        
+        if self.vlan == None:
+            self.fail("Failed to set non contiguous vlan ids to test. Free some ids from \
+                        from existing physical networks at extreme ends")
         self.cleanup = []
 
     def tearDown(self):
@@ -131,78 +147,6 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
-    def setNonContiguousVlanIds(self, apiclient, zoneid):
-        """
-        Form the non contiguous ranges based on currently assigned range in physical network
-        """
-
-        NonContigVlanIdsAcquired = False
-
-        list_physical_networks_response = PhysicalNetwork.list(
-            apiclient,
-            zoneid=zoneid
-        )
-        assert isinstance(list_physical_networks_response, list)
-        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
-
-        for physical_network in list_physical_networks_response:
-
-            self.physicalnetwork = physical_network
-            self.physicalnetworkid = physical_network.id
-            self.existingvlan = physical_network.vlan
-
-            vlans = xsplit(self.existingvlan, ['-', ','])
-
-            assert len(vlans) > 0
-            assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % self.existingvlan
-
-            # Keep some gap between existing vlan and the new vlans which we are going to add
-            # So that they are non contiguous
-
-            non_contig_end_vlan_id = int(vlans[-1]) + 6
-            non_contig_start_vlan_id = int(vlans[0]) - 6
-
-            # Form ranges which are consecutive to existing ranges but not immediately contiguous
-            # There should be gap in between existing range and new non contiguous ranage
-
-            # If you can't add range after existing range, because it's crossing 4095, then
-            # select VLAN ids before the existing range such that they are greater than 0, and
-            # then add this non contiguoud range
-
-            if non_contig_end_vlan_id < 4095:
-
-                self.vlan["partial_range"][0] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id - 3)
-                self.vlan["partial_range"][1] = str(non_contig_end_vlan_id - 1) + '-' + str(non_contig_end_vlan_id)
-                self.vlan["full_range"] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id)
-                NonContigVlanIdsAcquired = True
-
-            elif non_contig_start_vlan_id > 0:
-
-                self.vlan["partial_range"][0] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 1)
-                self.vlan["partial_range"][1] = str(non_contig_start_vlan_id + 3) + '-' + str(non_contig_start_vlan_id + 4)
-                self.vlan["full_range"] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 4)
-                NonContigVlanIdsAcquired = True
-
-            else:
-               NonContigVlanIdsAcquired = False
-
-            # If failed to get relevant vlan ids, continue to next physical network
-            # else break from loop as we have hot the non contiguous vlan ids for the test purpose
-
-            if not NonContigVlanIdsAcquired:
-                continue
-            else:
-                break
-
-        # If even through looping from all existing physical networks, failed to get relevant non
-        # contiguous vlan ids, then fail the test case
-
-        if not NonContigVlanIdsAcquired:
-            self.fail("Failed to set non contiguous vlan ids to test. Free some ids from \
-                        from existing physical networks at extreme ends")
-
-        return
 
     def validatePhysicalNetworkVlan(self, physicalNetworkId, vlan):
         """Validate whether the physical network has the updated vlan
@@ -330,12 +274,9 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         vlan1 = self.existingvlan+","+self.vlan["partial_range"][0]
         self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan1)
 
-        vlan2 = vlan1+","+self.vlan["partial_range"][1]
-        self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan2)
+        self.debug("Removing vlan : %s" % self.vlan["partial_range"][0])
 
-        self.debug("Removing vlan : %s" % self.vlan["partial_range"][1])
-
-        self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan1)
+        self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = self.existingvlan)
 
         physicalnetworks = PhysicalNetwork.list(self.apiclient, id=self.physicalnetworkid)
 
@@ -346,7 +287,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         vlanranges= physicalnetworks[0].vlan
 
-        self.assert_(vlanranges.find(self.vlan["partial_range"][1]) == -1, "vlan range is not removed")
+        self.assert_(vlanranges.find(self.vlan["partial_range"][0]) == -1, "vlan range is not removed")
 
         return
 
@@ -355,92 +296,32 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         """
         Test removing used vlan range
         """
-        # 1. If vlan id from existing range is in use, try to delete this range and add different range,
-        #    this operation should fail
-        # 2. If any of existing vlan id is not in use, delete this range and add new vlan range
-        # 3. Use a vlan id from this new range by deploying an instance which
+        # 1. Use a vlan id from existing range by deploying an instance which
         #    will create a network with vlan id from this range
         # 4. Now try to remove this vlan range
         # 5. Vlan range should not get removed, should throw error
 
-        vlans = xsplit(self.existingvlan, ['-', ','])
-        vlanstartid = int(vlans[0])
-        vlanendid = int(vlans[1])
+        account = Account.create(self.apiclient,self.services["account"],
+                                 domainid=self.domain.id)
 
-        networks = list_networks(self.apiclient)
-        existingvlaninuse = False
+        self.debug("Deploying instance in the account: %s" % account.name)
 
+        try:
 
-        # Check if any of the vlan id from existing range is in use
-        if isinstance(networks,list) and len(networks) > 0:
-
-            self.debug("networks: %s" % networks)
-
-            vlansinuse = [network for network in networks if network.vlan and (vlanstartid <= int(network.vlan) <= vlanendid)]
-
-            self.debug("Total no. of vlans in use : %s" % len(vlansinuse))
-
-            if len(vlansinuse) > 0:
-                existingvlaninuse = True
-            else:
-                existingvlaninuse = False
-
-        vlan1 = self.vlan["partial_range"][0]
-
-        # If existing vlan id is in use, then try to delete this range, the operation should fail
-        # This serves the test case purpose, hence test case has completed successfully
-        if existingvlaninuse:
-            self.debug("Trying to remove existing vlan in use, This should fail")
-            with self.assertRaises(Exception) as e:
-                self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan1)
-
-            self.debug("operation failed with exception: %s" % e.exception)
-
-        # If any of the existing vlan id is not in use, then add new range and deploy an instance which
-        # will create a network using vlan id from this new range, hence now the new range is in use
-        # Now try to delete this new range and add another range, operation should fail
-        # This serves the test case purpose, hence test case has completed successfully
-        else:
-
-            self.debug("No vlan in use, hence adding a new vlan and using it by deploying an instance")
-
-            self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan1)
-
-            self.debug("Verifying the VLAN of the updated physical network: %s, It should match with \
-                    the passed vlan: %s" % (self.physicalnetworkid,vlan1))
-
-            self.validatePhysicalNetworkVlan(self.physicalnetworkid, vlan1)
-
-            account = Account.create(
-                            self.apiclient,
-                            self.services["account"],
-                            domainid=self.domain.id
-                            )
-
-            self.debug("Deploying instance in the account: %s" %
-                                                account.name)
-
-            self.virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
-                                    self.services["virtual_machine"],
-                                    accountid=account.name,
-                                    domainid=account.domainid,
-                                    serviceofferingid=self.service_offering.id,
-                                    mode=self.zone.networktype
-                                )
-
-            self.debug("Deployed instance in account: %s" %
-                                                    account.name)
-
-
-
+            self.virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                     accountid=account.name,domainid=account.domainid,
+                                                     serviceofferingid=self.service_offering.id,
+                                                     mode=self.zone.networktype)
+            self.debug("Deployed instance in account: %s" % account.name)
             self.debug("Trying to remove vlan range : %s , This should fail" % self.vlan["partial_range"][0])
 
             with self.assertRaises(Exception) as e:
-                self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = self.existingvlan)
+                self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = self.vlan["partial_range"][0])
 
             self.debug("operation failed with exception: %s" % e.exception)
-
             account.delete(self.apiclient)
+
+        except Exception as e:
+            self.fail("Exception in test case: %s" % e)
 
         return

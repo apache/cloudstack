@@ -36,10 +36,11 @@ import java.util.concurrent.Executor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
 
 /**
  *
@@ -51,7 +52,7 @@ public class ConsoleProxy {
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
 
-    public static int VIEWER_LINGER_SECONDS = 180;
+    public static final int VIEWER_LINGER_SECONDS = 180;
 
     public static Object context;
 
@@ -390,7 +391,7 @@ public class ConsoleProxy {
             } finally {
                 try {
                     confs.close();
-                }  catch (IOException ioex) {
+                } catch (IOException ioex) {
                     s_logger.error(ioex.toString(), ioex);
                 }
             }
@@ -406,7 +407,7 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             viewer = connectionMap.get(clientKey);
             if (viewer == null) {
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
                 s_logger.info("Added viewer object " + viewer);
@@ -441,7 +442,7 @@ public class ConsoleProxy {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null) {
                 authenticationExternally(param);
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
 
                 connectionMap.put(clientKey, viewer);
@@ -475,6 +476,14 @@ public class ConsoleProxy {
                     s_logger.debug("Report load change : " + loadInfo);
             }
             return viewer;
+        }
+    }
+
+    private static ConsoleProxyClient getClient(ConsoleProxyClientParam param) {
+        if (param.getHypervHost() != null) {
+            return new ConsoleProxyRdpClient();
+        } else {
+            return new ConsoleProxyVncClient();
         }
     }
 

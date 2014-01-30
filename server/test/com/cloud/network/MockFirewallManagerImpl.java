@@ -167,7 +167,7 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     }
 
     @Override
-    public boolean applyIngressFirewallRules(long Ipid, Account caller) throws ResourceUnavailableException {
+    public boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

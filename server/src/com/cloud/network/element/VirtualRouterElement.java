@@ -30,13 +30,11 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
-
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -103,23 +101,20 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
-
-import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
-		        DhcpServiceProvider.class, UserDataServiceProvider.class,
-		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
-		        PortForwardingServiceProvider.class, IpDeployer.class,
-		        RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class} )
+    DhcpServiceProvider.class, UserDataServiceProvider.class,
+    StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+    PortForwardingServiceProvider.class, IpDeployer.class,
+    RemoteAccessVPNServiceProvider.class, NetworkMigrationResponder.class})
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider,
-    UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
+        UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
         NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
-	public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
-	public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
-	protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+    public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
+    public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
+    protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
     NetworkDao _networksDao;
@@ -153,8 +148,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
     @Inject
-	OvsProviderDao _ovsProviderDao;
-	@Inject
+    OvsProviderDao _ovsProviderDao;
+    @Inject
     IPAddressDao _ipAddressDao;
 
     protected boolean canHandle(Network network, Service service) {
@@ -246,10 +241,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
 
-            if (rules != null && rules.size() == 1 ) {
+            if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to DENY traffic
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
-                        ! _networkMgr.getNetworkEgressDefaultPolicy(config.getId()))
+                    !_networkMgr.getNetworkEgressDefaultPolicy(config.getId()))
                     return true;
             }
 
@@ -568,13 +563,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
-        
+
         //specifies that LB rules can support autoscaling and the list of counters it supports
         AutoScaleCounter counter;
         List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
-		counter = new AutoScaleCounter(AutoScaleCounterCpu);
+        counter = new AutoScaleCounter(AutoScaleCounterCpu);
         counterList.add(counter);
-		counter = new AutoScaleCounter(AutoScaleCounterMemory);
+        counter = new AutoScaleCounter(AutoScaleCounterMemory);
         counterList.add(counter);
         Gson gson = new Gson();
         String autoScaleCounterList = gson.toJson(counterList);
@@ -691,7 +686,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String SSHPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
         }
@@ -704,7 +699,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         @SuppressWarnings("unchecked")
         VirtualMachineProfile uservm = vm;
 
-        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, SSHPublicKey);
+        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
     }
 
     @Override
@@ -747,20 +742,20 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return element;
     }
 
-	@Override
-	public OvsProvider configure(ConfigureOvsElementCmd cmd) {
-		OvsProviderVO element = _ovsProviderDao.findById(cmd.getId());
-		if (element == null) {
-			s_logger.debug("Can't find Ovs element with network service provider id "
-					+ cmd.getId());
-			return null;
-		}
+    @Override
+    public OvsProvider configure(ConfigureOvsElementCmd cmd) {
+        OvsProviderVO element = _ovsProviderDao.findById(cmd.getId());
+        if (element == null) {
+            s_logger.debug("Can't find Ovs element with network service provider id "
+                + cmd.getId());
+            return null;
+        }
 
-		element.setEnabled(cmd.getEnabled());
-		_ovsProviderDao.persist(element);
+        element.setEnabled(cmd.getEnabled());
+        _ovsProviderDao.persist(element);
 
-		return element;
-	}
+        return element;
+    }
 
     @Override
     public VirtualRouterProvider addElement(Long nspId, Type providerType) {
@@ -992,25 +987,25 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return sc.list();
     }
 
-	@Override
-	public List<? extends OvsProvider> searchForOvsElement(ListOvsElementsCmd cmd) {
-		Long id = cmd.getId();
-		Long nspId = cmd.getNspId();
-		Boolean enabled = cmd.getEnabled();
-		QueryBuilder<OvsProviderVO> sc = QueryBuilder.create(OvsProviderVO.class);
+    @Override
+    public List<? extends OvsProvider> searchForOvsElement(ListOvsElementsCmd cmd) {
+        Long id = cmd.getId();
+        Long nspId = cmd.getNspId();
+        Boolean enabled = cmd.getEnabled();
+        QueryBuilder<OvsProviderVO> sc = QueryBuilder.create(OvsProviderVO.class);
 
-		if (id != null) {
-			sc.and(sc.entity().getId(), Op.EQ, id);
-		}
-		if (nspId != null) {
-			sc.and(sc.entity().getNspId(), Op.EQ, nspId);
-		}
-		if (enabled != null) {
-			sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
-		}
+        if (id != null) {
+            sc.and(sc.entity().getId(), Op.EQ, id);
+        }
+        if (nspId != null) {
+            sc.and(sc.entity().getNspId(), Op.EQ, nspId);
+        }
+        if (enabled != null) {
+            sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
+        }
 
-		return sc.list();
-	}
+        return sc.list();
+    }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {

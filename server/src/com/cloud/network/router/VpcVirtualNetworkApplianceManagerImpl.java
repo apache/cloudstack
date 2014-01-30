@@ -789,7 +789,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     // should this be a vlan id or a broadcast uri???
                     String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
                     String netmask = NetUtils.getCidrNetmask(network.getCidr());
-                    PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, guestNic.getMacAddress());
+                    PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, guestNic.getMacAddress());
 
                     List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
                     privateIps.add(ip);
@@ -891,6 +891,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             Network network = _networkModel.getNetwork(gateway.getNetworkId());
             NicProfile requested = createPrivateNicProfileForGateway(gateway);
 
+            if (!checkRouterVersion(router)) {
+                s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
+                return false;
+            }
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
 
             //setup source nat
@@ -932,18 +936,23 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             // or maybe conditional; in case of vlan ... in case of lswitch
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, privateNic.getMacAddress());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, privateNic.getMacAddress());
 
             List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
             Commands cmds = new Commands(Command.OnError.Stop);
             createVpcAssociatePrivateIPCommands(router, privateIps, cmds, add);
 
-            if (sendCommandsToRouter(router, cmds)) {
-                s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
-                return true;
-            } else {
-                s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+            try{
+                if (sendCommandsToRouter(router, cmds)) {
+                    s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
+                    return true;
+                } else {
+                    s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+                    return false;
+                }
+            }catch (Exception ex) {
+                s_logger.warn("Failed to send  " + (add ?"add ":"delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {

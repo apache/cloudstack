@@ -46,14 +46,14 @@ public class UsageVMInstanceVO {
     @Column(name = "service_offering_id")
     private long serviceOfferingId;
 
-    @Column(name="cpu_cores")
-    private  Long cpuCores;
+    @Column(name = "cpu_cores")
+    private Long cpuCores;
 
-    @Column(name="memory")
-    private  Long memory;
+    @Column(name = "memory")
+    private Long memory;
 
-    @Column(name="cpu_speed")
-    private  Long cpuSpeed;
+    @Column(name = "cpu_speed")
+    private Long cpuSpeed;
 
     @Column(name = "template_id")
     private long templateId;

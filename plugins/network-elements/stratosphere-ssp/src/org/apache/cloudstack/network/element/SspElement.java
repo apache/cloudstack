@@ -145,12 +145,12 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         return provider;
     }
 
-    private List<SspClient> fetchSspClients(Long physicalNetworkId, Long dataCenterId, boolean enabled_only) {
+    private List<SspClient> fetchSspClients(Long physicalNetworkId, Long dataCenterId, boolean enabledOnly) {
         ArrayList<SspClient> clients = new ArrayList<SspClient>();
 
         boolean provider_found = false;
         PhysicalNetworkServiceProviderVO provider = _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetworkId, s_SSP_NAME);
-        if (enabled_only) {
+        if (enabledOnly) {
             if (provider != null && provider.getState() == State.Enabled) {
                 provider_found = true;
             }

@@ -53,8 +53,8 @@ public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, Cont
         tcp, udp, http;
         public static boolean isValidServiceType(String serviceType) {
             if (tcp.name().equalsIgnoreCase(serviceType) ||
-                    udp.name().equalsIgnoreCase(serviceType) ||
-                    http.name().equalsIgnoreCase(serviceType)) {
+                udp.name().equalsIgnoreCase(serviceType) ||
+                http.name().equalsIgnoreCase(serviceType)) {
                 return true;
             }
             return false;

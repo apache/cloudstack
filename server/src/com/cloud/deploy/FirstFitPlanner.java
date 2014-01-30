@@ -35,7 +35,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -260,7 +259,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         return capacityList;
     }
 
-    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    /**
+     * This method should remove the clusters crossing capacity threshold to avoid further vm allocation on it.
+     * @param clusterListForVmAllocation
+     * @param avoid
+     * @param vmProfile
+     * @param plan
+     */
+    protected void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan) {
 
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
@@ -482,11 +489,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         ServiceOffering offering = vm.getServiceOffering();
         if (vm.getHypervisorType() != HypervisorType.BareMetal) {
             if (offering != null && offering.getDeploymentPlanner() != null) {
-                if (offering.getDeploymentPlanner().equals(this.getName())) {
+                if (offering.getDeploymentPlanner().equals(getName())) {
                     return true;
                 }
             } else {
-                if (_globalDeploymentPlanner != null && _globalDeploymentPlanner.equals(this._name)) {
+                if (_globalDeploymentPlanner != null && _globalDeploymentPlanner.equals(_name)) {
                     return true;
                 }
             }

@@ -32,12 +32,12 @@ from marvin.integration.lib.base   import (Account,
 from marvin.integration.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
-                                           cleanup_resources,
                                            list_volumes,
                                            update_resource_limit,
                                            list_networks,
                                            list_snapshots,
                                            list_virtual_machines)
+from marvin.integration.lib.utils import cleanup_resources
 
 def log_test_exceptions(func):
     def test_wrap_exception_log(self, *args, **kwargs):

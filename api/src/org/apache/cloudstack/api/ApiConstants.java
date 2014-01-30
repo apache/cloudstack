@@ -72,7 +72,6 @@ public class ApiConstants {
     public static final String DISPLAY_VM = "displayvm";
     public static final String DISPLAY_OFFERING = "displayoffering";
     public static final String DISPLAY_VOLUME = "displayvolume";
-    public static final String CUSTOM_PARAMETERS = "customparameters";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";
@@ -210,6 +209,7 @@ public class ApiConstants {
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SHOW_CAPACITIES = "showcapacities";
+    public static final String SHOW_REMOVED = "showremoved";
     public static final String SIZE = "size";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
@@ -344,6 +344,7 @@ public class ApiConstants {
     public static final String CAPACITY_IOPS = "capacityiops";
     public static final String NETWORK_SPEED = "networkspeed";
     public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
+    public static final String ISOLATION_METHOD = "isolationmethod";
     public static final String ISOLATION_METHODS = "isolationmethods";
     public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
     public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
@@ -412,11 +413,11 @@ public class ApiConstants {
     // Ovs controller
     public static final String OVS_DEVICE_ID = "ovsdeviceid";
     public static final String OVS_DEVICE_NAME = "ovsdevicename";
-	// OpenDaylight controller
-	public static final String ODL_DEVICE_ID = "odldeviceid";
-	public static final String ODL_DEVICE_NAME = "odldevicename";
-	public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
-	public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+    // OpenDaylight controller
+    public static final String ODL_DEVICE_ID = "odldeviceid";
+    public static final String ODL_DEVICE_NAME = "odldevicename";
+    public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
 
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
@@ -554,6 +555,6 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
     }
 }

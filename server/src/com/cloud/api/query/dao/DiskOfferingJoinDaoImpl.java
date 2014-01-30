@@ -41,7 +41,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
 
-     protected DiskOfferingJoinDaoImpl() {
+    protected DiskOfferingJoinDaoImpl() {
 
         dofIdSearch = createSearchBuilder();
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);

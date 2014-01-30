@@ -57,7 +57,6 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
         this.vmEntityVO.setOwner(owner);
         this.vmEntityVO.setHostname(hostName);
         this.vmEntityVO.setDisplayname(displayName);
-        this.vmEntityVO.setSpeed(speed);
         this.vmEntityVO.setComputeTags(computeTags);
         this.vmEntityVO.setRootDiskTags(rootDiskTags);
         this.vmEntityVO.setNetworkIds(networks);
@@ -76,7 +75,6 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
         this.vmEntityVO.setOwner(owner);
         this.vmEntityVO.setHostname(hostName);
         this.vmEntityVO.setDisplayname(displayName);
-        this.vmEntityVO.setSpeed(speed);
         this.vmEntityVO.setComputeTags(computeTags);
         this.vmEntityVO.setRootDiskTags(rootDiskTags);
         this.vmEntityVO.setNetworkIds(networks);

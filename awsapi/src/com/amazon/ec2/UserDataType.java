@@ -482,7 +482,7 @@ public class UserDataType implements org.apache.axis2.databinding.ADBBean {
                 // handle attribute "version"
                 java.lang.String tempAttribVersion =
 
-                reader.getAttributeValue(null, "version");
+                    reader.getAttributeValue(null, "version");
 
                 if (tempAttribVersion != null) {
                     java.lang.String content = tempAttribVersion;
@@ -499,7 +499,7 @@ public class UserDataType implements org.apache.axis2.databinding.ADBBean {
                 // handle attribute "encoding"
                 java.lang.String tempAttribEncoding =
 
-                reader.getAttributeValue(null, "encoding");
+                    reader.getAttributeValue(null, "encoding");
 
                 if (tempAttribEncoding != null) {
                     java.lang.String content = tempAttribEncoding;

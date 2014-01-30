@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 public class EventArgs implements Serializable {
     private static final long serialVersionUID = 30659016120504139L;
-    public static EventArgs Empty = new EventArgs();
+    public static final EventArgs Empty = new EventArgs();
 
     private String subject;
 

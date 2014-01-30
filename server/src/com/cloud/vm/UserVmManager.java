@@ -46,7 +46,7 @@ import com.cloud.utils.Pair;
 public interface UserVmManager extends UserVmService {
     static final String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     static final ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
-        "Enables/Diables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
+        "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
@@ -110,7 +110,8 @@ public interface UserVmManager extends UserVmService {
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
+        ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
@@ -118,7 +119,7 @@ public interface UserVmManager extends UserVmService {
     void collectVmDiskStatistics(UserVmVO userVm);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-                                Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId) throws ResourceUnavailableException, InsufficientCapacityException;
+        Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId) throws ResourceUnavailableException, InsufficientCapacityException;
 
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.

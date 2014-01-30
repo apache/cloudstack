@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -389,9 +390,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         SearchBuilder<PodVlanMapVO> podVlanMapSB = _podVlanMapDao.createSearchBuilder();
         podVlanMapSB.and("podId", podVlanMapSB.entity().getPodId(), Op.EQ);
         AssignIpAddressFromPodVlanSearch.join("podVlanMapSB", podVlanMapSB, podVlanMapSB.entity().getVlanDbId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(),
-            JoinType.INNER);
-        AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(),
-            JoinType.INNER);
+                JoinType.INNER);
+        AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressFromPodVlanSearch.done();
 
         Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao));
@@ -402,7 +402,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-        ConcurrentOperationException {
+            ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
         // check permissions
@@ -465,7 +465,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError)
-        throws ResourceUnavailableException {
+            throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {
             s_logger.debug("There are no rules to forward to the network elements");
             return true;
@@ -572,8 +572,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         IPAddressVO ip = markIpAsUnavailable(addrId);
 
-        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
         if (ip == null) {
+            String msg = "Unable to mark the ip address id=" + addrId + " as unavailable.";
+            s_logger.error(msg);
             return true;
         }
 
@@ -640,20 +641,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem)
-        throws InsufficientAddressCapacityException {
+            throws InsufficientAddressCapacityException {
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
     @Override
-    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
-        boolean isSystem) throws InsufficientAddressCapacityException {
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+            throws InsufficientAddressCapacityException {
         return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse,
-        final Long guestNetworkId, final boolean sourceNat, final boolean assign, final String requestedIp, final boolean isSystem, final Long vpcId)
-        throws InsufficientAddressCapacityException {
+    public PublicIp fetchNewPublicIp(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
+            final boolean sourceNat, final boolean assign, final String requestedIp, final boolean isSystem, final Long vpcId) throws InsufficientAddressCapacityException {
         IPAddressVO addr = Transaction.execute(new TransactionCallbackWithException<IPAddressVO, InsufficientAddressCapacityException>() {
             @Override
             public IPAddressVO doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
@@ -687,10 +687,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
                     fetchFromDedicatedRange = true;
                     sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
-                    errorMessage.append(", vlanId id=" + dedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
                 } else if (nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                     sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                    errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                 } else {
                     if (podId != null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
@@ -730,7 +730,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                         fetchFromDedicatedRange = false;
                         sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                        errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());
+                        errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                         addrs = _ipAddressDao.lockRows(sc, filter, true);
                     }
                 }
@@ -796,8 +796,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public void markPublicIpAsAllocated(final IPAddressVO addr) {
 
-        assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) : "Unable to transition from state " + addr.getState() +
-            " to " + IpAddress.State.Allocated;
+        assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) : "Unable to transition from state " + addr.getState() + " to "
+                + IpAddress.State.Allocated;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -813,8 +813,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     String guestType = vlan.getVlanType().toString();
 
                     if (!isIpDedicated(addr)) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress()
-                            .toString(), addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(),
+                                addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
                     }
 
                     if (updateIpResourceCount(addr)) {
@@ -835,7 +835,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         assert (guestNetwork.getTrafficType() != null) : "You're asking for a source nat but your network "
-            + "can't participate in source nat.  What do you have to say for yourself?";
+                + "can't participate in source nat.  What do you have to say for yourself?";
         long dcId = guestNetwork.getDataCenterId();
 
         IPAddressVO sourceNatIp = getExistingSourceNatInNetwork(owner.getId(), guestNetwork.getId());
@@ -853,7 +853,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     @Override
     public PublicIp assignDedicateIpAddress(Account owner, final Long guestNtwkId, final Long vpcId, final long dcId, final boolean isSourceNat)
-        throws ConcurrentOperationException, InsufficientAddressCapacityException {
+            throws ConcurrentOperationException, InsufficientAddressCapacityException {
+
+        if (owner == null) {
+            s_logger.error("No account to assign an ip to.");
+            return null;
+        }
 
         final long ownerId = owner.getId();
 
@@ -886,13 +891,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
             return ip;
         } finally {
-            if (owner != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing lock account " + ownerId);
-                }
-
-                _accountDao.releaseFromLockTable(ownerId);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Releasing lock account " + ownerId);
             }
+            _accountDao.releaseFromLockTable(ownerId);
+
             if (ip == null) {
                 s_logger.error("Unable to get source nat ip address for account " + ownerId);
             }
@@ -932,7 +935,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     // but still be associated with the account. Its up to caller of this function to decide when to invoke IPAssociation
     @Override
     public boolean applyIpAssociations(Network network, boolean postApplyRules, boolean continueOnError, List<? extends PublicIpAddress> publicIps)
-        throws ResourceUnavailableException {
+            throws ResourceUnavailableException {
         boolean success = true;
 
         Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(publicIps, postApplyRules, true);
@@ -976,8 +979,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @DB
     @Override
-    public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, long callerUserId, final DataCenter zone)
-        throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+    public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, long callerUserId, final DataCenter zone) throws ConcurrentOperationException,
+            ResourceAllocationException, InsufficientAddressCapacityException {
 
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
@@ -1012,8 +1015,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     PublicIp ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, null, isSystem, null);
 
                     if (ip == null) {
-                        InsufficientAddressCapacityException ex =
-                            new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone.getId());
+                        InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone
+                                .getId());
                         ex.addProxyObject(ApiDBUtils.findZoneById(zone.getId()).getUuid());
                         throw ex;
                     }
@@ -1040,8 +1043,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     @DB
-    public IpAddress allocatePortableIp(final Account ipOwner, Account caller, final long dcId, final Long networkId, final Long vpcID)
-        throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+    public IpAddress allocatePortableIp(final Account ipOwner, Account caller, final long dcId, final Long networkId, final Long vpcID) throws ConcurrentOperationException,
+            ResourceAllocationException, InsufficientAddressCapacityException {
 
         GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
         IPAddressVO ipaddr;
@@ -1056,8 +1059,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                     List<PortableIpVO> portableIpVOs = _portableIpDao.listByRegionIdAndState(1, PortableIp.State.Free);
                     if (portableIpVOs == null || portableIpVOs.isEmpty()) {
-                        InsufficientAddressCapacityException ex =
-                            new InsufficientAddressCapacityException("Unable to find available portable IP addresses", Region.class, new Long(1));
+                        InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available portable IP addresses", Region.class,
+                                new Long(1));
                         throw ex;
                     }
 
@@ -1077,22 +1080,20 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public).getId();
                     Network network = _networkModel.getSystemNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
                     String range = allocatedPortableIp.getAddress() + "-" + allocatedPortableIp.getAddress();
-                    VlanVO vlan =
-                        new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(), allocatedPortableIp.getNetmask(), dcId,
+                    VlanVO vlan = new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(), allocatedPortableIp.getNetmask(), dcId,
                             range, network.getId(), physicalNetworkId, null, null, null);
                     vlan = _vlanDao.persist(vlan);
 
                     // provision the portable IP in to user_ip_address table
-                    IPAddressVO ipaddr =
-                        new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, physicalNetworkId, network.getId(), vlan.getId(), true);
+                    IPAddressVO ipaddr = new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, physicalNetworkId, network.getId(), vlan.getId(), true);
                     ipaddr.setState(State.Allocated);
                     ipaddr.setAllocatedTime(new Date());
                     ipaddr.setAllocatedInDomainId(ipOwner.getDomainId());
                     ipaddr.setAllocatedToAccountId(ipOwner.getId());
                     ipaddr = _ipAddressDao.persist(ipaddr);
 
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(), ipaddr.getDataCenterId(), ipaddr.getId(), ipaddr.getAddress()
-                        .toString(), ipaddr.isSourceNat(), null, ipaddr.getSystem(), ipaddr.getClass().getName(), ipaddr.getUuid());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(), ipaddr.getDataCenterId(), ipaddr.getId(),
+                            ipaddr.getAddress().toString(), ipaddr.isSourceNat(), null, ipaddr.getSystem(), ipaddr.getClass().getName(), ipaddr.getUuid());
 
                     return ipaddr;
                 }
@@ -1105,8 +1106,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
-
-        List<? extends IpAddress> addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        List<? extends IpAddress> addrs;
+        Network guestNetwork = _networksDao.findById(networkId);
+        if (guestNetwork.getGuestType() == GuestType.Shared) {
+            // ignore the account id for the shared network
+            addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(networkId, true);
+        } else {
+            addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        }
 
         IPAddressVO sourceNatIp = null;
         if (addrs.isEmpty()) {
@@ -1129,7 +1136,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     @Override
     public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
-        InsufficientAddressCapacityException, ConcurrentOperationException {
+            InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 
@@ -1147,7 +1154,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseNetwork, false, network);
                     } else {
                         throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if "
-                            + "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+                                + "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
                     }
                 }
             } else {
@@ -1192,15 +1199,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (zone.getNetworkType() == NetworkType.Advanced) {
             // In Advance zone allow to do IP assoc only for Isolated networks with source nat service enabled
             if (network.getGuestType() == GuestType.Isolated && !(_networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
-                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated only to the network of guest type " +
-                    GuestType.Isolated + " with the " + Service.SourceNat.getName() + " enabled");
+                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated only to the network of guest type "
+                        + GuestType.Isolated + " with the " + Service.SourceNat.getName() + " enabled");
             }
 
             // In Advance zone allow to do IP assoc only for shared networks with source nat/static nat/lb/pf services enabled
             if (network.getGuestType() == GuestType.Shared && !isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated with network of guest type " +
-                    GuestType.Shared + "only if at " + "least one of the services " + Service.SourceNat.getName() + "/" + Service.StaticNat.getName() + "/" +
-                    Service.Lb.getName() + "/" + Service.PortForwarding.getName() + " is enabled");
+                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated with network of guest type " + GuestType.Shared
+                        + "only if at " + "least one of the services " + Service.SourceNat.getName() + "/" + Service.StaticNat.getName() + "/" + Service.Lb.getName() + "/"
+                        + Service.PortForwarding.getName() + " is enabled");
             }
         }
 
@@ -1217,7 +1224,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
-        IPAddressVO ip = _ipAddressDao.findById(ipId);
+        IPAddressVO ip = ipToAssoc; //_ipAddressDao.findById(ipId);
         //update ip address with networkId
         ip.setAssociatedWithNetworkId(networkId);
         ip.setSourceNat(isSourceNat);
@@ -1234,18 +1241,16 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return ip;
         } finally {
             if (!success && releaseOnFailure) {
-                if (ip != null) {
-                    try {
-                        s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
-                        _ipAddressDao.markAsUnavailable(ip.getId());
-                        if (!applyIpAssociations(network, true)) {
-                            // if fail to apply ip assciations again, unassign ip address without updating resource
-                            // count and generating usage event as there is no need to keep it in the db
-                            _ipAddressDao.unassignIpAddress(ip.getId());
-                        }
-                    } catch (Exception e) {
-                        s_logger.warn("Unable to disassociate ip address for recovery", e);
+                try {
+                    s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
+                    _ipAddressDao.markAsUnavailable(ip.getId());
+                    if (!applyIpAssociations(network, true)) {
+                        // if fail to apply ip assciations again, unassign ip address without updating resource
+                        // count and generating usage event as there is no need to keep it in the db
+                        _ipAddressDao.unassignIpAddress(ip.getId());
                     }
+                } catch (Exception e) {
+                    s_logger.warn("Unable to disassociate ip address for recovery", e);
                 }
             }
         }
@@ -1253,27 +1258,27 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        if ((networkOffering.getGuestType() == Network.GuestType.Shared) &&
-            (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat) ||
-                _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.StaticNat) ||
-                _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Firewall) ||
-                _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.PortForwarding) || _networkModel.areServicesSupportedByNetworkOffering(
-                networkOfferingId, Service.Lb))) {
+        if ((networkOffering.getGuestType() == Network.GuestType.Shared)
+                && (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat)
+                        || _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.StaticNat)
+                        || _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Firewall)
+                        || _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.PortForwarding) || _networkModel.areServicesSupportedByNetworkOffering(
+                        networkOfferingId, Service.Lb))) {
             return true;
         }
         return false;
     }
 
     @Override
-    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException,
-        ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
         return associateIPToGuestNetwork(ipAddrId, networkId, releaseOnFailure);
     }
 
     @DB
     @Override
     public IPAddressVO disassociatePortableIPToGuestNetwork(long ipId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
-        InsufficientAddressCapacityException, ConcurrentOperationException {
+            InsufficientAddressCapacityException, ConcurrentOperationException {
 
         Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
@@ -1326,7 +1331,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipToAssoc, _vlanDao.findById(ipToAssoc.getVlanId()));
         ipList.add(publicIp);
         Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
-        if (ipToServices != null & !ipToServices.isEmpty()) {
+        if (ipToServices != null && !ipToServices.isEmpty()) {
             Set<Service> services = ipToServices.get(publicIp);
             if (services != null && !services.isEmpty()) {
                 throw new InvalidParameterValueException("IP " + ipToAssoc + " has services and rules associated in the network " + networkId);
@@ -1367,7 +1372,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
         ipList.add(publicIp);
         Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
-        if (ipToServices != null & !ipToServices.isEmpty()) {
+        if (ipToServices != null && !ipToServices.isEmpty()) {
             Set<Service> ipServices = ipToServices.get(publicIp);
             if (ipServices != null && !ipServices.isEmpty()) {
                 return false;
@@ -1380,7 +1385,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     @Override
     public void transferPortableIP(final long ipAddrId, long currentNetworkId, long newNetworkId) throws ResourceAllocationException, ResourceUnavailableException,
-        InsufficientAddressCapacityException, ConcurrentOperationException {
+            InsufficientAddressCapacityException, ConcurrentOperationException {
 
         Network srcNetwork = _networksDao.findById(currentNetworkId);
         if (srcNetwork == null) {
@@ -1448,7 +1453,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // trigger an action event for the transfer of portable IP across the networks, so that external entities
         // monitoring for this event can initiate the route advertisement for the availability of IP from the zoe
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, EventTypes.EVENT_PORTABLE_IP_TRANSFER,
-            "Portable IP associated is transferred from network " + currentNetworkId + " to " + newNetworkId);
+                "Portable IP associated is transferred from network " + currentNetworkId + " to " + newNetworkId);
     }
 
     protected List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
@@ -1459,7 +1464,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public boolean associateIpAddressListToAccount(long userId, final long accountId, final long zoneId, final Long vlanId, final Network guestNetworkFinal)
-        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
         final Account owner = _accountMgr.getActiveAccountById(accountId);
 
         if (guestNetworkFinal != null && guestNetworkFinal.getTrafficType() != TrafficType.Guest) {
@@ -1471,7 +1476,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             pair = Transaction.execute(new TransactionCallbackWithException<Ternary<Boolean, List<NetworkOfferingVO>, Network>, Exception>() {
                 @Override
                 public Ternary<Boolean, List<NetworkOfferingVO>, Network> doInTransaction(TransactionStatus status) throws InsufficientCapacityException,
-                    ResourceAllocationException {
+                        ResourceAllocationException {
                     boolean createNetwork = false;
                     Network guestNetwork = guestNetworkFinal;
 
@@ -1483,41 +1488,37 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             guestNetwork = networks.get(0);
                         } else {
                             throw new InvalidParameterValueException("Error, more than 1 Guest Isolated Networks with SourceNAT "
-                                + "service enabled found for this account, cannot assosiate the IP range, please provide the network ID");
+                                    + "service enabled found for this account, cannot assosiate the IP range, please provide the network ID");
                         }
                     }
 
                     // create new Virtual network (Isolated with SourceNAT) for the user if it doesn't exist
                     List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (requiredOfferings.size() < 1) {
-                        throw new CloudRuntimeException("Unable to find network offering with availability=" + Availability.Required +
-                            " to automatically create the network as part of createVlanIpRange");
+                        throw new CloudRuntimeException("Unable to find network offering with availability=" + Availability.Required
+                                + " to automatically create the network as part of createVlanIpRange");
                     }
                     if (createNetwork) {
                         if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
-                            long physicalNetworkId =
-                                _networkModel.findPhysicalNetworkId(zoneId, requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                            long physicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
                             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                             if (physicalNetwork == null) {
-                                throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: " +
-                                    requiredOfferings.get(0).getTags());
+                                throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: "
+                                        + requiredOfferings.get(0).getTags());
                             }
 
-                            s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() +
-                                " as a part of createVlanIpRange process");
-                            guestNetwork =
-                                _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network",
-                                    owner.getAccountName() + "-network", null, null, null, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null,
-                                    null, true, null);
+                            s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
+                                    + " as a part of createVlanIpRange process");
+                            guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
+                                    + "-network", null, null, null, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null);
                             if (guestNetwork == null) {
                                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
-                                throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT " +
-                                    "service enabled as a part of createVlanIpRange, for the account " + accountId + "in zone " + zoneId);
+                                throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
+                                        + "service enabled as a part of createVlanIpRange, for the account " + accountId + "in zone " + zoneId);
                             }
                         } else {
-                            throw new CloudRuntimeException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " +
-                                NetworkOffering.State.Enabled);
+                            throw new CloudRuntimeException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
                         }
                     }
 
@@ -1580,8 +1581,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 guestNetwork = implementedNetwork.second();
             } catch (Exception ex) {
                 s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
-                CloudRuntimeException e =
-                    new CloudRuntimeException("Failed to implement network (with specified id)"
+                CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)"
                         + " elements and resources as a part of network provision for persistent network");
                 e.addProxyObject(guestNetwork.getUuid(), "networkId");
                 throw e;
@@ -1615,8 +1615,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         String guestType = vlan.getVlanType().toString();
                         if (!isIpDedicated(ip)) {
                             String eventType = ip.isPortable() ? EventTypes.EVENT_PORTABLE_IP_RELEASE : EventTypes.EVENT_NET_IP_RELEASE;
-                            UsageEventUtils.publishUsageEvent(eventType, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
-                                ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                            UsageEventUtils.publishUsageEvent(eventType, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(),
+                                    guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
                         }
                     }
 
@@ -1644,7 +1644,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
         if (availableIps == null || availableIps.isEmpty()) {
-            s_logger.debug("There are no free ips in the  network " + network );
+            s_logger.debug("There are no free ips in the  network " + network);
             return null;
         }
 
@@ -1675,13 +1675,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException {
-        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
-        boolean success = true;
-
         if (staticNats == null || staticNats.size() == 0) {
             s_logger.debug("There are no static nat rules for the network elements");
             return true;
         }
+
+        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
+        boolean success = true;
 
         // get the list of public ip's owned by the network
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
@@ -1811,7 +1811,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public void allocateDirectIp(final NicProfile nic, final DataCenter dc, final VirtualMachineProfile vm, final Network network, final String requestedIpv4,
-        final String requestedIpv6) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+            final String requestedIpv6) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
@@ -1892,8 +1892,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account owner, String requestedIp) throws InsufficientAddressCapacityException {
-        PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
+    public String allocatePublicIpForGuestNic(Network network, Long podId, Account owner, String requestedIp) throws InsufficientAddressCapacityException {
+        PublicIp ip = assignPublicIpAddress(network.getDataCenterId(), podId, owner, VlanType.DirectAttached, network.getId(), requestedIp, false);
         if (ip == null) {
             s_logger.debug("There is no free public ip address");
             return null;
@@ -1903,16 +1903,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
-        String ipaddr = null;
-        Account caller = CallContext.current().getCallingAccount();
-        // check permissions
-        Network network = _networksDao.findById(networkId);
-
-        _accountMgr.checkAccess(caller, null, false, network);
-
-        ipaddr = acquireGuestIpAddress(network, requestedIp);
-        return ipaddr;
+    public String allocateGuestIP(Network network, String requestedIp) throws InsufficientAddressCapacityException {
+        return acquireGuestIpAddress(network, requestedIp);
     }
 
     @Override

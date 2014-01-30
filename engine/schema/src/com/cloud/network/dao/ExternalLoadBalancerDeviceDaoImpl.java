@@ -87,18 +87,18 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
     }
 
     @Override
-    public List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String provider_name) {
+    public List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
         SearchCriteria<ExternalLoadBalancerDeviceVO> sc = physicalNetworkServiceProviderSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        sc.setParameters("providerName", provider_name);
+        sc.setParameters("providerName", providerName);
         return search(sc, null);
     }
 
     @Override
-    public List<ExternalLoadBalancerDeviceVO> listByProviderAndDeviceAllocationState(long physicalNetworkId, String provider_name, LBDeviceAllocationState state) {
+    public List<ExternalLoadBalancerDeviceVO> listByProviderAndDeviceAllocationState(long physicalNetworkId, String providerName, LBDeviceAllocationState state) {
         SearchCriteria<ExternalLoadBalancerDeviceVO> sc = allocationStateSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        sc.setParameters("providerName", provider_name);
+        sc.setParameters("providerName", providerName);
         sc.setParameters("allocationState", state);
         sc.setParameters("exclusiveGslbProvider", false);
         return search(sc, null);

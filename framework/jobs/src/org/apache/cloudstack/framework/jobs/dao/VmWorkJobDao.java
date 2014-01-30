@@ -35,4 +35,6 @@ public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
     void updateStep(long workJobId, Step step);
 
     void expungeCompletedWorkJobs(Date cutDate);
+
+    void expungeLeftoverWorkJobs(long msid);
 }

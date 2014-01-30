@@ -258,8 +258,8 @@ public class AgentResourceBase implements ServerResource {
         return _type;
     }
 
-    public void setType(Host.Type _type) {
-        this._type = _type;
+    public void setType(Host.Type type) {
+        this._type = type;
     }
 
     @Override

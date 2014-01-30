@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class NetworkOfferingUsageParser {
     public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageNetworkOfferingDao m_usageNetworkOfferingDao;
+    private static UsageDao s_usageDao;
+    private static UsageNetworkOfferingDao s_usageNetworkOfferingDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class NetworkOfferingUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageNetworkOfferingDao = _usageNetworkOfferingDao;
+        s_usageDao = _usageDao;
+        s_usageNetworkOfferingDao = _usageNetworkOfferingDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class NetworkOfferingUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageNetworkOfferingVO> usageNOs = m_usageNetworkOfferingDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageNetworkOfferingVO> usageNOs = s_usageNetworkOfferingDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageNOs.isEmpty()) {
             s_logger.debug("No NetworkOffering usage events for this period");
@@ -154,14 +154,14 @@ public class NetworkOfferingUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, noId, null, defaultNic,
                 null, startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class NOInfo {
-        private long vmId;
-        private long zoneId;
-        private long noId;
-        private boolean isDefault;
+        private final long vmId;
+        private final long zoneId;
+        private final long noId;
+        private final boolean isDefault;
 
         public NOInfo(long vmId, long zoneId, long noId, boolean isDefault) {
             this.vmId = vmId;

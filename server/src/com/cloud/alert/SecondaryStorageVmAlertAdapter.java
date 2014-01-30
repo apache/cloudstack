@@ -106,9 +106,10 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
                     s_logger.debug("Secondary Storage Vm creation failure, zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " +
                         secStorageVm.getPublicIpAddress() + ", private IP: " + (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVm.getPodIdToDeployIn(), "Secondary Storage Vm creation failure. zone: " +
-                    dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() + ", private IP: " +
-                    (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVm.getPodIdToDeployIn(),
+                    "Secondary Storage Vm creation failure. zone: " +
+                        dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() + ", private IP: " +
+                        (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
                     "Secondary Storage Vm creation failure (zone " + dc.getName() + ")");
                 break;
 
@@ -117,9 +118,10 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
                     s_logger.debug("Secondary Storage Vm startup failure, zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " +
                         secStorageVm.getPublicIpAddress() + ", private IP: " + (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVm.getPodIdToDeployIn(), "Secondary Storage Vm startup failure. zone: " +
-                    dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() + ", private IP: " +
-                    (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVm.getPodIdToDeployIn(),
+                    "Secondary Storage Vm startup failure. zone: " +
+                        dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() + ", private IP: " +
+                        (secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
                     "Secondary Storage Vm startup failure (zone " + dc.getName() + ")");
                 break;
 

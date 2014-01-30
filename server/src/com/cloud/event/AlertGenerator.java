@@ -36,7 +36,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentContext;
 
@@ -44,9 +43,9 @@ import com.cloud.utils.component.ComponentContext;
 public class AlertGenerator {
 
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
-    private static DataCenterDao _dcDao;
-    private static HostPodDao _podDao;
-    protected static EventBus _eventBus = null;
+    private static DataCenterDao s_dcDao;
+    private static HostPodDao s_podDao;
+    protected static EventBus s_eventBus = null;
 
     @Inject
     DataCenterDao dcDao;
@@ -58,13 +57,13 @@ public class AlertGenerator {
 
     @PostConstruct
     void init() {
-        _dcDao = dcDao;
-        _podDao = podDao;
+        s_dcDao = dcDao;
+        s_podDao = podDao;
     }
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
@@ -73,8 +72,8 @@ public class AlertGenerator {
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.ALERT_EVENT.getName(), alertType, null, null);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        HostPodVO pod = _podDao.findById(podId);
+        DataCenterVO dc = s_dcDao.findById(dataCenterId);
+        HostPodVO pod = s_podDao.findById(podId);
 
         eventDescription.put("event", alertType);
         if (dc != null) {
@@ -96,7 +95,7 @@ public class AlertGenerator {
         event.setDescription(eventDescription);
 
         try {
-            _eventBus.publish(event);
+            s_eventBus.publish(event);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish alert on the the event bus.");
         }
