@@ -142,6 +142,30 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         _configured.add(configurable);
     }
 
+    private void createOrupdateConfigObject(Date date, String componentName, ConfigKey<?> key, String value) {
+        ConfigurationVO vo = _configDao.findById(key.key());
+        if (vo == null) {
+            vo = new ConfigurationVO(componentName, key);
+            vo.setUpdated(date);
+            if (value != null) {
+                vo.setValue(value);
+            }
+            _configDao.persist(vo);
+        } else {
+            if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
+                !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
+                !ObjectUtils.equals(vo.getComponent(), componentName)) {
+                vo.setDynamic(key.isDynamic());
+                vo.setDescription(key.description());
+                vo.setDefaultValue(key.defaultValue());
+                vo.setScope(key.scope().toString());
+                vo.setComponent(componentName);
+                vo.setUpdated(date);
+                _configDao.persist(vo);
+            }
+        }
+    }
+
     @Override
     public void populateConfiguration(Configurable configurable) {
         populateConfiguration(new Date(), configurable);
