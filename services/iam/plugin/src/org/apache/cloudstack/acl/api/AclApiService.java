@@ -19,6 +19,7 @@ package org.apache.cloudstack.acl.api;
 import java.util.List;
 
 import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -63,6 +64,9 @@ public interface AclApiService extends PluggableService {
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action);
 
     AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action);
+
+    /* Utility routine to grant invidivual resource to list of accounts */
+    void grantEntityPermissioinToAccounts(String entityType, Long entityId, AccessType accessType, String action, List<Long> accountIds);
 
     /* Response Generation */
     AclPolicyResponse createAclPolicyResponse(AclPolicy policy);

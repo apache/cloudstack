@@ -17,6 +17,7 @@
 package org.apache.cloudstack.acl.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.acl.api.command.RemoveAclPolicyFromAclGroupCmd;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPermissionResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -175,6 +177,22 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     Long entityId = entity.second();
                     s_logger.debug("MessageBus message: delete an entity: (" + entityType + "," + entityId + "), remove its related permission");
                     _iamSrv.removeAclPermissionForEntity(entityType, entityId);
+                }
+            }
+        });
+
+        _messageBus.subscribe(EntityManager.MESSAGE_GRANT_ENTITY_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Map<String, Object> permit = (Map<String, Object>)obj;
+                if (permit != null) {
+                    String entityType = (String)permit.get(ApiConstants.ENTITY_TYPE);
+                    Long entityId = (Long)permit.get(ApiConstants.ENTITY_ID);
+                    AccessType accessType = (AccessType)permit.get(ApiConstants.ACCESS_TYPE);
+                    String action = (String)permit.get(ApiConstants.ACL_ACTION);
+                    List<Long> acctIds = (List<Long>)permit.get(ApiConstants.ACCOUNTS);
+                    s_logger.debug("MessageBus message: grant permission to an entity: (" + entityType + "," + entityId + ")");
+                    grantEntityPermissioinToAccounts(entityType, entityId, accessType, action, acctIds);
                 }
             }
         });
@@ -467,6 +485,38 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         }
         response.setResponses(policyResponses, result.second());
         return response;
+    }
+
+    @Override
+    public void grantEntityPermissioinToAccounts(String entityType, Long entityId, AccessType accessType, String action, List<Long> accountIds) {
+        // check if there is already a policy with only this permission added to it
+        AclPolicy policy = _iamSrv.getResourceGrantPolicy(entityType, entityId, accessType.toString(), action);
+        if (policy == null) {
+            // not found, just create a policy with resource grant permission
+            Account caller = CallContext.current().getCallingAccount();
+            String aclPolicyName = "policyGrant" + entityType + entityId;
+            String description = "Policy to grant permission to " + entityType + entityId;
+            policy = createAclPolicy(caller, aclPolicyName, description, null);
+            // add permission to this policy
+            addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE, entityId, action, Permission.Allow);
+        }
+        // attach this policy to list of accounts if not attached already
+        Long policyId = policy.getId();
+        for (Long acctId : accountIds) {
+            if (!isPolicyAttachedToAccount(policyId, acctId)) {
+                attachAclPolicyToAccounts(policyId, Collections.singletonList(acctId));
+            }
+        }
+    }
+
+    private boolean isPolicyAttachedToAccount(Long policyId, Long accountId) {
+        List<AclPolicy> pList = listAclPolicies(accountId);
+        for (AclPolicy p : pList) {
+            if (p.getId() == policyId.longValue()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

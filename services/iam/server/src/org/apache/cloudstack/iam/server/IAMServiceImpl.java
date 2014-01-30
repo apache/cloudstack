@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
@@ -387,6 +388,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return policies;
     }
 
+
     @SuppressWarnings("unchecked")
     @Override
     public Pair<List<AclPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize) {
@@ -704,6 +706,27 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Override
     public AclPolicy getResourceOwnerPolicy() {
         return _aclPolicyDao.findByName("RESOURCE_OWNER");
+    }
+
+    // search for policy with only one resource grant permission
+    @Override
+    public AclPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action) {
+        List<AclPolicyVO> policyList = _aclPolicyDao.listAll();
+        for (AclPolicyVO policy : policyList){
+            List<AclPolicyPermission> pp = listPolicyPermissions(policy.getId());
+            if ( pp != null && pp.size() == 1){
+                // resource grant policy should only have one ACL permission assigned
+                AclPolicyPermission permit = pp.get(0);
+                if ( permit.getEntityType().equals(entityType) && permit.getScope().equals(PermissionScope.RESOURCE.toString()) && permit.getScopeId().longValue() == entityId.longValue()){
+                    if (accessType != null && permit.getAccessType().equals(accessType)){
+                        return policy;
+                    } else if (action != null && permit.getAction().equals(action)) {
+                        return policy;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 }
