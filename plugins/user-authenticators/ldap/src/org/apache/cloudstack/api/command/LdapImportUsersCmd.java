@@ -34,6 +34,7 @@ import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.*;
@@ -170,15 +171,13 @@ public class LdapImportUsersCmd extends BaseListCmd {
     }
 
     private String generatePassword() throws ServerApiException {
-        final SecureRandom random = new SecureRandom();
-        final int length = 20;
-        final String characters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@£$%^&*()_+=";
-
-        String password = "";
-        for (int i = 0; i < length; i++) {
-            int index = (int) (random.nextDouble() * characters.length());
-            password += characters.charAt(index);
+        try {
+            final SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+            final byte bytes[] = new byte[20];
+            randomGen.nextBytes(bytes);
+            return Base64.encode(bytes).toString();
+        } catch (final NoSuchAlgorithmException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate random password");
         }
-        return password;
     }
 }
