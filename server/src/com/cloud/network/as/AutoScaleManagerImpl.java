@@ -438,6 +438,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long templateId = cmd.getTemplateId();
         String otherDeployParams = cmd.getOtherDeployParams();
         Long serviceOffId = cmd.getServiceOfferingId();
+        Long zoneId = cmd.getZoneId();
 
         SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(_autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmProfileVO> sb = searchWrapper.getSearchBuilder();
@@ -446,6 +447,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
         sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
         sb.and("otherDeployParams", sb.entity().getOtherDeployParams(), SearchCriteria.Op.LIKE);
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.LIKE);
         SearchCriteria<AutoScaleVmProfileVO> sc = searchWrapper.buildSearchCriteria();
 
         if (id != null) {
@@ -460,6 +462,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (serviceOffId != null) {
             sc.setParameters("serviceOfferingId", serviceOffId);
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
         }
 
         return searchWrapper.search();
