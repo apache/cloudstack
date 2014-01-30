@@ -26,9 +26,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -90,6 +87,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -175,8 +174,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -2828,10 +2827,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (!permittedAccounts.isEmpty()) {
                 for (Account account : permittedAccounts) {
                     permittedAccountIds.add(account.getId());
-                    DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+                    boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community);
 
                     // get all parent domain ID's all the way till root domain
-                    DomainVO domainTreeNode = accountDomain;
+                    DomainVO domainTreeNode = null;
+                    //if template filter is featured, or community, all child domains should be included in search
+                    if (publicTemplates) {
+                        domainTreeNode = _domainDao.findById(Domain.ROOT_DOMAIN);
+
+                    } else {
+                        domainTreeNode = _domainDao.findById(account.getDomainId());
+                    }
                     relatedDomainIds.add(domainTreeNode.getId());
                     while (domainTreeNode.getParent() != null) {
                         domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
@@ -2839,8 +2845,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     }
 
                     // get all child domain ID's
-                    if (_accountMgr.isAdmin(account.getType()) || (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)) {
-                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
+                    if (_accountMgr.isAdmin(account.getType()) || publicTemplates) {
+                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainTreeNode.getPath(), domainTreeNode.getId());
                         for (DomainVO childDomain : allChildDomains) {
                             relatedDomainIds.add(childDomain.getId());
                         }
