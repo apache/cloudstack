@@ -318,7 +318,6 @@
 
                     virtualRouterCount: function(data) {
                         var data2 = {
-                            projectid: -1,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -327,24 +326,35 @@
                             data: data2,
                             success: function(json) {
                                 var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;
+                                var total2 = 0; //reset
 
+                                /*
+                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                 */   
+                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                 var data3 = {
                                     listAll: true,
+	                                    projectid: -1,
                                     page: 1,
                                     pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                                 };
                                 $.ajax({
                                     url: createURL('listRouters'),
                                     data: data3,
+	                                    async: false,
                                     success: function(json) {
-                                        var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;
+	                                        total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;	                                        
+	                                    }
+	                                });
+                                }
+                                                                
                                         dataFns.capacity($.extend(data, {
                                             virtualRouterCount: (total1 + total2)
                                         }));
                                     }
                                 });
-                            }
-                        });
                     },
 
                     capacity: function(data) {
@@ -2317,10 +2327,16 @@
                                                     routers.push(item);
                                                 });
 
-                                                // Get project routers
+                                                /*
+                                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                                 */   
+                                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
+	                                                    async: false,
                                                     success: function(json) {
                                                         var items = json.listroutersresponse.router ?
                                                             json.listroutersresponse.router : [];
@@ -2328,14 +2344,16 @@
                                                         $(items).map(function(index, item) {
                                                             routers.push(item);
                                                         });
+	                                                    }
+	                                                });
+                                                }
+                                                
                                                         args.response.success({
                                                             actionFilter: routerActionfilter,
                                                             data: $(routers).map(mapRouterType)
                                                         });
                                                     }
                                                 });
-                                            }
-                                        });
                                     },
                                     detailView: {
                                         name: 'Virtual applicance details',
@@ -3397,25 +3415,32 @@
                                                     routers.push(item);
                                                 });
 
-                                                // Get project routers
+                                                /*
+                                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                                 */   
+                                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
-                                                    async: true,
+	                                                    async: false,
                                                     success: function(json) {
                                                         var items = json.listroutersresponse.router;
                                                         $(items).map(function(index, item) {
                                                             routers.push(item);
                                                         });
+	                                                    }
+	                                                });
+                                                }
+                                                
                                                         args.response.success({
                                                             actionFilter: routerActionfilter,
                                                             data: $(routers).map(mapRouterType)
                                                         });
                                                     }
                                                 });
-                                            }
-                                        });
                                     },
                                     detailView: {
                                         name: 'Virtual applicance details',
@@ -7392,32 +7417,41 @@
                                                         $(items).map(function(index, item) {
                                                             routers.push(item);
                                                         });
-
-                                                        //get project-owned routers
-                                                        var toSearchByProjectid = true;
+                                                        
+                                                        //if account is specified in advanced search, don't search project-owned routers
+                                                        var accountIsNotSpecifiedInAdvSearch = true;
                                                         if (args.filterBy != null) {
                                                             if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
-                                                                if ('account' in args.filterBy.advSearch  && args.filterBy.advSearch.account.length > 0) { //if account is specified in advanced search, don't search project-owned routers
-                                                                    toSearchByProjectid = false;  //since account and projectid can't be specified together
+                                                                if ('account' in args.filterBy.advSearch  && args.filterBy.advSearch.account.length > 0) { 
+                                                                    accountIsNotSpecifiedInAdvSearch = false;  //since account and projectid can't be specified together
                                                                 }
                                                             }
                                                         }
-                                                        if (toSearchByProjectid) {
-                                                            $.ajax({
-                                                                url: createURL('listRouters'),
-                                                                data: $.extend(data,{
-                                                                    listAll: true,
-                                                                    projectid: -1
-                                                                }),
-                                                                async: false,
-                                                                success: function(json) {
-                                                                    var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];
-                                                                    $(items).map(function(index, item) {
-                                                                        routers.push(item);
-                                                                    });
-                                                                }
-                                                            });
-                                                        }
+                                                        if (accountIsNotSpecifiedInAdvSearch) {                                                        
+				                                            /*
+				                                             * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+				                                             * because in project view, all API calls are appended with projectid=[projectID].  
+				                                             * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+				                                             */   
+				                                            if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
+					                                            $.ajax({
+					                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+				                                                    async: false,
+				                                                    success: function(json) {
+				                                                        var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];
+				                                                        $(items).map(function(index, item) {
+				                                                            routers.push(item);
+				                                                        });
+				                                                    }
+				                                                });
+				
+				                                            }
+                                                        }   
+			                                                                                        
+			                                            args.response.success({
+			                                                actionFilter: routerActionfilter,
+			                                                data: $(routers).map(mapRouterType)
+			                                            });                                                    
                                                     }
                                                 });
 
@@ -7681,10 +7715,17 @@
                                         $(items).map(function(index, item) {
                                             routers.push(item);
                                         });
-                                        // Get project routers
+                                
+                                /*
+                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                 */   
+                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                         $.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
+	                                    async: false,
                                             success: function(json) {
                                                 var items = json.listroutersresponse.router ?
                                                         json.listroutersresponse.router : [];
@@ -7692,14 +7733,16 @@
                                                 $(items).map(function(index, item) {
                                                     routers.push(item);
                                                 });
+	                                    }
+	                                });
+                                }
+                                
                                                 args.response.success({
                                                     actionFilter: routerActionfilter,
                                                     data: $(routers).map(mapRouterType)
                                                 });
                                             }
                                         });
-                                    }
-                                });
                             },
                             detailView: {
                                 name: 'Virtual applicance details',
