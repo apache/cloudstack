@@ -447,7 +447,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
         sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
         sb.and("otherDeployParams", sb.entity().getOtherDeployParams(), SearchCriteria.Op.LIKE);
-        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.LIKE);
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         SearchCriteria<AutoScaleVmProfileVO> sc = searchWrapper.buildSearchCriteria();
 
         if (id != null) {
