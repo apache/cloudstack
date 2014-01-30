@@ -970,7 +970,11 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
+                    if (template == null) {
+                        s_logger.debug("Zone host is ready, but console proxy template is null");
+                    } else {
+                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
+                    }
                 }
             }
         }

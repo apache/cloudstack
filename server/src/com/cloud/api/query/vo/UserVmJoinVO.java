@@ -35,7 +35,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -48,10 +47,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
-    private final String name = null;
+    private String name = null;
 
     @Column(name="display_name", updatable=false, nullable=false, length=255)
-    private final String displayName = null;
+    private String displayName = null;
 
     @Column(name="account_id")
     private long accountId;
@@ -60,7 +59,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String accountUuid;
 
     @Column(name="account_name")
-    private final String accountName = null;
+    private String accountName = null;
 
     @Column(name="account_type")
     private short accountType;
@@ -72,10 +71,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String domainUuid;
 
     @Column(name="domain_name")
-    private final String domainName = null;
+    private String domainName = null;
 
     @Column(name="domain_path")
-    private final String domainPath = null;
+    private String domainPath = null;
 
     @Column(name="instance_group_id")
     private long instanceGroupId;
@@ -97,7 +96,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
      */
     @Enumerated(value=EnumType.STRING)
     @Column(name="state", updatable=true, nullable=false, length=32)
-    private final State state = null;
+    private State state = null;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -150,7 +149,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String dataCenterUuid;
 
     @Column(name="data_center_name")
-    private final String dataCenterName = null;
+    private String dataCenterName = null;
 
     @Column(name="security_group_enabled")
     private boolean securityGroupEnabled;
@@ -226,7 +225,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String volume_uuid;
 
     @Column(name = "volume_device_id")
-    private final Long volumeDeviceId = null;
+    private Long volumeDeviceId = null;
 
     @Column(name = "volume_type")
     @Enumerated(EnumType.STRING)
@@ -727,11 +726,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     public String getDetail(String name) {
-        if (details == null) {
-            throw new CloudRuntimeException("No details to get. Did you forget to load the details?");
-        }
+        assert (details != null) : "Did you forget to load the details?";
 
-        return details.get(name);
+        return details != null ? details.get(name) : null;
     }
 
     public String getUserData() {

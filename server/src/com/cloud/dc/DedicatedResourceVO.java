@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,11 +30,6 @@ import javax.persistence.Table;
 @Entity
 @Table(name="dedicated_resources")
 public class DedicatedResourceVO implements DedicatedResources{
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -6659510127145101917L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,7 +61,7 @@ public class DedicatedResourceVO implements DedicatedResources{
     private long affinityGroupId;
 
     public DedicatedResourceVO() {
-        uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId,
@@ -76,16 +72,14 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.hostId = hostId;
         this.domainId = domainId;
         this.accountId = accountId;
-        uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
         this.affinityGroupId = affinityGroupId;
     }
 
-    @Override
     public long getId() {
         return id;
     }
 
-    @Override
     public Long getDataCenterId() {
         return dataCenterId;
     }
@@ -94,7 +88,6 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.dataCenterId = dataCenterId;
     }
 
-    @Override
     public Long getPodId() {
         return podId;
     }
@@ -103,7 +96,6 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.podId = podId;
     }
 
-    @Override
     public Long getClusterId() {
         return clusterId;
     }
@@ -112,7 +104,6 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.clusterId = clusterId;
     }
 
-    @Override
     public Long getHostId() {
         return hostId;
     }
@@ -122,10 +113,9 @@ public class DedicatedResourceVO implements DedicatedResources{
     }
 
     public DedicatedResourceVO(long dedicatedResourceId) {
-        id = dedicatedResourceId;
+        this.id = dedicatedResourceId;
     }
 
-    @Override
     public Long getDomainId() {
         return domainId;
     }
@@ -134,7 +124,6 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.domainId = domainId;
     }
 
-    @Override
     public Long getAccountId() {
         return accountId;
     }
@@ -143,16 +132,14 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.accountId = accountId;
     }
 
-    @Override
     public String getUuid() {
-        return uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
-    @Override
     public long getAffinityGroupId() {
         return affinityGroupId;
     }
@@ -160,7 +147,7 @@ public class DedicatedResourceVO implements DedicatedResources{
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DedicatedResourceVO) {
-            return ((DedicatedResourceVO) obj).getId() == getId();
+            return ((DedicatedResourceVO) obj).getId() == this.getId();
         } else {
             return false;
         }
