@@ -4216,7 +4216,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             collectVmDiskStatistics(uservm);
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
-        return _vmDao.findById(vmId);
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
+            return _vmDao.findById(vmId);
+        } else {
+            return vmInstance;
+        }
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
