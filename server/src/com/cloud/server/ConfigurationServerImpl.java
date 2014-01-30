@@ -206,6 +206,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
+                    configVO.setDefaultValue(value);
                     _configDao.persist(configVO);
                 }
             }
