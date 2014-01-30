@@ -2547,7 +2547,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -3073,7 +3073,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -3671,7 +3671,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -6264,7 +6264,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -7720,7 +7720,7 @@
                                                                             getUpdatedItem: function (json) {
                                                                                 //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                                 $.ajax({
-                                                                                    url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                                    url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                                     dataType: "json",
                                                                                     async: false,
                                                                                     success: function (json) {
@@ -8892,7 +8892,7 @@
                                                             getUpdatedItem: function (json) {
                                                                 //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                 $.ajax({
-                                                                    url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                    url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                     dataType: "json",
                                                                     async: false,
                                                                     success: function (json) {
@@ -10117,7 +10117,7 @@
                                                     getUpdatedItem: function (json) {
                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                         $.ajax({
-                                                            url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                            url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                             dataType: "json",
                                                             async: false,
                                                             success: function (json) {
