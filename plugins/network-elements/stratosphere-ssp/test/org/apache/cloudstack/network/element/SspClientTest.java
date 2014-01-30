@@ -16,49 +16,41 @@
 // under the License.
 package org.apache.cloudstack.network.element;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
-import org.apache.cloudstack.network.element.SspClient;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.URI;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
 public class SspClientTest {
-    HttpClient _client = mock(HttpClient.class);
-    PostMethod _postMethod = mock(PostMethod.class);
-    PutMethod _putMethod = mock(PutMethod.class);
-    DeleteMethod _deleteMethod = mock(DeleteMethod.class);
-
     String uuid = UUID.randomUUID().toString();
 
     String apiUrl = "http://a.example.jp/";
     String username = "foo";
     String password = "bar";
-    SspClient sspClient = new SspClient(apiUrl, username, password){
-        {
-            client = _client;
-            postMethod = _postMethod;
-            putMethod = _putMethod;
-            deleteMethod = _deleteMethod;
-        }
-    };
-
-    @SuppressWarnings("deprecation")
-    private URI getUri() throws Exception{
-        return new URI(apiUrl);
-    }
 
     @Test
     public void loginTest() throws Exception {
-        when(_postMethod.getURI()).thenReturn(getUri());
-        when(_postMethod.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        SspClient sspClient = spy(new SspClient(apiUrl, username, password));
+
+        HttpClient client = mock(HttpClient.class);
+        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
+        doReturn(client).when(sspClient).getHttpClient();
+        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
+        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_OK);
+
         assertTrue(sspClient.login());
         assertTrue(sspClient.login());
         assertTrue(sspClient.login());
@@ -68,13 +60,18 @@ public class SspClientTest {
     public void createNetworkTest() throws Exception {
         String networkName = "example network 1";
         String tenant_net_uuid = UUID.randomUUID().toString();
+        SspClient sspClient = spy(new SspClient(apiUrl, username, password));
 
-        when(_postMethod.getURI()).thenReturn(getUri());
-        when(_postMethod.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        when(_postMethod.getResponseBodyAsString()).thenReturn(
-                "{\"uuid\":\""+tenant_net_uuid+
-                "\",\"name\":\""+networkName+
-                "\",\"tenant_uuid\":\""+uuid+"\"}");
+        HttpClient client = mock(HttpClient.class);
+        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
+        doReturn(client).when(sspClient).getHttpClient();
+        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
+        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
+        String body = "{\"uuid\":\"" + tenant_net_uuid + "\",\"name\":\"" + networkName
+                + "\",\"tenant_uuid\":\"" + uuid + "\"}";
+        when(res.getEntity().getContent()).thenReturn(
+                new ByteArrayInputStream(body.getBytes("UTF-8")));
+
         SspClient.TenantNetwork tnet = sspClient.createTenantNetwork(uuid, networkName);
         assertEquals(tnet.name, networkName);
         assertEquals(tnet.uuid, tenant_net_uuid);
@@ -84,9 +81,13 @@ public class SspClientTest {
     @Test
     public void deleteNetworkTest() throws Exception {
         String tenant_net_uuid = UUID.randomUUID().toString();
+        SspClient sspClient = spy(new SspClient(apiUrl, username, password));
 
-        when(_deleteMethod.getURI()).thenReturn(getUri());
-        when(_deleteMethod.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
+        HttpClient client = mock(HttpClient.class);
+        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
+        doReturn(client).when(sspClient).getHttpClient();
+        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
+        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
 
         sspClient.deleteTenantNetwork(tenant_net_uuid);
     }
