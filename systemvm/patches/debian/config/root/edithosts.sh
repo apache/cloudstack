@@ -80,8 +80,7 @@ fi
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 no_redundant=$?
 
-command -v dhcp_release > /dev/null 2>&1
-no_dhcp_release=$?
+dnsmasq_managed_lease=`cat /var/cache/cloud/dnsmasq_managed_lease`
 
 wait_for_dnsmasq () {
   local _pid=$(pidof dnsmasq)
@@ -96,12 +95,7 @@ wait_for_dnsmasq () {
   return 1
 }
 
-if [ $ipv6 ]
-then
-    no_dhcp_release=1
-fi
-
-if [ $no_dhcp_release -eq 0 ]
+if [ $dnsmasq_managed_lease ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
@@ -145,27 +139,30 @@ then
   fi
 fi
 
-#delete leases to supplied mac and ip addresses
-if [ $ipv4 ]
+if [ $dnsmasq_managed_lease -eq 0 ]
 then
-  sed -i  /$mac/d $DHCP_LEASES 
-  sed -i  /"$ipv4 "/d $DHCP_LEASES 
-fi
-if [ $ipv6 ]
-then
-  sed -i  /$duid/d $DHCP_LEASES 
-  sed -i  /"$ipv6 "/d $DHCP_LEASES 
-fi
-sed -i  /"$host "/d $DHCP_LEASES 
+  #delete leases to supplied mac and ip addresses
+  if [ $ipv4 ]
+  then
+    sed -i  /$mac/d $DHCP_LEASES
+    sed -i  /"$ipv4 "/d $DHCP_LEASES
+  fi
+  if [ $ipv6 ]
+  then
+    sed -i  /$duid/d $DHCP_LEASES
+    sed -i  /"$ipv6 "/d $DHCP_LEASES
+  fi
+  sed -i  /"$host "/d $DHCP_LEASES
 
-#put in the new entry
-if [ $ipv4 ]
-then
-  echo "0 $mac $ipv4 $host *" >> $DHCP_LEASES
-fi
-if [ $ipv6 ]
-then
-  echo "0 $duid $ipv6 $host *" >> $DHCP_LEASES
+  #put in the new entry
+  if [ $ipv4 ]
+  then
+    echo "0 $mac $ipv4 $host *" >> $DHCP_LEASES
+  fi
+  if [ $ipv6 ]
+  then
+    echo "0 $duid $ipv6 $host *" >> $DHCP_LEASES
+  fi
 fi
 
 #edit hosts file as well
@@ -215,7 +212,7 @@ pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
   # use SIGHUP to avoid service outage if dhcp_release is available.
-  if [ $no_dhcp_release -eq 0 ]
+  if [ $dnsmasq_managed_lease ]
   then
     kill -HUP $pid
   else

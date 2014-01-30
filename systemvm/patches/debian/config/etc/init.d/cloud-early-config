@@ -750,6 +750,16 @@ setup_dnsmasq() {
       sed -i -e "/^dhcp-client-update/d" /etc/dnsmasq.conf
       echo 'dhcp-client-update' >> /etc/dnsmasq.conf
   fi
+
+  command -v dhcp_release > /dev/null 2>&1
+  no_dhcp_release=$?
+  if [ $no_dhcp_release -eq 0 -a -z "$ETH0_IP6" ]
+  then
+      echo 1 > /var/cache/cloud/dnsmasq_managed_lease
+      sed -i -e "/^leasefile-ro/d" /etc/dnsmasq.conf
+  else
+      echo 0 > /var/cache/cloud/dnsmasq_managed_lease
+  fi
 }
 
 setup_sshd(){
