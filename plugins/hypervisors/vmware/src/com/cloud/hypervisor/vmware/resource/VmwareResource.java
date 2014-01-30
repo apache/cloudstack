@@ -6690,11 +6690,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     if(vals.get(vi) instanceof PerfMetricIntSeries) {
                                         PerfMetricIntSeries val = (PerfMetricIntSeries)vals.get(vi);
                                         List<Long> perfValues = val.getValue();
+                                        Long sumRate = 0L;
+                                        for (int j = 0; j < infos.size(); j++) { // Size of the array matches the size as the PerfSampleInfo
+                                            sumRate += perfValues.get(j);
+                                        }
+                                        Long averageRate = sumRate / infos.size();
                                         if (vals.get(vi).getId().getCounterId() == rxPerfCounterInfo.getKey()) {
-                                            networkReadKBs = sampleDuration * perfValues.get(3); //get the average RX rate multiplied by sampled duration
+                                            networkReadKBs = sampleDuration * averageRate; //get the average RX rate multiplied by sampled duration
                                         }
                                         if (vals.get(vi).getId().getCounterId() == txPerfCounterInfo.getKey()) {
-                                            networkWriteKBs = sampleDuration * perfValues.get(3);//get the average TX rate multiplied by sampled duration
+                                            networkWriteKBs = sampleDuration * averageRate; //get the average TX rate multiplied by sampled duration
                                         }
                                     }
                                 }
