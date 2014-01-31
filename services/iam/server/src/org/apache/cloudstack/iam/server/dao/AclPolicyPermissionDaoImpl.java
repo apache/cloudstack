@@ -62,8 +62,8 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         actionScopeSearch.done();
 
         entitySearch = createSearchBuilder();
-        entitySearch.and("entityType", fullSearch.entity().getEntityType(), SearchCriteria.Op.EQ);
-        entitySearch.and("scopeId", fullSearch.entity().getScopeId(), SearchCriteria.Op.EQ);
+        entitySearch.and("entityType", entitySearch.entity().getEntityType(), SearchCriteria.Op.EQ);
+        entitySearch.and("scopeId", entitySearch.entity().getScopeId(), SearchCriteria.Op.EQ);
         entitySearch.done();
 
         return true;
