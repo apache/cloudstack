@@ -363,7 +363,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // restoreVM - move the new ROOT disk into corresponding VM folder
             String vmInternalCSName = volume.getVmName();
             if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkName);
+                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkFileBaseName);
             }
 
             VolumeObjectTO newVol = new VolumeObjectTO();
