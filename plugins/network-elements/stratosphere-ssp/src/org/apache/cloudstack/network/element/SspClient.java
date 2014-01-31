@@ -139,7 +139,7 @@ public class SspClient {
             return null;
         }
         try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
+            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent(), "UTF-8"),
                     TenantNetwork.class);
         } catch (JsonSyntaxException e) {
             s_logger.error("reading response body failed", e);
@@ -188,7 +188,7 @@ public class SspClient {
             return null;
         }
         try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
+            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent(), "UTF-8"),
                     TenantPort.class);
         } catch (JsonSyntaxException e) {
             s_logger.error("reading response body failed", e);
@@ -228,7 +228,7 @@ public class SspClient {
             return null;
         }
         try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
+            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent(), "UTF-8"),
                     TenantPort.class);
         } catch (JsonSyntaxException e) {
             s_logger.error("reading response body failed", e);
