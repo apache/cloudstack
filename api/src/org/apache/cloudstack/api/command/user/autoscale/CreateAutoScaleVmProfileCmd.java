@@ -151,7 +151,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         }
         Account account = null;
         if (autoscaleUserId != null) {
-            User user = _entityMgr.findById(User.class, autoscaleUserId);
+            final User user = _entityMgr.findById(User.class, autoscaleUserId);
             account = _entityMgr.findById(Account.class, user.getAccountId());
         } else {
             account = CallContext.current().getCallingAccount();
@@ -167,21 +167,21 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         }
         if (otherDeployParams == null)
             return;
-        String[] keyValues = otherDeployParams.split("&"); // hostid=123, hypervisor=xenserver
-        for (String keyValue : keyValues) { // keyValue == "hostid=123"
-            String[] keyAndValue = keyValue.split("="); // keyValue = hostid, 123
+        final String[] keyValues = otherDeployParams.split("&"); // hostid=123, hypervisor=xenserver
+        for (final String keyValue : keyValues) { // keyValue == "hostid=123"
+            final String[] keyAndValue = keyValue.split("="); // keyValue = hostid, 123
             if (keyAndValue.length != 2) {
                 throw new InvalidParameterValueException("Invalid parameter in otherDeployParam : " + keyValue);
             }
-            String paramName = keyAndValue[0]; // hostid
-            String paramValue = keyAndValue[1]; // 123
+            final String paramName = keyAndValue[0]; // hostid
+            final String paramValue = keyAndValue[1]; // 123
             otherDeployParamMap.put(paramName, paramValue);
         }
     }
 
-    public HashMap<String, String> getDeployParamMap() {
+    public HashMap<String, Object> getDeployParamMap() {
         createOtherDeployParamMap();
-        HashMap<String, String> deployParams = new HashMap<String, String>(otherDeployParamMap);
+        final HashMap<String, Object> deployParams = new HashMap<String, Object>(otherDeployParamMap);
         deployParams.put("command", "deployVirtualMachine");
         deployParams.put("zoneId", zoneId.toString());
         deployParams.put("serviceOfferingId", serviceOfferingId.toString());
@@ -189,7 +189,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return deployParams;
     }
 
-    public String getOtherDeployParam(String param) {
+    public String getOtherDeployParam(final String param) {
         if (param == null) {
             return null;
         }
@@ -232,19 +232,19 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        AutoScaleVmProfile result = _entityMgr.findById(AutoScaleVmProfile.class, getEntityId());
-        AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
+        final AutoScaleVmProfile result = _entityMgr.findById(AutoScaleVmProfile.class, getEntityId());
+        final AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override
     public void create() throws ResourceAllocationException {
 
-        AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
+        final AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
         }

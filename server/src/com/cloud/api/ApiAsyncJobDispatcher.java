@@ -70,30 +70,30 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
         });
     }
 
-    protected void runJobInContext(AsyncJob job) {
+    protected void runJobInContext(final AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
-            Class<?> cmdClass = Class.forName(job.getCmd());
+            final Class<?> cmdClass = Class.forName(job.getCmd());
             cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
             cmdObj = ComponentContext.inject(cmdObj);
             cmdObj.configure();
             cmdObj.setJob(job);
 
-            Type mapType = new TypeToken<Map<String, String>>() {
+            final Type mapType = new TypeToken<Map<String, String>>() {
             }.getType();
-            Gson gson = ApiGsonHelper.getBuilder().create();
-            Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
+            final Gson gson = ApiGsonHelper.getBuilder().create();
+            final Map<String, Object> params = gson.fromJson(job.getCmdInfo(), mapType);
 
             // whenever we deserialize, the UserContext needs to be updated
-            String userIdStr = params.get("ctxUserId");
-            String acctIdStr = params.get("ctxAccountId");
+            final String userIdStr = (String) params.get("ctxUserId");
+            final String acctIdStr = (String) params.get("ctxAccountId");
             Long userId = null;
             Account accountObject = null;
 
             if (cmdObj instanceof BaseAsyncCreateCmd) {
-                BaseAsyncCreateCmd create = (BaseAsyncCreateCmd)cmdObj;
-                create.setEntityId(Long.parseLong(params.get("id")));
-                create.setEntityUuid(params.get("uuid"));
+                final BaseAsyncCreateCmd create = (BaseAsyncCreateCmd)cmdObj;
+                create.setEntityId(Long.parseLong((String) params.get("id")));
+                create.setEntityUuid((String) params.get("uuid"));
             }
 
             User user = null;
@@ -116,19 +116,19 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             } finally {
                 CallContext.unregister();
             }
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
                 s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
                 errorMsg = e.getMessage();
             } else {
-                ServerApiException sApiEx = (ServerApiException)e;
+                final ServerApiException sApiEx = (ServerApiException)e;
                 errorMsg = sApiEx.getDescription();
                 errorCode = sApiEx.getErrorCode().getHttpCode();
             }
 
-            ExceptionResponse response = new ExceptionResponse();
+            final ExceptionResponse response = new ExceptionResponse();
             response.setErrorCode(errorCode);
             response.setErrorText(errorMsg);
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
