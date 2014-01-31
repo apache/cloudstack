@@ -168,6 +168,18 @@
     <property name="name" value="MidoNetElement"/>
   </bean>
 
+  <!--
+    Stratosphere SSP support components
+  -->
+  <bean id="sspCredentialDaoImpl" class="org.apache.cloudstack.network.dao.SspCredentialDaoImpl"/>
+  <bean id="sspTenantDaoImpl" class="org.apache.cloudstack.network.dao.SspTenantDaoImpl"/>
+  <bean id="sspUuidDaoImpl" class="org.apache.cloudstack.network.dao.SspUuidDaoImpl"/>
+  <bean id="SspGuestNetworkGuru" class="org.apache.cloudstack.network.guru.SspGuestNetworkGuru">
+    <property name="name" value="SspGuestNetworkGuru"/>
+  </bean>
+  <bean id="StratosphereSsp" class="org.apache.cloudstack.network.element.SspElement">
+    <property name="name" value="StratosphereSsp"/>
+  </bean>
 
   <!--
     UCS support components
