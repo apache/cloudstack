@@ -378,15 +378,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
-                // remove template from vm_templates table
-                if (_tmpltDao.remove(template.getId())) {
-                    // Decrement the number of templates and total secondary storage
-                    // space used by the account
-                    Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
-                    _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
-                    _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(),
-                            ResourceType.secondary_storage.getOrdinal());
-                }
+                // Mark template as Inactive.
+                template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.update(template.getId(), template);
+
+                // Decrement the number of templates and total secondary storage
+                // space used by the account
+                Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
+                _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
+                _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
             }
         }
         return success;

@@ -1127,9 +1127,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
-        template.setState(VirtualMachineTemplate.State.Inactive);
-        _tmpltDao.update(template.getId(), template);
-
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
         return adapter.delete(profile);
@@ -1162,9 +1159,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (zoneId != null && (_dataStoreMgr.getImageStore(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
         }
-
-        template.setState(VirtualMachineTemplate.State.Inactive);
-        _tmpltDao.update(template.getId(), template);
 
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);

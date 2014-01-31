@@ -303,7 +303,7 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id
             left join
-        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image' and template_store_ref.destroyed=0
             left join
         `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id
             left join
