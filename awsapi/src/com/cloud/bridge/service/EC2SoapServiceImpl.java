@@ -1977,6 +1977,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
             DescribeAddressesResponseItemType item = new DescribeAddressesResponseItemType();
             item.setPublicIp(addr.getIpAddress());
             item.setInstanceId(addr.getAssociatedInstanceId());
+            item.setDomain("standard"); // Since VPC is not supported by AWSAPI default to 'standard'
             items.add(item);
         }
         DescribeAddressesResponseInfoType descAddrRespInfoType = new DescribeAddressesResponseInfoType();
