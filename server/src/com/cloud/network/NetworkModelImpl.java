@@ -1024,14 +1024,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
     
         for (NetworkOfferingServiceMapVO instance : map) {
-            Service service = Network.Service.getService(instance.getService());
+            String service = instance.getService();
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(service, providers);
+            serviceProviderMap.put(Service.getService(service), providers);
         }
     
         return serviceProviderMap;
@@ -1526,15 +1526,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public void checkNetworkPermissions(Account owner, Network network) {
-        if (network == null) {
-            throw new CloudRuntimeException("no network to check permissions for.");
-        }
         // Perform account permission check
         if (network.getGuestType() != Network.GuestType.Shared
                 || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if(networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() + ", network does not have an owner");
+                throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", network does not have an owner");
             if(owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT){
                 if(!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())){
                     throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", permission denied");
@@ -1548,7 +1545,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + ((network != null)? ((NetworkVO)network).getUuid() : "") + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
