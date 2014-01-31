@@ -21,7 +21,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +45,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.template.FtpTemplateUploader;
-import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.TemplateUploader;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
@@ -72,85 +70,15 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     private static class UploadJob {
         private final TemplateUploader tu;
-        private final String jobId;
-        private final String name;
-        private final ImageFormat format;
-        private String tmpltPath;
-        private String description;
-        private String checksum;
-        private Long accountId;
-        private String installPathPrefix;
-        private long templatesize;
-        private long id;
 
         public UploadJob(TemplateUploader tu, String jobId, long id, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix) {
             super();
             this.tu = tu;
-            this.jobId = jobId;
-            this.name = name;
-            this.format = format;
-            this.accountId = accountId;
-            this.description = descr;
-            this.checksum = cksum;
-            this.installPathPrefix = installPathPrefix;
-            this.templatesize = 0;
-            this.id = id;
-        }
-
-        public TemplateUploader getTd() {
-            return tu;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public String getChecksum() {
-            return checksum;
-        }
-
-        public UploadJob(TemplateUploader td, String jobId, UploadCommand cmd) {
-            this.tu = td;
-            this.jobId = jobId;
-            this.name = cmd.getName();
-            this.format = cmd.getFormat();
         }
 
         public TemplateUploader getTemplateUploader() {
             return tu;
-        }
-
-        public String getJobId() {
-            return jobId;
-        }
-
-        public String getTmpltName() {
-            return name;
-        }
-
-        public ImageFormat getFormat() {
-            return format;
-        }
-
-        public Long getAccountId() {
-            return accountId;
-        }
-
-        public long getId() {
-            return id;
-        }
-
-        public void setTmpltPath(String tmpltPath) {
-            this.tmpltPath = tmpltPath;
-        }
-
-        public String getTmpltPath() {
-            return tmpltPath;
-        }
-
-        public String getInstallPathPrefix() {
-            return installPathPrefix;
         }
 
         public void cleanup() {
@@ -163,30 +91,19 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             }
         }
 
-        public void setTemplatesize(long templatesize) {
-            this.templatesize = templatesize;
-        }
-
-        public long getTemplatesize() {
-            return templatesize;
-        }
     }
 
     public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
     private ExecutorService threadPool;
     private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
     private String parentDir;
-    private List<Processor> _processors;
-    private String publicTemplateRepo;
     private final String extractMountPoint = "/mnt/SecStorage/extractmnt";
     private StorageLayer _storage;
-    private int installTimeoutPerGig;
-    private boolean _sslCopy;
     private boolean hvm;
 
     @Override
     public String uploadPublicTemplate(long id, String url, String name, ImageFormat format, Long accountId, String descr, String cksum, String installPathPrefix,
-        String userName, String passwd, long templateSizeInBytes) {
+            String userName, String passwd, long templateSizeInBytes) {
 
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
@@ -253,24 +170,24 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     public static UploadVO.Status convertStatus(Status tds) {
         switch (tds) {
-            case ABORTED:
-                return UploadVO.Status.NOT_UPLOADED;
-            case UPLOAD_FINISHED:
-                return UploadVO.Status.UPLOAD_IN_PROGRESS;
-            case IN_PROGRESS:
-                return UploadVO.Status.UPLOAD_IN_PROGRESS;
-            case NOT_STARTED:
-                return UploadVO.Status.NOT_UPLOADED;
-            case RECOVERABLE_ERROR:
-                return UploadVO.Status.NOT_UPLOADED;
-            case UNKNOWN:
-                return UploadVO.Status.UNKNOWN;
-            case UNRECOVERABLE_ERROR:
-                return UploadVO.Status.UPLOAD_ERROR;
-            case POST_UPLOAD_FINISHED:
-                return UploadVO.Status.UPLOADED;
-            default:
-                return UploadVO.Status.UNKNOWN;
+        case ABORTED:
+            return UploadVO.Status.NOT_UPLOADED;
+        case UPLOAD_FINISHED:
+            return UploadVO.Status.UPLOAD_IN_PROGRESS;
+        case IN_PROGRESS:
+            return UploadVO.Status.UPLOAD_IN_PROGRESS;
+        case NOT_STARTED:
+            return UploadVO.Status.NOT_UPLOADED;
+        case RECOVERABLE_ERROR:
+            return UploadVO.Status.NOT_UPLOADED;
+        case UNKNOWN:
+            return UploadVO.Status.UNKNOWN;
+        case UNRECOVERABLE_ERROR:
+            return UploadVO.Status.UPLOAD_ERROR;
+        case POST_UPLOAD_FINISHED:
+            return UploadVO.Status.UPLOADED;
+        default:
+            return UploadVO.Status.UNKNOWN;
         }
     }
 
@@ -296,29 +213,29 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         TemplateUploader td = uj.getTemplateUploader();
         switch (cmd.getRequest()) {
-            case GET_STATUS:
-                break;
-            case ABORT:
-                td.stopUpload();
-                sleep();
-                break;
+        case GET_STATUS:
+            break;
+        case ABORT:
+            td.stopUpload();
+            sleep();
+            break;
             /*case RESTART:
             td.stopUpload();
             sleep();
             threadPool.execute(td);
             break;*/
-            case PURGE:
-                td.stopUpload();
-                answer =
+        case PURGE:
+            td.stopUpload();
+            answer =
                     new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
-                        getUploadTemplateSize(jobId));
-                jobs.remove(jobId);
-                return answer;
-            default:
-                break; // TODO
+                            getUploadTemplateSize(jobId));
+            jobs.remove(jobId);
+            return answer;
+        default:
+            break; // TODO
         }
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
-            getUploadTemplateSize(jobId));
+                getUploadTemplateSize(jobId));
     }
 
     @Override
@@ -331,14 +248,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         String user = null;
         String password = null;
         String jobId =
-            uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
-                cmd.getInstallPath(), user, password, cmd.getTemplateSizeInBytes());
+                uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
+                        cmd.getInstallPath(), user, password, cmd.getTemplateSizeInBytes());
         sleep();
-        if (jobId == null) {
-            return new UploadAnswer(null, 0, "Internal Error", com.cloud.storage.UploadVO.Status.UPLOAD_ERROR, "", "", 0);
-        }
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
-            getUploadTemplateSize(jobId));
+                getUploadTemplateSize(jobId));
     }
 
     @Override
@@ -435,13 +349,10 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     }
 
     private long getUploadTemplateSize(String jobId) {
-        UploadJob uj = jobs.get(jobId);
-        if (uj != null) {
-            return uj.getTemplatesize();
-        }
         return 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
@@ -466,20 +377,13 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
                 throw new ConfigurationException("Unable to instantiate " + value);
             }
         }
-        String useSsl = (String)params.get("sslcopy");
-        if (useSsl != null) {
-            _sslCopy = Boolean.parseBoolean(useSsl);
 
-        }
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             s_logger.info("UploadManager: starting additional services since we are inside system vm");
             startAdditionalServices();
             //blockOutgoingOnPrivate();
         }
-
-        value = (String)params.get("install.timeout.pergig");
-        this.installTimeoutPerGig = NumbersUtil.parseInt(value, 15 * 60) * 1000;
 
         value = (String)params.get("install.numthreads");
         final int numInstallThreads = NumbersUtil.parseInt(value, 10);
@@ -544,43 +448,43 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         s_logger.warn("UploadedBytes=" + tu.getUploadedBytes() + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
 
         switch (status) {
-            case ABORTED:
-            case NOT_STARTED:
-            case UNRECOVERABLE_ERROR:
-                // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
-                if (uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1) {
-                    uj.cleanup();
-                }
-                break;
-            case UNKNOWN:
-                return;
-            case IN_PROGRESS:
-                s_logger.info("Resuming jobId: " + jobId + ", status=" + status);
-                tu.setResume(true);
-                threadPool.execute(tu);
-                break;
-            case RECOVERABLE_ERROR:
-                threadPool.execute(tu);
-                break;
-            case UPLOAD_FINISHED:
-                tu.setUploadError("Upload success, starting install ");
-                String result = postUpload(jobId);
-                if (result != null) {
-                    s_logger.error("Failed post upload script: " + result);
-                    tu.setStatus(Status.UNRECOVERABLE_ERROR);
-                    tu.setUploadError("Failed post upload script: " + result);
-                } else {
-                    s_logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
-                    tu.setStatus(Status.POST_UPLOAD_FINISHED);
-                    tu.setUploadError("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
-                }
-                // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
-                if (uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1) {
-                    uj.cleanup();
-                }
-                break;
-            default:
-                break;
+        case ABORTED:
+        case NOT_STARTED:
+        case UNRECOVERABLE_ERROR:
+            // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
+            if (uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1) {
+                uj.cleanup();
+            }
+            break;
+        case UNKNOWN:
+            return;
+        case IN_PROGRESS:
+            s_logger.info("Resuming jobId: " + jobId + ", status=" + status);
+            tu.setResume(true);
+            threadPool.execute(tu);
+            break;
+        case RECOVERABLE_ERROR:
+            threadPool.execute(tu);
+            break;
+        case UPLOAD_FINISHED:
+            tu.setUploadError("Upload success, starting install ");
+            String result = postUpload(jobId);
+            if (result != null) {
+                s_logger.error("Failed post upload script: " + result);
+                tu.setStatus(Status.UNRECOVERABLE_ERROR);
+                tu.setUploadError("Failed post upload script: " + result);
+            } else {
+                s_logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
+                tu.setStatus(Status.POST_UPLOAD_FINISHED);
+                tu.setUploadError("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
+            }
+            // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
+            if (uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1) {
+                uj.cleanup();
+            }
+            break;
+        default:
+            break;
         }
     }
 
