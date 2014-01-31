@@ -69,11 +69,11 @@ public interface ProjectService {
 
     Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException;
 
-    boolean addAccountToProject(long projectId, String accountName, String email);
+    Project addAccountToProject(long projectId, String accountName, String email);
 
-    boolean deleteAccountFromProject(long projectId, String accountName);
+    Project deleteAccountFromProject(long projectId, String accountName);
 
-    boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
+    Project updateInvitation(long projectId, String accountName, String token, boolean accept);
 
     Project activateProject(long projectId);
 

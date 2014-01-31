@@ -77,9 +77,10 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName);
-        boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+        Project project = _projectService.deleteAccountFromProject(projectId, accountName);
+        if (project != null) {
+            ProjectResponse response = _responseGenerator.createProjectResponse(project);
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete account from the project");
