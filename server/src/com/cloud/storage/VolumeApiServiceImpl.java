@@ -1387,17 +1387,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volume = _volsDao.findByInstanceAndDeviceId(cmmd.getVirtualMachineId(), cmmd.getDeviceId()).get(0);
         }
 
+        // Check that the volume ID is valid
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
+        }
+
         Long vmId = null;
 
         if (cmmd.getVirtualMachineId() == null) {
             vmId = volume.getInstanceId();
         } else {
             vmId = cmmd.getVirtualMachineId();
-        }
-
-        // Check that the volume ID is valid
-        if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
         }
 
         // Permissions check
