@@ -619,6 +619,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
                 r.confSet("key", pool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -730,6 +731,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
                 r.confSet("key", pool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -840,6 +842,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             Rados r = new Rados(srcPool.getAuthUserName());
                             r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                             r.confSet("key", srcPool.getAuthSecret());
+                            r.confSet("client_mount_timeout", "30");
                             r.connect();
                             s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -877,12 +880,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             Rados rSrc = new Rados(srcPool.getAuthUserName());
                             rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                             rSrc.confSet("key", srcPool.getAuthSecret());
+                            rSrc.confSet("client_mount_timeout", "30");
                             rSrc.connect();
                             s_logger.debug("Succesfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                             Rados rDest = new Rados(destPool.getAuthUserName());
                             rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                             rDest.confSet("key", destPool.getAuthSecret());
+                            rDest.confSet("client_mount_timeout", "30");
                             rDest.connect();
                             s_logger.debug("Succesfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 
@@ -1062,6 +1067,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(destPool.getAuthUserName());
                 r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                 r.confSet("key", destPool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 

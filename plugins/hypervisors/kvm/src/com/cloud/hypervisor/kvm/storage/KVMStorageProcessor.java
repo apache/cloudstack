@@ -675,6 +675,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     Rados r = new Rados(primaryPool.getAuthUserName());
                     r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                     r.confSet("key", primaryPool.getAuthSecret());
+                    r.confSet("client_mount_timeout", "30");
                     r.connect();
                     s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -1095,6 +1096,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         Rados r = new Rados(primaryPool.getAuthUserName());
                         r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                         r.confSet("key", primaryPool.getAuthSecret());
+                        r.confSet("client_mount_timeout", "30");
                         r.connect();
                         s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
