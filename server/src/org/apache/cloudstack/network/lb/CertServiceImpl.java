@@ -53,18 +53,17 @@ import javax.crypto.NoSuchPaddingException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -213,7 +212,8 @@ public class CertServiceImpl implements CertService {
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                throw new InvalidParameterValueException("No certificate bound to loadbalancer id: " + lbRuleId);
+                s_logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                return certResponseList;
             }
 
             certVO = _sslCertDao.findById(lbCertMapRule.getCertId());
