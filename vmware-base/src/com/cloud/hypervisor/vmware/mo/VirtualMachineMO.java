@@ -248,12 +248,17 @@ public class VirtualMachineMO extends BaseMO {
             }
         });
 
-        boolean result = _context.getVimClient().waitForTask(morTask);
-        if (result) {
-            _context.waitForTaskProgressDone(morTask);
-            return true;
-        } else {
-            s_logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+            if (result) {
+                _context.waitForTaskProgressDone(morTask);
+                return true;
+            } else {
+                s_logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+        } finally {
+            // make sure to let VM question monitor exit
+            flags[0] = true;
         }
 
         return false;
