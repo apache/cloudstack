@@ -224,12 +224,12 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
 
-        _cidr = dbParams.get(Config.ControlCidr.toString());
+        _cidr = dbParams.get(Config.ControlCidr);
         if (_cidr == null) {
             _cidr = "169.254.0.0/16";
         }
 
-        _gateway = dbParams.get(Config.ControlGateway.toString());
+        _gateway = dbParams.get(Config.ControlGateway);
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }

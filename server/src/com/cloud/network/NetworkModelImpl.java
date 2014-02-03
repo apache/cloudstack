@@ -1017,14 +1017,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
 
         for (NetworkOfferingServiceMapVO instance : map) {
-            Service service = Network.Service.getService(instance.getService());
+            String service = instance.getService();
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(service, providers);
+            serviceProviderMap.put(Service.getService(service), providers);
         }
 
         return serviceProviderMap;
@@ -1533,9 +1533,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public void checkNetworkPermissions(Account owner, Network network) {
-        if (network == null) {
-            throw new CloudRuntimeException("no network to check permissions for.");
-        }
         // Perform account permission check
         if (network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
