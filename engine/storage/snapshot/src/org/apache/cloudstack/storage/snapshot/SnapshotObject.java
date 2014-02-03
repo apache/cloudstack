@@ -288,7 +288,10 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CopyCmdAnswer) answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
-                snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                if (snapshotTO.getPhysicalSize() != null) {
+                    // For S3 delta snapshot, physical size is currently not set
+                    snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }
