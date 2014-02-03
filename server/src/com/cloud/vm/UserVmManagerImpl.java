@@ -71,6 +71,7 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -5113,14 +5114,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
 
-        // For VMware hypervisor since the old root volume is replaced by the new root volume in storage, force expunge old root volume
+        // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
         if (vm.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.info("Expunging volume " + root.getId() + " from primary data store");
-            AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
-            try {
-                future.get();
-            } catch (Exception e) {
-                s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+            VolumeInfo volumeInStorage = volFactory.getVolume(root.getId());
+            if (volumeInStorage != null) {
+                s_logger.info("Expunging volume " + root.getId() + " from primary data store");
+                AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+                }
             }
         }
 
