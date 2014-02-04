@@ -67,8 +67,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -104,9 +102,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @Inject
     MessageBus _messageBus;
-
-    @Inject
-    NetworkDomainDao _networkDomainDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -221,9 +216,9 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         _messageBus.subscribe(EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
-                Pair<AclEntityType, Long> entity = (Pair<AclEntityType, Long>) obj;
-                if (entity != null) {
-                    addDomainWideResourceAccess(entity);
+                Map<String, Object> params = (Map<String, Object>) obj;
+                if (params != null) {
+                    addDomainWideResourceAccess(params);
                 }
             }
         });
@@ -231,20 +226,19 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return super.configure(name, params);
     }
 
-    private void addDomainWideResourceAccess(Pair<AclEntityType, Long> entity) {
+    private void addDomainWideResourceAccess(Map<String, Object> params) {
 
-        String entityType = entity.first().toString();
-        Long entityId = entity.second();
+        String entityType = (String) params.get(ApiConstants.ENTITY_TYPE);
+        Long entityId = (Long) params.get(ApiConstants.ENTITY_ID);
+        Long domainId = (Long) params.get(ApiConstants.DOMAIN_ID);
+        Boolean isRecursive = (Boolean) params.get(ApiConstants.SUBDOMAIN_ACCESS);
 
         if (AclEntityType.Network.toString().equals(entityType)) {
-            NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(entityId);
-            if (networkDomainMap != null) {
-                createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType,
-                        entityId, "listNetworks", AccessType.UseEntry, networkDomainMap.getDomainId(),
-                        networkDomainMap.isSubdomainAccess());
-            }
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType,
+                    entityId, "listNetworks", AccessType.UseEntry, domainId, isRecursive);
         } else if (AclEntityType.AffinityGroup.toString().equals(entityType)) {
-
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide affinityGroup", entityType,
+                    entityId, "listAffinityGroups", AccessType.UseEntry, domainId, isRecursive);
         }
 
     }

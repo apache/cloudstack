@@ -28,13 +28,17 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -50,6 +54,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -91,6 +96,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Inject
     DomainManager _domainMgr;
+
+    @Inject
+    MessageBus _messageBus;
 
     protected List<AffinityGroupProcessor> _affinityProcessors;
 
@@ -200,14 +208,23 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             public AffinityGroupVO doInTransaction(TransactionStatus status) {
                 AffinityGroupVO group =
                     new AffinityGroupVO(affinityGroupName, affinityGroupType, description, ownerFinal.getDomainId(), ownerFinal.getId(), aclTypeFinal);
-        _affinityGroupDao.persist(group);
+                _affinityGroupDao.persist(group);
 
                 if (domainId != null && aclTypeFinal == ACLType.Domain) {
-            boolean subDomainAccess = false;
-            subDomainAccess = processor.subDomainAccess();
-            AffinityGroupDomainMapVO domainMap = new AffinityGroupDomainMapVO(group.getId(), domainId, subDomainAccess);
-            _affinityGroupDomainMapDao.persist(domainMap);
-        }
+                    boolean subDomainAccess = false;
+                    subDomainAccess = processor.subDomainAccess();
+                    AffinityGroupDomainMapVO domainMap = new AffinityGroupDomainMapVO(group.getId(), domainId,
+                            subDomainAccess);
+                    _affinityGroupDomainMapDao.persist(domainMap);
+                    //send event for storing the domain wide resource access
+                    Map<String, Object> params = new HashMap<String, Object>();
+                    params.put(ApiConstants.ENTITY_TYPE, AclEntityType.AffinityGroup);
+                    params.put(ApiConstants.ENTITY_ID, group.getId());
+                    params.put(ApiConstants.DOMAIN_ID, domainId);
+                    params.put(ApiConstants.SUBDOMAIN_ACCESS, subDomainAccess);
+                    _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, PublishScope.LOCAL,
+                            params);
+                }
 
                 return group;
             }
