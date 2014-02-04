@@ -214,7 +214,7 @@ class CSConnection(object):
                 payload["signature"] = self.__sign(payload)
 
             #Verify whether protocol is "http", then call the request over http
-            if self.protocol == "http":
+            if self.protocol == "http" or self.protocol == "https":
                 self.logger.debug("Payload: %s" % str(payload))
                 if method == 'POST':
                     self.logger.debug("=======Sending POST Cmd : %s======="

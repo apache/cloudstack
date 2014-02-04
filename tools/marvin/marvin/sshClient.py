@@ -32,7 +32,7 @@ from cloudstackException import (
 import contextlib
 import logging
 from marvin.codes import (
-    SUCCESS, FAIL, INVALID_INPUT, EXCEPTION_OCCURRED
+    SUCCESS, FAILED, INVALID_INPUT, EXCEPTION_OCCURRED
     )
 from contextlib import closing
 
@@ -42,7 +42,7 @@ class SshClient(object):
     Added timeout flag for ssh connect calls.Default to 3.0 seconds
     '''
     def __init__(self, host, port, user, passwd, retries=20, delay=30,
-                 log_lvl=logging.INFO, keyPairFiles=None, timeout=10.0):
+                 log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0):
         self.host = None
         self.port = 22
         self.user = user
@@ -70,7 +70,7 @@ class SshClient(object):
             self.timeout = timeout
         if port is not None and port >= 0:
             self.port = port
-        if self.createConnection() == FAIL:
+        if self.createConnection() == FAILED:
             raise internalError("Connection Failed")
 
     def execute(self, command):
@@ -96,16 +96,16 @@ class SshClient(object):
         @Desc: Creates an ssh connection for
                retries mentioned,along with sleep mentioned
         @Output: SUCCESS on successful connection
-                 FAIL If connection through ssh failed
+                 FAILED If connection through ssh failed
         '''
-        ret = FAIL
+        ret = FAILED
         except_msg = ''
         while self.retryCnt >= 0:
             try:
-                self.logger.debug("SSH Connection: Host:%s User:%s\
-                                   Port:%s" %
-                                  (self.host, self.user, str(self.port)
-                                   ))
+                self.logger.debug("====Trying SSH Connection: Host:%s User:%s\
+                                   Port:%s RetryCnt:%s===" %
+                                  (self.host, self.user, str(self.port),
+                                   str(self.retryCnt)))
                 if self.keyPairFiles is None:
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,
@@ -113,14 +113,17 @@ class SshClient(object):
                                      password=self.passwd,
                                      timeout=self.timeout)
                 else:
+                    self.ssh.load_host_keys(self.keyPairFiles)
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,
                                      username=self.user,
                                      password=self.passwd,
                                      key_filename=self.keyPairFiles,
                                      timeout=self.timeout,
-                                     look_for_keys=False
+                                     look_for_keys=True
                                      )
+                self.logger.debug("===SSH to Host %s port : %s SUCCESSFUL==="
+                                  % (str(self.host), str(self.port)))
                 ret = SUCCESS
                 break
             except BadHostKeyException, e:
@@ -134,12 +137,13 @@ class SshClient(object):
             except Exception, e:
                 except_msg = GetDetailExceptionInfo(e)
             finally:
-                self.logger.exception("SshClient: "
-                                      "Exception under createConnection: %s"
-                                      % except_msg)
-                self.retryCnt = self.retryCnt - 1
-                if self.retryCnt == 0:
+                if self.retryCnt == 0 or ret == SUCCESS:
                     break
+                if except_msg != '':
+                    self.logger.\
+                        exception("SshClient: Exception under "
+                                  "createConnection: %s" % except_msg)
+                self.retryCnt = self.retryCnt - 1
                 time.sleep(self.delay)
         return ret
 
@@ -150,33 +154,26 @@ class SshClient(object):
                returns the result along with status code
         @Input: command to execute
         @Output: 1: status of command executed.
-                 Default to None
                  SUCCESS : If command execution is successful
-                 FAIL    : If command execution has failed
-                 EXCEPTION_OCCURRED: Exception occurred while executing
-                                     command
-                 INVALID_INPUT : If invalid value for command is passed
+                 FAILED    : If command execution has failed
                  2: stdin,stdout,stderr values of command output
         '''
-        ret = {"status": FAIL, "stdin": None, "stdout": None, "stderr": ''}
+        ret = {"status": FAILED, "stdin": None, "stdout": None,
+               "stderr": INVALID_INPUT}
         if command is None or command == '':
-            ret["status"] = INVALID_INPUT
             return ret
         try:
             status_check = 1
-            stdin, stdout, stderr = self.ssh.exec_command(command)
-            output = stdout.readlines()
-            errors = stderr.readlines()
-            inp = stdin.readlines()
-            ret["stdin"] = inp
-            ret["stdout"] = output
-            ret["stderr"] = errors
+            stdin, stdout, stderr = self.ssh.\
+                exec_command(command, timeout=self.timeout)
             if stdout is not None:
                 status_check = stdout.channel.recv_exit_status()
-            if status_check == 0:
-                ret["status"] = SUCCESS
+                if status_check == 0:
+                    ret["status"] = SUCCESS
+                ret["stdout"] = stdout.readlines()
+                if stderr is not None:
+                    ret["stderr"] = stderr.readlines()
         except Exception as e:
-            ret["status"] = EXCEPTION_OCCURRED
             ret["stderr"] = GetDetailExceptionInfo(e)
             self.logger.exception("SshClient: Exception under runCommand :%s" %
                                   GetDetailExceptionInfo(e))
@@ -194,12 +191,17 @@ class SshClient(object):
         except IOError, e:
             raise e
 
+    def __del__(self):
+        self.close()
+
     def close(self):
             if self.ssh is not None:
                 self.ssh.close()
+                self.ssh = None
 
 
 if __name__ == "__main__":
-    with contextlib.closing(SshClient("10.223.75.10", 22, "root",
-                                      "password")) as ssh:
-        print ssh.execute("ls -l")
+    with contextlib.closing(SshClient("127.0.0.1", 22, "root",
+                                      "asdf!@34")) as ssh:
+        ret = ssh.runCommand("ls -l")
+        print ret
