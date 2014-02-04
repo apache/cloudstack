@@ -23,17 +23,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.dao.VpcDao;
-import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -43,6 +41,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -606,7 +605,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         if (aclItem == null) {
             throw new InvalidParameterValueException("Unable to find ACL Item cannot be found");
@@ -635,7 +634,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd()
             : sourcePortEnd, sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action, number);
 
-        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType);
+        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType, newUUID);
     }
 
 }

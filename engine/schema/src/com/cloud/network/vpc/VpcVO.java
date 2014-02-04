@@ -31,6 +31,7 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name = "vpc")
 public class VpcVO implements Vpc {
+
     @Id
     @Column(name = "id")
     long id;
@@ -176,5 +177,9 @@ public class VpcVO implements Vpc {
     @Override
     public boolean isRestartRequired() {
         return restartRequired;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

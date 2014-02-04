@@ -66,9 +66,10 @@ public interface VpcService {
      * @param vpcId
      * @param vpcName
      * @param displayText
+     * @param customId TODO
      * @return
      */
-    public Vpc updateVpc(long vpcId, String vpcName, String displayText);
+    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId);
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call

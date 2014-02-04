@@ -241,4 +241,8 @@ public class NetworkACLItemVO implements NetworkACLItem {
     public void setAction(Action action) {
         this.action = action;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

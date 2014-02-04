@@ -24,6 +24,9 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,10 +43,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.Network;
@@ -228,7 +227,7 @@ public class NetworkACLManagerTest extends TestCase {
     public void testUpdateACLItem() throws Exception {
         Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
         Mockito.when(_networkACLItemDao.update(Matchers.anyLong(), Matchers.any(NetworkACLItemVO.class))).thenReturn(true);
-        assertNotNull(_aclMgr.updateNetworkACLItem(1L, "UDP", null, NetworkACLItem.TrafficType.Ingress, "Deny", 10, 22, 32, null, null));
+        assertNotNull(_aclMgr.updateNetworkACLItem(1L, "UDP", null, NetworkACLItem.TrafficType.Ingress, "Deny", 10, 22, 32, null, null, null));
     }
 
     @Test(expected = CloudRuntimeException.class)
