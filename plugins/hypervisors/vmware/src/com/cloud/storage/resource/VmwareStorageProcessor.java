@@ -1670,6 +1670,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
+            // strip off the extension since restoreVolumeFromSecStorage internally will append suffix there.
+            if (backedUpSnapshotUuid.endsWith(".ova")){
+                backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ova", "");
+            } else if (backedUpSnapshotUuid.endsWith(".ovf")){
+                backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
+            }            
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
             restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
 
