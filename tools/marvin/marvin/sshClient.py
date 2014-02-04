@@ -16,6 +16,14 @@
 # under the License.
 
 import paramiko
+from paramiko import (BadHostKeyException,
+                      AuthenticationException,
+                      SSHException,
+                      SSHClient,
+                      AutoAddPolicy,
+                      Transport,
+                      SFTPClient)
+import socket
 import time
 from cloudstackException import (
     internalError,
@@ -40,8 +48,8 @@ class SshClient(object):
         self.user = user
         self.passwd = passwd
         self.keyPairFiles = keyPairFiles
-        self.ssh = paramiko.SSHClient()
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.ssh = SSHClient()
+        self.ssh.set_missing_host_key_policy(AutoAddPolicy())
         self.logger = logging.getLogger('sshClient')
         self.retryCnt = 0
         self.delay = 0
@@ -60,7 +68,7 @@ class SshClient(object):
             self.delay = delay
         if timeout is not None and timeout > 0:
             self.timeout = timeout
-        if port is not None or port >= 0:
+        if port is not None and port >= 0:
             self.port = port
         if self.createConnection() == FAIL:
             raise internalError("Connection Failed")
@@ -91,6 +99,7 @@ class SshClient(object):
                  FAIL If connection through ssh failed
         '''
         ret = FAIL
+        except_msg = ''
         while self.retryCnt >= 0:
             try:
                 self.logger.debug("SSH Connection: Host:%s User:%s\
@@ -114,7 +123,20 @@ class SshClient(object):
                                      )
                 ret = SUCCESS
                 break
-            except Exception as se:
+            except BadHostKeyException, e:
+                except_msg = GetDetailExceptionInfo(e)
+            except AuthenticationException, e:
+                except_msg = GetDetailExceptionInfo(e)
+            except SSHException, e:
+                except_msg = GetDetailExceptionInfo(e)
+            except socket.error, e:
+                except_msg = GetDetailExceptionInfo(e)
+            except Exception, e:
+                except_msg = GetDetailExceptionInfo(e)
+            finally:
+                self.logger.exception("SshClient: "
+                                      "Exception under createConnection: %s"
+                                      % except_msg)
                 self.retryCnt = self.retryCnt - 1
                 if self.retryCnt == 0:
                     break
@@ -156,15 +178,17 @@ class SshClient(object):
         except Exception as e:
             ret["status"] = EXCEPTION_OCCURRED
             ret["stderr"] = GetDetailExceptionInfo(e)
+            self.logger.exception("SshClient: Exception under runCommand :%s" %
+                                  GetDetailExceptionInfo(e))
         finally:
-            self.logger.debug(" Host: %s Cmd: %s Output:%s Exception: %s" %
-                              (self.host, command, str(ret), ret["stderr"]))
+            self.logger.debug(" Host: %s Cmd: %s Output:%s" %
+                              (self.host, command, str(ret)))
             return ret
 
     def scp(self, srcFile, destPath):
-        transport = paramiko.Transport((self.host, int(self.port)))
+        transport = Transport((self.host, int(self.port)))
         transport.connect(username=self.user, password=self.passwd)
-        sftp = paramiko.SFTPClient.from_transport(transport)
+        sftp = SFTPClient.from_transport(transport)
         try:
             sftp.put(srcFile, destPath)
         except IOError, e:
