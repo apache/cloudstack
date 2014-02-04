@@ -1675,7 +1675,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ova", "");
             } else if (backedUpSnapshotUuid.endsWith(".ovf")){
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
-            }            
+            }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
             restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
 
