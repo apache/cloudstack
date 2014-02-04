@@ -1312,7 +1312,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (guestOsTypeName.toLowerCase().contains("windows")) {
             vmr.VCPUsMax = (long)vmSpec.getCpus();
         } else {
-            vmr.VCPUsMax = 32L;
+            // XenServer has a documented limit of 16 vcpus per vm
+            vmr.VCPUsMax = 2L * vmSpec.getCpus();
+            if (vmr.VCPUsMax > 16)
+            {
+                vmr.VCPUsMax = 16L;
+            }
         }
 
         vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
