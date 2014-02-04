@@ -56,7 +56,7 @@ public class Ip implements Serializable, Comparable<Ip> {
     }
     
     public boolean isIp4() {
-        return ip < Integer.MAX_VALUE;
+        return ip <= 2L * Integer.MAX_VALUE + 1;
     }
     
     public boolean isIp6() {
