@@ -46,8 +46,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.dao.NetworkAccountVO;
-import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -284,7 +282,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     listByAffinityGroup.done();
                     SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
                             sc.setParameters("affinityGroupId", affinityGroupIdFinal);
-        
+
                     _affinityGroupVMMapDao.lockRows(sc, null, true);
                     _affinityGroupVMMapDao.remove(sc);
                 }
