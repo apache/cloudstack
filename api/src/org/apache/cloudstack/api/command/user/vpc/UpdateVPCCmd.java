@@ -42,7 +42,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the id of the VPC")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC", required = true)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC")
     private String vpcName;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC")

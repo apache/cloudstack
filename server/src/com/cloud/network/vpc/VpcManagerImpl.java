@@ -776,7 +776,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // Verify input parameters
         VpcVO vpcToUpdate = _vpcDao.findById(vpcId);
         if (vpcToUpdate == null) {
-            throw new InvalidParameterValueException("Unable to find vpc offering " + vpcId);
+            throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
 
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);

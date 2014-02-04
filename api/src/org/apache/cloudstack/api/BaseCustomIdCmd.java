@@ -20,7 +20,7 @@ public abstract class BaseCustomIdCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.CUSTOM_ID,
                type = CommandType.STRING,
-               description = "an optional field, in case you want to set a custom id to the resource. Allowed to Root Admins only")
+ description = "an optional field, in case you want to set a custom id to the resource. Allowed to Root Admins only", since = "4.4")
     private String customId;
 
     public String getCustomId() {
