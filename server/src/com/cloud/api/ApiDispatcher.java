@@ -21,14 +21,16 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -97,6 +99,13 @@ public class ApiDispatcher {
                 }
             }
         }
+
+        if (cmd instanceof BaseAsyncCustomIdCmd) {
+            ((BaseAsyncCustomIdCmd)cmd).checkUuid();
+        } else if (cmd instanceof BaseCustomIdCmd) {
+            ((BaseCustomIdCmd)cmd).checkUuid();
+        }
+
         cmd.execute();
     }
 

@@ -148,7 +148,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     }
 
     @Override
-    public void checkUuid(String id, Class<?> cls) {
+    public void checkUuid() {
         if (this.getCustomId() != null) {
             _uuidMgr.checkUuid(this.getCustomId(), UserVm.class);
 

@@ -27,6 +27,6 @@ public abstract class BaseAsyncCustomIdCmd extends BaseAsyncCmd {
         return customId;
     }
 
-    public abstract void checkUuid(String id, Class<?> cls);
+    public abstract void checkUuid();
 
 }

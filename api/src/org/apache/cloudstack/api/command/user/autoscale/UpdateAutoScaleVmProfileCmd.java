@@ -147,7 +147,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     }
 
     @Override
-    public void checkUuid(String id, Class<?> cls) {
+    public void checkUuid() {
         if (this.getCustomId() != null) {
             _uuidMgr.checkUuid(this.getCustomId(), AutoScaleVmProfile.class);
         }
