@@ -160,11 +160,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    public static boolean encodeApiResponse = false;
-    public static String jsonContentType = "text/javascript";
-    public static String controlCharacters = "[\000-\011\013-\014\016-\037\177]"; // Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
-    @Inject
-    ApiDispatcher _dispatcher;
+    private static boolean encodeApiResponse = false;
+    private static String jsonContentType = "text/javascript";
+    private static String controlCharacters = "[\000-\011\013-\014\016-\037\177]"; // Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
+    @Inject ApiDispatcher _dispatcher;
 
     @Inject
     private AccountManager _accountMgr;
@@ -245,7 +244,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         }
 
-        encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
+        setEncodeApiResponse(Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key())));
         String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
         if (jsonType != null) {
             jsonContentType = jsonType;
@@ -383,7 +382,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
                     if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
-                        String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
+                        String errorString = "Unknown API command: " + command[0];
                         s_logger.warn(errorString);
                         auditTrailSb.append(" " + errorString);
                         throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, errorString);
@@ -1153,5 +1152,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
         _apiAccessCheckers = apiAccessCheckers;
+    }
+
+    public static boolean isEncodeApiResponse() {
+        return encodeApiResponse;
+    }
+
+    private static void setEncodeApiResponse(boolean encodeApiResponse) {
+        ApiServer.encodeApiResponse = encodeApiResponse;
+    }
+
+    public static String getJsonContentType() {
+        return jsonContentType;
     }
 }

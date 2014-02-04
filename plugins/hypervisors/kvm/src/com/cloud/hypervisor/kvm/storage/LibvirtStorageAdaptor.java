@@ -386,7 +386,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
 
         try {
-            StorageVol vol = this.getVolume(libvirtPool.getPool(), volumeUuid);
+            StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
             KVMPhysicalDisk disk;
             LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
@@ -471,7 +471,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     String targetPath = pdef.getTargetPath();
                     if (targetPath != null && targetPath.equals(path)) {
                         s_logger.debug("Storage pool utilizing path '" + path + "' already exists as pool " + poolname +
-                            ", undefining so we can re-define with correct name " + name);
+                                ", undefining so we can re-define with correct name " + name);
                         if (p.isPersistent() == 1) {
                             p.destroy();
                             p.undefine();
@@ -527,8 +527,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
                 throw new CloudRuntimeException("A pool matching this location already exists in libvirt, " +
-                    " but has a different UUID/Name. Cannot create new pool without first " + " removing it. Check for inactive pools via 'virsh pool-list --all'. " +
-                    error);
+                        " but has a different UUID/Name. Cannot create new pool without first " + " removing it. Check for inactive pools via 'virsh pool-list --all'. " +
+                        error);
             } else {
                 throw new CloudRuntimeException(error);
             }
@@ -556,7 +556,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         /*
          * Some storage pools, like RBD also have 'secret' information stored in libvirt
          * Destroy them if they exist
-        */
+         */
         try {
             s = conn.secretLookupByUUIDString(uuid);
         } catch (LibvirtException e) {
@@ -580,7 +580,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (e.toString().contains("exit status 16")) {
                 String targetPath = _mountPoint + File.separator + uuid;
                 s_logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble" + "unmounting the pool. Trying umount location " + targetPath +
-                    "again in a few seconds");
+                        "again in a few seconds");
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
                     s_logger.error("Succeeded in unmounting " + targetPath);
@@ -624,7 +624,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 IoCTX io = r.ioCtxCreate(pool.getSourceDir());
                 Rbd rbd = new Rbd(io);
-                rbd.create(name, size, this.rbdFeatures, this.rbdOrder);
+                rbd.create(name, size, rbdFeatures, rbdOrder);
 
                 r.ioCtxDestroy(io);
             } catch (RadosException e) {
@@ -702,7 +702,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             Connect conn = LibvirtConnection.getConnection();
 
-            StoragePool pool = conn.storagePoolLookupByUUIDString(poolUuid);
+            conn.storagePoolLookupByUUIDString(poolUuid);
 
             deleteStoragePool(poolUuid);
 
@@ -753,7 +753,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
-            StorageVol vol = this.getVolume(libvirtPool.getPool(), uuid);
+            StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
             deleteVol(libvirtPool, vol);
             vol.free();
             return true;
@@ -784,7 +784,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             So for RBD we don't create the image, but let qemu-img do that for us.
 
             We then create a KVMPhysicalDisk object that we can return
-        */
+         */
         try {
             if (destPool.getType() != StoragePoolType.RBD) {
                 disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
@@ -815,8 +815,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 QemuImg qemu = new QemuImg(timeout);
                 QemuImgFile srcFile;
                 QemuImgFile destFile =
-                    new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(),
-                        destPool.getAuthSecret(), disk.getPath()));
+                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(),
+                                destPool.getAuthSecret(), disk.getPath()));
                 destFile.setFormat(format);
 
                 if (srcPool.getType() != StoragePoolType.RBD) {
@@ -850,9 +850,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             if (srcImage.isOldFormat()) {
                                 /* The source image is RBD format 1, we have to do a regular copy */
                                 s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                    " is RBD format 1. We have to perform a regular copy (" + template.getVirtualSize() + " bytes)");
+                                        " is RBD format 1. We have to perform a regular copy (" + template.getVirtualSize() + " bytes)");
 
-                                rbd.create(disk.getName(), template.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
+                                rbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
                                 RbdImage destImage = rbd.open(disk.getName());
 
                                 s_logger.debug("Starting to copy " + srcImage.getName() + " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
@@ -862,10 +862,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 rbd.close(destImage);
                             } else {
                                 s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                    " is RBD format 2. We will perform a RBD clone using snapshot " + this.rbdTemplateSnapName);
+                                        " is RBD format 2. We will perform a RBD clone using snapshot " + rbdTemplateSnapName);
                                 /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
-                                rbd.clone(template.getName(), this.rbdTemplateSnapName, io, disk.getName(), this.rbdFeatures, this.rbdOrder);
-                                s_logger.debug("Succesfully cloned " + template.getName() + "@" + this.rbdTemplateSnapName + " to " + disk.getName());
+                                rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), rbdFeatures, rbdOrder);
+                                s_logger.debug("Succesfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
                             }
 
                             rbd.close(srcImage);
@@ -893,14 +893,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             Rbd dRbd = new Rbd(dIO);
 
                             s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
-                                destPool.getSourceDir());
-                            dRbd.create(disk.getName(), template.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
+                                    destPool.getSourceDir());
+                            dRbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
 
                             RbdImage srcImage = sRbd.open(template.getName());
                             RbdImage destImage = dRbd.open(disk.getName());
 
                             s_logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName() + " on cluster " +
-                                rDest.confGet("mon_host"));
+                                    rDest.confGet("mon_host"));
                             sRbd.copy(srcImage, destImage);
 
                             sRbd.close(srcImage);
@@ -923,7 +923,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         if (disk == null) {
-            throw new CloudRuntimeException("Failed to create " + disk.getPath() + " from template " + template.getName());
+            throw new CloudRuntimeException("Failed to create disk from template " + template.getName());
         }
 
         return disk;
@@ -942,7 +942,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             String[] vols = virtPool.listVolumes();
             for (String volName : vols) {
-                KVMPhysicalDisk disk = this.getPhysicalDisk(volName, pool);
+                KVMPhysicalDisk disk = getPhysicalDisk(volName, pool);
                 disks.add(disk);
             }
             return disks;
@@ -1036,11 +1036,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD)) {
             /**
-              * Qemu doesn't support writing to RBD format 2 directly, so we have to write to a temporary RAW file first
-              * which we then convert to RBD format 2.
-              *
-              * A HUGE performance gain can be achieved here if QCOW2 -> RBD format 2 can be done in one step
-              */
+             * Qemu doesn't support writing to RBD format 2 directly, so we have to write to a temporary RAW file first
+             * which we then convert to RBD format 2.
+             *
+             * A HUGE performance gain can be achieved here if QCOW2 -> RBD format 2 can be done in one step
+             */
             s_logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
             String sourceFile;
             boolean useTmpFile = false;
@@ -1069,7 +1069,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rbd rbd = new Rbd(io);
 
                 s_logger.debug("Creating RBD image " + name + " in Ceph pool " + destPool.getSourceDir() + " with RBD format 2");
-                rbd.create(name, disk.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
+                rbd.create(name, disk.getVirtualSize(), rbdFeatures, rbdOrder);
 
                 RbdImage image = rbd.open(name);
 
@@ -1098,10 +1098,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
 
                 /* Snapshot the image and protect that snapshot so we can clone (layer) from it */
-                s_logger.debug("Creating RBD snapshot " + this.rbdTemplateSnapName + " on image " + name);
-                image.snapCreate(this.rbdTemplateSnapName);
-                s_logger.debug("Protecting RBD snapshot " + this.rbdTemplateSnapName + " on image " + name);
-                image.snapProtect(this.rbdTemplateSnapName);
+                s_logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                image.snapCreate(rbdTemplateSnapName);
+                s_logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                image.snapProtect(rbdTemplateSnapName);
 
                 rbd.close(image);
                 r.ioCtxDestroy(io);
@@ -1125,8 +1125,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 it doesn't benefit us. It's better to keep the current code in place which works
              */
             srcFile =
-                new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(), srcPool.getSourcePort(), srcPool.getAuthUserName(), srcPool.getAuthSecret(),
-                    sourcePath));
+                    new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(), srcPool.getSourcePort(), srcPool.getAuthUserName(), srcPool.getAuthSecret(),
+                            sourcePath));
             srcFile.setFormat(sourceFormat);
             destFile = new QemuImgFile(destPath);
             destFile.setFormat(destFormat);

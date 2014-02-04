@@ -207,7 +207,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.AttachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.AttachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -268,7 +268,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DettachCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DettachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -485,7 +485,7 @@ namespace HypervResource
         {
             JObject ansObj = Utils.CreateCloudStackObject(ansType, ansContent);
             JArray answer = new JArray(ansObj);
-            logger.Info(ansObj.ToString());
+            logger.Info(Utils.CleanString(ansObj.ToString()));
             return answer;
         }
 
@@ -496,7 +496,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -603,7 +603,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PrimaryStorageDownloadCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
                 long size = 0;
@@ -871,7 +871,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -889,7 +889,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.ModifyStoragePoolCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 string localPath;
                 StoragePoolType poolType;
@@ -982,6 +982,24 @@ namespace HypervResource
             return true;
         }
 
+        // POST api/HypervResource/PlugNicCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.PlugNicCommand)]
+        public JContainer PlugNicCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.PlugNicCommand + cmd.ToString());
+                object ansContent = new
+                {
+                    result = true,
+                    details = "instead of plug, change he network settings",
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PlugNicAnswer);
+            }
+        }
+
 
         // POST api/HypervResource/CleanupNetworkRulesCmd
         [HttpPost]
@@ -1045,7 +1063,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.StartCommand + cmd.ToString()); // TODO: Security hole? VM data printed to log
+                logger.Info(CloudStackTypes.StartCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
 
@@ -1144,7 +1162,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CreateObjectCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CreateObjectCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
@@ -1264,6 +1282,88 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/ModifyVmVnicVlanCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.ModifyVmNicConfigCommand)]
+        public JContainer ModifyVmNicConfigCommand([FromBody]dynamic cmd)
+        {
+
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.ModifyVmNicConfigCommand + cmd.ToString());
+                bool result = false;
+                String vmName = cmd.vmName;
+                uint vlan = (uint)cmd.vlan;
+                string macAddress = cmd.macAddress;
+                wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
+
+                result = true;
+
+                object ansContent = new
+                {
+                    vmName = vmName,
+                    result = result,
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyVmNicConfigAnswer);
+            }
+
+        }
+
+        // POST api/HypervResource/GetVmConfigCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVmConfigCommand)]
+        public JContainer GetVmConfigCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVmConfigCommand + cmd.ToString());
+                bool result = false;
+                String vmName = cmd.vmName;
+                ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
+                List<NicDetails> nicDetails = new List<NicDetails>();
+                var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
+                NicDetails nic = null;
+                String[] macAddress = new String[nicSettingsViaVm.Length];
+                int index = 0;
+                foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+                {
+                    macAddress[index++] = item.Address;
+                }
+
+                index = 0;
+                var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
+                int vlanid = 1;
+                foreach (EthernetPortAllocationSettingData item in ethernetConnections)
+                {
+                    EthernetSwitchPortVlanSettingData vlanSettings = wmiCallsV2.GetVlanSettings(item);
+                    if (vlanSettings == null)
+                    {
+                        vlanid = -1;
+                    }
+                    else
+                    {
+                        vlanid = vlanSettings.AccessVlanId;
+                    }
+                    nic = new NicDetails(macAddress[index++], vlanid);
+                    nicDetails.Add(nic);
+                }
+
+                result = true;
+
+                object ansContent = new
+                {
+                    vmName = vmName,
+                    nics = nicDetails,
+                    result = result,
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmConfigAnswer);
+            }
+        }
+
+
+
         // POST api/HypervResource/GetVmStatsCommand
         [HttpPost]
         [ActionName(CloudStackTypes.GetVmStatsCommand)]
@@ -1315,7 +1415,7 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 // Log command *after* we've removed security details from the command.
-                logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CopyCommand + Utils.CleanString(cmd.ToString()));
 
                 bool result = false;
                 string details = null;
@@ -1691,7 +1791,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetStorageStatsCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetStorageStatsCommand + Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 string details = null;
                 long capacity = 0;
@@ -1921,6 +2021,7 @@ namespace HypervResource
                     string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
                         System.Environment.OSVersion.Version.Minor.ToString();
                     details.Add("product_version", productVersion);
+                    details.Add("rdp.server.port", 2179);
                 }
 
                 // Detect CPUs, speed, memory
@@ -1997,6 +2098,45 @@ namespace HypervResource
                 // Convert result to array for type correctness?
                 logger.Info(CloudStackTypes.StartupCommand + " result is " + cmdArray.ToString());
                 return cmdArray;
+            }
+        }
+
+        // POST api/HypervResource/GetVncPortCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVncPortCommand)]
+        public JContainer GetVncPortCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVncPortCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+                string address = null;
+                int port = -9;
+
+                try
+                {
+                    string vmName = (string)cmd.name;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    address = "instanceId=" + sys.Name ;
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.GetVncPortAnswer + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    address = address,
+                    port = port
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVncPortAnswer);
             }
         }
 

@@ -658,9 +658,21 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
+    /**
+     * Get a value from a result set.
+     *
+     * @param type
+     *            the expected type of the result
+     * @param rs
+     *            the result set
+     * @param index
+     *            the index of the column
+     * @return the result in the requested type
+     * @throws SQLException
+     */
     @DB()
     @SuppressWarnings("unchecked")
-    protected <M> M getObject(Class<M> type, ResultSet rs, int index) throws SQLException {
+    protected static <M> M getObject(Class<M> type, ResultSet rs, int index) throws SQLException {
         if (type == String.class) {
             byte[] bytes = rs.getBytes(index);
             if (bytes != null) {
@@ -681,12 +693,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return (M)new Integer(rs.getInt(index));
             }
         } else if (type == long.class) {
-            return (M)new Long(rs.getLong(index));
+            return (M) (Long) rs.getLong(index);
         } else if (type == Long.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Long(rs.getLong(index));
+                return (M) (Long) rs.getLong(index);
             }
         } else if (type == Date.class) {
             final Object data = rs.getDate(index);
@@ -696,44 +708,44 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return (M)DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index));
             }
         } else if (type == short.class) {
-            return (M)new Short(rs.getShort(index));
+            return (M) (Short) rs.getShort(index);
         } else if (type == Short.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Short(rs.getShort(index));
+                return (M) (Short) rs.getShort(index);
             }
         } else if (type == boolean.class) {
-            return (M)new Boolean(rs.getBoolean(index));
+            return (M) (Boolean) rs.getBoolean(index);
         } else if (type == Boolean.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Boolean(rs.getBoolean(index));
+                return (M) (Boolean) rs.getBoolean(index);
             }
         } else if (type == float.class) {
-            return (M)new Float(rs.getFloat(index));
+            return (M) (Float) rs.getFloat(index);
         } else if (type == Float.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Float(rs.getFloat(index));
+                return (M) (Float) rs.getFloat(index);
             }
         } else if (type == double.class) {
-            return (M)new Double(rs.getDouble(index));
+            return (M) (Double) rs.getDouble(index);
         } else if (type == Double.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Double(rs.getDouble(index));
+                return (M) (Double) rs.getDouble(index);
             }
         } else if (type == byte.class) {
-            return (M)new Byte(rs.getByte(index));
+            return (M) (Byte) rs.getByte(index);
         } else if (type == Byte.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Byte(rs.getByte(index));
+                return (M) (Byte) rs.getByte(index);
             }
         } else if (type == Calendar.class) {
             final Object data = rs.getDate(index);

@@ -880,7 +880,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
 
-        if (oldCount != newCount) {
+                if (!Long.valueOf(oldCount).equals(newCount)) {
                     s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                         " for account ID " + accountId + " is fixed during resource count recalculation.");
         }

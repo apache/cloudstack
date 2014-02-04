@@ -2226,7 +2226,7 @@
                                 }
                             }
 
-                            if (ipAddress.issourcenat) {
+                            if (ipAddress.vpcid != null && ipAddress.issourcenat) { //don't show Configuration(ipRules) tab on VPC sourceNAT IP
                                 disableIpRules = true;
                             }
                             
@@ -2382,6 +2382,7 @@
 
                                         listView: $.extend(true, {}, cloudStack.sections.instances, {
                                             listView: {
+                                                advSearchFields: null, // Not supported in dialogs right now due to display issues
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
@@ -2393,6 +2394,10 @@
                                                         pageSize: pageSize,
                                                         listAll: true
                                                     };
+
+                                                    if (args.filterBy.search.value) {
+                                                        data.keyword = args.filterBy.search.value;
+                                                    }
 
                                                     var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
 

@@ -49,6 +49,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -192,7 +193,9 @@ public abstract class AgentHookBase implements AgentHook {
 
         assert (ksBits != null);
         if (ksBits == null) {
-            s_logger.error("Could not find and construct a valid SSL certificate");
+            String msg = "Could not find and construct a valid SSL certificate";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
         cmd.setEncryptorPassword(getEncryptorPassword());

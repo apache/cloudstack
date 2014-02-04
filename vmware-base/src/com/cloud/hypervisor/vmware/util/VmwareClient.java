@@ -263,12 +263,12 @@ public class VmwareClient {
         props.add(propertyName);
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
 
-        T propertyValue = null;
+        Object propertyValue = null;
         if (objContent != null && objContent.size() > 0) {
             List<DynamicProperty> dynamicProperty = objContent.get(0).getPropSet();
             if (dynamicProperty != null && dynamicProperty.size() > 0) {
                 DynamicProperty dp = dynamicProperty.get(0);
-                propertyValue = (T)dp.getVal();
+                propertyValue = dp.getVal();
                 /*
                  * If object is ArrayOfXXX object, then get the XXX[] by
                  * invoking getXXX() on the object.
@@ -276,17 +276,17 @@ public class VmwareClient {
                  * ArrayOfManagedObjectReference.getManagedObjectReference()
                  * returns ManagedObjectReference[] array.
                  */
-                Class<? extends Object> dpCls = propertyValue.getClass();
+                Class dpCls = propertyValue.getClass();
                 String dynamicPropertyName = dpCls.getName();
                 if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
                     String methodName = "get" + dynamicPropertyName.substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
 
-                    Method getMorMethod = dpCls.getDeclaredMethod(methodName, (Class<?>)null);
-                    propertyValue = (T)getMorMethod.invoke(propertyValue, (Object[])null);
+                    Method getMorMethod = dpCls.getDeclaredMethod(methodName, null);
+                    propertyValue = getMorMethod.invoke(propertyValue, (Object[])null);
                 }
             }
         }
-        return propertyValue;
+        return (T)propertyValue;
     }
 
     private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws Exception {

@@ -671,6 +671,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
+        int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), 10);
+        Long nicWiseIpCount = _nicSecondaryIpDao.countByNicId(nicId);
+        if(nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
+            s_logger.error("Maximum Number of Ips \"vm.network.nic.max.secondary.ipaddresses = \"" + maxAllowedIpsPerNic + " per Nic has been crossed for the nic " +  nicId + ".");
+            throw new InsufficientAddressCapacityException("Maximum Number of Ips per Nic has been crossed.", Nic.class, nicId);
+        }
+
+
         s_logger.debug("Calling the ip allocation ...");
         String ipaddr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
@@ -3531,7 +3539,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)
-    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel,
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel,
             String simulatorLabel, String vlan, String hypervLabel) {
 
         // verify input parameters
@@ -3586,6 +3594,20 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel,
                     vlan, hypervLabel);
             pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
+
+            // For public traffic, get isolation method of physical network and update the public network accordingly
+            // each broadcast type will individually need to be qualified for support of public traffic
+            List<String> isolationMethods = network.getIsolationMethods();
+            if ((isolationMethods.size() == 1 && isolationMethods.get(0).toLowerCase().equals("vxlan"))
+                || (isolationMethod != null && isolationMethods.contains(isolationMethod) && isolationMethod.toLowerCase().equals("vxlan"))) {
+                // find row in networks table that is defined as 'Public', created when zone was deployed
+                NetworkVO publicNetwork = _networksDao.listByZoneAndTrafficType(network.getDataCenterId(),TrafficType.Public).get(0);
+                if (publicNetwork != null) {
+                    s_logger.debug("setting public network " + publicNetwork + " to broadcast type vxlan");
+                    publicNetwork.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+                    _networksDao.persist(publicNetwork);
+                }
+            }
 
             return pNetworktrafficType;
         } catch (Exception ex) {
@@ -3848,10 +3870,16 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
         if (network.getVpcId() != null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" + " to VPC.Specify vpcId to associate ip address to VPC");
         }
         return _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, true);

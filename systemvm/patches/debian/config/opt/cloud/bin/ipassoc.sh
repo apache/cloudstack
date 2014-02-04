@@ -254,10 +254,11 @@ remove_first_ip() {
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      remove_routing $1
+     sudo ip link set $ethDev down
      return 1
   fi
   remove_routing $1
-
+  sudo ip link set $ethDev down
   return $?
 }
 

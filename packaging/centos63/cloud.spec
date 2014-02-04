@@ -43,7 +43,7 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-1.6.0-openjdk-devel
+BuildRequires: java-1.7.0-openjdk-devel
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
@@ -60,7 +60,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: tomcat6
-Requires: java >= 1.6.0
+Requires: java >= 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -112,7 +112,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java >= 1.6.0
+Requires: java >= 1.7.0
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -138,7 +138,7 @@ The CloudStack agent for KVM hypervisors
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java >= 1.6.0
+Requires: java >= 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc

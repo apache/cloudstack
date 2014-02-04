@@ -1691,7 +1691,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Storage);
                     } catch (InvalidParameterValueException noStorage) {
                                 PhysicalNetworkTrafficTypeVO mgmtTraffic = _trafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Management);
-                                _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(), TrafficType.Storage.toString(), mgmtTraffic.getXenNetworkLabel(),
+                                _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(), TrafficType.Storage.toString(), "vlan", mgmtTraffic.getXenNetworkLabel(),
                                         mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(), mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan(),
                                         mgmtTraffic.getHypervNetworkLabel());
                                 s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network " + mgmtPhyNetwork.getId()
@@ -2643,8 +2643,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
             return NetUtils.supersetOrSubset.neitherSubetNorSuperset;
-        } else if (newVlanGateway == null || newVlanGateway == null) {
-            throw new InvalidParameterValueException("either both netmask and gateway should be passed or both should me omited.");
+        } else if (newVlanGateway == null || newVlanNetmask == null) {
+            throw new InvalidParameterValueException(
+                    "either both netmask and gateway should be passed or both should me omited.");
         } else {
             if (!NetUtils.sameSubnet(startIP, newVlanGateway, newVlanNetmask)) {
                 throw new InvalidParameterValueException("The start ip and gateway do not belong to the same subnet");
@@ -4295,7 +4296,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean isOfferingForVpc(NetworkOffering offering) {
-        boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.VPCVirtualRouter);
+        boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.VPCVirtualRouter) ||
+                              _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.JuniperContrailVpcRouter);
+
         return vpcProvider;
     }
 

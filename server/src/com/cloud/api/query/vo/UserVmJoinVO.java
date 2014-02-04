@@ -36,8 +36,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -50,10 +50,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private long id;
 
     @Column(name = "name", updatable = false, nullable = false, length = 255)
-    private String name = null;
+    private final String name = null;
 
     @Column(name = "display_name", updatable = false, nullable = false, length = 255)
-    private String displayName = null;
+    private final String displayName = null;
 
     @Column(name = "account_id")
     private long accountId;
@@ -62,7 +62,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String accountUuid;
 
     @Column(name = "account_name")
-    private String accountName = null;
+    private final String accountName = null;
 
     @Column(name = "account_type")
     private short accountType;
@@ -74,10 +74,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String domainUuid;
 
     @Column(name = "domain_name")
-    private String domainName = null;
+    private final String domainName = null;
 
     @Column(name = "domain_path")
-    private String domainPath = null;
+    private final String domainPath = null;
 
     @Column(name = "instance_group_id")
     private long instanceGroupId;
@@ -99,7 +99,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
      */
     @Enumerated(value = EnumType.STRING)
     @Column(name = "state", updatable = true, nullable = false, length = 32)
-    private State state = null;
+    private final State state = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -122,10 +122,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "ha_enabled", updatable = true, nullable = true)
     private boolean haEnabled;
-
-    @Encrypt
-    @Column(name = "vnc_password", updatable = true, nullable = false, length = 255)
-    protected String vncPassword;
 
     @Column(name = "limit_cpu_use", updatable = true, nullable = true)
     private boolean limitCpuUse;
@@ -155,7 +151,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String dataCenterUuid;
 
     @Column(name = "data_center_name")
-    private String dataCenterName = null;
+    private final String dataCenterName = null;
 
     @Column(name = "security_group_enabled")
     private boolean securityGroupEnabled;
@@ -240,7 +236,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String volumeUuid;
 
     @Column(name = "volume_device_id")
-    private Long volumeDeviceId = null;
+    private final Long volumeDeviceId = null;
 
     @Column(name = "volume_type")
     @Enumerated(EnumType.STRING)
@@ -539,10 +535,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         return haEnabled;
     }
 
-    public String getVncPassword() {
-        return vncPassword;
-    }
-
     public String getPrivateIpAddress() {
         return privateIpAddress;
     }
@@ -756,9 +748,11 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     public String getDetail(String name) {
-        assert (details != null) : "Did you forget to load the details?";
+        if (details == null) {
+            throw new CloudRuntimeException("No details to get. Did you forget to load the details?");
+        }
 
-        return details != null ? details.get(name) : null;
+        return details.get(name);
     }
 
     public String getUserData() {

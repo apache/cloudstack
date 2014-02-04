@@ -81,6 +81,12 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.ProjectVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcProvisioningService;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
@@ -132,6 +138,12 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Inject
     UserVmDao _vmDao;
     @Inject
+    VpcOfferingDao _vpcOffDao;
+    @Inject
+    VpcProvisioningService _vpcProvSvc;
+    @Inject
+    VpcDao _vpcDao;
+    @Inject
     NetworkACLDao _networkAclDao;
 
     private static final Logger s_logger = Logger.getLogger(ContrailManager.class);
@@ -141,6 +153,9 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     private NetworkOffering _offering;
     private NetworkOffering _routerOffering;
     private NetworkOffering _routerPublicOffering;
+    private NetworkOffering _vpcRouterOffering;
+    private VpcOffering _vpcOffering;
+
     private Timer _dbSyncTimer;
     private int _dbSyncInterval = DB_SYNC_INTERVAL_DEFAULT;
     private final String configuration = "contrail.properties";
@@ -175,7 +190,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         return _database;
     }
 
-    private NetworkOffering LocatePublicNetworkOffering(String offeringName,
+    private NetworkOffering locatePublicNetworkOffering(String offeringName,
                                            String offeringDisplayText, Provider provider) {
         List<? extends NetworkOffering> offerList = _configService.listNetworkOfferings(TrafficType.Public, false);
         for (NetworkOffering offer: offerList) {
@@ -210,7 +225,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         return _networkOfferingDao.findById(id);
     }
 
-    private NetworkOffering LocateNetworkOffering(String offeringName,
+    private NetworkOffering locateNetworkOffering(String offeringName,
                                            String offeringDisplayText, Provider provider) {
         List<? extends NetworkOffering> offerList = _configService.listNetworkOfferings(TrafficType.Guest, false);
         for (NetworkOffering offer : offerList) {
@@ -237,6 +252,38 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         long id = voffer.getId();
         _networkOfferingDao.update(id, voffer);
         return _networkOfferingDao.findById(id);
+    }
+
+    private VpcOffering locateVpcOffering() {
+        VpcOffering vpcOffer = _vpcOffDao.findByUniqueName(juniperVPCOfferingName);
+        if (vpcOffer != null) {
+            if (((VpcOfferingVO)vpcOffer).getState() == VpcOffering.State.Enabled) {
+                return vpcOffer;
+            }
+            ((VpcOfferingVO)vpcOffer).setState(VpcOffering.State.Enabled);
+            long id = vpcOffer.getId();
+            _vpcOffDao.update(id, (VpcOfferingVO)vpcOffer);
+            return vpcOffer;
+        }
+        Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();
+        List<String> providerSet = new ArrayList<String>();
+        providerSet.add(Provider.JuniperContrailVpcRouter.getName());
+        final List<String> services = new ArrayList<String>();
+        services.add(Service.Connectivity.getName());
+        services.add(Service.Dhcp.getName());
+        services.add(Service.NetworkACL.getName());
+        services.add(Service.StaticNat.getName());
+        services.add(Service.SourceNat.getName());
+        services.add(Service.Gateway.getName());
+
+        for (String svc: services) {
+            serviceProviderMap.put(svc, providerSet);
+        }
+        vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null);
+        ((VpcOfferingVO)vpcOffer).setState(VpcOffering.State.Enabled);
+        long id = vpcOffer.getId();
+        _vpcOffDao.update(id, (VpcOfferingVO)vpcOffer);
+        return _vpcOffDao.findById(id);
     }
 
     private NetworkOffering EnableNetworkOffering(long id) {
@@ -281,10 +328,13 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
         _controller = new ModelController(this, _api, _vmDao, _networksDao, _nicDao, _vlanDao, _ipAddressDao);
 
-        _routerOffering = LocateNetworkOffering(routerOfferingName, routerOfferingDisplayText,
+        _routerOffering = locateNetworkOffering(routerOfferingName, routerOfferingDisplayText,
                                                                   Provider.JuniperContrailRouter);
-        _routerPublicOffering = LocatePublicNetworkOffering(routerPublicOfferingName, routerPublicOfferingDisplayText,
+        _routerPublicOffering = locatePublicNetworkOffering(routerPublicOfferingName, routerPublicOfferingDisplayText,
                                                                   Provider.JuniperContrailRouter);
+        _vpcRouterOffering = locateNetworkOffering(vpcRouterOfferingName, vpcRouterOfferingDisplayText,
+                                                                  Provider.JuniperContrailVpcRouter);
+        _vpcOffering = locateVpcOffering();
 
         _eventHandler.subscribe();
 
@@ -301,6 +351,16 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Override
     public NetworkOffering getRouterOffering() {
         return _routerOffering;
+    }
+
+    @Override
+    public NetworkOffering getVpcRouterOffering() {
+        return _vpcRouterOffering;
+    }
+
+    @Override
+    public VpcOffering getVpcOffering() {
+        return _vpcOffering;
     }
 
     @Override
@@ -465,7 +525,8 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     public boolean isManagedPhysicalNetwork(Network network) {
         List<PhysicalNetworkVO> net_list = _physicalNetworkDao.listByZone(network.getDataCenterId());
         for (PhysicalNetworkVO phys : net_list) {
-            if (_physProviderDao.findByServiceProvider(phys.getId(), Network.Provider.JuniperContrailRouter.getName()) != null) {
+            if(_physProviderDao.findByServiceProvider(phys.getId(), Provider.JuniperContrailRouter.getName()) != null ||
+               _physProviderDao.findByServiceProvider(phys.getId(), Provider.JuniperContrailVpcRouter.getName()) != null) {
                 return true;
             }
         }
@@ -564,6 +625,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         SearchCriteria<NetworkVO> sc = searchBuilder.create();
         List<Long> offerings = new ArrayList<Long>();
         offerings.add(getRouterOffering().getId());
+        offerings.add(getVpcRouterOffering().getId());
         offerings.add(getPublicRouterOffering().getId());
         sc.setParameters("networkOfferingId", offerings.toArray());
 
@@ -585,9 +647,11 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
         List<PhysicalNetworkVO> phys_list = _physicalNetworkDao.listAll();
         final String provider = Network.Provider.JuniperContrailRouter.getName();
+        final String vpcProvider = Provider.JuniperContrailVpcRouter.getName();
         for (Iterator<PhysicalNetworkVO> iter = phys_list.iterator(); iter.hasNext();) {
             PhysicalNetworkVO phys = iter.next();
-            if (_physProviderDao.findByServiceProvider(phys.getId(), provider) != null) {
+            if (_physProviderDao.findByServiceProvider(phys.getId(), provider) != null ||
+                _physProviderDao.findByServiceProvider(phys.getId(), vpcProvider) != null) {
                 List<NetworkVO> infraNets = new ArrayList<NetworkVO>();
                 findInfrastructureNetworks(phys, infraNets);
                 for (NetworkVO net : infraNets) {
@@ -612,9 +676,50 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     }
 
     @Override
+    public List<VpcVO> findManagedVpcs() {
+        SearchBuilder<VpcVO> searchBuilder = _vpcDao.createSearchBuilder();
+        searchBuilder.and("vpcOffering", searchBuilder.entity().getVpcOfferingId(), Op.EQ);
+        SearchCriteria<VpcVO> sc = searchBuilder.create();
+        sc.setParameters("vpcOffering", getVpcOffering().getId());
+        List<VpcVO> vpcs = _vpcDao.search(sc, null);
+        if (vpcs == null || vpcs.size() == 0) {
+            s_logger.debug("no vpcs found");
+            return null;
+        }
+        return vpcs;
+    }
+
+    @Override
     public List<NetworkACLVO> findManagedACLs() {
-        /* contrail vpc is not yet implemented */
-        return null;
+        List<VpcVO> vpcs = findManagedVpcs();
+        if (vpcs == null || vpcs.isEmpty()) {
+            return null;
+        }
+        List<Long> vpcIds = new ArrayList<Long>();
+        /* default-allow, default-deny ACLs will be under vpcId '0', so include it*/
+        vpcIds.add((long)0);
+        for (VpcVO vpc:vpcs) {
+            vpcIds.add(vpc.getId());
+        }
+        SearchBuilder<NetworkACLVO> searchBuilder = _networkAclDao.createSearchBuilder();
+        searchBuilder.and("vpcId", searchBuilder.entity().getVpcId(), Op.IN);
+        SearchCriteria<NetworkACLVO> sc = searchBuilder.create();
+        sc.setParameters("vpcId", vpcIds.toArray());
+        List<NetworkACLVO> acls = _networkAclDao.search(sc, null);
+        if (acls == null || acls.size() == 0) {
+            s_logger.debug("no acls found");
+            return null;
+        }
+        /* only return if acl is associated to any network */
+        List<NetworkACLVO> jnprAcls = new ArrayList<NetworkACLVO>();
+        for (NetworkACLVO acl:acls) {
+            List<NetworkVO> nets = _networksDao.listByAclId(acl.getId());
+            if (nets == null || nets.isEmpty()) {
+                continue;
+            }
+            jnprAcls.add(acl);
+        }
+        return jnprAcls;
     }
 
     /*

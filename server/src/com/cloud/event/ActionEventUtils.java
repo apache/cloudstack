@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -40,6 +41,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.projects.Project;
 import com.cloud.utils.component.ComponentContext;
 
 public class ActionEventUtils {
@@ -47,6 +50,7 @@ public class ActionEventUtils {
 
     private static EventDao s_eventDao;
     private static AccountDao s_accountDao;
+    private static ProjectDao s_projectDao;
     protected static UserDao s_userDao;
     protected static EventBus s_eventBus = null;
 
@@ -62,6 +66,8 @@ public class ActionEventUtils {
     AccountDao accountDao;
     @Inject
     UserDao userDao;
+    @Inject
+    ProjectDao projectDao;
 
     public ActionEventUtils() {
     }
@@ -71,6 +77,7 @@ public class ActionEventUtils {
         s_eventDao = eventDao;
         s_accountDao = accountDao;
         s_userDao = userDao;
+        s_projectDao = projectDao;
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description) {
@@ -181,9 +188,10 @@ public class ActionEventUtils {
         }
 
         org.apache.cloudstack.framework.events.Event event =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), null);
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
+        Project project = s_projectDao.findByProjectAccountId(accountId);
         Account account = s_accountDao.findById(accountId);
         User user = s_userDao.findById(userId);
         // if account has been deleted, this might be called during cleanup of resources and results in null pointer
@@ -191,6 +199,8 @@ public class ActionEventUtils {
             return;
         if (user == null)
             return;
+        if (project != null)
+            eventDescription.put("project", project.getUuid());
         eventDescription.put("user", user.getUuid());
         eventDescription.put("account", account.getUuid());
         eventDescription.put("event", eventType);
@@ -233,6 +243,8 @@ public class ActionEventUtils {
         else if (eventType.startsWith("USER."))
         {
             return User.class;
+        }else if (eventType.startsWith("VM.")){
+            return VirtualMachine.class;
         }
 
         return null;

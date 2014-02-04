@@ -343,7 +343,7 @@ public class AwtRdpKeyboardAdapter extends BaseElement {
 
         default:
             System.err.println("Key is not mapped: " + event + ".");
-            return 57; // Space
+            return event.getKeyCode();
         }
     }
 

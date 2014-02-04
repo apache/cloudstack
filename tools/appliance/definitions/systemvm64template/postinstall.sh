@@ -68,8 +68,9 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   # ipcalc
   apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  apt-get update
   # java
-  apt-get --no-install-recommends -q -y --force-yes install  default-jre-headless
+  apt-get --no-install-recommends -q -y --force-yes install  openjdk-7-jre-headless
 
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections

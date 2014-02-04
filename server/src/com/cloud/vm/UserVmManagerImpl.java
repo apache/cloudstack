@@ -453,7 +453,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected boolean _dailyOrHourly = false;
     private int capacityReleaseInterval;
 
-    protected String _name;
     protected String _instance;
     protected String _zone;
     protected boolean _instanceNameFlag;
@@ -2969,6 +2968,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getEntityId();
         Long hostId = cmd.getHostId();
         UserVmVO vm = _vmDao.findById(vmId);
+        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
         try {
@@ -3754,7 +3754,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             collectVmDiskStatistics(uservm);
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
         return _vmDao.findById(vmId);
+        } else {
+            return vmInstance;
+        }
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
@@ -3825,13 +3830,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //if hosts are dedicated to different account/domains, raise an alert
         if (srcExplDedicated && destExplDedicated) {
-            if ((accountOfDedicatedHost(srcHost) != null) && (accountOfDedicatedHost(srcHost) != accountOfDedicatedHost(destHost))) {
+            if (!((accountOfDedicatedHost(srcHost) == null) || (accountOfDedicatedHost(srcHost).equals(accountOfDedicatedHost(destHost))))) {
                 String msg = "VM is being migrated from host " + srcHost.getName() + " explicitly dedicated to account " + accountOfDedicatedHost(srcHost) + " to host "
                         + destHost.getName() + " explicitly dedicated to account " + accountOfDedicatedHost(destHost);
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
                 s_logger.warn(msg);
             }
-            if ((domainOfDedicatedHost(srcHost) != null) && (domainOfDedicatedHost(srcHost) != domainOfDedicatedHost(destHost))) {
+            if (!((domainOfDedicatedHost(srcHost) == null) || (domainOfDedicatedHost(srcHost).equals(domainOfDedicatedHost(destHost))))) {
                 String msg = "VM is being migrated from host " + srcHost.getName() + " explicitly dedicated to domain " + domainOfDedicatedHost(srcHost) + " to host "
                         + destHost.getName() + " explicitly dedicated to domain " + domainOfDedicatedHost(destHost);
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);

@@ -94,7 +94,22 @@ public class Networks {
                 return uri.getSchemeSpecificPart();
             }
         },
-        Mido("mido", String.class), Pvlan("pvlan", String.class), Vxlan("vxlan", Long.class), UnDecided(null, null), OpenDaylight("opendaylight", String.class);
+        Mido("mido", String.class), Pvlan("pvlan", String.class),
+        Vxlan("vxlan", Long.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("vxlan://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException(
+                            "Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
+        UnDecided(null, null), OpenDaylight("opendaylight", String.class);
 
         private final String scheme;
         private final Class<?> type;

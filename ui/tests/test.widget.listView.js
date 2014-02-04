@@ -86,4 +86,160 @@
             equal($field.html(), v.label, k + '-> Has correct label');
         });
     });
+
+    test('Data loading state', function() {
+        var $listView = listView();
+
+        equal($listView.find('table.body tr.loading').size(), 1, 'Row has loading state');
+        equal($listView.find('table.body tr.loading td.loading.icon').size(), 1, 'Row cell has loading icon');
+    });
+
+    asyncTest('Data provider: basic', function() {
+        expect(3);
+        var $listView = listView({
+            listView: {
+                fields: {
+                    fieldA: { label: 'TestFieldA' },
+                    fieldB: { label: 'TestFieldB' }
+                },
+                dataProvider: function(args) {
+                    args.response.success({ data: [] });
+
+                    ok(true, 'Data provider called');
+                    start();
+                }
+            }
+        });
+
+        equal($listView.find('.data-table table.body tbody tr.empty td').size(), 1, 'Body table has empty table row');
+        equal($listView.find('.data-table table.body tbody tr.empty td').html(), 'label.no.data', 'Empty contents notice displayed');
+    });
+
+    asyncTest('Data provider: load data', function() {
+        var $listView = listView({
+            listView: {
+                fields: {
+                    fieldA: { label: 'TestFieldA' },
+                    fieldB: { label: 'TestFieldB' }
+                },
+                dataProvider: function(args) {
+                    args.response.success({
+                        data: [
+                            { fieldA: 'FieldDataA', fieldB: 'FieldDataB' }
+                        ]
+                    });
+
+                    start();
+                }
+            }
+        });
+
+        equal($listView.find('table.body tbody tr').size(), 1, 'Body table has table row');
+        equal($listView.find('table.body tbody tr td').size(), 2, 'Body table has table cells');
+        equal($listView.find('table.body tbody tr td.fieldA > span').html(), 'FieldDataA', 'FieldDataA content present');
+        equal($listView.find('table.body tbody tr td.fieldB > span').html(), 'FieldDataB', 'FieldDataB content present');
+    });
+
+    asyncTest('Data provider: multiple rows of data', function() {
+        var testData = [
+            { fieldA: 'FieldDataA1', fieldB: 'FieldDataB1' },
+            { fieldA: 'FieldDataA2', fieldB: 'FieldDataB2' },
+            { fieldA: 'FieldDataA3', fieldB: 'FieldDataB3' }
+        ];
+
+        var $listView = listView({
+            listView: {
+                fields: {
+                    fieldA: { label: 'TestFieldA' },
+                    fieldB: { label: 'TestFieldB' }
+                },
+                dataProvider: function(args) {
+                    args.response.success({
+                        data: testData
+                    });
+
+                    start();
+                }
+            }
+        });
+
+        equal($listView.find('table.body tbody tr').size(), 3, 'Body table has correct # of table rows');
+
+        $(testData).map(function(index, data) {
+            var $tr = $listView.find('table.body tbody tr').filter(function() {
+                return $(this).index() === index;
+            });
+
+            equal($tr.find('td.fieldA > span').html(), 'FieldDataA' + (index + 1), 'FieldDataA' + (index + 1) + ' present');
+            equal($tr.find('td.fieldB > span').html(), 'FieldDataB' + (index + 1), 'FieldDataB' + (index + 1) + ' present');
+        });
+    });
+
+    test('Field pre-filter', function() {
+        var $listView = listView({
+            listView: {
+                fields: {
+                    fieldA: { label: 'TestFieldA' },
+                    fieldB: { label: 'TestFieldB' },
+                    fieldHidden: { label: 'TestFieldHidden' }
+                },
+                preFilter: function(args) {
+                    return ['fieldHidden'];
+                },
+                dataProvider: function(args) {
+                    args.response.success({
+                        data: [
+                            { fieldA: 'FieldDataA', fieldB: 'FieldDataB', fieldHidden: 'FieldDataHidden' }
+                        ]
+                    });
+
+                    start();
+                }
+            }
+        });
+
+        equal($listView.find('table tr th').size(), 2, 'Correct number of header columns present');
+        equal($listView.find('table.body tbody tr td').size(), 2, 'Correct number of data body columns present');
+        ok(!$listView.find('table.body tbody td.fieldHidden').size(), 'Hidden field not present');
+    });
+
+    test('Filter dropdown', function() {
+        var $listView = listView({
+            listView: {
+                fields: {
+                    state: { label: 'State' }
+                },
+                filters: {
+                    on: { label: 'FilterOnLabel' },
+                    off: { label: 'FilterOffLabel' }
+                },
+                dataProvider: function(args) {
+                    var filterBy = args.filterBy.kind;
+                    var data = filterBy === 'on' ? [{ state: 'on' }] : [{ state: 'off' }];
+
+                    args.response.success({
+                        data: data
+                    });
+
+                    start();
+                }
+            }
+        });
+        
+        var $filters = $listView.find('.filters select');
+
+        var testFilterDropdownContent = function() {
+            equal($filters.find('option').size(), 2, 'Correct # of filters present');
+            equal($filters.find('option:first').html(), 'FilterOnLabel', 'Filter on label present');
+            equal($filters.find('option:last').html(), 'FilterOffLabel', 'Filter off label present');
+        };
+
+        testFilterDropdownContent();
+        equal($filters.find('option').val(), 'on', 'Correct default filter active');
+        equal($listView.find('tbody td.state span').html(), 'on', '"on" data item visible');
+        ok($filters.val('off').trigger('change'), 'Change filter to "off"');
+        equal($listView.find('tbody td.state span').html(), 'off', '"off" data item visible');
+        equal($filters.val(), 'off', 'Correct filter active');
+        testFilterDropdownContent();
+    });
 }());

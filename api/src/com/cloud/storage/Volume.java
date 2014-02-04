@@ -82,7 +82,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
             s_fsm.addTransition(Expunging, Event.ExpungingRequested, Expunging);
             s_fsm.addTransition(Expunging, Event.OperationSucceeded, Expunged);
-            s_fsm.addTransition(Expunging, Event.OperationFailed, Expunging);
+            s_fsm.addTransition(Expunging, Event.OperationFailed, Destroy);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
             s_fsm.addTransition(Snapshotting, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Snapshotting, Event.OperationFailed, Ready);

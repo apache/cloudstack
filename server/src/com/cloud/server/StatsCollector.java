@@ -737,7 +737,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                             }
 
                                             String counterName = getCounternamebyCondition(conditionId.longValue());
-                                            if (counterName == Counter.Source.memory.toString()) {
+                                            if (Counter.Source.memory.toString().equals(counterName)) {
                                                 // calculate memory in percent
                                                 Long profileId = asGroup.getProfileId();
                                                 AutoScaleVmProfileVO profileVo = _asProfileDao.findById(profileId);
@@ -839,11 +839,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 Double sum = avgCounter.get(counter_count);
                                 Double avg = sum / currentVM;
                                 Operator op = conditionVO.getRelationalOperator();
-                                boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent == avg))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg >= thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg > thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg <= thresholdPercent))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg < thresholdPercent));
+                                boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent.equals(avg)))
+                                    || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg.doubleValue() >= thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg.doubleValue() > thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg.doubleValue() <= thresholdPercent.doubleValue()))
+                                    || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg.doubleValue() < thresholdPercent.doubleValue()));
 
                                 if (!bConditionCheck) {
                                     bValid = false;

@@ -48,7 +48,7 @@ public class GenerateAlertCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the alert", required = true)
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Alert description", required = true)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Alert description", required = true, length = 999)
     private String description;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Zone id for which alert is generated")

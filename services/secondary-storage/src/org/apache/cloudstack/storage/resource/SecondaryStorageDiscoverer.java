@@ -32,12 +32,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -66,15 +63,11 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 
     Random _random = new Random(System.currentTimeMillis());
     @Inject
-    protected HostDao _hostDao = null;
-    @Inject
     protected VMTemplateDao _tmpltDao = null;
     @Inject
     protected VMTemplateZoneDao _vmTemplateZoneDao = null;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
-    @Inject
-    protected ConfigurationDao _configDao = null;
     @Inject
     protected AgentManager _agentMgr = null;
 

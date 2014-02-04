@@ -443,6 +443,7 @@ namespace HypervResource
                 nicCount++;
             }
 
+
             // pass the boot args for the VM using KVP component.
             // We need to pass the boot args to system vm's to get them configured with cloudstack configuration.
             // Add new user data
@@ -907,6 +908,37 @@ namespace HypervResource
 
             ResourceAllocationSettingData defaultDiskDriveSettings = defaultDiskDriveSettingsObjs.OfType<ResourceAllocationSettingData>().First();
             return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
+        }
+
+
+        // Modify the systemvm nic's VLAN id
+        public void ModifyVmVLan(string vmName, uint vlanid, String mac)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
+            // Obtain controller for Hyper-V virtualisation subsystem
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+            string normalisedMAC = string.Join("", (mac.Split(new char[] { ':' })));
+            int index = 0;
+            foreach (SyntheticEthernetPortSettingData item in nicSettingsViaVm)
+            {
+                if (normalisedMAC.ToLower().Equals(item.Address.ToLower()))
+                {
+                    break;
+                }
+                index++;
+            }
+
+            //TODO: make sure the index wont be out of range.
+
+            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
+            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
+
+            //Assign configuration to new NIC
+            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
+            vlanSettings.LateBoundObject["OperationMode"] = 1;
+            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
+                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
         }
 
         public void AttachIso(string displayName, string iso)
@@ -1418,6 +1450,36 @@ namespace HypervResource
             }
             }
             return vSwitch;
+        }
+
+
+        private static void ModifyFeatureVmResources(VirtualSystemManagementService vmMgmtSvc, ComputerSystem vm, string[] resourceSettings)
+        {
+            // Resource settings are changed through the management service
+            System.Management.ManagementPath jobPath;
+            System.Management.ManagementPath[] results;
+
+            var ret_val = vmMgmtSvc.ModifyFeatureSettings(
+                resourceSettings,
+                out jobPath,
+                out results);
+
+            // If the Job is done asynchronously
+            if (ret_val == ReturnCode.Started)
+            {
+                JobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed to update VM {0} (GUID {1}) due to {2} (ModifyVirtualSystem call), existing VM not deleted",
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
         }
 
         private static void ModifyVmResources(VirtualSystemManagementService vmMgmtSvc, ComputerSystem vm, string[] resourceSettings)

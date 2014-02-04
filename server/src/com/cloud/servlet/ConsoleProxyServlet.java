@@ -328,7 +328,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
 
-        if (hostInfo != null && hostInfo.startsWith("consoleurl")) {
+        if (hostInfo != null) {
+            if (hostInfo.startsWith("consoleurl")) {
             String tokens[] = hostInfo.split("&");
 
             if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
@@ -337,6 +338,11 @@ public class ConsoleProxyServlet extends HttpServlet {
                 tunnelSession = tokens[1].split("=")[1];
             } else {
                 host = "";
+            }
+            } else if (hostInfo.startsWith("instanceId")) {
+                host = hostInfo.substring(hostInfo.indexOf('=') + 1);
+            } else {
+                host = hostInfo;
             }
         } else {
             host = hostInfo;
@@ -363,7 +369,16 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         String sid = vm.getVncPassword();
         String tag = vm.getUuid();
-        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+
+        int port = -1;
+        if (portInfo.second() == -9) {
+            //for hyperv
+            port = Integer.parseInt(_ms.findDetail(hostVo.getId(), "rdp.server.port").getValue());
+        } else {
+            port = portInfo.second();
+        }
+
+        String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag);
 
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
@@ -372,6 +387,12 @@ public class ConsoleProxyServlet extends HttpServlet {
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+        if (portInfo.second() == -9) {
+            //For Hyperv Clinet Host Address will send Instance id
+            param.setHypervHost(host);
+            param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
+            param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
+        }
         if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
@@ -396,19 +417,37 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
 
-        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
+        int port = -1;
+        if (portInfo.second() == -9) {
+            //for hyperv
+            port = Integer.parseInt(_ms.findDetail(hostVo.getId(), "rdp.server.port").getValue());
+        } else {
+            port = portInfo.second();
+        }
+
         String sid = vm.getVncPassword();
+        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
+
         String tag = vm.getUuid();
-        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+
+        String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
-        param.setClientHostPort(portInfo.second());
+        param.setClientHostPort(port);
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+
         if (details != null) {
             param.setLocale(details.getValue());
+        }
+
+        if (portInfo.second() == -9) {
+            //For Hyperv Clinet Host Address will send Instance id
+            param.setHypervHost(host);
+            param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
+            param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
         }
         if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());

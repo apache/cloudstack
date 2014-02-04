@@ -857,6 +857,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public DetailVO findDetail(long hostId, String name) {
+        return _detailsDao.findDetail(hostId, name);
+    }
+
+    @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();
     }
@@ -901,7 +906,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -928,7 +933,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;

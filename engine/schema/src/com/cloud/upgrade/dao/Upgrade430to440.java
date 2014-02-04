@@ -172,43 +172,17 @@ public class Upgrade430to440 implements DbUpgrade {
 
                             }
                         }
-
-
-                        if (networkRs != null) {
-                            try {
                                 networkRs.close();
-                            } catch (SQLException e) {
-                            }
-                        }
-
-
-                        if (pstmtNw != null) {
-                            try {
+                        networkRs = null;
                                 pstmtNw.close();
-
-                            } catch (SQLException e) {
-                            }
-                        }
-
+                        pstmtNw = null;
                     }
                 } //if
 
-
-                if (vmRs != null) {
-                    try {
+                pstmtVm.close();
+                pstmtVm = null;
                         vmRs.close();
-                    } catch (SQLException e) {
-                    }
-                }
-
-                if (networkRs != null) {
-                    try {
-                        networkRs.close();
-                    } catch (SQLException e) {
-                    }
-                }
-
-
+                vmRs = null;
             } // while
 
 
@@ -225,25 +199,18 @@ public class Upgrade430to440 implements DbUpgrade {
             }
 
 
-            if (pstmtVm != null) {
-                try {
-                    pstmtVm.close();
-                } catch (SQLException e) {
-                }
-            }
-
-
-            if (pstmtNw != null) {
-                try {
-                    pstmtNw.close();
-
-                } catch (SQLException e) {
-                }
-            }
-
             if (rs1 != null) {
                 try {
                     rs1.close();
+                } catch (SQLException e) {
+                }
+            }
+
+
+
+            if (pstmtVm != null) {
+                try {
+                    pstmtVm.close();
                 } catch (SQLException e) {
                 }
             }
@@ -254,6 +221,17 @@ public class Upgrade430to440 implements DbUpgrade {
                 } catch (SQLException e) {
                 }
             }
+
+
+
+            if (pstmtNw != null) {
+                try {
+                    pstmtNw.close();
+
+                } catch (SQLException e) {
+                }
+            }
+
 
             if (networkRs != null) {
                 try {

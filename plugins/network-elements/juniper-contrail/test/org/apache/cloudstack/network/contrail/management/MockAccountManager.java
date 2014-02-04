@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
@@ -68,8 +67,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Inject
     ResourceCountDao _resourceCountDao;
 
-    @Inject
-    AccountJoinDao _accountJoinDao;
     @Inject
     UserDao _userDao;
 

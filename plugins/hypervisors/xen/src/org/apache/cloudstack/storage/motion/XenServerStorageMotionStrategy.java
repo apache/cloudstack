@@ -106,7 +106,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         try {
             VMInstanceVO instance = instanceDao.findById(vmTo.getId());
             if (instance != null) {
-                if (srcHost.getClusterId() == destHost.getClusterId()) {
+                if (srcHost.getClusterId().equals(destHost.getClusterId())) {
                     answer = migrateVmWithVolumesWithinCluster(instance, vmTo, srcHost, destHost, volumeMap);
                 } else {
                     answer = migrateVmWithVolumesAcrossCluster(instance, vmTo, srcHost, destHost, volumeMap);
@@ -126,7 +126,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     }
 
     private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
-        throws AgentUnavailableException {
+            throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -153,7 +153,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             }
 
             MigrateWithStorageSendCommand sendCmd =
-                new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(), receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
+                    new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(), receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
             MigrateWithStorageSendAnswer sendAnswer = (MigrateWithStorageSendAnswer)agentMgr.send(srcHost.getId(), sendCmd);
             if (sendAnswer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
@@ -184,7 +184,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     }
 
     private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
-        throws AgentUnavailableException {
+            throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {

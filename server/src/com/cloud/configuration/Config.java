@@ -402,6 +402,10 @@ public enum Config {
             "10",
             "The maximum number of subnets per customer gateway",
             null),
+    MaxNumberOfSecondaryIPsPerNIC(
+            "Network", ManagementServer.class, Integer.class,
+            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "Specify the number of secondary ip addresses per nic per vm", null),
 
     // Console Proxy
     ConsoleProxyCapacityStandby(
@@ -981,7 +985,6 @@ public enum Config {
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
             null),
-    EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", null),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,

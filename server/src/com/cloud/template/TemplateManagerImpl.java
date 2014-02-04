@@ -425,7 +425,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        eventId = eventId == null ? 0 : eventId;
+        eventId = (eventId == null ? 0 : eventId);
 
         if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
@@ -1084,9 +1084,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
-        template.setState(VirtualMachineTemplate.State.Inactive);
-        _tmpltDao.update(template.getId(), template);
-
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
         return adapter.delete(profile);
@@ -1118,9 +1115,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (zoneId != null && (_dataStoreMgr.getImageStore(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
         }
-
-        template.setState(VirtualMachineTemplate.State.Inactive);
-        _tmpltDao.update(template.getId(), template);
 
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
@@ -1780,7 +1774,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
+        if (Long.valueOf(1).equals(id)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
             ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;

@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.ejb.Local;
@@ -54,6 +55,8 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
@@ -94,7 +97,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     private boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
         if (networkType == NetworkType.Advanced
-                && offering.getId() == _manager.getRouterOffering().getId()
+                && (offering.getId() == _manager.getRouterOffering().getId() || offering.getId() == _manager.getVpcRouterOffering().getId())
                 && isMyTrafficType(offering.getTrafficType())
                 && offering.getGuestType() == Network.GuestType.Isolated
                 && physicalNetwork.getIsolationMethods().contains("L3VPN"))
@@ -148,6 +151,25 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return network;
         }
         _manager.getDatabase().getVirtualNetworks().add(vnModel);
+
+        if (network.getVpcId() != null) {
+            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
+            if (ips.isEmpty()) {
+                s_logger.debug("Creating a source nat ip for network " + network);
+                Account owner = _accountMgr.getAccount(network.getAccountId());
+                try {
+                    PublicIp publicIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+                    IPAddressVO ip = publicIp.ip();
+                    ip.setVpcId(network.getVpcId());
+                    _ipAddressDao.acquireInLockTable(ip.getId());
+                    _ipAddressDao.update(ip.getId(), ip);
+                    _ipAddressDao.releaseFromLockTable(ip.getId());
+                } catch (Exception e) {
+                    s_logger.error("Unable to allocate source nat ip: " + e);
+                }
+            }
+        }
+
         return network;
     }
 

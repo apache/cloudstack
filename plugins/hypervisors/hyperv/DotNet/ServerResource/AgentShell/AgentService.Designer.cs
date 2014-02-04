@@ -45,7 +45,7 @@ namespace CloudStack.Plugin.AgentShell
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            this.ServiceName = "CloudStack ServerResource";
+            this.ServiceName = Program.serviceName;
         }
 
         #endregion
