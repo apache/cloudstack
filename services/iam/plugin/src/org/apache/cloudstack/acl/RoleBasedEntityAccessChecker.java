@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
@@ -166,6 +167,15 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         if (caller.getId() == entity.getAccountId()) {
             // The caller owns the entity
             policies.add(_iamSrv.getResourceOwnerPolicy());
+        }
+
+        List<AclGroup> groups = _iamSrv.listAclGroups(caller.getId());
+        for (AclGroup group : groups) {
+            // for each group find the grand parent groups.
+            List<AclGroup> parentGroups = _iamSrv.listParentAclGroupsOnPath(group.getPath());
+            for (AclGroup parentGroup : parentGroups) {
+                policies.addAll(_iamSrv.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
+            }
         }
 
         return policies;

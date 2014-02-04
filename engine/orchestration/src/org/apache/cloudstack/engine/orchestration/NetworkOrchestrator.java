@@ -2196,6 +2196,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(networkFinal.getId());
                                 if (networkAccount != null)
                                     _networkAccountDao.remove(networkAccount.getId());
+                                
+                                // remove its related ACL permission
+                                Pair<AclEntityType, Long> networkMsg = new Pair<AclEntityType, Long>(AclEntityType.Network, networkFinal.getId());
+                                _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                             }
 
                             NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());

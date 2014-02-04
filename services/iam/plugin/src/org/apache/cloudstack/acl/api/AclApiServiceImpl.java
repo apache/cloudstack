@@ -159,6 +159,21 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             }
         });
 
+        _messageBus.subscribe(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Long domainId = ((Long) obj);
+                if (domainId != null) {
+                    s_logger.debug("MessageBus message: Domain removed: " + domainId + ", removing the domain group");
+                    Domain domain = _domainDao.findById(domainId);
+                    List<AclGroup> groups = listDomainGroup(domain);
+                    for (AclGroup group : groups) {
+                        _iamSrv.deleteAclGroup(group.getId());
+                    }
+                }
+            }
+        });
+
         _messageBus.subscribe(TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
