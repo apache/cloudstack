@@ -4132,7 +4132,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-off report from hypervisor");
 
-            // TODO: we need to forcely release all resource allocation
+            VirtualMachineGuru vmGuru = getVmGuru(vm);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+            sendStop(vmGuru, profile, true);
             break;
 
         case Destroyed:
