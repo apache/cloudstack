@@ -20,7 +20,7 @@
 from nose.plugins.attrib import             attr
 from marvin.cloudstackTestCase import       cloudstackTestCase, unittest
 
-from marvin.integration.lib.base import     (Snapshot,
+from marvin.lib.base import     (Snapshot,
                                              Template,
                                              VirtualMachine,
                                              Account,
@@ -28,7 +28,7 @@ from marvin.integration.lib.base import     (Snapshot,
                                              DiskOffering,
                                              Volume)
 
-from marvin.integration.lib.common import   (get_domain,
+from marvin.lib.common import   (get_domain,
                                              get_zone,
                                              get_template,
                                              list_events,
@@ -38,7 +38,7 @@ from marvin.integration.lib.common import   (get_domain,
                                              list_virtual_machines,
                                              )
 
-from marvin.integration.lib.utils import    (cleanup_resources,
+from marvin.lib.utils import    (cleanup_resources,
                                              format_volume_to_ext3,
                                              random_gen,
                                              is_snapshot_on_nfs,

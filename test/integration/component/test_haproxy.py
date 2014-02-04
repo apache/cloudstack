@@ -19,7 +19,7 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -31,11 +31,11 @@ from marvin.integration.lib.base import (
                                         Vpn,
                                         NATRule
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen)
 from marvin.cloudstackAPI import createLBStickinessPolicy
 from marvin.sshClient import SshClient

@@ -19,7 +19,7 @@
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
-from marvin.integration.lib.base import (Zone,
+from marvin.lib.base import (Zone,
                                          ServiceOffering,
                                          Account,
                                          NetworkOffering,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base import (Zone,
                                          SecurityGroup,
                                          Host)
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            get_free_vlan,
                                            list_virtual_machines,
                                            wait_for_cleanup)
 
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
 from marvin.cloudstackAPI import (authorizeSecurityGroupIngress,

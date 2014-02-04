@@ -21,8 +21,8 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine
-from marvin.integration.lib.utils import cleanup_resources, validateList
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (VirtualMachine,
                                          ServiceOffering,
                                          Account,
                                          NATRule,
@@ -35,7 +35,7 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          StaticNATRule,
                                          NetworkACL,
                                          PublicIPAddress)
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_domain,
                                            get_template,
                                            wait_for_cleanup,

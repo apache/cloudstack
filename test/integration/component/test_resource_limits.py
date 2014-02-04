@@ -19,7 +19,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          Snapshot,
                                          Template,
                                          PublicIPAddress,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          NetworkOffering,
                                          ServiceOffering,
                                          Configurations)
-from marvin.integration.lib.common import (list_volumes,
+from marvin.lib.common import (list_volumes,
                                            get_domain,
                                            get_zone,
                                            get_template,
                                            update_resource_limit,
                                            list_configurations,
                                            wait_for_cleanup)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import time
 
 

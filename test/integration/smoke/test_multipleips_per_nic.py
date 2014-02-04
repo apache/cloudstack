@@ -23,13 +23,13 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 #Import Integration Libraries
 
 #base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering
 
 #utils - utility classes for common cleanup, external library wrappers etc
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 #common - commonly used methods for all tests are listed here
-from marvin.integration.lib.common import get_zone, get_domain, get_template
+from marvin.lib.common import get_zone, get_domain, get_template
 
 from marvin.cloudstackAPI.addIpToNic import addIpToNicCmd
 from marvin.cloudstackAPI.removeIpFromNic import removeIpFromNicCmd

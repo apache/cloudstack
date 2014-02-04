@@ -20,10 +20,10 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (random_gen,
+from marvin.lib.utils import (random_gen,
                                           is_snapshot_on_nfs,
                                           cleanup_resources)
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
                                         VirtualMachine,
@@ -32,7 +32,7 @@ from marvin.integration.lib.base import (
                                         Volume,
                                         DiskOffering
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_snapshots

@@ -19,9 +19,9 @@
 # this script will cover VMdeployment  with Userdata tests
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import *
+from marvin.lib.utils import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
 import unittest

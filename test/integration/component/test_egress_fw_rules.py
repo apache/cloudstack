@@ -21,7 +21,7 @@
 import unittest
 from nose.plugins.attrib           import attr
 from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.integration.lib.base   import (Account,
+from marvin.lib.base   import (Account,
                                            Domain,
                                            Router,
                                            Network,
@@ -31,14 +31,14 @@ from marvin.integration.lib.base   import (Account,
                                            FireWallRule,
                                            NATRule,
                                            PublicIPAddress)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers,
                                            wait_for_cleanup,
                                            list_virtual_machines
                                            )
-from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd

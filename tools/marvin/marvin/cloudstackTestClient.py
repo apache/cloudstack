@@ -25,10 +25,9 @@ import hashlib
 from codes import (FAILED, PASS, ADMIN, DOMAIN_ADMIN,
                    USER, SUCCESS, XEN_SERVER)
 from configGenerator import ConfigManager
-from marvin.integration.lib import utils
+from marvin.lib import utils
 from cloudstackException import GetDetailExceptionInfo
-from marvin.integration.lib.utils import (random_gen,
-                                          validateList)
+from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
 
 '''

@@ -19,7 +19,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          Account,
                                          Project,
                                          NATRule,
@@ -35,7 +35,7 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          DiskOffering,
                                          LoadBalancerRule)
 
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_template,
                                            get_domain,
                                            list_volumes,
@@ -44,7 +44,7 @@ from marvin.integration.lib.common import (get_zone,
                                            get_free_vlan,
                                            wait_for_cleanup)
 
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import random
 
 

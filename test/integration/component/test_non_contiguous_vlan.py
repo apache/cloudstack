@@ -28,17 +28,17 @@
 
 
 from marvin.cloudstackTestCase import (cloudstackTestCase,unittest)
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          ServiceOffering,
                                          PhysicalNetwork,
                                          VirtualMachine,
                                          )
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_pod,
                                            get_domain,
                                            get_template,
                                            setNonContiguousVlanIds)
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           xsplit)
 
 from nose.plugins.attrib import attr

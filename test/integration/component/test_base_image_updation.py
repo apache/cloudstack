@@ -31,7 +31,7 @@ from marvin.codes import (PASS,
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 
-from marvin.integration.lib.base import (ServiceOffering,
+from marvin.lib.base import (ServiceOffering,
                                          Account,
                                          VirtualMachine,
                                          Volume,
@@ -41,13 +41,13 @@ from marvin.integration.lib.base import (ServiceOffering,
                                          Template
                                          )
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_templates
                                            )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
                                           cleanup_resources)
 
 import time

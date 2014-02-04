@@ -19,13 +19,13 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import changeServiceForVirtualMachine,updateServiceOffering
-from marvin.integration.lib.utils import (isAlmostEqual,
+from marvin.lib.utils import (isAlmostEqual,
                                           cleanup_resources,
                                           random_gen)
-from marvin.integration.lib.base import (ServiceOffering,
+from marvin.lib.base import (ServiceOffering,
                                          Account,
                                          VirtualMachine)
-from marvin.integration.lib.common import (list_service_offering,
+from marvin.lib.common import (list_service_offering,
                                            list_virtual_machines,
                                            get_domain,
                                            get_zone,

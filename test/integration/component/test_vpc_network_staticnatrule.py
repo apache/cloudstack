@@ -19,7 +19,7 @@
 """
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          VpcOffering,
                                          VPC,
                                          ServiceOffering,
@@ -32,11 +32,11 @@ from marvin.integration.lib.base import (Account,
                                          StaticNATRule)
 from marvin.cloudstackAPI import (stopRouter,
                                   startRouter)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import socket
 import time
 

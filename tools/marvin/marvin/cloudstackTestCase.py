@@ -16,7 +16,7 @@
 # under the License.
 
 import unittest
-from marvin.integration.lib.utils import verifyElementInList
+from marvin.lib.utils import verifyElementInList
 from marvin.codes import PASS
 
 

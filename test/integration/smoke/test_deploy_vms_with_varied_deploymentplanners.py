@@ -16,9 +16,9 @@
 # under the License.
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
-from marvin.integration.lib.common import get_zone, get_domain, get_template
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
+from marvin.lib.common import get_zone, get_domain, get_template
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):

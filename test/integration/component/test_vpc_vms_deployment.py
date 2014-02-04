@@ -20,7 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          NetworkOffering,
                                          VpcOffering,
                                          VPC,
@@ -36,13 +36,13 @@ from marvin.integration.lib.base import (VirtualMachine,
                                          StaticNATRule,
                                          Configurations)
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            wait_for_cleanup,
                                            get_free_vlan)
 
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 from marvin.cloudstackAPI import rebootRouter
 
 

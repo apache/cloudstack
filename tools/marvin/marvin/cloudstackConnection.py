@@ -63,6 +63,7 @@ class CSConnection(object):
         self.logger = logger
         self.path = path
         self.retries = 5
+        self.__lastError = ''
         self.mgtDetails = mgmtDet
         self.asyncTimeout = asyncTimeout
         self.auth = True
@@ -82,8 +83,9 @@ class CSConnection(object):
 
     def __poll(self, jobid, response_cmd):
         '''
+        @Name : __poll
         @Desc: polls for the completion of a given jobid
-        @param 1. jobid: Monitor the Jobid for CS
+        @Input 1. jobid: Monitor the Jobid for CS
                2. response_cmd:response command for request cmd
         @return: FAILED if jobid is cancelled,failed
                  Else return async_response
@@ -114,17 +116,25 @@ class CSConnection(object):
                                                           str(timeout)))
             return FAILED
         except Exception, e:
+            self.__lastError = GetDetailExceptionInfo(e)
             self.logger.exception("__poll: Exception Occurred :%s" %
-                                  GetDetailExceptionInfo(e))
+                                  self.__lastError)
             return FAILED
+
+    def getLastError(self):
+        '''
+        @Name : getLastError
+        @Desc : Returns the last error from marvinRequest
+        '''
+        return self.__lastError
 
     def __sign(self, payload):
         """
         @Name : __sign
         @Desc:signs a given request URL when the apiKey and
               secretKey are known
-        @param payload: dict of GET params to be signed
-        @return: the signature of the payload
+        @Input: payload: dictionary of params be signed
+        @Output: the signature of the payload
         """
         params = zip(payload.keys(), payload.values())
         params.sort(key=lambda k: str.lower(k[0]))
@@ -146,6 +156,8 @@ class CSConnection(object):
         @Desc : Sends the POST Request to CS
         @Input : url: URL to send post req
                  payload:Payload information as part of request
+        @Output: Returns response from POST output
+                 else FAILED
         '''
         try:
             response = requests.post(url,
@@ -154,9 +166,10 @@ class CSConnection(object):
                                      verify=self.httpsFlag)
             return response
         except Exception, e:
+            self.__lastError = GetDetailExceptionInfo(e)
             self.logger.\
                 exception("__sendPostReqToCS : Exception "
-                          "Occurred: %s" % GetDetailExceptionInfo(e))
+                          "Occurred: %s" % self.__lastError)
             return FAILED
 
     def __sendGetReqToCS(self, url, payload):
@@ -165,6 +178,8 @@ class CSConnection(object):
         @Desc : Sends the GET Request to CS
         @Input : url: URL to send post req
                  payload:Payload information as part of request
+        @Output: Returns response from GET output
+                 else FAILED
         '''
         try:
             response = requests.get(url,
@@ -173,20 +188,21 @@ class CSConnection(object):
                                     verify=self.httpsFlag)
             return response
         except Exception, e:
+            self.__lastError = GetDetailExceptionInfo(e)
             self.logger.exception("__sendGetReqToCS : Exception Occurred: %s" %
-                                  GetDetailExceptionInfo(e))
+                                  self.__lastError)
             return FAILED
 
     def __sendCmdToCS(self, command, auth=True, payload={}, method='GET'):
         """
         @Name : __sendCmdToCS
         @Desc : Makes requests to CS using the Inputs provided
-        @param command: cloudstack API command name
+        @Input: command: cloudstack API command name
                     eg: deployVirtualMachineCommand
-        @param auth: Authentication (apikey,secretKey) => True
+                auth: Authentication (apikey,secretKey) => True
                      else False for integration.api.port
-        @param payload: request data composed as a dictionary
-        @param method: GET/POST via HTTP
+                payload: request data composed as a dictionary
+                method: GET/POST via HTTP
         @output: FAILED or else response from CS
         """
         try:
@@ -220,9 +236,9 @@ class CSConnection(object):
         """
         @Name : __sanitizeCmd
         @Desc : Removes None values, Validates all required params are present
-        @param cmd: Cmd object eg: createPhysicalNetwork
-        @Output: Returns command name, asynchronous or not , request payload
-                 INVALID_INPUT if cmd is invalid
+        @Input: cmd: Cmd object eg: createPhysicalNetwork
+        @Output: Returns command name, asynchronous or not,request payload
+                 FAILED for failed cases
         """
         try:
             cmd_name = ''
@@ -241,7 +257,7 @@ class CSConnection(object):
                 if payload[required_param] is None:
                     self.logger.debug("CmdName: %s Parameter : %s is Required"
                                       % (cmd_name, required_param))
-                    return INVALID_INPUT
+                    return FAILED
             for param, value in payload.items():
                 if value is None:
                     payload.pop(param)
@@ -272,10 +288,11 @@ class CSConnection(object):
         @Name : __parseAndGetResponse
         @Desc : Verifies the  Response(from CS) and returns an
                 appropriate json parsed Response
-        @Output:
+        @Input: cmd_response: Command Response from cs
+                response_cls : Mapping class for this Response
+                is_async: Whether the cmd is async or not.
+        @Output:Response output from CS
         '''
-        if cmd_response == FAILED:
-            return FAILED
         try:
             ret = jsonHelper.getResultObj(cmd_response.json(), response_cls)
         except TypeError:
@@ -297,10 +314,10 @@ class CSConnection(object):
         """
         @Name : marvinRequest
         @Desc: Handles Marvin Requests
-        @param cmd: marvin's command from cloudstackAPI
-        @param response_type: response type of the command in cmd
-        @param method: HTTP GET/POST, defaults to GET
-        @return: Response received from CS
+        @Input  cmd: marvin's command from cloudstackAPI
+                response_type: response type of the command in cmd
+                method: HTTP GET/POST, defaults to GET
+        @Output: Response received from CS
                  FAILED In case of Error\Exception
         """
         try:
@@ -315,13 +332,12 @@ class CSConnection(object):
             '''
             2. Sanitize the Command
             '''
-            if self.__sanitizeCmd(cmd) != INVALID_INPUT:
-                cmd_name, is_async, payload = self.__sanitizeCmd(cmd)
-            else:
-                self.logger.exception("marvinRequest : Cmd: "
-                                      "Sanitizing Command Failed")
+            sanitize_cmd_out = self.__sanitizeCmd(cmd)
+
+            if sanitize_cmd_out == FAILED:
                 return FAILED
 
+            cmd_name, is_async, payload = sanitize_cmd_out
             '''
             3. Send Command to CS
             '''

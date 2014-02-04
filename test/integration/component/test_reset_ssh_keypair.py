@@ -19,18 +19,18 @@
 """
 
 #Import Local Modules
-from marvin.integration.lib.base import (VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                                          SSHKeyPair,
                                          Account,
                                          Template,
                                          ServiceOffering,
                                          EgressFireWallRule)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_virtual_machines,
                                            list_volumes)
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest

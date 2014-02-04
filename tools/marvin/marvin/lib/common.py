@@ -57,13 +57,13 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listNetworkOfferings,
                                   listResourceLimits,
                                   listVPCOfferings)
-from marvin.integration.lib.base import (Configurations,
+from marvin.lib.base import (Configurations,
                                          NetScaler,
                                          Template,
                                          Resources,
                                          PhysicalNetwork,
                                          Host)
-from marvin.integration.lib.utils import (get_process_status,
+from marvin.lib.utils import (get_process_status,
                                           xsplit)
 
 from marvin.sshClient import SshClient
@@ -71,7 +71,7 @@ import random
 from utils import *
 from base import *
 from marvin.codes import PASS
-from marvin.integration.lib.utils import validateList
+from marvin.lib.utils import validateList
 
 #Import System modules
 import time

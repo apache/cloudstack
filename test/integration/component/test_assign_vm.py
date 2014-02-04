@@ -20,7 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib           import attr
 from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.integration.lib.base   import (Account,
+from marvin.lib.base   import (Account,
                                            Domain,
                                            User,
                                            Project,
@@ -29,7 +29,7 @@ from marvin.integration.lib.base   import (Account,
                                            DiskOffering,
                                            ServiceOffering,
                                            VirtualMachine)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_volumes,
@@ -37,7 +37,7 @@ from marvin.integration.lib.common import (get_domain,
                                            list_networks,
                                            list_snapshots,
                                            list_virtual_machines)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 
 def log_test_exceptions(func):
     def test_wrap_exception_log(self, *args, **kwargs):

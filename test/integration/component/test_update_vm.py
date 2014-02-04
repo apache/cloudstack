@@ -17,9 +17,9 @@
 
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
-from marvin.integration.lib.utils import cleanup_resources
-from marvin.integration.lib.common import get_zone, get_domain, get_template
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import get_zone, get_domain, get_template
 from nose.plugins.attrib import attr
 
 class TestData(object):

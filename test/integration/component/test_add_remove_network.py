@@ -29,7 +29,7 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
-from marvin.integration.lib.base import (
+from marvin.lib.base import (
                                         Account,
                                         Domain,
                                         ServiceOffering,
@@ -39,7 +39,7 @@ from marvin.integration.lib.base import (
                                         VpcOffering,
                                         VPC
                                         )
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_virtual_machines,
@@ -49,7 +49,7 @@ from marvin.integration.lib.common import (get_domain,
                                         update_resource_limit
                                         )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
 					                      random_gen,
                                           get_hypervisor_type,
                                           cleanup_resources)
