@@ -46,6 +46,8 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NetworkAccountVO;
+import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -271,29 +273,38 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             public void doInTransactionWithoutResult(TransactionStatus status) {
 
                 AffinityGroupVO group = _affinityGroupDao.lockRow(affinityGroupIdFinal, true);
-        if (group == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupIdFinal);
-        }
+                if (group == null) {
+                            throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupIdFinal);
+                }
 
                 List<AffinityGroupVMMapVO> affinityGroupVmMap = _affinityGroupVMMapDao.listByAffinityGroup(affinityGroupIdFinal);
-        if (!affinityGroupVmMap.isEmpty()) {
-            SearchBuilder<AffinityGroupVMMapVO> listByAffinityGroup = _affinityGroupVMMapDao.createSearchBuilder();
-                    listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
-            listByAffinityGroup.done();
-            SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
-                    sc.setParameters("affinityGroupId", affinityGroupIdFinal);
+                if (!affinityGroupVmMap.isEmpty()) {
+                    SearchBuilder<AffinityGroupVMMapVO> listByAffinityGroup = _affinityGroupVMMapDao.createSearchBuilder();
+                            listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+                    listByAffinityGroup.done();
+                    SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
+                            sc.setParameters("affinityGroupId", affinityGroupIdFinal);
+        
+                    _affinityGroupVMMapDao.lockRows(sc, null, true);
+                    _affinityGroupVMMapDao.remove(sc);
+                }
 
-            _affinityGroupVMMapDao.lockRows(sc, null, true);
-            _affinityGroupVMMapDao.remove(sc);
-        }
+                // call processor to handle the group delete
+                AffinityGroupProcessor processor = getAffinityGroupProcessorForType(group.getType());
+                if (processor != null) {
+                    processor.handleDeleteGroup(group);
+                }
 
-        // call processor to handle the group delete
-        AffinityGroupProcessor processor = getAffinityGroupProcessorForType(group.getType());
-        if (processor != null) {
-            processor.handleDeleteGroup(group);
-        }
-
-                _affinityGroupDao.expunge(affinityGroupIdFinal);
+                if(_affinityGroupDao.expunge(affinityGroupIdFinal)){
+                    AffinityGroupDomainMapVO groupDomain = _affinityGroupDomainMapDao
+                            .findByAffinityGroup(affinityGroupIdFinal);
+                    if (groupDomain != null) {
+                        _affinityGroupDomainMapDao.remove(groupDomain.getId());
+                    }
+                    // remove its related ACL permission
+                    Pair<AclEntityType, Long> params = new Pair<AclEntityType, Long>(AclEntityType.AffinityGroup, affinityGroupIdFinal);
+                    _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
+                }
             }
         });
 
