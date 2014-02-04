@@ -83,6 +83,17 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         long accountId = caller.getAccountId();
         // Get the static Policies of the Caller
         List<AclPolicy> policies = _iamService.listAclPolicies(accountId);
+
+        // add the policies that grant recursive access
+        List<AclGroup> groups = _iamService.listAclGroups(caller.getId());
+        for (AclGroup group : groups) {
+            // for each group find the grand parent groups.
+            List<AclGroup> parentGroups = _iamService.listParentAclGroups(group.getId());
+            for (AclGroup parentGroup : parentGroups) {
+                policies.addAll(_iamService.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
+            }
+        }
+
         // for each policy, find granted permission with Resource scope
         List<Long> entityIds = new ArrayList<Long>();
         for (AclPolicy policy : policies) {

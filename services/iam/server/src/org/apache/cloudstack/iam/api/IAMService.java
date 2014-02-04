@@ -85,7 +85,7 @@ public interface IAMService {
     List<AclPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
             String entityType);
 
-    List<AclGroup> listParentAclGroupsOnPath(String path);
+    List<AclGroup> listParentAclGroups(long groupId);
 
     List<AclPolicy> listRecursiveAclPoliciesByGroup(long groupId);
 

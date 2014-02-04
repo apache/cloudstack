@@ -257,8 +257,13 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public List<AclGroup> listParentAclGroupsOnPath(String path) {
+    public List<AclGroup> listParentAclGroups(long groupId) {
+        AclGroup group = _aclGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group by id " + groupId);
+        }
 
+        String path = group.getPath();
         List<String> pathList = new ArrayList<String>();
 
         String[] parts = path.split("/");

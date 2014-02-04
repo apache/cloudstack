@@ -172,7 +172,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         List<AclGroup> groups = _iamSrv.listAclGroups(caller.getId());
         for (AclGroup group : groups) {
             // for each group find the grand parent groups.
-            List<AclGroup> parentGroups = _iamSrv.listParentAclGroupsOnPath(group.getPath());
+            List<AclGroup> parentGroups = _iamSrv.listParentAclGroups(group.getId());
             for (AclGroup parentGroup : parentGroups) {
                 policies.addAll(_iamSrv.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
             }
