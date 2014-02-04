@@ -26,4 +26,7 @@ public abstract class BaseCustomIdCmd extends BaseCmd {
     public String getCustomId() {
         return customId;
     }
+
+    public abstract void checkUuid(String id, Class<?> cls);
+
 }

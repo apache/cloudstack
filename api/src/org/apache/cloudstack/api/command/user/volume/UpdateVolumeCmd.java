@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +26,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -149,4 +148,12 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
         }
     }
+
+    @Override
+    public void checkUuid(String id, Class<?> cls) {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), Volume.class);
+        }
+    }
+
 }

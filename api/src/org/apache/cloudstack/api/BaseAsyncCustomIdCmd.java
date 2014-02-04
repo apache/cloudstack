@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+
 public abstract class BaseAsyncCustomIdCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CUSTOM_ID,
                type = CommandType.STRING,
@@ -25,4 +26,7 @@ public abstract class BaseAsyncCustomIdCmd extends BaseAsyncCmd {
     public String getCustomId() {
         return customId;
     }
+
+    public abstract void checkUuid(String id, Class<?> cls);
+
 }

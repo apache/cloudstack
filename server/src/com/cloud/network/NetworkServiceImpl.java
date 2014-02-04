@@ -1939,7 +1939,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(final long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix,
-            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
+            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String customId) {
 
         boolean restartNetwork = false;
 
@@ -1982,6 +1982,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+
+        if (customId != null) {
+            network.setUuid(customId);
         }
 
         // display flag is not null and has changed

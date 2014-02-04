@@ -16,17 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 
 @APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class)
-public class UpdateNetworkCmd extends BaseAsyncCmd {
+public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
     private static final String s_name = "updatenetworkresponse";
@@ -141,7 +141,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
         Network result =
             _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), this.getCustomId());
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
@@ -187,5 +187,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return id;
+    }
+
+    @Override
+    public void checkUuid(String id, Class<?> cls) {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), Network.class);
+        }
     }
 }
