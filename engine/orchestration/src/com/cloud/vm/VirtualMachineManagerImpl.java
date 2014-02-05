@@ -1543,10 +1543,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) throws NoTransitionException {
         // if there are active vm snapshots task, state change is not allowed
-        if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
-            s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
-            return false;
-        }
+
+        // Disable this hacking thing, VM snapshot task need to be managed by its orchestartion flow istelf instead of
+        // hacking it here at general VM manager
+        /*        
+                if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
+                    s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
+                    return false;
+                }
+        */
         vm.setReservationId(reservationId);
         return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
