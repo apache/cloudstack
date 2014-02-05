@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.secstorage;
+package org.apache.cloudstack.secondarystorage;
 
 import java.util.Date;
 import java.util.List;
@@ -32,7 +32,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
+import com.cloud.secstorage.CommandExecLogDao;
+import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
