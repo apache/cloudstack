@@ -30,12 +30,12 @@
     <dependency>
         <groupId>com.citrix.netscaler.nitro</groupId>
         <artifactId>nitro</artifactId>
-        <version>10.0.e</version>
+        <version>10.1</version>
     </dependency>
     <dependency>
-      <groupId>com.cloud.com.citrix</groupId>
-      <artifactId>netscaler-sdx</artifactId>
-      <version>1.0</version>
+      <groupId>com.citrix.netscaler.nitro</groupId>
+      <artifactId>sdx_nitro</artifactId>
+      <version>10.1</version>
     </dependency>
   </dependencies>
 </project>
