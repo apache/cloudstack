@@ -1486,7 +1486,8 @@
         }
 
         // Detail action
-        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size() &&
+            !$target.closest('.list-view').size()) {
             var $action = $target.closest('.action').find('[detail-action]');
             var actionName = $action.attr('detail-action');
             var actionCallback = $action.data('detail-view-action-callback');
