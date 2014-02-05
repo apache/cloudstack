@@ -23,15 +23,11 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-
-import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.junit.Test;
 
 public class SspClientTest {
@@ -46,10 +42,8 @@ public class SspClientTest {
         SspClient sspClient = spy(new SspClient(apiUrl, username, password));
 
         HttpClient client = mock(HttpClient.class);
-        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
         doReturn(client).when(sspClient).getHttpClient();
-        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
-        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(client.execute(any(HttpUriRequest.class), any(BasicResponseHandler.class))).thenReturn("");
 
         assertTrue(sspClient.login());
         assertTrue(sspClient.login());
@@ -63,14 +57,10 @@ public class SspClientTest {
         SspClient sspClient = spy(new SspClient(apiUrl, username, password));
 
         HttpClient client = mock(HttpClient.class);
-        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
         doReturn(client).when(sspClient).getHttpClient();
-        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
-        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         String body = "{\"uuid\":\"" + tenant_net_uuid + "\",\"name\":\"" + networkName
                 + "\",\"tenant_uuid\":\"" + uuid + "\"}";
-        when(res.getEntity().getContent()).thenReturn(
-                new ByteArrayInputStream(body.getBytes("UTF-8")));
+        when(client.execute(any(HttpUriRequest.class), any(BasicResponseHandler.class))).thenReturn(body);
 
         SspClient.TenantNetwork tnet = sspClient.createTenantNetwork(uuid, networkName);
         assertEquals(tnet.name, networkName);
@@ -84,10 +74,8 @@ public class SspClientTest {
         SspClient sspClient = spy(new SspClient(apiUrl, username, password));
 
         HttpClient client = mock(HttpClient.class);
-        HttpResponse res = mock(HttpResponse.class, RETURNS_DEEP_STUBS);
         doReturn(client).when(sspClient).getHttpClient();
-        when(client.execute(any(HttpUriRequest.class))).thenReturn(res);
-        when(res.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
+        when(client.execute(any(HttpUriRequest.class), any(BasicResponseHandler.class))).thenReturn("");
 
         sspClient.deleteTenantNetwork(tenant_net_uuid);
     }
