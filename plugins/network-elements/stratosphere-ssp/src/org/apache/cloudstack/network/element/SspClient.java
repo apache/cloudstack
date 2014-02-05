@@ -17,15 +17,15 @@
 package org.apache.cloudstack.network.element;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPost;
@@ -35,6 +35,7 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
@@ -42,8 +43,6 @@ import org.apache.http.params.CoreConnectionPNames;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -74,7 +73,7 @@ public class SspClient {
         return s_client;
     }
 
-    private HttpResponse innerExecuteMethod(HttpRequestBase req, String path) {
+    private String executeMethod(HttpRequestBase req, String path) {
         try {
             URI base = new URI(apiUrl);
             req.setURI(new URI(base.getScheme(), base.getUserInfo(), base.getHost(),
@@ -83,23 +82,26 @@ public class SspClient {
             s_logger.error("invalid API URL " + apiUrl + " path " + path, e);
             return null;
         }
-        HttpResponse res = null;
         try {
-            res = getHttpClient().execute(req);
-            s_logger.info("ssp api call:" + req + " status=" + res.getStatusLine());
+            String content = null;
+            try {
+                content = getHttpClient().execute(req, new BasicResponseHandler());
+                s_logger.info("ssp api call: " + req);
+            } catch (HttpResponseException e) {
+                s_logger.info("ssp api call failed: " + req, e);
+                if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED && login()) {
+                    req.reset();
+                    content = getHttpClient().execute(req, new BasicResponseHandler());
+                    s_logger.info("ssp api retry call: " + req);
+                }
+            }
+            return content;
+        } catch (ClientProtocolException e) { // includes HttpResponseException
+            s_logger.error("ssp api call failed: " + req, e);
         } catch (IOException e) {
             s_logger.error("ssp api call failed: " + req, e);
         }
-        return res;
-    }
-
-    private HttpResponse executeMethod(HttpRequestBase req, String path) {
-        HttpResponse res = innerExecuteMethod(req, path);
-        if (res.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED && login()) {
-            req.reset();
-            res = innerExecuteMethod(req, path);
-        }
-        return res;
+        return null;
     }
 
     public boolean login() {
@@ -112,9 +114,7 @@ public class SspClient {
             s_logger.error("invalid username or password", e);
             return false;
         }
-
-        HttpResponse res = this.innerExecuteMethod(method, "/ws.v1/login");
-        if (res != null && res.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+        if (executeMethod(method, "/ws.v1/login") != null) {
             return true;
         }
         return false;
@@ -134,29 +134,14 @@ public class SspClient {
 
         HttpPost method = new HttpPost();
         method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
-        HttpResponse res = executeMethod(method, "/ssp.v1/tenant-networks");
-        if (res == null || res.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-            return null;
-        }
-        try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
-                    TenantNetwork.class);
-        } catch (JsonSyntaxException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (JsonIOException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IllegalStateException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IOException e) {
-            s_logger.error("reading response body failed", e);
-        }
-        return null;
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-networks"),
+                TenantNetwork.class);
     }
 
     public boolean deleteTenantNetwork(String tenantNetworkUuid) {
         HttpDelete method = new HttpDelete();
-        HttpResponse res = executeMethod(method, "/ssp.v1/tenant-networks/" + tenantNetworkUuid);
-        if (res != null && res.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+        if (executeMethod(method, "/ssp.v1/tenant-networks/" + tenantNetworkUuid) != null) {
             return true;
         }
         return false;
@@ -182,31 +167,14 @@ public class SspClient {
 
         HttpPost method = new HttpPost();
         method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
-        HttpResponse res = executeMethod(method, "/ssp.v1/tenant-ports");
-
-        if (res == null || res.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-            return null;
-        }
-        try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
-                    TenantPort.class);
-        } catch (JsonSyntaxException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (JsonIOException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IllegalStateException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IOException e) {
-            s_logger.error("reading response body failed", e);
-        }
-        return null;
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-ports"),
+                TenantPort.class);
     }
 
     public boolean deleteTenantPort(String tenantPortUuid) {
         HttpDelete method = new HttpDelete();
-        HttpResponse res = executeMethod(method, "/ssp.v1/tenant-ports/" + tenantPortUuid);
-
-        if (res != null && res.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+        if (executeMethod(method, "/ssp.v1/tenant-ports/" + tenantPortUuid) != null) {
             return true;
         }
         return false;
@@ -223,22 +191,8 @@ public class SspClient {
 
         HttpPut method = new HttpPut();
         method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
-        HttpResponse res = executeMethod(method, "/ssp.v1/tenant-ports/" + portUuid);
-        if (res == null || res.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            return null;
-        }
-        try {
-            return new Gson().fromJson(new InputStreamReader(res.getEntity().getContent()),
-                    TenantPort.class);
-        } catch (JsonSyntaxException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (JsonIOException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IllegalStateException e) {
-            s_logger.error("reading response body failed", e);
-        } catch (IOException e) {
-            s_logger.error("reading response body failed", e);
-        }
-        return null;
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-ports/" + portUuid),
+                TenantPort.class);
     }
 }
