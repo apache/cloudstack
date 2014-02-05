@@ -203,6 +203,11 @@
                     zoneCount: function(data) {
                         $.ajax({
                             url: createURL('listZones'),
+                            data: {
+                            	listAll: true,
+                                page: 1,
+                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                            },
                             success: function(json) {
                                 dataFns.podCount($.extend(data, {
                                     zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count : 0,
@@ -216,6 +221,7 @@
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -231,6 +237,7 @@
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -254,6 +261,7 @@
                     hostCount: function(data) {
                         var data2 = {
                             type: 'routing',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -270,6 +278,7 @@
 
                     primaryStorageCount: function(data) {
                         var data2 = {
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -287,6 +296,7 @@
                     secondaryStorageCount: function(data) {
                         var data2 = {
                             type: 'SecondaryStorage',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -305,6 +315,7 @@
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -318,6 +329,7 @@
 
                     virtualRouterCount: function(data) {
                         var data2 = {
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -336,7 +348,7 @@
                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                 var data3 = {
                                     listAll: true,
-	                                    projectid: -1,
+	                                projectid: -1,
                                     page: 1,
                                     pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                                 };
@@ -350,11 +362,11 @@
 	                                });
                                 }
                                                                 
-                                        dataFns.capacity($.extend(data, {
-                                            virtualRouterCount: (total1 + total2)
-                                        }));
-                                    }
-                                });
+                                dataFns.capacity($.extend(data, {
+                                    virtualRouterCount: (total1 + total2)
+                                }));
+                            }
+                        });
                     },
 
                     capacity: function(data) {
