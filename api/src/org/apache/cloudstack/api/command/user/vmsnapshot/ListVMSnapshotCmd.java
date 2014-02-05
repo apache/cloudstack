@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.vmsnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -30,7 +31,7 @@ import org.apache.cloudstack.api.response.VMSnapshotResponse;
 
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0")
+@APICommand(name = "listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = { AclEntityType.VMSnapshot })
 public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     private static final String s_name = "listvmsnapshotresponse";
