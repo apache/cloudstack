@@ -88,6 +88,8 @@
     <cs.jna.version>4.0.0</cs.jna.version>
     <cs.checkstyle.version>2.11</cs.checkstyle.version>
     <cs.mycila.license.version>2.5</cs.mycila.license.version>
+    <cs.findbugs.version>2.5.3</cs.findbugs.version>
+    <cs.javadoc.version>2.9.1</cs.javadoc.version>
   </properties>
 
   <distributionManagement>
@@ -865,7 +867,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
-          <version>2.5.3</version>
+          <version>${cs.findbugs.version}</version>
           <configuration>
             <effort>Max</effort>
             <threshold>High</threshold>
@@ -890,6 +892,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
+        <version>${cs.findbugs.version}</version>
         <configuration>
           <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
           <effort>Default</effort><!-- Min|Default|Max -->
@@ -898,6 +901,7 @@
       <plugin>
          <groupId>org.apache.maven.plugins</groupId>
          <artifactId>maven-javadoc-plugin</artifactId>
+         <version>${cs.javadoc.version}</version>
          <configuration>
            <minmemory>128m</minmemory>
            <maxmemory>1g</maxmemory>
