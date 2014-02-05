@@ -19,5 +19,22 @@
 
 package com.cloud.network.nicira;
 
-public class Acl extends AccessConfiguration<AclRule> {
+/**
+ *
+ */
+public class SingleDefaultRouteImplicitRoutingConfig extends RoutingConfig {
+    public RouterNextHop defaultRouteNextHop;
+    public final String type = "SingleDefaultRouteImplicitRoutingConfig";
+
+    public SingleDefaultRouteImplicitRoutingConfig(final RouterNextHop routerNextHop) {
+        defaultRouteNextHop = routerNextHop;
+    }
+
+    public RouterNextHop getDefaultRouteNextHop() {
+        return defaultRouteNextHop;
+    }
+
+    public void setDefaultRouteNextHop(final RouterNextHop defaultRouteNextHop) {
+        this.defaultRouteNextHop = defaultRouteNextHop;
+    }
 }

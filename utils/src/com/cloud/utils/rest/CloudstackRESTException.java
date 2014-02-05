@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,9 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.utils.rest;
 
-package com.cloud.network.nicira;
+public class CloudstackRESTException extends Exception {
 
-public class Acl extends AccessConfiguration<AclRule> {
+    public CloudstackRESTException() {
+    }
+
+    public CloudstackRESTException(final String message) {
+        super(message);
+    }
+
+    public CloudstackRESTException(final Throwable cause) {
+        super(cause);
+    }
+
+    public CloudstackRESTException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
 }

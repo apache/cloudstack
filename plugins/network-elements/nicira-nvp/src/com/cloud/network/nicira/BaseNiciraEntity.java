@@ -19,34 +19,41 @@
 
 package com.cloud.network.nicira;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-public class VifAttachment extends Attachment {
-    private final String type = "VifAttachment";
-    private String vifUuid;
+public abstract class BaseNiciraEntity implements Serializable {
+    protected String href;
+    protected String schema;
+    protected String uuid;
 
-    public VifAttachment() {
+    public String getUuid() {
+        return uuid;
     }
 
-    public VifAttachment(final String vifUuid) {
-        this.vifUuid = vifUuid;
+    public void setUuid(final String uuid) {
+        this.uuid = uuid;
     }
 
-    public String getVifUuid() {
-        return vifUuid;
+    public String getHref() {
+        return href;
     }
 
-    public void setVifUuid(final String vifUuid) {
-        this.vifUuid = vifUuid;
+    public void setHref(final String href) {
+        this.href = href;
     }
 
-    public String getType() {
-        return type;
+    public String getSchema() {
+        return schema;
     }
 
+    public void setSchema(final String schema) {
+        this.schema = schema;
+    }
 
     @Override
     public String toString() {
@@ -57,7 +64,7 @@ public class VifAttachment extends Attachment {
     public int hashCode() {
         return new HashCodeBuilder(17, 31)
                 .append(this.getClass())
-                .append(vifUuid)
+                .append(uuid)
                 .toHashCode();
     }
 
@@ -72,7 +79,7 @@ public class VifAttachment extends Attachment {
         if (!(this.getClass().isInstance(obj))) {
             return false;
         }
-        final VifAttachment another = (VifAttachment) obj;
-        return new EqualsBuilder().append(vifUuid, another.vifUuid).isEquals();
+        final BaseNiciraEntity another = (BaseNiciraEntity) obj;
+        return new EqualsBuilder().append(uuid, another.uuid).isEquals();
     }
 }

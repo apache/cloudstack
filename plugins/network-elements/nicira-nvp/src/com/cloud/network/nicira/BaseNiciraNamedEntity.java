@@ -19,22 +19,26 @@
 
 package com.cloud.network.nicira;
 
-/**
- *
- */
-public class SingleDefaultRouteImplictRoutingConfig extends RoutingConfig {
-    public RouterNextHop defaultRouteNextHop;
-    public final String type = "SingleDefaultRouteImplicitRoutingConfig";
+import java.util.List;
 
-    public SingleDefaultRouteImplictRoutingConfig(RouterNextHop routerNextHop) {
-        defaultRouteNextHop = routerNextHop;
+public abstract class BaseNiciraNamedEntity extends BaseNiciraEntity {
+
+    protected String displayName;
+    protected List<NiciraNvpTag> tags;
+
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public RouterNextHop getDefaultRouteNextHop() {
-        return defaultRouteNextHop;
+    public void setDisplayName(final String displayName) {
+        this.displayName = displayName;
     }
 
-    public void setDefaultRouteNextHop(RouterNextHop defaultRouteNextHop) {
-        this.defaultRouteNextHop = defaultRouteNextHop;
+    public List<NiciraNvpTag> getTags() {
+        return tags;
+    }
+
+    public void setTags(final List<NiciraNvpTag> tags) {
+        this.tags = tags;
     }
 }
