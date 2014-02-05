@@ -3276,8 +3276,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (RuntimeException)jobException;
                 else if (jobException instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobException);
-                else if (jobException instanceof Long)
-                    return requested;
+                else if (jobException instanceof NicProfile)
+                    return (NicProfile)jobException;
             }
 
             throw new RuntimeException("Unexpected job execution result");
@@ -5006,7 +5006,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         NicProfile nic = orchestrateAddVmToNetwork(vm, network,
                 work.getRequestedNicProfile());
 
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic.getId()));
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
     }
 
     private Pair<JobInfo.Status, String> orchestrateRemoveNicFromVm(VmWorkRemoveNicFromVm work) throws Exception {
