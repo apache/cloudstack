@@ -34,7 +34,10 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        // FIXME SnapshotDetailsVO doesn't have a display field
+        if (_allAttributes.containsKey("display")) {
+            AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        }
         AllFieldsSearch.done();
     }
 
