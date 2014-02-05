@@ -127,6 +127,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider NiciraNvp = new Provider("NiciraNvp", false);
         public static final Provider InternalLbVm = new Provider("InternalLbVm", false);
         public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
+        public static final Provider Ovs = new Provider("Ovs", false);
 
         private String name;
         private boolean isExternal;
