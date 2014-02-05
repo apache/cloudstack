@@ -30,10 +30,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -135,10 +136,10 @@ public class StoragePoolVO implements StoragePool {
         this.usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
         this.hostAddress = hostAddress;
-        this.path = hostPath;
         this.port = port;
         this.podId = podId;
         this.setStatus(StoragePoolStatus.Initial);
+        this.setPath(hostPath);
     }
 
     public StoragePoolVO(StoragePoolVO that) {
@@ -150,9 +151,9 @@ public class StoragePoolVO implements StoragePool {
         this.poolType = type;
         this.hostAddress = hostAddress;
         this.port = port;
-        this.path = path;
         this.setStatus(StoragePoolStatus.Initial);
         this.uuid = UUID.randomUUID().toString();
+        this.setPath(path);
     }
 
     public String getName() {
@@ -244,7 +245,12 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public String getPath() {
-        return path;
+        String updatedPath = path;
+        if (this.poolType == StoragePoolType.SMB) {
+            updatedPath = UriUtils.getUpdateUri(updatedPath, false);
+        }
+
+        return updatedPath;
     }
 
     public String getUserInfo() {
@@ -273,6 +279,9 @@ public class StoragePoolVO implements StoragePool {
 
     public void setPath(String path) {
         this.path = path;
+        if (this.poolType == StoragePoolType.SMB) {
+            this.path = UriUtils.getUpdateUri(this.path, true);
+        }
     }
 
     public void setUserInfo(String userInfo) {

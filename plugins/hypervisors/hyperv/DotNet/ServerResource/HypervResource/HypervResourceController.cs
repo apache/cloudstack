@@ -916,7 +916,8 @@ namespace HypervResource
                     GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
                     hostPath = localPath;
                 }
-                else if (poolType == StoragePoolType.NetworkFilesystem)
+                else if (poolType == StoragePoolType.NetworkFilesystem ||
+                    poolType == StoragePoolType.SMB)
                 {
                     NFSTO share = new NFSTO();
                     String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
@@ -972,7 +973,8 @@ namespace HypervResource
             }
 
             if (poolType != StoragePoolType.Filesystem &&
-                poolType != StoragePoolType.NetworkFilesystem)
+                poolType != StoragePoolType.NetworkFilesystem &&
+                poolType != StoragePoolType.SMB)
             {
                 details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
                 logger.Error(details);
@@ -1715,7 +1717,7 @@ namespace HypervResource
                         used = capacity - available;
                         result = true;
                     }
-                    else if (poolType == StoragePoolType.NetworkFilesystem)
+                    else if (poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.SMB)
                     {
                         string sharePath = config.getPrimaryStorage((string)cmd.id);
                         if (sharePath != null)

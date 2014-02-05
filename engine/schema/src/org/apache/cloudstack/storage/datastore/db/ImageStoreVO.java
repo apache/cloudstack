@@ -31,6 +31,7 @@ import javax.persistence.TableGenerator;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -144,11 +145,18 @@ public class ImageStoreVO implements ImageStore {
     }
 
     public String getUrl() {
-        return url;
+        String updatedUrl = url;
+        if ("cifs".equalsIgnoreCase(this.protocol)) {
+            updatedUrl = UriUtils.getUpdateUri(updatedUrl, false);
+        }
+        return updatedUrl;
     }
 
     public void setUrl(String url) {
         this.url = url;
+        if ("cifs".equalsIgnoreCase(this.protocol)) {
+            this.url = UriUtils.getUpdateUri(url, true);
+        }
     }
 
     public Date getCreated() {
