@@ -69,8 +69,8 @@ public class PrimaryDataStoreHelper {
         dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(params.getProviderName());
         dataStoreVO.setHostAddress(params.getHost());
-        dataStoreVO.setPath(params.getPath());
         dataStoreVO.setPoolType(params.getType());
+        dataStoreVO.setPath(params.getPath());
         dataStoreVO.setPort(params.getPort());
         dataStoreVO.setName(params.getName());
         dataStoreVO.setUuid(params.getUuid());
