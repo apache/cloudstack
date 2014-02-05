@@ -881,7 +881,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             dom0vif = VIF.create(conn, vifr);
         }
         // At this stage we surely have a VIF
-        dom0vif.plug(conn);
+        try {
+            dom0vif.plug(conn);
+        } catch (Exception e) {
+            // though wierd exception is thrown, VIF actually gets plugged-in to dom0, so just ignore exception
+            s_logger.info("Ignoring the benign error thrown while plugging VIF to dom0");
+        }
         dom0vif.unplug(conn);
         synchronized(_tmpDom0Vif) {
             _tmpDom0Vif.add(dom0vif);
