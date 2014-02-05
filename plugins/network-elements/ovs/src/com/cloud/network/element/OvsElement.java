@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,12 +54,14 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
-        return null;
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.put(Service.Connectivity, null);
+        return capabilities;
     }
 
     @Override
     public Provider getProvider() {
-        return null;
+        return Network.Provider.Ovs;
     }
 
     @Override
