@@ -3,7 +3,7 @@ Veewee::Definition.declare({
   :memory_size=> '256',
   :disk_size => '2500', :disk_format => 'VDI', :hostiocache => 'off',
   :os_type_id => 'Debian_64',
-  :iso_file => "debian-7.0.0-amd64-netinst.iso",
+  :iso_file => "debian-7.3.0-amd64-netinst.iso",
   :iso_src => "http://ftp.acc.umu.se/mirror/cdimage/release/7.3.0/amd64/iso-cd/debian-7.3.0-amd64-netinst.iso",
   :iso_md5 => "72473e8a5e65b61acc7efde90d9f71d1",
   :iso_download_timeout => "1000",
