@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -31,7 +32,7 @@ import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVpnCustomerGateways", description = "Lists site to site vpn customer gateways", responseObject = Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "listVpnCustomerGateways", description = "Lists site to site vpn customer gateways", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = { AclEntityType.Site2SiteCustomerGateway })
 public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVpnCustomerGatewaysCmd.class.getName());
 
