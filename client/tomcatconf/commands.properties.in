@@ -471,6 +471,7 @@ createNetworkACLList=15
 deleteNetworkACLList=15
 replaceNetworkACLList=15
 listNetworkACLLists=15
+updateNetworkACLList=15
 
 
 #### Static route commands
@@ -653,6 +654,7 @@ removedeleteUcsManager=1
 createLoadBalancer=15
 listLoadBalancers=15
 deleteLoadBalancer=15
+updateLoadBalancer=15
 
 #Internal Load Balancer Element commands
 configureInternalLoadBalancerElement=7

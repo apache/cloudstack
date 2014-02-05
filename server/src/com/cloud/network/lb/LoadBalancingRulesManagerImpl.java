@@ -1888,6 +1888,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String algorithm = cmd.getAlgorithm();
         LoadBalancerVO lb = _lbDao.findById(lbRuleId);
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
+        String customId = cmd.getCustomId();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -1906,6 +1907,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (algorithm != null) {
             lb.setAlgorithm(algorithm);
+        }
+
+        if (customId != null) {
+            lb.setUuid(customId);
         }
 
         boolean success = _lbDao.update(lbRuleId, lb);
