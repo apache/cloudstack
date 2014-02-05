@@ -401,11 +401,13 @@ deleteProjectInvitation=15
 createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
+updateFirewallRule=15
 
 ####
 createEgressFirewallRule=15
 deleteEgressFirewallRule=15
 listEgressFirewallRules=15
+updateEgressFirewallRule=15
 
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=1

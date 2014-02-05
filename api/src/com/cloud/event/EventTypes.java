@@ -112,6 +112,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
+    public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";

@@ -255,6 +255,8 @@ import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleC
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateEgressFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
@@ -2861,6 +2863,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListOvsElementsCmd.class);
         cmdList.add(ConfigureOvsElementCmd.class);
         cmdList.add(GetVMUserDataCmd.class);
+        cmdList.add(UpdateEgressFirewallRuleCmd.class);
+        cmdList.add(UpdateFirewallRuleCmd.class);
         return cmdList;
     }
 
