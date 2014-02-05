@@ -585,6 +585,10 @@ public class LibvirtVMDef {
             return _diskLabel;
         }
 
+        public diskType getDiskType() {
+            return _diskType;
+        }
+
         public deviceType getDeviceType() {
             return _deviceType;
         }
@@ -595,6 +599,10 @@ public class LibvirtVMDef {
 
         public diskBus getBusType() {
             return _bus;
+        }
+
+        public diskFmtType getDiskFormatType() {
+            return _diskFmtType;
         }
 
         public int getDiskSeq() {
@@ -620,6 +628,10 @@ public class LibvirtVMDef {
 
         public void setCacheMode(diskCacheMode cacheMode) {
             _diskCacheMode = cacheMode;
+        }
+
+        public diskCacheMode getCacheMode() {
+            return _diskCacheMode;
         }
 
         @Override
