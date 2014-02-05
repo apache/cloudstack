@@ -19,14 +19,13 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.3.0
+CLOUDSTACK_RELEASE=4.4.0
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
     echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
     apt-get update
 }
-
 
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
@@ -51,8 +50,8 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
   apt-get --no-install-recommends -q -y --force-yes install irqbalance
-  
- # cifs client
+
+  # cifs client
   apt-get --no-install-recommends -q -y --force-yes install samba-common
   apt-get --no-install-recommends -q -y --force-yes install cifs-utils
 
@@ -76,12 +75,13 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
   
-  # Hyperv  kvp daemon
+  # Hyperv  kvp daemon - 64bit only
   # Download the hv kvp daemon 
   wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
   dpkg -i hv-kvp-daemon_3.1_amd64.deb
+
   #libraries required for rdp client (Hyper-V) 
-   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
+  apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
@@ -221,7 +221,7 @@ configure_services() {
   snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
-  tar -zxvf cloudstack.tar.gz
+  tar -zxvf cloudstack.tar.gz 'cloudstack-HEAD-???????/systemvm'
   cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
   cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
   mkdir -p /usr/share/cloud/
