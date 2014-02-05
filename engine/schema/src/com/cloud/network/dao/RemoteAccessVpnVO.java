@@ -148,4 +148,8 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public Long getVpcId() {
         return vpcId;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

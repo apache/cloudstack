@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.FirewallRule;
 
 @APICommand(name = "updateLoadBalancer", description = "Updates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0")
 public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
@@ -89,7 +90,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void checkUuid() {
         if (this.getCustomId() != null) {
-            _uuidMgr.checkUuid(this.getCustomId(), ApplicationLoadBalancerRule.class);
+            _uuidMgr.checkUuid(this.getCustomId(), FirewallRule.class);
         }
     }
 }

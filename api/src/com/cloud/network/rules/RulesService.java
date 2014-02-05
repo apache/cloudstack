@@ -80,4 +80,6 @@ public interface RulesService {
 
     boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException;
 
+    PortForwardingRule updatePortForwardingRule(long id, String customId);
+
 }

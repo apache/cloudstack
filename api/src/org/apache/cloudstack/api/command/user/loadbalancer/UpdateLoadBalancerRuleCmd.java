@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
@@ -136,7 +137,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void checkUuid() {
         if (this.getCustomId() != null) {
-            _uuidMgr.checkUuid(this.getCustomId(), LoadBalancer.class);
+            _uuidMgr.checkUuid(this.getCustomId(), FirewallRule.class);
         }
     }
 }

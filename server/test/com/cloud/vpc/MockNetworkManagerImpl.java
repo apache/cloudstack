@@ -25,8 +25,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -36,6 +34,8 @@ import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -855,6 +855,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public void rollbackNicForMigration(VirtualMachineProfile src, VirtualMachineProfile dst) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public IpAddress updateIP(Long id, String customId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

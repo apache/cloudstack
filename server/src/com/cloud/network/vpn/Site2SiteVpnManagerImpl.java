@@ -24,9 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
@@ -40,6 +37,8 @@ import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
@@ -782,5 +781,42 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Inject
     public void setS2sProviders(List<Site2SiteVpnServiceProvider> s2sProviders) {
         this._s2sProviders = s2sProviders;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_UPDATE, eventDescription = "creating s2s vpn gateway", async = true)
+    public Site2SiteVpnConnection updateVpnConnection(long id, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
+        if (conn == null) {
+            throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id);
+        }
+
+        _accountMgr.checkAccess(caller, null, false, conn);
+        if (customId != null) {
+            conn.setUuid(customId);
+        }
+
+        _vpnConnectionDao.update(id, conn);
+        return _vpnConnectionDao.findById(id);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_UPDATE, eventDescription = "updating s2s vpn gateway", async = true)
+    public Site2SiteVpnGateway updateVpnGateway(Long id, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+
+        Site2SiteVpnGatewayVO vpnGateway = _vpnGatewayDao.findById(id);
+        if (vpnGateway == null) {
+            throw new InvalidParameterValueException("Fail to find vpn gateway with " + id);
+        }
+
+        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        if (customId != null) {
+            vpnGateway.setUuid(customId);
+        }
+        _vpnGatewayDao.update(id, vpnGateway);
+        return _vpnGatewayDao.findById(id);
+
     }
 }
