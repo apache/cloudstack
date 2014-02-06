@@ -836,6 +836,10 @@ public class LibvirtVMDef {
             return _macAddr;
         }
 
+        public nicModel getModel() {
+            return _model;
+        }
+
         public void setVirtualPortType(String virtualPortType) {
             _virtualPortType = virtualPortType;
         }

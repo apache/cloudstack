@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource;
 import junit.framework.TestCase;
 import java.util.List;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -33,6 +34,9 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         DiskDef.deviceType deviceType = DiskDef.deviceType.DISK;
         DiskDef.diskFmtType diskFormat = DiskDef.diskFmtType.QCOW2;
         DiskDef.diskCacheMode diskCache = DiskDef.diskCacheMode.NONE;
+
+        InterfaceDef.nicModel ifModel = InterfaceDef.nicModel.VIRTIO;
+        InterfaceDef.guestNetType ifType = InterfaceDef.guestNetType.BRIDGE;
 
         String diskLabel ="vda";
         String diskPath = "/var/lib/libvirt/images/my-test-image.qcow2";
@@ -96,35 +100,35 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='virtio-serial0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>" +
                      "</controller>" +
-                     "<interface type='bridge'>" +
+                     "<interface type='" + ifType.toString() + "'>" +
                      "<mac address='0e:00:a9:fe:02:00'/>" +
                      "<source bridge='cloud0'/>" +
                      "<target dev='vnet0'/>" +
-                     "<model type='virtio'/>" +
+                     "<model type='" + ifModel.toString() + "'/>" +
                      "<alias name='net0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>" +
                      "</interface>" +
-                     "<interface type='bridge'>" +
+                     "<interface type='" + ifType.toString() + "'>" +
                      "<mac address='06:c5:94:00:05:65'/>" +
                      "<source bridge='cloudbr1'/>" +
                      "<target dev='vnet1'/>" +
-                     "<model type='virtio'/>" +
+                     "<model type='" + ifModel.toString() + "'/>" +
                      "<alias name='net1'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>" +
                      "</interface>" +
-                     "<interface type='bridge'>" +
+                     "<interface type='" + ifType.toString() + "'>" +
                      "<mac address='06:c9:f4:00:04:40'/>" +
                      "<source bridge='cloudbr0'/>" +
                      "<target dev='vnet2'/>" +
-                     "<model type='virtio'/>" +
+                     "<model type='" + ifModel.toString() + "'/>" +
                      "<alias name='net2'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>" +
                      "</interface>" +
-                     "<interface type='bridge'>" +
+                     "<interface type='" + ifType.toString() + "'>" +
                      "<mac address='06:7e:c6:00:05:68'/>" +
                      "<source bridge='cloudbr1'/>" +
                      "<target dev='vnet3'/>" +
-                     "<model type='virtio'/>" +
+                     "<model type='" + ifModel.toString() + "'/>" +
                      "<alias name='net3'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>" +
                      "</interface>" +
@@ -180,5 +184,11 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(diskType, disks.get(diskId).getDiskType());
         assertEquals(deviceType, disks.get(diskId).getDeviceType());
         assertEquals(diskFormat, disks.get(diskId).getDiskFormatType());
+
+        List<InterfaceDef> ifs = parser.getInterfaces();
+        for (int i = 0; i < ifs.size(); i++) {
+            assertEquals(ifModel, ifs.get(i).getModel());
+            assertEquals(ifType, ifs.get(i).getNetType());
+        }
     }
 }
