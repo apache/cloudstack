@@ -584,15 +584,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -16061,16 +16061,16 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add UCS Manager',
+                            label: 'label.add.ucs.manager',
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'Add UCS Manager';
+                                    return 'label.add.ucs.manager';
                                 }
                             },
                             
                             createForm: {
-                                title: 'Add UCS Manager',
+                                title: 'label.add.ucs.manager',
                                 fields: {
                                     name: {
                                         label: 'label.name',
