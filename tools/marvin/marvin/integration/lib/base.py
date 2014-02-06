@@ -1462,6 +1462,9 @@ class ServiceOffering:
         if "deploymentplanner" in services:
             cmd.deploymentplanner = services["deploymentplanner"]
 
+        if "serviceofferingdetails" in services:
+            cmd.serviceofferingdetails.append({services['serviceofferingdetails']})
+
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
 

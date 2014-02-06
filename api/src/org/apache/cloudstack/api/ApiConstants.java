@@ -581,6 +581,11 @@ public class ApiConstants {
     public static final String PASSIVE = "passive";
     public static final String VERSION = "version";
     public static final String START = "start";
+    public static final String GPUGROUP = "gpugroup";
+    public static final String GPUGROUPNAME = "gpugroupname";
+    public static final String VGPU = "vgpu";
+    public static final String VGPUTYPE = "vgputype";
+    public static final String REMAININGCAPACITY = "remainingcapacity";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

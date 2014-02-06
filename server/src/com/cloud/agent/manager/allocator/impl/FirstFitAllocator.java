@@ -26,10 +26,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
@@ -38,6 +37,7 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -47,7 +47,9 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
@@ -99,6 +101,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     ClusterDao _clusterDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     float _factor = 1;
     boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
@@ -264,7 +268,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
         }
 
+        long serviceOfferingId = offering.getId();
         List<Host> suitableHosts = new ArrayList<Host>();
+        ServiceOfferingDetailsVO offeringDetails = null;
 
         for (Host host : hosts) {
             if (suitableHosts.size() == returnUpTo) {
@@ -283,6 +289,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                     s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
                         " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
+                continue;
+            }
+
+            // Check if GPU device is required by offering and host has the availability
+            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null
+                    && !_resourceMgr.isGPUDeviceAvailable(host.getId(), offeringDetails.getValue())){
+                s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
                 continue;
             }
 

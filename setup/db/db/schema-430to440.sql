@@ -592,4 +592,22 @@ CREATE VIEW `cloud`.`event_view` AS
         `cloud`.`event` eve ON event.start_id = eve.id;
 
 
+DROP TABLE IF EXISTS `cloud`.`host_gpu_groups`;
+CREATE TABLE `cloud`.`host_gpu_groups` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `group_name` varchar(255) NOT NULL,
+  `host_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_host_gpu_groups__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`vgpu_types`;
+CREATE TABLE `cloud`.`vgpu_types` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `gpu_group_id` bigint(20) unsigned NOT NULL,
+  `vgpu_type` varchar(40) NOT NULL COMMENT 'vgpu type supported by this gpu group',
+  `remaining_vm_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'remaining vgpu can be created with this vgpu_type on the given gpu group',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vgpu_types__gpu_group_id` FOREIGN KEY (`gpu_group_id`) REFERENCES `host_gpu_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
 

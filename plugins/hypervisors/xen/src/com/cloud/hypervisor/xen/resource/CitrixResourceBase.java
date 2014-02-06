@@ -56,11 +56,13 @@ import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Console;
+import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostCpu;
 import com.xensource.xenapi.HostMetrics;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PGPU;
 import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
@@ -73,6 +75,8 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VBDMetrics;
 import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VGPU;
+import com.xensource.xenapi.VGPUType;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
@@ -108,6 +112,8 @@ import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -201,6 +207,7 @@ import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
@@ -433,6 +440,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetHostStatsCommand)cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand)cmd);
+        } else if (clazz == GetGPUStatsCommand.class) {
+            return execute((GetGPUStatsCommand) cmd);
         } else if (clazz == GetVmDiskStatsCommand.class) {
             return execute((GetVmDiskStatsCommand)cmd);
         } else if (clazz == CheckHealthCommand.class) {
@@ -1288,6 +1297,65 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return dynamicMinRam;
     }
 
+    private HashMap<String, HashMap<String, Long>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
+        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+        Host host = Host.getByUuid(conn, _host.uuid);
+        Set<PGPU> pgpus = host.getPGPUs(conn);
+        Iterator<PGPU> iter = pgpus.iterator();
+        while (iter.hasNext()) {
+            PGPU pgpu = iter.next();
+            GPUGroup gpuGroup = pgpu.getGPUGroup(conn);
+            Set<VGPUType> enabledVGPUTypes = gpuGroup.getEnabledVGPUTypes(conn);
+            String groupName = gpuGroup.getNameLabel(conn);
+            HashMap<String, Long> gpuCapacity = new HashMap<String, Long>();
+            if (groupDetails.get(groupName) != null) {
+                gpuCapacity = groupDetails.get(groupName);
+            }
+            // Get remaining capacity of all the enabled VGPU in a PGPU
+            if(enabledVGPUTypes != null) {
+                Iterator<VGPUType> it = enabledVGPUTypes.iterator();
+                while (it.hasNext()) {
+                    VGPUType type = it.next();
+                    String modelName = type.getModelName(conn);
+                    Long remainingCapacity = pgpu.getRemainingCapacity(conn, type);
+                    if (gpuCapacity.get(modelName) != null) {
+                        long newRemainingCapacity = gpuCapacity.get(modelName) + remainingCapacity;
+                        gpuCapacity.put(modelName, newRemainingCapacity);
+                    } else {
+                        gpuCapacity.put(modelName, remainingCapacity);
+                    }
+                }
+            }
+            groupDetails.put(groupName, gpuCapacity);
+        }
+        return groupDetails;
+    }
+
+    protected void createVGPU(Connection conn, StartCommand cmd, VM vm, GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
+        Set<GPUGroup> groups = GPUGroup.getByNameLabel(conn, gpuDevice.getGpuGroup());
+        assert groups.size() == 1 : "Should only have 1 group but found " + groups.size();
+        GPUGroup gpuGroup = groups.iterator().next();
+
+        Set<VGPUType> vgpuTypes = gpuGroup.getEnabledVGPUTypes(conn);
+        Iterator<VGPUType> iter = vgpuTypes.iterator();
+        VGPUType vgpuType = null;
+        while (iter.hasNext()) {
+            VGPUType entry = iter.next();
+            if (entry.getModelName(conn).equals(gpuDevice.getVgpuType())) {
+                vgpuType = entry;
+            }
+        }
+        String device = "0"; // Only allow device = "0" for now, as XenServer supports just a single vGPU per VM.
+        Map<String, String> other_config = new HashMap<String, String>();
+        VGPU.create(conn, vm, gpuGroup, device, other_config, vgpuType);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Created VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] for VM " + cmd.getVirtualMachine().getName());
+        }
+        // Calculate and set remaining GPU capacity in the host.
+        cmd.getVirtualMachine().getGpuDevice().setGroupDetails(getGPUGroupDetails(conn));
+    }
+
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
@@ -1720,6 +1788,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             Host host = Host.getByUuid(conn, _host.uuid);
             vm = createVmFromTemplate(conn, vmSpec, host);
+
+            GPUDeviceTO gpuDevice = vmSpec.getGpuDevice();
+            if (gpuDevice != null) {
+                s_logger.debug("Creating VGPU for of VGPU type: " + gpuDevice.getVgpuType() + " in GPU group "
+                        + gpuDevice.getGpuGroup() + " for VM " + vmName );
+                createVGPU(conn, cmd, vm, gpuDevice);
+            }
 
             for (DiskTO disk : vmSpec.getDisks()) {
                 VDI newVdi = prepareManagedDisk(conn, disk, vmName);
@@ -2243,6 +2318,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
          */
 
         return hostStats;
+    }
+
+    protected GetGPUStatsAnswer execute(GetGPUStatsCommand cmd) {
+        Connection conn = getConnection();
+        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+        try {
+            groupDetails = getGPUGroupDetails(conn);
+        } catch (Exception e) {
+            String msg = "Unable to get GPU stats" + e.toString();
+            s_logger.warn(msg, e);
+        }
+        return new GetGPUStatsAnswer(cmd, groupDetails);
     }
 
     protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
@@ -3566,6 +3653,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                     try {
                         if (vm.getPowerState(conn) == VmPowerState.HALTED) {
+                            Set<VGPU> vGPUs = null;
+                            // Get updated GPU details
+                            try {
+                                vGPUs = vm.getVGPUs(conn);
+                            } catch (XenAPIException e2) {
+                                s_logger.debug("VM " + vmName + " does not have GPU support.");
+                            }
+                            if (vGPUs != null && !vGPUs.isEmpty()) {
+                                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                                cmd.setGpuDevice(new GPUDeviceTO(null, null, groupDetails));
+                            }
+
                             Set<VIF> vifs = vm.getVIFs(conn);
                             List<Network> networks = new ArrayList<Network>();
                             for (VIF vif : vifs) {
@@ -5398,6 +5497,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (_privateNetworkName != null) {
                 details.put("private.network.device", _privateNetworkName);
+            }
+
+            try {
+                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                cmd.setGpuGroupDetails(groupDetails);
+            } catch (Exception e) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("GPU device not found in host " + hr.hostname);
+                }
             }
 
             cmd.setHostDetails(details);
