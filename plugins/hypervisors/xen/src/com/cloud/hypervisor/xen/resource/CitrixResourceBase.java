@@ -5019,6 +5019,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected boolean launchHeartBeat(Connection conn) {
+        String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
+                .toString(_heartbeatInterval));
+        if (result == null || !result.contains("> DONE <")) {
+            s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
+            return false;
+        }
+        return true;
+    }
+
     protected SetupAnswer execute(SetupCommand cmd) {
         Connection conn = getConnection();
         setupServer(conn);
@@ -5032,12 +5042,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             	_canBridgeFirewall = can_bridge_firewall(conn);
             }
 
-            String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
-                    .toString(_heartbeatInterval));
-            if (result == null || !result.contains("> DONE <")) {
-                s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
+            boolean r = launchHeartBeat(conn);
+            if (!r) {
                 return null;
             }
+
             cleanupTemplateSR(conn);
             Host host = Host.getByUuid(conn, _host.uuid);
             try {
@@ -5051,7 +5060,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("multipath is already set");
             }
             if (cmd.needSetup() ) {
-                result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
+                String result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
                 if (!result.contains("> DONE <")) {
                     s_logger.warn("Unable to setup iscsi: " + result);
                     return new SetupAnswer(cmd, result);
