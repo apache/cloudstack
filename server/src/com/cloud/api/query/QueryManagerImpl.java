@@ -26,6 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -94,8 +97,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -2764,6 +2765,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean showRemovedTmpl = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
+        // TODO: listAll flag has some conflicts with TemplateFilter parameter
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
             if (_accountMgr.isNormalUser(caller.getId())) {
@@ -2777,20 +2779,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<Long> permittedAccounts = new ArrayList<Long>();
         List<Long> permittedResources = new ArrayList<Long>();
 
-        //List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
                 domainIdRecursiveListProject, listAll, false, "listTemplates");
 
-        //_accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
-        //        domainIdRecursiveListProject, listAll, false);
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        //List<Account> permittedAccounts = new ArrayList<Account>();
-        //for (Long accountId : permittedAccountIds) {
-        //    permittedAccounts.add(_accountMgr.getAccount(accountId));
-        //}
 
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
@@ -2855,63 +2850,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             // search and ignore other query parameters
             sc.addAnd("id", SearchCriteria.Op.EQ, templateId);
         } else {
-
-            DomainVO domain = null;
-            if (!permittedAccounts.isEmpty()) {
-                domain = _domainDao.findById(permittedAccounts.get(0));
-            } else {
-                domain = _domainDao.findById(Domain.ROOT_DOMAIN);
-            }
-
-            // List<HypervisorType> hypers = null;
-            // if (!isIso) {
-            // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-            // }
-
-            // add criteria for project or not
-            if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
-                sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
-            } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
-            }
-
-            // add criteria for domain path in case of domain admin
-            if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) &&
-                (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
-                sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
-            }
-
-            List<Long> relatedDomainIds = new ArrayList<Long>();
-            if (!permittedAccounts.isEmpty()) {
-                for (Long accountId : permittedAccounts) {
-                    Account account = _accountDao.findById(accountId);
-                    boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community);
-
-                    // get all parent domain ID's all the way till root domain
-                    DomainVO domainTreeNode = null;
-                    //if template filter is featured, or community, all child domains should be included in search
-                    if (publicTemplates) {
-                        domainTreeNode = _domainDao.findById(Domain.ROOT_DOMAIN);
-
-                    } else {
-                        domainTreeNode = _domainDao.findById(account.getDomainId());
-                    }
-                    relatedDomainIds.add(domainTreeNode.getId());
-                    while (domainTreeNode.getParent() != null) {
-                        domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
-                        relatedDomainIds.add(domainTreeNode.getId());
-                    }
-
-                    // get all child domain ID's
-                    if (_accountMgr.isAdmin(account.getType()) || publicTemplates) {
-                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainTreeNode.getPath(), domainTreeNode.getId());
-                        for (DomainVO childDomain : allChildDomains) {
-                            relatedDomainIds.add(childDomain.getId());
-                        }
-                    }
-                }
-            }
-
             if (!isIso) {
                 // add hypervisor criteria for template case
                 if (hypers != null && !hypers.isEmpty()) {
@@ -2933,19 +2871,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     sc.addAnd("featured", SearchCriteria.Op.EQ, false);
                 }
 
-                // restrict to caller domain tree
+                // for public templates, we should get all public templates from all domains in the system
                 // get all parent domain ID's all the way till root domain
                 List<Long> domainTree = new ArrayList<Long>();
-                DomainVO domainTreeNode = callerDomain;
+                DomainVO domainTreeNode = _domainDao.findById(Domain.ROOT_DOMAIN); // fix for CLOUDSTACK-5987
                 domainTree.add(domainTreeNode.getId());
-                while (domainTreeNode.getParent() != null) {
-                    domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
-                    domainTree.add(domainTreeNode.getId());
-                }
 
-                // get all child domain ID's
-                List<DomainVO> allChildDomains = _domainDao.findAllChildren(callerDomain.getPath(),
-                        callerDomain.getId());
+                // get all child domain ID's under root
+                List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainTreeNode.getPath(), domainTreeNode.getId());
                 for (DomainVO childDomain : allChildDomains) {
                     domainTree.add(childDomain.getId());
                 }
