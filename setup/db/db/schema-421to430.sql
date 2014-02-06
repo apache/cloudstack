@@ -828,6 +828,8 @@ CREATE TABLE `cloud`.`network_acl_item_details` (
 
 ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
 
+UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='150' WHERE hypervisor_version='6.1.0';
+UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='500' WHERE hypervisor_version='6.2.0';
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'Hyperv', '6.2', 1024, 0, 64, 0);
 
