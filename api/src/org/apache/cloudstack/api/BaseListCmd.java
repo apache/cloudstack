@@ -16,10 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import java.util.Map;
-
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 
 public abstract class BaseListCmd extends BaseCmd {
 
@@ -86,7 +83,7 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public Long getPageSizeVal() {
         Long defaultPageSize = s_maxPageSize;
-        final Integer pageSizeInt = getPageSize();
+        Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
             defaultPageSize = pageSizeInt.longValue();
         }
@@ -99,12 +96,12 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public Long getStartIndex() {
         Long startIndex = Long.valueOf(0);
-        final Long pageSizeVal = getPageSizeVal();
+        Long pageSizeVal = getPageSizeVal();
 
         if (pageSizeVal == null) {
             startIndex = null;
         } else if (page != null) {
-            final int pageNum = page.intValue();
+            int pageNum = page.intValue();
             if (pageNum > 0) {
                 startIndex = Long.valueOf(pageSizeVal * (pageNum - 1));
             }
@@ -114,26 +111,5 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.None;
-    }
-
-    @Override
-    public void validateSpecificParameters(final Map<String, Object> params){
-        super.validateSpecificParameters(params);
-
-        final Object pageSizeObj = params.get(ApiConstants.PAGE_SIZE);
-        Long pageSize = null;
-        if (pageSizeObj != null) {
-            pageSize = Long.valueOf((String)pageSizeObj);
-        }
-
-        if (params.get(ApiConstants.PAGE) == null &&
-                pageSize != null &&
-                !pageSize.equals(BaseListCmd.s_pageSizeUnlimited)) {
-            final ServerApiException ex = new ServerApiException(ApiErrorCode.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
-            ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
-            throw ex;
-        } else if (pageSize == null && (params.get(ApiConstants.PAGE) != null)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
-        }
     }
 }

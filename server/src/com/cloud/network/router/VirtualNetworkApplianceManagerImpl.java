@@ -1362,7 +1362,8 @@ Listener, Configurable {
     private final static int DEFAULT_PRIORITY = 100;
     private final static int DEFAULT_DELTA = 2;
 
-    protected int getUpdatedPriority(final Network guestNetwork, final List<DomainRouterVO> routers, final DomainRouterVO exclude) throws InsufficientVirtualNetworkCapcityException {
+    protected int getUpdatedPriority(final Network guestNetwork, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
+            throws InsufficientVirtualNetworkCapcityException {
         int priority;
         if (routers.size() == 0) {
             priority = DEFAULT_PRIORITY;
@@ -2564,7 +2565,8 @@ Listener, Configurable {
         }
     }
 
-    protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter router, final Provider provider, final Long guestNetworkId, final Map<String, String> vlanMacAddress) {
+    protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter router, final Provider provider, final Long guestNetworkId,
+            final Map<String, String> vlanMacAddress) {
 
         final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
 
@@ -2792,7 +2794,8 @@ Listener, Configurable {
     }
 
     @Override
-    public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
+    public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
+            ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -2973,7 +2976,8 @@ Listener, Configurable {
         });
     }
 
-    private void createDeleteIpAliasCommand(final DomainRouterVO router, final List<IpAliasTO> deleteIpAliasTOs, final List<IpAliasTO> createIpAliasTos, final long networkId, final Commands cmds) {
+    private void createDeleteIpAliasCommand(final DomainRouterVO router, final List<IpAliasTO> deleteIpAliasTOs, final List<IpAliasTO> createIpAliasTos, final long networkId,
+            final Commands cmds) {
         final String routerip = getRouterIpInNetwork(networkId, router.getId());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         final DeleteIpAliasCommand deleteIpaliasCmd = new DeleteIpAliasCommand(routerip, deleteIpAliasTOs, createIpAliasTos);
@@ -4160,7 +4164,7 @@ Listener, Configurable {
 
     //Checks if the router is at the required version
     // Compares MS version and router version
-    protected boolean checkRouterVersion(final VirtualRouter router){
+    protected boolean checkRouterVersion(final VirtualRouter router) {
         if(!routerVersionCheckEnabled.value()){
             //Router version check is disabled.
             return true;

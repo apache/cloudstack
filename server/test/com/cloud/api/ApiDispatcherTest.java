@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.api.dispatch;
+package com.cloud.api;
 
 import java.util.HashMap;
 
@@ -44,12 +44,10 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ParamProcessWorkerTest {
+public class ApiDispatcherTest {
 
     @Mock
-    protected AccountManager accountManager;
-
-    protected ParamProcessWorker paramProcessWorker;
+    AccountManager accountManager;
 
     public static class TestCmd extends BaseCmd {
 
@@ -83,8 +81,8 @@ public class ParamProcessWorkerTest {
     @Before
     public void setup() {
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
-        paramProcessWorker = new ParamProcessWorker();
-        paramProcessWorker._accountMgr = accountManager;
+        new ApiDispatcher().init();
+        ApiDispatcher.getInstance()._accountMgr = accountManager;
     }
 
     @After
@@ -94,12 +92,13 @@ public class ParamProcessWorkerTest {
 
     @Test
     public void processParameters() {
-        final HashMap<String, Object> params = new HashMap<String, Object>();
+        HashMap<String, String> params = new HashMap<String, String>();
         params.put("strparam1", "foo");
         params.put("intparam1", "100");
         params.put("boolparam1", "true");
-        final TestCmd cmd = new TestCmd();
-        paramProcessWorker.processParameters(cmd, params);
+        TestCmd cmd = new TestCmd();
+        //how lucky that field is not protected, this test would be impossible
+        ApiDispatcher.processParameters(cmd, params);
         Assert.assertEquals("foo", cmd.strparam1);
         Assert.assertEquals(100, cmd.intparam1);
     }
