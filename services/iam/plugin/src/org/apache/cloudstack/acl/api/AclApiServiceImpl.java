@@ -183,6 +183,17 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             }
         });
 
+        _messageBus.subscribe(TemplateManager.MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Long templateId = (Long)obj;
+                if (templateId != null) {
+                    s_logger.debug("MessageBus message: reset template permission: " + templateId);
+                    resetTemplatePermission(templateId);
+                }
+            }
+        });
+
         _messageBus.subscribe(EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
@@ -207,8 +218,24 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
                     AccessType accessType = (AccessType)permit.get(ApiConstants.ACCESS_TYPE);
                     String action = (String)permit.get(ApiConstants.ACL_ACTION);
                     List<Long> acctIds = (List<Long>)permit.get(ApiConstants.ACCOUNTS);
-                    s_logger.debug("MessageBus message: grant permission to an entity: (" + entityType + "," + entityId + ")");
+                    s_logger.debug("MessageBus message: grant accounts permission to an entity: (" + entityType + "," + entityId + ")");
                     grantEntityPermissioinToAccounts(entityType, entityId, accessType, action, acctIds);
+                }
+            }
+        });
+
+        _messageBus.subscribe(EntityManager.MESSAGE_REVOKE_ENTITY_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Map<String, Object> permit = (Map<String, Object>)obj;
+                if (permit != null) {
+                    String entityType = (String)permit.get(ApiConstants.ENTITY_TYPE);
+                    Long entityId = (Long)permit.get(ApiConstants.ENTITY_ID);
+                    AccessType accessType = (AccessType)permit.get(ApiConstants.ACCESS_TYPE);
+                    String action = (String)permit.get(ApiConstants.ACL_ACTION);
+                    List<Long> acctIds = (List<Long>)permit.get(ApiConstants.ACCOUNTS);
+                    s_logger.debug("MessageBus message: revoke from accounts permission to an entity: (" + entityType + "," + entityId + ")");
+                    revokeEntityPermissioinFromAccounts(entityType, entityId, accessType, action, acctIds);
                 }
             }
         });
@@ -588,6 +615,24 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         }
     }
 
+    @Override
+    public void revokeEntityPermissioinFromAccounts(String entityType, Long entityId, AccessType accessType, String action, List<Long> accountIds) {
+        // there should already a policy with only this permission added to it, this call is mainly used
+        AclPolicy policy = _iamSrv.getResourceGrantPolicy(entityType, entityId, accessType.toString(), action);
+        if (policy == null) {
+            s_logger.warn("Cannot find a policy associated with this entity permissioin to be revoked, just return");
+            return;
+        }
+        // detach this policy from list of accounts if not detached already
+        Long policyId = policy.getId();
+        for (Long acctId : accountIds) {
+            if (isPolicyAttachedToAccount(policyId, acctId)) {
+                removeAclPolicyFromAccounts(policyId, Collections.singletonList(acctId));
+            }
+        }
+
+    }
+
     private boolean isPolicyAttachedToAccount(Long policyId, Long accountId) {
         List<AclPolicy> pList = listAclPolicies(accountId);
         for (AclPolicy p : pList) {
@@ -596,6 +641,23 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             }
         }
         return false;
+    }
+
+    private void resetTemplatePermission(Long templateId){
+        // reset template will change template to private, so we need to remove its permission for domain admin and normal user group
+        _iamSrv.removeAclPermissionFromAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                PermissionScope.RESOURCE.toString(), templateId, "listTemplates");
+        _iamSrv.removeAclPermissionFromAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
+                PermissionScope.RESOURCE.toString(), templateId, "listTemplates");
+        // check if there is a policy with only UseEntry permission for this template added
+        AclPolicy policy = _iamSrv.getResourceGrantPolicy(AclEntityType.VirtualMachineTemplate.toString(), templateId, AccessType.UseEntry.toString(), "listTemplates");
+        if ( policy == null ){
+            s_logger.info("No policy found for this template grant: " + templateId + ", no detach to be done");
+            return;
+        }
+        // delete the policy, which should detach it from groups and accounts
+        _iamSrv.deleteAclPolicy(policy.getId());
+
     }
 
     @Override

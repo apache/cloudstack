@@ -345,6 +345,14 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     }
                 }
 
+                // remove this policy related entry in acl_account_policy_map table
+                List<AclAccountPolicyMapVO> policyAcctMap = _aclAccountPolicyMapDao.listByPolicyId(policy.getId());
+                if (policyAcctMap != null) {
+                    for (AclAccountPolicyMapVO policyAcct : policyAcctMap) {
+                        _aclAccountPolicyMapDao.remove(policyAcct.getId());
+                    }
+                }
+
                 // remove this policy related entry in acl_policy_permission table
                 List<AclPolicyPermissionVO> policyPermMap = _policyPermissionDao.listByPolicy(policy.getId());
                 if (policyPermMap != null) {
@@ -658,7 +666,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     long policyId = permit.getAclPolicyId();
                     _policyPermissionDao.remove(permit.getId());
 
-                    // remove the policy of there are no other permissions
+                    // remove the policy if there are no other permissions
                     if ((_policyPermissionDao.listByPolicy(policyId)).isEmpty()) {
                         deleteAclPolicy(policyId);
                     }

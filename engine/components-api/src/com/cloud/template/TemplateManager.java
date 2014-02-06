@@ -114,4 +114,5 @@ public interface TemplateManager {
     TemplateInfo prepareIso(long isoId, long dcId);
 
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
+    public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 }

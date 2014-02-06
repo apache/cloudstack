@@ -66,8 +66,10 @@ public interface AclApiService extends PluggableService {
 
     AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action);
 
-    /* Utility routine to grant invidivual resource to list of accounts */
+    /* Utility routine to grant/revoke invidivual resource to list of accounts */
     void grantEntityPermissioinToAccounts(String entityType, Long entityId, AccessType accessType, String action, List<Long> accountIds);
+
+    void revokeEntityPermissioinFromAccounts(String entityType, Long entityId, AccessType accessType, String action, List<Long> accountIds);
 
     /* Response Generation */
     AclPolicyResponse createAclPolicyResponse(AclPolicy policy);
