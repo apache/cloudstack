@@ -14885,16 +14885,19 @@
                     section: 'primary-storage',
                     fields: {
                         name: {
-                            label: 'label.name'
+                            label: 'label.name',
+                            truncate: true
                         },
                         ipaddress: {
                             label: 'label.server'
                         },
                         path: {
-                            label: 'label.path'
+                            label: 'label.path',
+                            truncate: true
                         },
                         clustername: {
-                            label: 'label.cluster'
+                            label: 'label.cluster',
+                            truncate: true
                         },
                         scope: {
                             label: 'Scope'
