@@ -167,10 +167,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
             poolId = destStore.getId();
         } else {
             // if both are zone scope
-            selectedScope = srcScope;
             if (srcStore.getRole() == DataStoreRole.Primary) {
+                selectedScope = srcScope;
                 poolId = srcStore.getId();
             } else if (destStore.getRole() == DataStoreRole.Primary) {
+                selectedScope = destScope;
                 poolId = destStore.getId();
             }
         }
