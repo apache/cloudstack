@@ -391,7 +391,7 @@ namespace HypervResource
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
                     string broadcastUri = nic.broadcastUri;
-                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")) && !isolationUri.Equals("vlan://untagged"))
+                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")))
                     {
                         if (broadcastUri != null && broadcastUri.StartsWith("storage"))
                         {
@@ -402,7 +402,11 @@ namespace HypervResource
                             vlan = isolationUri.Substring("vlan://".Length);
                         }
                         int tmp;
-                        if (!int.TryParse(vlan, out tmp))
+                        if (vlan.Equals("untagged", StringComparison.CurrentCultureIgnoreCase) ) {
+                            // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                            vlan = null;
+                        }
+                        else if (!int.TryParse(vlan, out tmp))
                         {
                             // TODO: double check exception type
                             errMsg = string.Format("Invalid VLAN value {0} for on vm {1} for nic uuid {2}", isolationUri, vmName, nic.uuid);

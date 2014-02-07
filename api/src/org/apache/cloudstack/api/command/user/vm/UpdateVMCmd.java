@@ -154,4 +154,12 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
         }
     }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), UserVm.class);
+
+        }
+    }
 }

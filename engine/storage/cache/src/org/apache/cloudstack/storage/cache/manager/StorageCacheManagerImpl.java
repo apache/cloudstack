@@ -90,6 +90,19 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return null;
     }
 
+
+    @Override
+    public DataStore getCacheStorage(DataObject data, Scope scope) {
+        for (StorageCacheAllocator allocator : storageCacheAllocator) {
+            DataStore store = allocator.getCacheStore(data, scope);
+            if (store != null) {
+                return store;
+            }
+        }
+        return null;
+    }
+
+
     protected List<DataStore> getCacheStores() {
         QueryBuilder<ImageStoreVO> sc = QueryBuilder.create(ImageStoreVO.class);
         sc.and(sc.entity().getRole(), SearchCriteria.Op.EQ, DataStoreRole.ImageCache);

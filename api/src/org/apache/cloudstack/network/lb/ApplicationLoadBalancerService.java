@@ -39,4 +39,6 @@ public interface ApplicationLoadBalancerService {
 
     ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId);
 
+    ApplicationLoadBalancerRule deleteApplicationLoadBalancer(Long id, String customId);
+
 }

@@ -34,9 +34,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -71,6 +68,7 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -82,6 +80,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -247,11 +247,11 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.uuididentity.UUIDManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
@@ -1909,8 +1909,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isDynamicallyScalable == null) {
             isDynamicallyScalable = vm.isDynamicallyScalable();
         }
-
-        _uuidMgr.checkUuid(customId, UserVm.class);
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId);
 
@@ -4559,8 +4557,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
 
-        // For VMware hypervisor since the old root volume is replaced by the new root volume in storage, force expunge old root volume
+        // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
         if (vm.getHypervisorType() == HypervisorType.VMware) {
+            VolumeInfo volumeInStorage = volFactory.getVolume(root.getId());
+            if (volumeInStorage != null) {
             s_logger.info("Expunging volume " + root.getId() + " from primary data store");
             AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
             try {
@@ -4568,6 +4568,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } catch (Exception e) {
                 s_logger.debug("Failed to expunge volume:" + root.getId(), e);
             }
+        }
         }
 
         if (template.getEnablePassword()) {

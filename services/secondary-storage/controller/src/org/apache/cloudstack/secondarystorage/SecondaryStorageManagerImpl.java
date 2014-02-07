@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.secondary;
+package org.apache.cloudstack.secondarystorage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,6 +30,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -42,7 +44,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -104,6 +105,10 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.secondary.SecStorageVmAlertEventArgs;
+import com.cloud.storage.secondary.SecondaryStorageListener;
+import com.cloud.storage.secondary.SecondaryStorageVmAllocator;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -188,9 +193,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected NetworkModel _networkModel;
     @Inject
     protected SnapshotDao _snapshotDao;
-    @Inject
-    private ClusterManager _clusterMgr;
-
     private SecondaryStorageListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
@@ -211,8 +213,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
-    //@Inject            // TODO this is a very strange usage, a singleton class need to inject itself?
-    protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -250,7 +250,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     public SecondaryStorageManagerImpl() {
-        _ssvmMgr = this;
     }
 
     @Override
@@ -825,7 +824,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         value = agentMgrConfigs.get("port");
         _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
-        _listener = new SecondaryStorageListener(this, _agentMgr);
+        _listener = new SecondaryStorageListener(this);
         _agentMgr.registerForHostEvents(_listener, true, false, true);
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);

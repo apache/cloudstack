@@ -22,9 +22,8 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.event.ActionEvent;
@@ -399,7 +398,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         aclItem.setState(State.Add);
 
@@ -441,6 +440,10 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         if (icmpType != null) {
             aclItem.setIcmpType(icmpType);
+        }
+
+        if (customId != null) {
+            aclItem.setUuid(customId);
         }
 
         if (_networkACLItemDao.update(id, aclItem)) {

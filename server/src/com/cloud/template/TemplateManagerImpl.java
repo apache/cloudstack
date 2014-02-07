@@ -74,14 +74,12 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -103,7 +101,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -111,7 +108,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -121,11 +117,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.resource.ResourceManager;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
@@ -152,16 +145,10 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -170,11 +157,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -185,12 +169,10 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {TemplateManager.class, TemplateApiService.class})
@@ -198,118 +180,82 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
 
     @Inject
-    VMTemplateDao _tmpltDao;
+    private VMTemplateDao _tmpltDao;
     @Inject
-    TemplateDataStoreDao _tmplStoreDao;
+    private TemplateDataStoreDao _tmplStoreDao;
     @Inject
-    VMTemplatePoolDao _tmpltPoolDao;
+    private VMTemplatePoolDao _tmpltPoolDao;
     @Inject
-    VMTemplateZoneDao _tmpltZoneDao;
+    private VMTemplateZoneDao _tmpltZoneDao;
     @Inject
-    protected UserVmDetailsDao _vmDetailsDao;
+    private VMInstanceDao _vmInstanceDao;
     @Inject
-    protected VMTemplateDetailsDao _templateDetailsDao;
+    private PrimaryDataStoreDao _poolDao;
     @Inject
-    VMInstanceDao _vmInstanceDao;
+    private StoragePoolHostDao _poolHostDao;
     @Inject
-    PrimaryDataStoreDao _poolDao;
+    private AccountDao _accountDao;
     @Inject
-    StoragePoolHostDao _poolHostDao;
+    private AgentManager _agentMgr;
     @Inject
-    EventDao _eventDao;
+    private AccountManager _accountMgr;
     @Inject
-    DownloadMonitor _downloadMonitor;
+    private HostDao _hostDao;
     @Inject
-    UploadMonitor _uploadMonitor;
+    private DataCenterDao _dcDao;
     @Inject
-    UserAccountDao _userAccountDao;
+    private UserVmDao _userVmDao;
     @Inject
-    AccountDao _accountDao;
+    private VolumeDao _volumeDao;
     @Inject
-    UserDao _userDao;
+    private SnapshotDao _snapshotDao;
     @Inject
-    AgentManager _agentMgr;
+    private ConfigurationDao _configDao;
     @Inject
-    AccountManager _accountMgr;
+    private DomainDao _domainDao;
     @Inject
-    HostDao _hostDao;
+    private GuestOSDao _guestOSDao;
     @Inject
-    DataCenterDao _dcDao;
+    private StorageManager _storageMgr;
     @Inject
-    UserVmDao _userVmDao;
+    private UsageEventDao _usageEventDao;
     @Inject
-    VolumeDao _volumeDao;
+    private AccountService _accountService;
     @Inject
-    SnapshotDao _snapshotDao;
+    private ResourceLimitService _resourceLimitMgr;
     @Inject
-    ConfigurationDao _configDao;
+    private LaunchPermissionDao _launchPermissionDao;
     @Inject
-    ClusterDao _clusterDao;
+    private ProjectManager _projectMgr;
     @Inject
-    DomainDao _domainDao;
+    private VolumeDataFactory _volFactory;
     @Inject
-    UploadDao _uploadDao;
+    private TemplateDataFactory _tmplFactory;
     @Inject
-    protected GuestOSDao _guestOSDao;
+    private SnapshotDataFactory _snapshotFactory;
     @Inject
-    StorageManager _storageMgr;
+    private TemplateService _tmpltSvr;
     @Inject
-    AsyncJobManager _asyncMgr;
+    private DataStoreManager _dataStoreMgr;
     @Inject
-    UserVmManager _vmMgr;
+    private VolumeOrchestrationService _volumeMgr;
     @Inject
-    UsageEventDao _usageEventDao;
+    private EndPointSelector _epSelector;
     @Inject
-    HypervisorGuruManager _hvGuruMgr;
-    @Inject
-    AccountService _accountService;
-    @Inject
-    ResourceLimitService _resourceLimitMgr;
-    @Inject
-    SecondaryStorageVmManager _ssvmMgr;
-    @Inject
-    LaunchPermissionDao _launchPermissionDao;
-    @Inject
-    ProjectManager _projectMgr;
-    @Inject
-    VolumeDataFactory _volFactory;
-    @Inject
-    TemplateDataFactory _tmplFactory;
-    @Inject
-    SnapshotDataFactory _snapshotFactory;
-    @Inject
-    TemplateService _tmpltSvr;
-    @Inject
-    DataStoreManager _dataStoreMgr;
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    VolumeOrchestrationService _volumeMgr;
-    @Inject
-    ImageStoreDao _imageStoreDao;
-    @Inject
-    EndPointSelector _epSelector;
-    @Inject
-    UserVmJoinDao _userVmJoinDao;
-    @Inject
-    VMTemplateHostDao _vmTemplateHostDao;
+    private UserVmJoinDao _userVmJoinDao;
 
-    @Inject
-    ConfigurationServer _configServer;
     @Inject
     MessageBus _messageBus;
 
-    int _primaryStorageDownloadWait;
-    int _storagePoolMaxWaitSeconds = 3600;
-    boolean _disableExtraction = false;
-    ExecutorService _preloadExecutor;
+    private boolean _disableExtraction = false;
+    private ExecutorService _preloadExecutor;
 
-    protected List<TemplateAdapter> _adapters;
+    private List<TemplateAdapter> _adapters;
 
     @Inject
-    StorageCacheManager cacheMgr;
+    private StorageCacheManager cacheMgr;
     @Inject
-    EndPointSelector selector;
+    private EndPointSelector selector;
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -432,7 +378,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        eventId = (eventId == null ? 0 : eventId);
+        eventId = eventId == null ? 0 : eventId;
 
         if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
@@ -849,13 +795,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
 
         String disableExtraction = _configDao.getValue(Config.DisableExtraction.toString());
         _disableExtraction = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
 
-        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
 
         return true;
@@ -1801,7 +1744,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // Don't allow to modify system template
-        if (Long.valueOf(1).equals(id)) {
+        if (id == Long.valueOf(1)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
             ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;

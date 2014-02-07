@@ -48,7 +48,7 @@ public class UpdateNetworkCmdByAdmin extends UpdateNetworkCmd {
         }
 
         Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
+                callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId());
 
 
         if (result != null) {

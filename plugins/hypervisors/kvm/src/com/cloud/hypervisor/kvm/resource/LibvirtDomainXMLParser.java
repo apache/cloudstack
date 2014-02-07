@@ -76,7 +76,7 @@ public class LibvirtDomainXMLParser {
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.diskBus.valueOf(bus.toUpperCase()),
                         DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
-                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
@@ -100,8 +100,8 @@ public class LibvirtDomainXMLParser {
                     } else if (type.equalsIgnoreCase("block")) {
                         def.defBlockBasedDisk(diskDev, diskLabel,
                             DiskDef.diskBus.valueOf(bus.toUpperCase()));
-                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                     }
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 }
 
                 NodeList iotune = disk.getElementsByTagName("iotune");

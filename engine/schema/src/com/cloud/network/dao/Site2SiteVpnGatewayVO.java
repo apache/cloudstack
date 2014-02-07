@@ -116,6 +116,10 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
         return accountId;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.Site2SiteVpnGateway;

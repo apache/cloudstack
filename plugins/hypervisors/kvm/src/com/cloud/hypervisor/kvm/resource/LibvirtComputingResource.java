@@ -216,6 +216,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+import org.libvirt.StorageVol;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -1773,45 +1774,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String path = vol.getPath();
             String type = getResizeScriptType(pool, vol);
 
-            /**
-             * RBD volumes can't be resized via a Bash script or via libvirt
-             *
-             * libvirt-java doesn't implemented resizing volumes, so we have to do this manually
-             *
-             * Future fix would be to hand this over to libvirt
-             */
-            if (pool.getType() == StoragePoolType.RBD) {
+            if (type == null) {
+                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+            } else if (type.equals("QCOW2") && shrinkOk) {
+                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+            }
+
+            s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+
+            /* libvirt doesn't support resizing (C)LVM devices, so we have to do that via a Bash script */
+            if (pool.getType() != StoragePoolType.CLVM) {
+                s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
-                    Rados r = new Rados(pool.getAuthUserName());
-                    r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-                    r.confSet("key", pool.getAuthSecret());
-                    r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    Connect conn = LibvirtConnection.getConnection();
+                    StorageVol v = conn.storageVolLookupByPath(path);
 
-                    IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage image = rbd.open(vol.getName());
+                    int flags = 1;
+                    if (shrinkOk) {
+                        flags = 4;
+                    }
 
-                    s_logger.debug("Resizing RBD volume " + vol.getName() + " to " + newSize + " bytes");
-                    image.resize(newSize);
-                    rbd.close(image);
-
-                    r.ioCtxDestroy(io);
-                    s_logger.debug("Succesfully resized RBD volume " + vol.getName() + " to " + newSize + " bytes");
-                } catch (RadosException e) {
-                    return new ResizeVolumeAnswer(cmd, false, e.toString());
-                } catch (RbdException e) {
+                    v.resize(newSize, flags);
+                } catch (LibvirtException e) {
                     return new ResizeVolumeAnswer(cmd, false, e.toString());
                 }
             } else {
-                if (type == null) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-                } else if (type.equals("QCOW2") && shrinkOk) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
-                }
-
-                s_logger.debug("got to the stage where we execute the volume resize, params:" + path + "," + currentSize + "," + newSize + "," + type + "," +
-                        vmInstanceName + "," + shrinkOk);
+                s_logger.debug("Volume " + path + " is of the type LVM and can not be resized using libvirt. Invoking resize script.");
                 final Script resizecmd = new Script(_resizeVolumePath, _cmdsTimeout, s_logger);
                 resizecmd.add("-s", String.valueOf(newSize));
                 resizecmd.add("-c", String.valueOf(currentSize));
@@ -2234,6 +2222,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         Rados r = new Rados(primaryPool.getAuthUserName());
                         r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                         r.confSet("key", primaryPool.getAuthSecret());
+                        r.confSet("client_mount_timeout", "30");
                         r.connect();
                         s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -2316,6 +2305,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     Rados r = new Rados(primaryPool.getAuthUserName());
                     r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                     r.confSet("key", primaryPool.getAuthSecret());
+                    r.confSet("client_mount_timeout", "30");
                     r.connect();
                     s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 

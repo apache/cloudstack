@@ -195,7 +195,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot, Scope scope) {
         DataObject leafData = null;
-        DataStore store = cacheMgr.getCacheStorage(scope);
+        DataStore store = cacheMgr.getCacheStorage(snapshot, scope);
         while (snapshot != null) {
             DataObject cacheData = cacheMgr.createCacheObject(snapshot, store);
             if (leafData == null) {
@@ -242,7 +242,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
                 ep = selector.select(volObj);
             } else {
-                ep = selector.select(snapObj, volObj);
+                ep = selector.select(srcData, volObj);
             }
 
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());

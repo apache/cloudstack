@@ -137,14 +137,13 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String getUri() {
-        String path = pdsv.getPath();
-        path.replaceFirst("/*", "");
+        String path = pdsv.getPath().replaceFirst("/*", "");
         StringBuilder builder = new StringBuilder();
         builder.append(pdsv.getPoolType());
         builder.append("://");
         builder.append(pdsv.getHostAddress());
         builder.append(File.separator);
-        builder.append(pdsv.getPath());
+        builder.append(path);
         builder.append(File.separator);
         builder.append("?" + EncodingType.ROLE + "=" + getRole());
         builder.append("&" + EncodingType.STOREUUID + "=" + pdsv.getUuid());

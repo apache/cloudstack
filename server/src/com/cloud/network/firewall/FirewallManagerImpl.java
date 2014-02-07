@@ -27,13 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
@@ -714,6 +713,32 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Account caller = CallContext.current().getCallingAccount();
         long userId = CallContext.current().getCallingUserId();
         return revokeFirewallRule(ruleId, apply, caller, userId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating firewall rule", async = true)
+    public FirewallRule updateFirewallRule(long ruleId, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+        return updateFirewallRule(ruleId, customId, caller);
+    }
+
+    protected FirewallRule updateFirewallRule(long ruleId, String customId, Account caller) {
+        FirewallRuleVO rule = _firewallDao.findById(ruleId);
+        if (rule == null || rule.getPurpose() != Purpose.Firewall) {
+            throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
+        }
+
+        if (rule.getType() == FirewallRuleType.System && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Only root admin can update the system wide firewall rule");
+        }
+
+        _accountMgr.checkAccess(caller, null, true, rule);
+
+        if (customId != null) {
+            rule.setUuid(customId);
+            _firewallDao.update(ruleId, rule);
+        }
+        return _firewallDao.findById(ruleId);
     }
 
     @Override

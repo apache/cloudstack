@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -40,7 +40,7 @@ import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class, entityType = { AclEntityType.AutoScaleVmGroup })
-public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
+public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmGroupCmd.class.getName());
 
     private static final String s_name = "updateautoscalevmgroupresponse";
@@ -95,7 +95,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale VmGroup");
         }
@@ -157,5 +157,12 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.AutoScaleVmGroup;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), AutoScaleVmGroup.class);
+        }
     }
 }

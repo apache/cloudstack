@@ -92,7 +92,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
             Integer destroyVmGraceperiod, long autoscaleUserId) {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
         this.accountId = accountId;
@@ -147,7 +147,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     public void setCounterParams(String counterParam) {
-        this.counterParams = counterParam;
+        counterParams = counterParam;
     }
 
     public void setCounterParamsForUpdate(Map counterParamList) {
@@ -218,8 +218,13 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return autoscaleUserId;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.AutoScaleVmProfile;
     }
+
 }

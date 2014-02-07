@@ -222,6 +222,7 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
@@ -259,6 +260,8 @@ import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleC
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateEgressFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
@@ -293,6 +296,7 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRules
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateApplicationLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
@@ -313,6 +317,7 @@ import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -433,14 +438,16 @@ import org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;
 import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateRemoteAccessVpnCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -468,7 +475,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
@@ -553,7 +559,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -699,38 +704,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ImageStoreDao _imgStoreDao;
 
     @Inject
-    ProjectManager _projectMgr;
+    private ProjectManager _projectMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
-    SnapshotManager _snapshotMgr;
+    private HighAvailabilityManager _haMgr;
     @Inject
-    HighAvailabilityManager _haMgr;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    TemplateManager templateMgr;
+    private HostTagsDao _hostTagsDao;
     @Inject
-    DataStoreManager dataStoreMgr;
+    private ConfigDepot _configDepot;
     @Inject
-    HostTagsDao _hostTagsDao;
+    private UserVmManager _userVmMgr;
     @Inject
-    ConfigurationServer _configServer;
+    private AccountService _accountService;
     @Inject
-    ConfigDepot _configDepot;
-    @Inject
-    UserVmManager _userVmMgr;
-    @Inject
-    VolumeDataFactory _volFactory;
-    @Inject
-    AccountService _accountService;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    ServiceOfferingDao _offeringDao;
+    private ServiceOfferingDao _offeringDao;
 
     @Inject
-    DeploymentPlanningManager _dpMgr;
+    private DeploymentPlanningManager _dpMgr;
 
-    LockMasterListener _lockMasterListener;
+    private LockMasterListener _lockMasterListener;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -2863,6 +2858,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListOvsElementsCmd.class);
         cmdList.add(ConfigureOvsElementCmd.class);
         cmdList.add(GetVMUserDataCmd.class);
+        cmdList.add(UpdateEgressFirewallRuleCmd.class);
+        cmdList.add(UpdateFirewallRuleCmd.class);
+        cmdList.add(UpdateNetworkACLListCmd.class);
+        cmdList.add(UpdateApplicationLoadBalancerCmd.class);
+        cmdList.add(UpdateIPAddrCmd.class);
+        cmdList.add(UpdateRemoteAccessVpnCmd.class);
+        cmdList.add(UpdateVpnConnectionCmd.class);
+        cmdList.add(UpdateVpnGatewayCmd.class);
         return cmdList;
     }
 

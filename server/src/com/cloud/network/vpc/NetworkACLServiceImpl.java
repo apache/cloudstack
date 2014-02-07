@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -611,7 +613,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         if (aclItem == null) {
             throw new InvalidParameterValueException("Unable to find ACL Item cannot be found");
@@ -640,7 +642,23 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd()
             : sourcePortEnd, sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action, number);
 
-        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType);
+        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType, newUUID);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_UPDATE, eventDescription = "updating network acl", async = true)
+    public NetworkACL updateNetworkACL(Long id, String customId) {
+        NetworkACLVO acl = _networkACLDao.findById(id);
+        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vpc);
+
+        if (customId != null) {
+            acl.setUuid(customId);
+        }
+
+        _networkACLDao.update(id, acl);
+        return _networkACLDao.findById(id);
     }
 
 }

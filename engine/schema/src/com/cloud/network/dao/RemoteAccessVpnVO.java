@@ -151,6 +151,10 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         return vpcId;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.RemoteAccessVpn;

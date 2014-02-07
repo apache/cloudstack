@@ -26,7 +26,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.StringTokenizer;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -37,10 +40,14 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UriUtils {
@@ -136,6 +143,59 @@ public class UriUtils {
             }
         }
         return (foundUser && foundPswd);
+    }
+
+    public static String getUpdateUri(String url, boolean encrypt) {
+        String updatedPath = null;
+        try {
+            String query = URIUtil.getQuery(url);
+            URIBuilder builder = new URIBuilder(url);
+            builder.removeQuery();
+
+            String updatedQuery = new String();
+            List<NameValuePair> queryParams = getUserDetails(query);
+            ListIterator<NameValuePair> iterator = queryParams.listIterator();
+            while (iterator.hasNext()) {
+                NameValuePair param = iterator.next();
+                String value = null;
+                if ("password".equalsIgnoreCase(param.getName()) &&
+                        param.getValue() != null) {
+                    value = encrypt ? DBEncryptionUtil.encrypt(param.getValue()) : DBEncryptionUtil.decrypt(param.getValue());
+                } else {
+                    value = param.getValue();
+                }
+
+                if (updatedQuery.isEmpty()) {
+                    updatedQuery += (param.getName() + "=" + value);
+                } else {
+                    updatedQuery += ("&" + param.getName() + "=" + value);
+                }
+            }
+
+            String schemeAndHost = new String();
+            URI newUri = builder.build();
+            if (newUri.getScheme() != null) {
+                schemeAndHost = newUri.getScheme() + "://" + newUri.getHost();
+            }
+
+            updatedPath = schemeAndHost + newUri.getPath() + "?" + updatedQuery;
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("Couldn't generate an updated uri. " + e.getMessage());
+        }
+
+        return updatedPath;
+    }
+
+    private static List<NameValuePair> getUserDetails(String query) {
+        List<NameValuePair> details = new ArrayList<NameValuePair>();
+        StringTokenizer allParams = new StringTokenizer(query, "&");
+        while (allParams.hasMoreTokens()) {
+            String param = allParams.nextToken();
+            details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
+                    param.substring(param.indexOf("=") + 1)));
+        }
+
+        return details;
     }
 
     // Get the size of a file from URL response header.

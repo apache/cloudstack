@@ -158,6 +158,10 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
         this.passive = passive;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.Site2SiteVpnConnection;

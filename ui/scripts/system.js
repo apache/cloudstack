@@ -210,6 +210,11 @@
                     zoneCount: function (data) {
                         $.ajax({
                             url: createURL('listZones'),
+                            data: {
+                            	listAll: true,
+                                page: 1,
+                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                            },
                             success: function (json) {
                                 dataFns.podCount($.extend(data, {
                                     zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count: 0,
@@ -223,6 +228,7 @@
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -238,6 +244,7 @@
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -261,6 +268,7 @@
                     hostCount: function (data) {
                         var data2 = {
                             type: 'routing',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -277,6 +285,7 @@
                     
                     primaryStorageCount: function (data) {
                         var data2 = {
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -294,6 +303,7 @@
                     secondaryStorageCount: function (data) {
                         var data2 = {
                             type: 'SecondaryStorage',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -312,6 +322,7 @@
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -325,6 +336,7 @@
                     
                     virtualRouterCount: function (data) {
                         var data2 = {
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -8452,7 +8464,7 @@
                                 	var array1 = [];
                                 	
                                 	// ***** non XenServer (begin) *****
-                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "Ovm", "LXC"];
+                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal"];
                                 	
                                         	var supportSocketHypervisors = {
                                         		"Hyperv": 1, 
@@ -8524,8 +8536,8 @@
                                 	var currentPage = 1;
                                 	var returnedHostCount = 0;
                                 	
-                                	var returnedHostCountForXenServer = 0;
-                                	var returnedHostCountForXenServer620 = 0;                                 	
+                                	var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
+                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
                                 	var returnedHostCpusocketsSumForXenServer620 = 0;    
                                 	
                                 	var callListHostsWithPage = function() {                                                		
@@ -8555,7 +8567,7 @@
                                         					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
                                         				} 
                                     				} else {
-                                    					returnedHostCountForXenServer++;
+                                    					returnedHostCountForXenServer61x++;
                                     				}
                                     			}  
                                     			
@@ -8570,8 +8582,8 @@
                                 	callListHostsWithPage();                                	                                                  	
                                 	
                                 	array1.push({
-                                        hypervisor: 'XenServer',
-                                        hosts: returnedHostCountForXenServer,
+                                        hypervisor: 'XenServer 6.1.x and before',
+                                        hosts: returnedHostCountForXenServer61x,
                                         sockets: 'N/A'                                                   
                                     });
                                 	
@@ -14873,16 +14885,19 @@
                     section: 'primary-storage',
                     fields: {
                         name: {
-                            label: 'label.name'
+                            label: 'label.name',
+                            truncate: true
                         },
                         ipaddress: {
                             label: 'label.server'
                         },
                         path: {
-                            label: 'label.path'
+                            label: 'label.path',
+                            truncate: true
                         },
                         clustername: {
-                            label: 'label.cluster'
+                            label: 'label.cluster',
+                            truncate: true
                         },
                         scope: {
                             label: 'Scope'

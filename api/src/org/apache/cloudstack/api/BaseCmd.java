@@ -26,8 +26,6 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
@@ -35,6 +33,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.domain.Domain;
@@ -76,6 +75,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
 
@@ -192,6 +192,8 @@ public abstract class BaseCmd {
     public NetworkModel _ntwkModel;
     @Inject
     public AlertService _alertSvc;
+    @Inject
+    public UUIDManager _uuidMgr;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

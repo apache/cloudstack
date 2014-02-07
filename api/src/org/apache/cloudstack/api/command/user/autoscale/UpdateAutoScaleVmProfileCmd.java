@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
@@ -41,7 +41,7 @@ import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class, entityType = { AclEntityType.AutoScaleVmProfile })
-public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
+public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "updateautoscalevmprofileresponse";
@@ -91,7 +91,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale vm profile");
         }
@@ -149,5 +149,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.AutoScaleVmProfile;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), AutoScaleVmProfile.class);
+        }
     }
 }

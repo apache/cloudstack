@@ -47,6 +47,7 @@
     <module>network-elements/ovs</module>
     <module>network-elements/juniper-contrail</module>
     <module>network-elements/palo-alto</module>
+    <module>network-elements/netscaler</module>
     <module>network-elements/nicira-nvp</module>
     <module>network-elements/bigswitch-vns</module>
     <module>network-elements/midonet</module>
@@ -134,17 +135,6 @@
       </activation>
       <modules>
         <module>network-elements/f5</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>netscaler</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>network-elements/netscaler</module>
       </modules>
     </profile>
     <profile>

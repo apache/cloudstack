@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -42,7 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 
 @APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Network })
-public class UpdateNetworkCmd extends BaseAsyncCmd {
+public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
     private static final String s_name = "updatenetworkresponse";
@@ -147,10 +148,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
         Network result =
             _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId());
 
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Full, result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -193,5 +194,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return id;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), Network.class);
+        }
     }
 }

@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -31,8 +30,6 @@ import com.cloud.vm.ConsoleProxy;
 
 @Local(value = {ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator extends AdapterBase implements ConsoleProxyAllocator {
-
-    private final Random _rand = new Random(System.currentTimeMillis());
 
     @Override
     public Long allocProxy(List<? extends ConsoleProxy> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
@@ -153,4 +154,12 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
         }
     }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), Volume.class);
+        }
+    }
+
 }

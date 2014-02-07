@@ -47,7 +47,6 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -129,7 +128,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -168,55 +166,51 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     Gson _gson;
 
     @Inject
-    AccountManager _accountMgr;
+    private AccountManager _accountMgr;
     @Inject
-    AgentManager _agentMgr;
+    private AgentManager _agentMgr;
     @Inject
-    StorageManager _storageMgr;
+    private StorageManager _storageMgr;
     @Inject
-    protected SecondaryStorageVmManager _secondaryStorageMgr;
+    private DataCenterDao _dcDao;
     @Inject
-    protected RegionDao _regionDao;
+    private HostPodDao _podDao;
     @Inject
-    protected DataCenterDao _dcDao;
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    protected HostPodDao _podDao;
+    private ClusterDao _clusterDao;
     @Inject
-    protected ClusterDetailsDao _clusterDetailsDao;
+    private CapacityDao _capacityDao;
     @Inject
-    protected ClusterDao _clusterDao;
+    private HostDao _hostDao;
     @Inject
-    protected CapacityDao _capacityDao;
+    private HostDetailsDao _hostDetailsDao;
     @Inject
-    protected HostDao _hostDao;
+    private ConfigurationDao _configDao;
     @Inject
-    protected HostDetailsDao _hostDetailsDao;
+    private HostTagsDao _hostTagsDao;
     @Inject
-    protected ConfigurationDao _configDao;
+    private GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
-    protected HostTagsDao _hostTagsDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    protected GuestOSCategoryDao _guestOSCategoryDao;
+    private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject
-    protected PrimaryDataStoreDao _storagePoolDao;
+    private IPAddressDao _publicIPAddressDao;
     @Inject
-    protected DataCenterIpAddressDao _privateIPAddressDao;
+    private VirtualMachineManager _vmMgr;
     @Inject
-    protected IPAddressDao _publicIPAddressDao;
+    private VMInstanceDao _vmDao;
     @Inject
-    protected VirtualMachineManager _vmMgr;
+    private HighAvailabilityManager _haMgr;
     @Inject
-    protected VMInstanceDao _vmDao;
-    @Inject
-    protected HighAvailabilityManager _haMgr;
-    @Inject
-    protected StorageService _storageSvr;
+    private StorageService _storageSvr;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
     @Inject
-    protected DedicatedResourceDao _dedicatedDao;
+    private DedicatedResourceDao _dedicatedDao;
 
-    protected List<? extends Discoverer> _discoverers;
+    private List<? extends Discoverer> _discoverers;
 
     public List<? extends Discoverer> getDiscoverers() {
         return _discoverers;
@@ -227,22 +221,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Inject
-    protected ClusterManager _clusterMgr;
+    private ClusterManager _clusterMgr;
     @Inject
-    protected StoragePoolHostDao _storagePoolHostDao;
+    private StoragePoolHostDao _storagePoolHostDao;
 
     @Inject
-    protected VMTemplateDao _templateDao;
+    private VMTemplateDao _templateDao;
     @Inject
-    protected ConfigurationManager _configMgr;
+    private ConfigurationManager _configMgr;
     @Inject
-    protected ClusterVSMMapDao _clusterVSMMapDao;
+    private ClusterVSMMapDao _clusterVSMMapDao;
 
-    protected long _nodeId = ManagementServerNode.getManagementServerId();
+    private final long _nodeId = ManagementServerNode.getManagementServerId();
 
-    protected HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();
+    private final HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();
 
-    protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
+    private final HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
     private HypervisorType _defaultSystemVMHypervisor;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds

@@ -18,23 +18,17 @@ package com.cloud.consoleproxy;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -43,11 +37,9 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {ConsoleProxyManager.class})
 public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager implements ConsoleProxyManager, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(StaticConsoleProxyManager.class);
 
     @Inject
     ConsoleProxyDao _proxyDao;
@@ -55,16 +47,6 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     ResourceManager _resourceMgr;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    private VMInstanceDao _instanceDao;
-    @Inject
-    KeystoreDao _ksDao;
-    @Inject
-    private KeystoreManager _ksMgr;
-    @Inject
-    private HostDao _hostDao;
-    private final Random _random = new Random(System.currentTimeMillis());
-    private String _hashKey;
     private String _ip = null;
 
     public StaticConsoleProxyManager() {

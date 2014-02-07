@@ -25,18 +25,18 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
@@ -700,6 +700,11 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         return _remoteAccessVpnDao.findByPublicIpAddress(vpnAddrId);
     }
 
+    @Override
+    public RemoteAccessVpn getRemoteAccessVpnById(long vpnId) {
+        return _remoteAccessVpnDao.findById(vpnId);
+    }
+
     public List<RemoteAccessVPNServiceProvider> getRemoteAccessVPNServiceProviders() {
         List<RemoteAccessVPNServiceProvider> result = new ArrayList<RemoteAccessVPNServiceProvider>();
         for (Iterator<RemoteAccessVPNServiceProvider> e = _vpnServiceProviders.iterator(); e.hasNext();) {
@@ -725,6 +730,23 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     public void setVpnServiceProviders(List<RemoteAccessVPNServiceProvider> vpnServiceProviders) {
         _vpnServiceProviders = vpnServiceProviders;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REMOTE_ACCESS_VPN_UPDATE, eventDescription = "updating remote access vpn", async = true)
+    public RemoteAccessVpn updateRemoteAccessVpn(long id, String customId) {
+        final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(id);
+        if (vpn == null) {
+            throw new InvalidParameterValueException("Can't find remote access vpn by id " + id);
+        }
+
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vpn);
+        if (customId != null) {
+            vpn.setUuid(customId);
+        }
+
+        _remoteAccessVpnDao.update(vpn.getId(), vpn);
+        return _remoteAccessVpnDao.findById(id);
     }
 
 }

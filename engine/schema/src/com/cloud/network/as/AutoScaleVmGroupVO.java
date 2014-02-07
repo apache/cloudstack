@@ -210,6 +210,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         return uuid;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public AclEntityType getEntityType() {
         return AclEntityType.AutoScaleVmGroup;

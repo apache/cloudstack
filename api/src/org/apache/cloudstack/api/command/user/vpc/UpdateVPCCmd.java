@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -35,7 +36,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Vpc })
-public class UpdateVPCCmd extends BaseAsyncCmd{
+public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String Name = "updatevpcresponse";
 
@@ -46,7 +47,7 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the id of the VPC")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC", required = true)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC")
     private String vpcName;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC")
@@ -88,7 +89,7 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText());
+        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId());
         if (result != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
@@ -116,5 +117,12 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     @Override
     public Long getSyncObjId() {
         return getId();
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), Vpc.class);
+        }
     }
 }

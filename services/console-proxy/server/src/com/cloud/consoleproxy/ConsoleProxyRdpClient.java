@@ -19,7 +19,6 @@ package com.cloud.consoleproxy;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import org.apache.log4j.Logger;
@@ -55,7 +54,8 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
     private RdpBufferedImageCanvas _canvas = null;
 
     private Thread _worker;
-    private volatile boolean _workerDone = false;
+    private volatile boolean _workerDone = true;
+    private volatile long _threadStopTime;
 
     private AwtMouseEventSource _mouseEventSource = null;
     private AwtKeyEventSource _keyEventSource = null;
@@ -231,77 +231,86 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
     @Override
     public void initClient(final ConsoleProxyClientParam param) {
-        _workerDone = false;
-
-        int canvasWidth = 1024;
-        int canvasHeight = 768;
-        setClientParam(param);
-
-        final String host = param.getHypervHost();
-        final String password = param.getPassword();
-        final String instanceId = param.getClientHostAddress();
-        final int port = param.getClientHostPort();
-
-        _screen = new ScreenDescription();
-        _canvas = new RdpBufferedImageCanvas(this, canvasWidth, canvasHeight);
-        onFramebufferSizeChange(canvasWidth, canvasHeight);
-
-        _screen.addSizeChangeListener(new SizeChangeListener() {
-            @Override
-            public void sizeChanged(int width, int height) {
-                if (_canvas != null) {
-                    _canvas.setCanvasSize(width, height);
-                }
-            }
-        });
-
-        final SSLState sslState = new SSLState();
-
-        final String username = param.getUsername();
-        String name = null;
-        String domain = null;
-        if (username.contains("\\")) {
-            String[] tokens = username.split("\\\\");
-            name = tokens[1];
-            domain = tokens[0];
-        } else {
-            name = username;
-            domain = "Workgroup";
+        if ((System.currentTimeMillis() - _threadStopTime) < 1000) {
+            return;
         }
 
-        _client = new RdpClient("client", host, domain, name, password, instanceId, _screen, _canvas,
-                sslState);
+        try {
+            int canvasWidth = 1024;
+            int canvasHeight = 768;
+            setClientParam(param);
 
-        _mouseEventSource = _client.getMouseEventSource();
-        _keyEventSource = _client.getKeyEventSource();
+            final String host = param.getHypervHost();
+            final String password = param.getPassword();
+            final String instanceId = param.getClientHostAddress();
+            final int port = param.getClientHostPort();
 
-        _worker = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                _socket = new AprSocketWrapperImpl("socket", sslState);
-                Pipeline pipeline = new PipelineImpl("Client");
-                pipeline.add(_socket, _client);
-                pipeline.link("socket", _client.getId(), "socket");
-                pipeline.validate();
+            final SSLState sslState = new SSLState();
 
-                InetSocketAddress address = new InetSocketAddress(host, port);
-                ConsoleProxy.ensureRoute(host);
-
-                try {
-                    // Connect socket to remote server and run main loop(s)
-                    _socket.connect(address);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    shutdown();
-                }
-
-                s_logger.info("Receiver thread stopped.");
-                _workerDone = true;
+            final String username = param.getUsername();
+            String name = null;
+            String domain = null;
+            if (username.contains("\\")) {
+                String[] tokens = username.split("\\\\");
+                name = tokens[1];
+                domain = tokens[0];
+            } else {
+                name = username;
+                domain = "Workgroup";
             }
-        });
-        _worker.setDaemon(true);
-        _worker.start();
+
+            _screen = new ScreenDescription();
+            _canvas = new RdpBufferedImageCanvas(this, canvasWidth, canvasHeight);
+            onFramebufferSizeChange(canvasWidth, canvasHeight);
+
+            _screen.addSizeChangeListener(new SizeChangeListener() {
+                @Override
+                public void sizeChanged(int width, int height) {
+                    if (_canvas != null) {
+                        _canvas.setCanvasSize(width, height);
+                    }
+                }
+            });
+
+            s_logger.info("connecting to instance " + instanceId + " on host " + host);
+            _client = new RdpClient("client", host, domain, name, password, instanceId, _screen, _canvas, sslState);
+
+            _mouseEventSource = _client.getMouseEventSource();
+            _keyEventSource = _client.getKeyEventSource();
+
+            _worker = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    _socket = new AprSocketWrapperImpl("socket", sslState);
+                    Pipeline pipeline = new PipelineImpl("Client");
+                    pipeline.add(_socket, _client);
+                    pipeline.link("socket", _client.getId(), "socket");
+                    pipeline.validate();
+
+                    InetSocketAddress address = new InetSocketAddress(host, port);
+                    ConsoleProxy.ensureRoute(host);
+
+                    try {
+                        _workerDone = false;
+                        s_logger.info("Connecting socket to remote server and run main loop(s)");
+                        _socket.connect(address);
+                    } catch (Exception e) {
+                        s_logger.info(" error occurred in connecting to socket " + e.getMessage());
+                    } finally {
+                        shutdown();
+                    }
+
+                    _threadStopTime = System.currentTimeMillis();
+                    s_logger.info("Receiver thread stopped.");
+                    _workerDone = true;
+                }
+            });
+            _worker.setDaemon(true);
+            _worker.start();
+        } catch (Exception e) {
+            _workerDone = true;
+            s_logger.info("error occurred in initializing rdp client " + e.getMessage());
+        }
     }
 
     @Override

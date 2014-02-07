@@ -27,8 +27,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -71,7 +69,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -95,41 +92,38 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
-    NetworkDao _networkDao;
+    private NetworkDao _networkDao;
     @Inject
-    GuestOSDao _guestOsDao;
+    private GuestOSDao _guestOsDao;
     @Inject
-    HostDao _hostDao;
+    private HostDao _hostDao;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    private HostDetailsDao _hostDetailsDao;
     @Inject
-    CommandExecLogDao _cmdExecLogDao;
+    private CommandExecLogDao _cmdExecLogDao;
     @Inject
-    VmwareManager _vmwareMgr;
+    private VmwareManager _vmwareMgr;
     @Inject
-    SecondaryStorageVmManager _secStorageMgr;
+    private SecondaryStorageVmManager _secStorageMgr;
     @Inject
-    NetworkModel _networkMgr;
+    private NetworkModel _networkMgr;
     @Inject
-    ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Inject
-    NicDao _nicDao;
+    private NicDao _nicDao;
     @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
+    private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
-    PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    private VMInstanceDao _vmDao;
     @Inject
-    VMInstanceDao _vmDao;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ClusterManager _clusterMgr;
+    private ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
@@ -204,7 +198,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        long clusterId = this.getClusterId(vm.getId());
+        long clusterId = getClusterId(vm.getId());
         details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
