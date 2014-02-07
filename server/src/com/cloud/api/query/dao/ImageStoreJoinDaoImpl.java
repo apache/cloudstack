@@ -86,7 +86,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setZoneName(ids.getZoneName());
 
         String detailName = ids.getDetailName();
-        if ( detailName != null && detailName.length() > 0 ){
+        if ( detailName != null && detailName.length() > 0 && !detailName.equals(ApiConstants.PASSWORD)) {
             String detailValue = ids.getDetailValue();
             if (detailName.equals(ApiConstants.KEY) || detailName.equals(ApiConstants.S3_SECRET_KEY)) {
                 detailValue = DBEncryptionUtil.decrypt(detailValue);
@@ -105,7 +105,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
     @Override
     public ImageStoreResponse setImageStoreResponse(ImageStoreResponse response, ImageStoreJoinVO ids) {
         String detailName = ids.getDetailName();
-        if ( detailName != null && detailName.length() > 0 ){
+        if ( detailName != null && detailName.length() > 0 && !detailName.equals(ApiConstants.PASSWORD)) {
             String detailValue = ids.getDetailValue();
             if (detailName.equals(ApiConstants.KEY) || detailName.equals(ApiConstants.S3_SECRET_KEY)) {
                 detailValue = DBEncryptionUtil.decrypt(detailValue);

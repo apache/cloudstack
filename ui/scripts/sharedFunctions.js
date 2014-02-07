@@ -1253,7 +1253,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         	url += 'cifs://';
         }
         
-        url += (server + path + '?user=' + smbUsername + '&password=' + smbPassword + '&domain=' + smbDomain);
+        url += (server + path);
                
         return url;
     }
