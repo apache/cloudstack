@@ -50,7 +50,11 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
             if (pp != null) {
                 for (AclPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
-                        domainIds.add(p.getScopeId());
+                        if (p.getScopeId().longValue() == -1) {
+                            domainIds.add(caller.getDomainId());
+                        } else {
+                            domainIds.add(p.getScopeId());
+                        }
                     }
                 }
             }
@@ -70,7 +74,11 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
             if (pp != null) {
                 for (AclPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
-                        accountIds.add(p.getScopeId());
+                        if (p.getScopeId().longValue() == -1) {
+                            accountIds.add(caller.getId());
+                        } else {
+                            accountIds.add(p.getScopeId());
+                        }
                     }
                 }
             }
