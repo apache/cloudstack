@@ -14759,7 +14759,10 @@
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
-                                    url = smbURL(server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);                                
+                                    url = smbURL(server, path);
+                                    array1.push("&details[0].user=" + args.data.smbUsername);
+                                    array1.push("&details[1].password=" + todb(args.data.smbPassword));
+                                    array1.push("&details[2].domain=" + args.data.smbDomain);
                                 } else if (args.data.protocol == "PreSetup") {                                    
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
@@ -16157,12 +16160,18 @@
                                         	var zoneid = args.data.zoneid;
                                             var nfs_server = args.data.nfsServer;
                                             var path = args.data.path;
-                                            var url = smbURL(nfs_server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
+                                            var url = smbURL(nfs_server, path);
 
                                             $.extend(data, {
                                                 provider: args.data.provider,
                                                 zoneid: zoneid,
-                                                url: url
+                                                url: url,
+                                                'details[0].key': 'user',
+                                                'details[0].value': args.data.smbUsername,
+                                                'details[1].key': 'password',
+                                                'details[1].value': args.data.smbPassword,
+                                                'details[2].key': 'domain',
+                                                'details[2].value': args.data.smbDomain
                                             });
 
                                             $.ajax({
