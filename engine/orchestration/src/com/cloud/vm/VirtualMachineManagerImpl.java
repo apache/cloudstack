@@ -636,7 +636,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             try {
-                Thread.sleep(VmOpWaitInterval.value());
+                Thread.sleep(VmOpWaitInterval.value()*1000);
             } catch (InterruptedException e) {
                 s_logger.info("Waiting for " + vm + " but is interrupted");
                 throw new ConcurrentOperationException("Waiting for " + vm + " but is interrupted");
