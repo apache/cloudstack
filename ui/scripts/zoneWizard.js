@@ -4420,7 +4420,10 @@
                     	var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
-                        url = smbURL(server, path, args.data.primaryStorage.smbUsername, args.data.primaryStorage.smbPassword, args.data.primaryStorage.smbDomain);
+                        url = smbURL(server, path);
+                        array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
+                        array1.push("&details[1].password=" + todb(args.data.primaryStorage.smbPassword));
+                        array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
                     } else if (args.data.primaryStorage.protocol == "PreSetup") {                        
                         var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
@@ -4529,12 +4532,18 @@
                     } else if (args.data.secondaryStorage.provider == 'SMB') {
                         var nfs_server = args.data.secondaryStorage.nfsServer;
                         var path = args.data.secondaryStorage.path;
-                        var url = smbURL(nfs_server, path, args.data.secondaryStorage.smbUsername, args.data.secondaryStorage.smbPassword, args.data.secondaryStorage.smbDomain);
+                        var url = smbURL(nfs_server, path);
 
                         $.extend(data, {
                             provider: args.data.secondaryStorage.provider,
                             zoneid: args.data.returnedZone.id,
-                            url: url
+                            url: url,
+                            'details[0].key': 'user',
+                            'details[0].value': args.data.secondaryStorage.smbUsername,
+                            'details[1].key': 'password',
+                            'details[1].value': args.data.secondaryStorage.smbPassword,
+                            'details[2].key': 'domain',
+                            'details[2].value': args.data.secondaryStorage.smbDomain
                         });
 
                         $.ajax({

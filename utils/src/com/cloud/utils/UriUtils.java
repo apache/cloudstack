@@ -108,13 +108,7 @@ public class UriUtils {
 
     public static String getCifsUriParametersProblems(URI uri) {
         if (!UriUtils.hostAndPathPresent(uri)) {
-            String errMsg = "cifs URI missing host and/or path.  " + " Make sure it's of the format " + "cifs://hostname/path?user=<username>&password=<password>";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        if (!UriUtils.cifsCredentialsPresent(uri)) {
-            String errMsg =
-                "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
+            String errMsg = "cifs URI missing host and/or path. Make sure it's of the format cifs://hostname/path";
             s_logger.warn(errMsg);
             return errMsg;
         }
@@ -185,11 +179,13 @@ public class UriUtils {
 
     private static List<NameValuePair> getUserDetails(String query) {
         List<NameValuePair> details = new ArrayList<NameValuePair>();
-        StringTokenizer allParams = new StringTokenizer(query, "&");
-        while (allParams.hasMoreTokens()) {
-            String param = allParams.nextToken();
-            details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
-                    param.substring(param.indexOf("=") + 1)));
+        if (query != null && !query.isEmpty()) {
+            StringTokenizer allParams = new StringTokenizer(query, "&");
+            while (allParams.hasMoreTokens()) {
+                String param = allParams.nextToken();
+                details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
+                        param.substring(param.indexOf("=") + 1)));
+            }
         }
 
         return details;
