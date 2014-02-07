@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.vmsnapshot;
 
 import java.util.logging.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -43,6 +45,7 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevertToVMSnapshotCmd.class.getName());
     private static final String s_name = "reverttovmsnapshotresponse";
 
+    @ACL(accessType = AccessType.OperateEntry, pointerToEntity = "getVmId()")
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID,
                type = CommandType.UUID,
                required = true,

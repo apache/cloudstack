@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.vpn;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,6 +43,7 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = Site2SiteCustomerGatewayResponse.class,
