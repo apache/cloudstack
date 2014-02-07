@@ -42,6 +42,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -56,7 +58,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -2795,7 +2796,7 @@ Listener, Configurable {
 
     @Override
     public DomainRouterVO stop(final VirtualRouter router, final boolean forced, final User user, final Account caller) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
             _itMgr.advanceStop(router.getUuid(), forced);
@@ -3535,7 +3536,8 @@ Listener, Configurable {
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
-            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId());
+            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
+                    + ", minimal required version : " + MinVRVersion);
             throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
         }
         Answer[] answers = null;
