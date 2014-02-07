@@ -201,7 +201,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot, Scope scope) {
         DataObject leafData = null;
-        DataStore store = cacheMgr.getCacheStorage(scope);
+        DataStore store = cacheMgr.getCacheStorage(snapshot, scope);
         while (snapshot != null) {
             DataObject cacheData = cacheMgr.createCacheObject(snapshot, store);
             if (leafData == null) {
