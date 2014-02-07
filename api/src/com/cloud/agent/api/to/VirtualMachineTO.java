@@ -60,6 +60,7 @@ public class VirtualMachineTO {
 
     DiskTO[] disks;
     NicTO[] nics;
+    Integer vcpuMaxLimit;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
@@ -261,6 +262,14 @@ public class VirtualMachineTO {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public Integer getVcpuMaxLimit() {
+        return vcpuMaxLimit;
+    }
+
+    public void setVcpuMaxLimit(Integer vcpuMaxLimit) {
+        this.vcpuMaxLimit = vcpuMaxLimit;
     }
 
 
