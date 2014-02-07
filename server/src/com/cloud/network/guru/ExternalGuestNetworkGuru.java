@@ -123,6 +123,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 
+        if (_networkModel.areServicesSupportedInNetwork(config.getId(), Network.Service.Connectivity)) {
+            return null;
+        }
+
         if (!_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);
         }
