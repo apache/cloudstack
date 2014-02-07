@@ -637,6 +637,7 @@ public class VirtualRoutingResource {
         String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
 
         String args = " -C";
+        args += " -M " + nic.getMac();
         args += " -d " + dev;
         args += " -i " + routerGIP;
         args += " -g " + gateway;
@@ -677,6 +678,7 @@ public class VirtualRoutingResource {
             ExecutionResult result;
 
             String args = " -d " + dev;
+            args += " -M " + nic.getMac();
             if (privateGw != null) {
                 args += " -a " + rule;
                 result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_privategw_acl.sh", args);
