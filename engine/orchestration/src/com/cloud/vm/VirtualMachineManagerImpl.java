@@ -1559,11 +1559,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean stateTransitTo(VirtualMachine vm1, VirtualMachine.Event e, Long hostId) throws NoTransitionException {
         VMInstanceVO vm = (VMInstanceVO)vm1;
-        // if there are active vm snapshots task, state change is not allowed
-        if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
-            s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
-            return false;
-        }
+
+        /*
+         *  Remove the hacking logic here.
+                // if there are active vm snapshots task, state change is not allowed
+                if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
+                    s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
+                    return false;
+                }
+        */
 
         State oldState = vm.getState();
         if (oldState == State.Starting) {
@@ -4172,7 +4176,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Migrating:
             s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-off report while there is no pending jobs on it");
             try {
-                stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, vm.getPowerHostId());
+                stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
             } catch (NoTransitionException e) {
                 s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
             }
