@@ -276,6 +276,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             }
         }
 
+        if (pathList.isEmpty()) {
+            return new ArrayList<AclGroup>();
+        }
+
         SearchBuilder<AclGroupVO> sb = _aclGroupDao.createSearchBuilder();
         sb.and("paths", sb.entity().getPath(), SearchCriteria.Op.IN);
 
