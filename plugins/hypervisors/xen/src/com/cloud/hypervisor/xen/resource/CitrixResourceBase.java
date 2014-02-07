@@ -1314,6 +1314,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vmr.nameLabel = vmSpec.getName();
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
+        vmr.VCPUsMax = (long) vmSpec.getCpus(); // FIX ME: In case of dynamic scaling this VCPU max should be the minumum of
+                                                // recommended value for that template and capacity remaining on host
 
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
@@ -1321,6 +1323,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
+
+            if (guestOsTypeName.toLowerCase().contains("windows")) {
+                vmr.VCPUsMax = (long) vmSpec.getCpus();
+            } else {
+                if (vmSpec.getVcpuMaxLimit() != null) {
+                    vmr.VCPUsMax = (long) vmSpec.getVcpuMaxLimit();
+                }
+            }
         } else {
             //scaling disallowed, set static memory target
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
@@ -1330,20 +1340,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryStaticMax = vmSpec.getMaxRam();
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
+
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
         }
 
-        if (guestOsTypeName.toLowerCase().contains("windows")) {
-            vmr.VCPUsMax = (long)vmSpec.getCpus();
-        } else {
-            // XenServer has a documented limit of 16 vcpus per vm
-            vmr.VCPUsMax = 2L * vmSpec.getCpus();
-            if (vmr.VCPUsMax > 16)
-            {
-                vmr.VCPUsMax = 16L;
-            }
-        }
-
-        vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 
         VM vm = VM.create(conn, vmr);
