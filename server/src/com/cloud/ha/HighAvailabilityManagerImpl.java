@@ -32,7 +32,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import com.cloud.deploy.HAPlanner;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
@@ -48,6 +47,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.HAPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -148,7 +149,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     public void setHaPlanners(List<HAPlanner> haPlanners) {
-        this._haPlanners = haPlanners;
+        _haPlanners = haPlanners;
     }
 
 
@@ -611,13 +612,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             VMInstanceVO vm = _instanceDao.findById(vmId);
             // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
-            boolean result = false;
-            try {
-                _itMgr.migrateAway(vm.getUuid(), srcHostId, null);
-            }catch (InsufficientServerCapacityException e) {
-                s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
-                _itMgr.migrateAway(vm.getUuid(), srcHostId, _haPlanners.get(0));
-            }
+            _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
@@ -935,4 +930,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         return _haTag;
     }
 
+    @Override
+    public DeploymentPlanner getHAPlanner() {
+        return _haPlanners.get(0);
+    }
 }

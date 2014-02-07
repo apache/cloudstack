@@ -1546,7 +1546,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Disable this hacking thing, VM snapshot task need to be managed by its orchestartion flow istelf instead of
         // hacking it here at general VM manager
-        /*        
+        /*
                 if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
                     s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
                     return false;
@@ -2183,7 +2183,53 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void migrateAway(String vmUuid, long srcHostId, DeploymentPlanner planner) throws InsufficientServerCapacityException {
+    public void migrateAway(String vmUuid, long srcHostId) throws InsufficientServerCapacityException {
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+
+            VmWorkJobVO placeHolder = null;
+            if (VmJobEnabled.value()) {
+                VirtualMachine vm = _vmDao.findByUuid(vmUuid);
+                placeHolder = createPlaceHolderWork(vm.getId());
+            }
+            try {
+                try {
+                    orchestrateMigrateAway(vmUuid, srcHostId, null);
+                } catch (InsufficientServerCapacityException e) {
+                    s_logger.warn("Failed to deploy vm " + vmUuid + " with original planner, sending HAPlanner");
+                    orchestrateMigrateAway(vmUuid, srcHostId, _haMgr.getHAPlanner());
+                }
+            } finally {
+                if (VmJobEnabled.value())
+                    _workJobDao.expunge(placeHolder.getId());
+            }
+        } else {
+            Outcome<VirtualMachine> outcome = migrateVmAwayThroughJobQueue(vmUuid, srcHostId);
+
+            try {
+                VirtualMachine vm = outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution excetion", e);
+            }
+
+            Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobException != null) {
+                if (jobException instanceof InsufficientServerCapacityException)
+                    throw (InsufficientServerCapacityException)jobException;
+                else if (jobException instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobException;
+                else if (jobException instanceof RuntimeException)
+                    throw (RuntimeException)jobException;
+                else if (jobException instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
+            }
+        }
+    }
+
+    private void orchestrateMigrateAway(String vmUuid, long srcHostId, DeploymentPlanner planner) throws InsufficientServerCapacityException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             s_logger.debug("Unable to find a VM for " + vmUuid);
@@ -4562,6 +4608,57 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VirtualMachine.PowerState.PowerOn, vm.getId(), vm.getPowerHostId());
     }
 
+    public Outcome<VirtualMachine> migrateVmAwayThroughJobQueue(final String vmUuid, final long srcHostId) {
+        final CallContext context = CallContext.current();
+        final User user = context.getCallingUser();
+        final Account account = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
+            @Override
+            public Object[] doInTransaction(TransactionStatus status) {
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                        VirtualMachine.Type.Instance, vm.getId(),
+                        VmWorkMigrateAway.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkMigrateAway.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(VirtualMachine.Type.Instance);
+                    workJob.setVmInstanceId(vm.getId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkMigrateAway workInfo = new VmWorkMigrateAway(user.getId(), account.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                }
+                return new Object[] {workJob, new Long(workJob.getId())};
+            }
+        });
+
+        final long jobId = (Long)result[1];
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmStateSyncOutcome((VmWorkJobVO)result[0],
+                VirtualMachine.PowerState.PowerOn, vm.getId(), vm.getPowerHostId());
+    }
+
     public Outcome<VirtualMachine> migrateVmWithStorageThroughJobQueue(
             final String vmUuid, final long srcHostId, final long destHostId,
             final Map<Volume, StoragePool> volumeToPool) {
@@ -4961,6 +5058,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert (vm != null);
 
         orchestrateMigrate(vm.getUuid(), work.getSrcHostId(), work.getDeployDestination());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateMigrateAway(VmWorkMigrateAway work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+
+        try {
+            orchestrateMigrateAway(vm.getUuid(), work.getSrcHostId(), null);
+        } catch (InsufficientServerCapacityException e) {
+            s_logger.warn("Failed to deploy vm " + vm.getId() + " with original planner, sending HAPlanner");
+            orchestrateMigrateAway(vm.getUuid(), work.getSrcHostId(), _haMgr.getHAPlanner());
+        }
+
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
