@@ -2871,6 +2871,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     sc.addAnd("featured", SearchCriteria.Op.EQ, false);
                 }
 
+                /* We don't need this any more to check domain id, based on CLOUDSTACK-5987
                 // for public templates, we should get all public templates from all domains in the system
                 // get all parent domain ID's all the way till root domain
                 List<Long> domainTree = new ArrayList<Long>();
@@ -2887,6 +2888,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 scc.addOr("domainId", SearchCriteria.Op.IN, domainTree.toArray());
                 scc.addOr("domainId", SearchCriteria.Op.NULL);
                 sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+                */
             } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
                 if (permittedDomains.contains(caller.getDomainId())) {
                     // this caller acts like a domain admin
