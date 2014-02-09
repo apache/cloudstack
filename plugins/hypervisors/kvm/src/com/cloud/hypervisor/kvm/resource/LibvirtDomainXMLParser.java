@@ -145,8 +145,9 @@ public class LibvirtDomainXMLParser {
                 if ((bandwidth != null) && (bandwidth.getLength() != 0)) {
                     Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
                     Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
-                    if (inbound == outbound)
+                    if (inbound.equals(outbound)) {
                         networkRateKBps = inbound;
+                    }
                 }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
