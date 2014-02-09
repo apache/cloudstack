@@ -3324,13 +3324,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (pubKeyFile.exists()) {
-            String pubKey = cmd.getPubKey();
-            try {
-                FileOutputStream pubkStream = new FileOutputStream(pubKeyFile);
-                pubkStream.write(pubKey.getBytes());
-                pubkStream.close();
+            try (FileOutputStream pubkStream = new FileOutputStream(pubKeyFile)) {
+                pubkStream.write(cmd.getPubKey().getBytes());
             } catch (FileNotFoundException e) {
-                result = "File" + SSHPUBKEYPATH + "is not found:" + e.toString();
+                result = "File" + SSHPUBKEYPATH + "is not found:"
+                        + e.toString();
                 s_logger.debug(result);
             } catch (IOException e) {
                 result = "Write file " + SSHPUBKEYPATH + ":" + e.toString();
