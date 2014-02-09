@@ -558,7 +558,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     protected Answer copyToObjectStore(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         NfsTO srcStore = (NfsTO)srcData.getDataStore();
         String srcPath = srcData.getPath();
@@ -600,9 +599,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected Answer backupSnapshotForObjectStore(CopyCommand cmd) {
-        DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         DataTO cacheData = cmd.getCacheTO();
         if (cacheData == null) {
@@ -682,8 +679,6 @@ public class KVMStorageProcessor implements StorageProcessor {
                     IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
                     RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-
-                    long startTime = System.currentTimeMillis() / 1000;
 
                     File snapDir = new File(snapshotDestPath);
                     s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively");
