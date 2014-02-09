@@ -1156,12 +1156,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Script command = new Script("/bin/sh", _timeout);
         command.add("-c");
         command.add("ovs-vsctl br-exists " + networkName);
-        String result = command.execute(null);
-        if ("0".equals(result)) {
-            return true;
-        } else {
-            return false;
-        }
+        return "0".equals(command.execute(null));
     }
 
     private boolean passCmdLine(String vmName, String cmdLine) throws InternalErrorException {
