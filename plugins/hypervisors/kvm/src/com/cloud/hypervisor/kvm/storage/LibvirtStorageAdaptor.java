@@ -310,11 +310,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new InternalErrorException("volume:" + srcPath + " is not exits");
         }
         String result = Script.runSimpleBashScript("cp " + srcPath + " " + destPath + File.separator + volumeName, timeout);
-        if (result != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return result == null;
     }
 
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
