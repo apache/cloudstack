@@ -199,6 +199,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -207,6 +208,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -220,6 +222,7 @@ import org.libvirt.StorageVol;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -229,6 +232,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -4392,24 +4396,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         int cpuSockets = 0;
         String cap = null;
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
-            boolean result = false;
-            try {
-                BufferedReader in = new BufferedReader(new FileReader("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"));
-                speed = Long.parseLong(in.readLine()) / 1000;
-                result = true;
-            } catch (FileNotFoundException e) {
-
-            } catch (IOException e) {
-
-            } catch (NumberFormatException e) {
-
-            }
-
-            if (!result) {
-                speed = hosts.mhz;
-            }
+            speed = getCpuSpeed(hosts);
 
             cpuSockets = hosts.sockets;
             cpus = hosts.cpus;
@@ -4448,6 +4437,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram + ", cpu sockets=" + cpuSockets);
 
         return info;
+    }
+
+    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
+        try (final Reader reader = new FileReader(
+                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
+            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
+        } catch (IOException | NumberFormatException e) {
+            s_logger.warn("Could not read cpuinfo_max_freq");
+            return nodeInfo.mhz;
+        }
     }
 
     protected String rebootVM(Connect conn, String vmName) {
