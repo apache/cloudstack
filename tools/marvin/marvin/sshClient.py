@@ -25,7 +25,7 @@ from paramiko import (BadHostKeyException,
                       SFTPClient)
 import socket
 import time
-from cloudstackException import (
+from marvin.cloudstackException import (
     internalError,
     GetDetailExceptionInfo
     )

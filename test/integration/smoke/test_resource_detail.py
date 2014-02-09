@@ -40,7 +40,7 @@ class TestResourceDetail(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
-        zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = zone.networktype
 
         # Set Zones and disk offerings ??

@@ -48,7 +48,7 @@ class TestNic(cloudstackTestCase):
 
             # Get Zone, Domain and templates
             domain = get_domain(self.apiclient)
-            zone = get_zone(self.apiclient, self.getZoneForTests())
+            zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
             self.services['mode'] = zone.networktype
 
             if zone.networktype != 'Advanced':

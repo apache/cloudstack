@@ -332,10 +332,7 @@ class ConfigManager(object):
               "getConfig" API,once configObj is returned.
     '''
     def __init__(self, cfg_file=None):
-        if cfg_file is None:
-            self.__filePath = "config/test_data.cfg"
-        else:
-            self.__filePath = cfg_file
+        self.__filePath = cfg_file
         self.__parsedCfgDict = None
         '''
         Set the Configuration
@@ -343,8 +340,11 @@ class ConfigManager(object):
         self.__setConfig()
 
     def __setConfig(self):
-        if self.__verifyFile() is not False:
-            self.__parsedCfgDict = self.__parseConfig()
+        if not self.__verifyFile():
+            dirPath = os.path.dirname(__file__)
+            self.__filePath = os.path.join(dirPath,"config/test_data.cfg")
+        self.__parsedCfgDict = self.__parseConfig()
+        print "*************PATH3***************",self.__filePath,self.__parsedCfgDict
 
     def __parseConfig(self):
         '''
@@ -382,7 +382,7 @@ class ConfigManager(object):
         '''
         if self.__filePath is None or self.__filePath == '':
             return False
-        return False if os.path.exists(self.__filePath) is False else True
+        return os.path.exists(self.__filePath)
 
     def getSectionData(self, section=None):
         '''
