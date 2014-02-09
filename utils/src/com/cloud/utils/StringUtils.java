@@ -95,17 +95,17 @@ public class StringUtils {
      */
 
     public static String listToCsvTags(List<String> tagsList) {
-        String tags = "";
+        StringBuilder tags = new StringBuilder();
         if (tagsList.size() > 0) {
             for (int i = 0; i < tagsList.size(); i++) {
-                tags += tagsList.get(i);
+                tags.append(tagsList.get(i));
                 if (i != tagsList.size() - 1) {
-                    tags += ",";
+                    tags.append(',');
                 }
             }
         }
 
-        return tags;
+        return tags.toString();
     }
 
     public static String getExceptionStackInfo(Throwable e) {
