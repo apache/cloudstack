@@ -90,11 +90,11 @@ public class QemuImg {
 
         if (options != null && !options.isEmpty()) {
             s.add("-o");
-            String optionsStr = "";
+            final StringBuilder optionsStr = new StringBuilder();
             for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr += option.getKey() + "=" + option.getValue() + ",";
+                optionsStr.append(option.getKey()).append('=').append(option.getValue()).append(',');
             }
-            s.add(optionsStr);
+            s.add(optionsStr.toString());
         }
 
         /*
