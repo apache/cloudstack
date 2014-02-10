@@ -191,6 +191,7 @@ public class VpcVO implements Vpc {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
 
     @Override
     public boolean isRegionLevelVpc() {
