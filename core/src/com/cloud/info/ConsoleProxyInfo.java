@@ -32,16 +32,17 @@ public class ConsoleProxyInfo {
         this.sslEnabled = sslEnabled;
 
         if (sslEnabled) {
-            StringBuffer sb = new StringBuffer(proxyIpAddress);
-            for (int i = 0; i < sb.length(); i++)
-                if (sb.charAt(i) == '.')
-                    sb.setCharAt(i, '-');
-            if (consoleProxyUrlDomain != null && consoleProxyUrlDomain.length() > 0) {
-                sb.append(".");
+            StringBuffer sb = new StringBuffer();
+            if (consoleProxyUrlDomain.startsWith("*")) {
+                sb.append(proxyIpAddress);
+                for (int i = 0; i < proxyIpAddress.length(); i++)
+                    if (sb.charAt(i) == '.')
+                        sb.setCharAt(i, '-');
+                sb.append(consoleProxyUrlDomain.substring(1));//skip the *
+            } else {
+                //LB address
                 sb.append(consoleProxyUrlDomain);
-            } else
-                sb.append(".realhostip.com");
-
+            }
             proxyAddress = sb.toString();
             proxyPort = port;
             this.proxyUrlPort = proxyUrlPort;

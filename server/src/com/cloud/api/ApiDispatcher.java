@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -82,7 +83,13 @@ public class ApiDispatcher {
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
+            String uuid = params.get("uuid");
             ctx.setStartEventId(Long.valueOf(startEventId));
+
+            // Fow now use the key from EventTypes.java rather than getInstanceType bcz the later doesn't refer to the interfaces
+            if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
+                ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), uuid);
+            }
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {

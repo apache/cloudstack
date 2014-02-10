@@ -1254,21 +1254,10 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                     str(self.services["fw_rule"]["endport"]),
                     "Check end port of firewall rule"
                     )
-        hosts = list_hosts(
-                           self.apiclient,
-                           id=router.hostid,
-                           )
-        self.assertEqual(
-                        isinstance(hosts, list),
-                        True,
-                        "Check for list hosts response return valid data"
-                        )
-        host = hosts[0]
-        host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
-
         # For DNS and DHCP check 'dnsmasq' process status
-        if self.apiclient.hypervisor.lower() == 'vmware':
-               result = get_process_status(
+        if (self.apiclient.hypervisor.lower() == 'vmware'
+                         or self.apiclient.hypervisor.lower() == 'hyperv'):
+            result = get_process_status(
                                self.apiclient.connection.mgtSvr,
                                22,
                                self.apiclient.connection.user,
@@ -1278,6 +1267,17 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                 hypervisor=self.apiclient.hypervisor
                                )
         else:
+            hosts = list_hosts(
+                        self.apiclient,
+                        id=router.hostid,
+                        )
+            self.assertEqual(
+                        isinstance(hosts, list),
+                        True,
+                        "Check for list hosts response return valid data"
+                        )
+            host = hosts[0]
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
             try:
                 result = get_process_status(
                     host.ipaddress,
