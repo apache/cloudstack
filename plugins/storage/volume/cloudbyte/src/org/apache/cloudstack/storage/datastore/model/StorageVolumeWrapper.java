@@ -4,12 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class StorageVolumeWrapper {
 
-	@SerializedName("storage")
-	private StorageVolume storageVolume;
-	
-	public StorageVolume getStorageVolume()
-	{
-		return storageVolume;
-	}
-		
+    @SerializedName("storage")
+    private StorageVolume storageVolume;
+
+    public StorageVolume getStorageVolume() {
+        return storageVolume;
+    }
+
 }

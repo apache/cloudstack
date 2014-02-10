@@ -4,15 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class FilesystemQoSWrapper {
 
-	@SerializedName("monitorFilesystemQoS")
-	private FileSystem fileSystem[];
-	
-	
+    @SerializedName("monitorFilesystemQoS")
+    private FileSystem fileSystem[];
 
-	public FileSystem[] getFileSystemQos() {
-		return fileSystem;
-	}
-	
-	
-	
+    public FileSystem[] getFileSystemQos() {
+        return fileSystem;
+    }
+
 }

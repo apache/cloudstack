@@ -4,14 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class FileSystemWrapper {
 
-	@SerializedName("filesystem")
-	private FileSystem fileSystem;
-	
-	
+    @SerializedName("filesystem")
+    private FileSystem fileSystem;
 
-	public FileSystem getFileSystem() {
-		return fileSystem;
-	}
-	
-	
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
+
 }
