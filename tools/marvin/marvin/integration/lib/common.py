@@ -215,17 +215,7 @@ def get_pod(apiclient, zoneid, services=None):
 def get_template(apiclient, zoneid, ostype, services=None,
                  templatefilter='featured',
                  templatetype='BUILTIN'):
-    "Returns a template"
-
-    cmd = listOsTypes.listOsTypesCmd()
-    cmd.description = ostype
-    ostypes = apiclient.listOsTypes(cmd)
-
-    if isinstance(ostypes, list):
-        ostypeid = ostypes[0].id
-    else:
-        raise Exception(
-            "Failed to find OS type with description: %s" % ostype)
+    "Returns a featured built in template in given zone"
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.templatefilter = templatefilter
@@ -238,13 +228,13 @@ def get_template(apiclient, zoneid, ostype, services=None,
     list_templates = apiclient.listTemplates(cmd)
 
     if isinstance(list_templates, list):
-        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
+        assert len(list_templates) > 0, "received empty response on featured templates"
         for template in list_templates:
-            if template.ostypeid == ostypeid and template.isready and template.templatetype == templatetype:
+            if template.isready and template.templatetype == templatetype:
                 return template
 
-    raise Exception("Exception: Failed to find template of type %s with OSTypeID and which is in "
-                                "ready state: %s" %(templatetype, ostypeid))
+    raise Exception("Exception: Failed to find built in template which is in "
+                                "ready state: %s" % templatetype)
     return
 
 
