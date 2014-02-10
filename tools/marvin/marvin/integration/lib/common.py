@@ -62,11 +62,14 @@ from marvin.integration.lib.base import (Configurations,
                                          Template,
                                          Resources,
                                          PhysicalNetwork,
-                                         Host)
+                                         Host,
+                                         PublicIPAddress)
 from marvin.integration.lib.utils import (get_process_status,
-                                          xsplit)
+                                          xsplit,
+                                          validateList)
 
 from marvin.sshClient import SshClient
+from marvin.codes import PASS
 import random
 
 #Import System modules
@@ -212,17 +215,7 @@ def get_pod(apiclient, zoneid, services=None):
 def get_template(apiclient, zoneid, ostype, services=None,
                  templatefilter='featured',
                  templatetype='BUILTIN'):
-    "Returns a template"
-
-    cmd = listOsTypes.listOsTypesCmd()
-    cmd.description = ostype
-    ostypes = apiclient.listOsTypes(cmd)
-
-    if isinstance(ostypes, list):
-        ostypeid = ostypes[0].id
-    else:
-        raise Exception(
-            "Failed to find OS type with description: %s" % ostype)
+    "Returns a featured built in template in given zone"
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.templatefilter = templatefilter
@@ -235,13 +228,13 @@ def get_template(apiclient, zoneid, ostype, services=None,
     list_templates = apiclient.listTemplates(cmd)
 
     if isinstance(list_templates, list):
-        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
+        assert len(list_templates) > 0, "received empty response on featured templates"
         for template in list_templates:
-            if template.ostypeid == ostypeid and template.isready and template.templatetype == templatetype:
+            if template.isready and template.templatetype == templatetype:
                 return template
 
-    raise Exception("Exception: Failed to find template of type %s with OSTypeID and which is in "
-                                "ready state: %s" %(templatetype, ostypeid))
+    raise Exception("Exception: Failed to find built in template which is in "
+                                "ready state: %s" % templatetype)
     return
 
 
@@ -907,3 +900,20 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         return None, None
 
     return physical_network, vlan
+
+def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
+    """ Check if the given IP is in the correct state (given)
+    and return True/False accordingly"""
+    retriesCount = 10
+    while True:
+        portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
+        assert validateList(portableips)[0] == PASS, "IPs list validation failed"
+        if str(portableips[0].state).lower() == state:
+            break
+        elif retriesCount == 0:
+           return False
+        else:
+            retriesCount -= 1
+            time.sleep(60)
+            continue
+    return True

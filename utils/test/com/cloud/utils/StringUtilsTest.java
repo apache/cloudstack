@@ -18,6 +18,11 @@ package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 public class StringUtilsTest {
@@ -215,5 +220,11 @@ public class StringUtilsTest {
         String expected = "username=foo&url=foobar";
         String result = StringUtils.cleanString(input);
         assertEquals(result, expected);
+    }
+
+    @Test
+    public void listToCsvTags() {
+        Assert.assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
+        Assert.assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
     }
 }

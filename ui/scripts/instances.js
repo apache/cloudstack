@@ -504,7 +504,7 @@
                                         _custom: {
                                             jobId: jid,
                                             getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;

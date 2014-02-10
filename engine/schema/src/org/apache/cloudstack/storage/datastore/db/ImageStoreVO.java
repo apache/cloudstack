@@ -159,9 +159,6 @@ public class ImageStoreVO implements ImageStore {
 
     public void setUrl(String url) {
         this.url = url;
-        if ("cifs".equalsIgnoreCase(this.protocol)) {
-            this.url = UriUtils.getUpdateUri(url, true);
-        }
     }
 
     public Date getCreated() {
