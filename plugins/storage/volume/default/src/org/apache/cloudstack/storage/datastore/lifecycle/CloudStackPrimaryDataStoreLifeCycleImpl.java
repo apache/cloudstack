@@ -27,8 +27,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -40,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -250,7 +249,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 if (clusterId == null) {
                     throw new IllegalArgumentException("IscsiLUN need to have clusters specified");
                 }
-                hostPath.replaceFirst("/", "");
+                hostPath = hostPath.replaceFirst("/", "");
                 parameters.setType(StoragePoolType.IscsiLUN);
                 parameters.setHost(storageHost);
                 parameters.setPort(port);
@@ -321,7 +320,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             uuid = hostPath.replace("/", "");
         } else {
-            uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+            uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
         }
 
         List<StoragePoolVO> spHandles = primaryDataStoreDao.findIfDuplicatePoolsExistByUUID(uuid);
@@ -348,9 +347,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
 
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
-            pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
-            pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 &&
-            pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM && pool.getPoolType() != StoragePoolType.SMB) {
+                pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
+                pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 &&
+                pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM && pool.getPoolType() != StoragePoolType.SMB) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
@@ -377,7 +376,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo)store;
         // Check if there is host up in this cluster
         List<HostVO> allHosts =
-            _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
+                _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
         if (allHosts.isEmpty()) {
             primaryDataStoreDao.expunge(primarystore.getId());
             throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + primarystore.getClusterId());
