@@ -1812,6 +1812,12 @@ namespace HypervResource
             return null;
         }
 
+        public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
+        {
+            var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
+            return ComputerSystem.GetInstances(wmiQuery);
+        }
+
         public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
         {
             List<String> vms = GetVmElementNames();
@@ -2409,6 +2415,25 @@ namespace HypervResource
                 case Stopping: result = "Stopping"; break;
                 case Pausing: result = "Unknown"; break;
                 case Resuming: result = "Starting"; break; 
+            }
+            return result;
+        }
+
+        public static string ToCloudStackPowerState(UInt16 value)
+        {
+            string result = "Unknown";
+            switch (value)
+            {
+                case Enabled: result = "PowerOn"; break;
+                case Disabled: result = "PowerOff"; break;
+                case Paused: result = "PowerUnknown"; break;
+                case Suspended: result = "PowerUnknown"; break;
+                case Starting: result = "PowerOn"; break;
+                case Snapshotting: result = "PowerUnknown"; break; // NOT used
+                case Saving: result = "PowerOn"; break;
+                case Stopping: result = "PowerOff"; break;
+                case Pausing: result = "PowerUnknown"; break;
+                case Resuming: result = "PowerOn"; break;
             }
             return result;
         }

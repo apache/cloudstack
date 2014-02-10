@@ -42,6 +42,7 @@ namespace HypervResource
         void MigrateVm(string vmName, string destination);
         void DetachDisk(string displayName, string diskFileName);
         ComputerSystem GetComputerSystem(string displayName);
+        ComputerSystem.ComputerSystemCollection GetComputerSystemCollection();
         string GetDefaultDataRoot();
         string GetDefaultVirtualDiskFolder();
         ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings);
