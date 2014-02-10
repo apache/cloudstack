@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.List;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -334,7 +335,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
-            if (!privateIp.isIp4()) {
+            if (!NetUtils.isValidIp(privateIp.toString())) {
                 throw new InvalidParameterValueException("Invalid vm ip address");
             }
         }
