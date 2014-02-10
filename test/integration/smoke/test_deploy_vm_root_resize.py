@@ -76,9 +76,9 @@ class TestDeployVM(cloudstackTestCase):
         self.domain = get_domain(self.apiclient, self.testdata)
         self.zone = get_zone(self.apiclient, self.testdata)
         self.testdata["mode"] = self.zone.networktype
-        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+#        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 #       for testing with specific template
-#        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
+        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
         
 
         #create a user account
@@ -98,7 +98,6 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(hypervisor = ['kvm'])
     @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
@@ -108,185 +107,154 @@ class TestDeployVM(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-        self.apiclient.hypervisor = 'KVM'
-        newrootsize = (self.template.size >> 30) + 2 
-        self.virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.testdata["virtual_machine"],
-            accountid=self.account.name,
-            zoneid=self.zone.id,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            rootdisksize=newrootsize
-        )
+        if(self.apiclient.hypervisor == 'kvm'):
+            newrootsize = (self.template.size >> 30) + 2 
+            self.virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                templateid=self.template.id,
+                rootdisksize=newrootsize
+            )
 
-        list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+            list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
 
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"\
-            % self.virtual_machine.id
-        )
+            self.debug(
+                "Verify listVirtualMachines response for virtual machine: %s"\
+                % self.virtual_machine.id
+            )
 
-        self.assertEqual(
-            isinstance(list_vms, list),
-            True,
-            "List VM response was not a valid list"
-        )
-        self.assertNotEqual(
-            len(list_vms),
-            0,
-            "List VM response was empty"
-        )
+            self.assertEqual(
+                isinstance(list_vms, list),
+                True,
+                "List VM response was not a valid list"
+            )
+            self.assertNotEqual(
+                len(list_vms),
+                0,
+                "List VM response was empty"
+            )
 
-        vm = list_vms[0]
-        self.assertEqual(
-            vm.id,
-            self.virtual_machine.id,
-            "Virtual Machine ids do not match"
-        )
-        self.assertEqual(
-            vm.name,
-            self.virtual_machine.name,
-            "Virtual Machine names do not match"
-        )
-        self.assertEqual(
-            vm.state,
-            "Running",
-            msg="VM is not in Running state"
-        )
+            vm = list_vms[0]
+            self.assertEqual(
+                vm.id,
+                self.virtual_machine.id,
+                "Virtual Machine ids do not match"
+            )
+            self.assertEqual(
+                vm.name,
+                self.virtual_machine.name,
+                "Virtual Machine names do not match"
+            )
+            self.assertEqual(
+                vm.state,
+                "Running",
+                msg="VM is not in Running state"
+            )
 
-        # get root vol from created vm, verify it is correct size
-        list_volume_response = list_volumes(
-                                            self.apiclient,
-                                            virtualmachineid=self.virtual_machine.id,
-                                            type='ROOT',
-                                            listall=True
-                                            )
+            # get root vol from created vm, verify it is correct size
+            list_volume_response = list_volumes(
+                                                self.apiclient,
+                                                virtualmachineid=self.virtual_machine.id,
+                                                type='ROOT',
+                                                listall=True
+                                                )
 
-        rootvolume = list_volume_response[0]
-        success = False
-        if rootvolume is not None and rootvolume.size  == (newrootsize << 30):
-            success = True
+            rootvolume = list_volume_response[0]
+            success = False
+            if rootvolume is not None and rootvolume.size  == (newrootsize << 30):
+                success = True
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                        )
+            self.assertEqual(
+                             success,
+                             True,
+                             "Check if the root volume resized appropriately"
+                            )
+        else:
+            self.debug("hypervisor %s unsupported for test 00, verifying it errors properly" % self.apiclient.hypervisor)
 
-    @attr(hypervisor = 'kvm')
+            newrootsize = (self.template.size >> 30) + 2
+            success = False
+            try:
+                self.virtual_machine = VirtualMachine.create(
+                    self.apiclient,
+                    self.testdata["virtual_machine"],
+                    accountid=self.account.name,
+                    zoneid=self.zone.id,
+                    domainid=self.account.domainid,
+                    serviceofferingid=self.service_offering.id,
+                    templateid=self.template.id,
+                    rootdisksize=newrootsize
+                )
+            except Exception as ex:
+                if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
+                    success = True
+                else:
+                    self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+
+            self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.apiclient.hypervisor)
+
     @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0 
         """
-        newrootsize = 0
-        success = False
-        self.apiclient.hypervisor = 'KVM'
-        try:
-            self.virtual_machine = VirtualMachine.create(
-                self.apiclient,
-                self.testdata["virtual_machine"],
-                accountid=self.account.name,
-                zoneid=self.zone.id,
-                domainid=self.account.domainid,
-                serviceofferingid=self.service_offering.id,
-                templateid=self.template.id,
-                rootdisksize=newrootsize
-            )
-        except Exception as ex:
-            if "rootdisk size should be a non zero number" in str(ex):
-                success = True
-            else:
-                self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+        if (self.apiclient.hypervisor == 'kvm'):
+            newrootsize = 0
+            success = False
+            try:
+                self.virtual_machine = VirtualMachine.create(
+                    self.apiclient,
+                    self.testdata["virtual_machine"],
+                    accountid=self.account.name,
+                    zoneid=self.zone.id,
+                    domainid=self.account.domainid,
+                    serviceofferingid=self.service_offering.id,
+                    templateid=self.template.id,
+                    rootdisksize=newrootsize
+                )
+            except Exception as ex:
+                if "rootdisk size should be a non zero number" in str(ex):
+                    success = True
+                else:
+                    self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
 
-        self.assertEqual(success, True, "Check if passing 0 as rootdisksize fails appropriately")
+            self.assertEqual(success, True, "Check if passing 0 as rootdisksize fails appropriately")
+        else:
+            self.debug("test 01 does not support hypervisor type " + self.apiclient.hypervisor);
 
-    @attr(hypervisor = 'kvm')
     @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
-        self.apiclient.hypervisor = 'KVM'
-        newrootsize = (self.template.size >> 30) - 1
-        
-        self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
+        if (self.apiclient.hypervisor == 'kvm'):
+            newrootsize = (self.template.size >> 30) - 1
+            
+            self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
 
-        success = False
-        try:
-            self.virtual_machine = VirtualMachine.create(
-                self.apiclient,
-                self.testdata["virtual_machine"],
-                accountid=self.account.name,
-                zoneid=self.zone.id,
-                domainid=self.account.domainid,
-                serviceofferingid=self.service_offering.id,
-                templateid=self.template.id,
-                rootdisksize=newrootsize
-            )
-        except Exception as ex:
-            if "rootdisksize override is smaller than template size" in str(ex):
-                success = True
-            else:
-                self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+            success = False
+            try:
+                self.virtual_machine = VirtualMachine.create(
+                    self.apiclient,
+                    self.testdata["virtual_machine"],
+                    accountid=self.account.name,
+                    zoneid=self.zone.id,
+                    domainid=self.account.domainid,
+                    serviceofferingid=self.service_offering.id,
+                    templateid=self.template.id,
+                    rootdisksize=newrootsize
+                )
+            except Exception as ex:
+                if "rootdisksize override is smaller than template size" in str(ex):
+                    success = True
+                else:
+                    self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
 
-        self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
-
-    @attr(hypervisor = ['xenserver','kvm','vmware'])
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
-    def test_03_deploy_vm_root_resize(self):
-        """Test proper failure to deploy virtual machine with XenServer hypervisor
-        # remove this test completely if/when XenServer supports rootdisksize parameter, tests 00 01 02 will then need to test it.
-        """
-        self.apiclient.hypervisor = 'XenServer'
-        newrootsize = (self.template.size >> 30) + 2
-        success = False
-        try:
-            self.virtual_machine = VirtualMachine.create(
-                self.apiclient,
-                self.testdata["virtual_machine"],
-                accountid=self.account.name,
-                zoneid=self.zone.id,
-                domainid=self.account.domainid,
-                serviceofferingid=self.service_offering.id,
-                templateid=self.template.id,
-                rootdisksize=newrootsize
-            )
-        except Exception as ex:
-            if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
-                success = True
-            else:
-                self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
-
-        self.assertEqual(success, True, "Check if unsupported hypervisor XenServer fails appropriately")
-
-    @attr(hypervisor = ['xenserver','kvm','vmware'])
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
-    def test_04_deploy_vm_root_resize(self):
-        """Test proper failure to deploy virtual machine with VMware hypervisor
-        # remove this test completely if/when VMware supports rootdisksize parameter, tests 00 01 02 will then need to test it.
-        """
-        self.apiclient.hypervisor = 'VMware'
-        newrootsize = (self.template.size >> 30) + 2
-        success = False
-        try:
-            self.virtual_machine = VirtualMachine.create(
-                self.apiclient,
-                self.testdata["virtual_machine"],
-                accountid=self.account.name,
-                zoneid=self.zone.id,
-                domainid=self.account.domainid,
-                serviceofferingid=self.service_offering.id,
-                templateid=self.template.id,
-                rootdisksize=newrootsize
-            )
-        except Exception as ex:
-            if "Hypervisor VMware does not support rootdisksize override" in str(ex):
-                success = True
-            else:
-                self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
-
-        self.assertEqual(success, True, "Check if unsupported hypervisor VMware fails appropriately")
+            self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
+        else:
+            self.debug("test 01 does not support hypervisor type " + self.apiclient.hypervisor);
 
     def tearDown(self):
         try:
