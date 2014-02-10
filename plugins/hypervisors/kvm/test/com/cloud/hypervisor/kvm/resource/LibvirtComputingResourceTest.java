@@ -31,7 +31,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -449,7 +448,6 @@ public class LibvirtComputingResourceTest {
         Assert.assertTrue(vmStat.getDiskWriteKBs() > 0);
     }
 
-    @Ignore
     @Test
     public void getCpuSpeed() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
