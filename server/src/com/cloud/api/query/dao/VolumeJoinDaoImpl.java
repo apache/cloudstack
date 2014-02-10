@@ -208,7 +208,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         }
 
         volResponse.setExtractable(isExtractable);
-        volResponse.setDisplayVm(volume.isDisplayVolume());
+        volResponse.setDisplayVolume(volume.isDisplayVolume());
 
         // set async job
         if (volume.getJobId() != null) {

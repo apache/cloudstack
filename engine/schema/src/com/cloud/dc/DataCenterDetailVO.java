@@ -48,10 +48,11 @@ public class DataCenterDetailVO implements ResourceDetail {
     protected DataCenterDetailVO() {
     }
 
-    public DataCenterDetailVO(long dcId, String name, String value) {
+    public DataCenterDetailVO(long dcId, String name, String value, boolean display) {
         this.resourceId = dcId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

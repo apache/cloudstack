@@ -159,7 +159,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
-    public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details) {
+    public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details, final boolean forDisplay) {
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -171,7 +171,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     }
 
                     DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-                    newDetailDaoHelper.addDetail(_taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);
+                    newDetailDaoHelper.addDetail(_taggedResourceMgr.getResourceId(resourceId, resourceType), key, value, forDisplay);
                 }
 
                 return true;
@@ -215,8 +215,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             return dao.findDetail(resourceId, key);
         }
 
-        private void addDetail(long resourceId, String key, String value) {
-            dao.addDetail(resourceId, key, value);
+        private void addDetail(long resourceId, String key, String value, boolean forDisplay) {
+            dao.addDetail(resourceId, key, value, forDisplay);
         }
 
         private Map<String, String> getDetailsMap(long resourceId, Boolean forDisplay) {

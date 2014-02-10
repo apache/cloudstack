@@ -48,10 +48,11 @@ public class VpcGatewayDetailVO implements ResourceDetail {
     public VpcGatewayDetailVO() {
     }
 
-    public VpcGatewayDetailVO(long id, String name, String value) {
+    public VpcGatewayDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

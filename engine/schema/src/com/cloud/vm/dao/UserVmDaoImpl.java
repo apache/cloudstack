@@ -343,7 +343,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
         for (String key : detailsStr.keySet()) {
-            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key)));
+            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key), true));
         }
 
         _detailsDao.saveDetails(details);

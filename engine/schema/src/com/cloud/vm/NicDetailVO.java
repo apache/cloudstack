@@ -48,10 +48,11 @@ public class NicDetailVO implements ResourceDetail {
     public NicDetailVO() {
     }
 
-    public NicDetailVO(long nicId, String name, String value) {
+    public NicDetailVO(long nicId, String name, String value, boolean display) {
         this.resourceId = nicId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

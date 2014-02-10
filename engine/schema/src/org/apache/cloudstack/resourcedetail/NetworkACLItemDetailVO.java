@@ -48,10 +48,11 @@ public class NetworkACLItemDetailVO implements ResourceDetail {
     public NetworkACLItemDetailVO() {
     }
 
-    public NetworkACLItemDetailVO(long id, String name, String value) {
+    public NetworkACLItemDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

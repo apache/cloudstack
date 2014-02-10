@@ -190,7 +190,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
     @Param(description = "an optional field whether to the display the volume to the end user or not.")
-    private Boolean displayVm;
+    private Boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
     @Param(description = "The path of the volume")
@@ -406,12 +406,12 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.tags.add(tag);
     }
 
-    public Boolean getDisplayVm() {
-        return displayVm;
+    public Boolean getDisplayVolume() {
+        return displayVolume;
     }
 
-    public void setDisplayVm(Boolean displayVm) {
-        this.displayVm = displayVm;
+    public void setDisplayVolume(Boolean displayVm) {
+        this.displayVolume = displayVm;
     }
 
     public void setStoragePoolId(String storagePoolId) {

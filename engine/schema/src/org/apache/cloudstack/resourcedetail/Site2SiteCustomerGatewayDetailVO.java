@@ -48,10 +48,11 @@ public class Site2SiteCustomerGatewayDetailVO implements ResourceDetail {
     public Site2SiteCustomerGatewayDetailVO() {
     }
 
-    public Site2SiteCustomerGatewayDetailVO(long id, String name, String value) {
+    public Site2SiteCustomerGatewayDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

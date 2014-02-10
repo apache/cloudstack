@@ -48,10 +48,11 @@ public class FirewallRuleDetailVO implements ResourceDetail {
     public FirewallRuleDetailVO() {
     }
 
-    public FirewallRuleDetailVO(long id, String name, String value) {
+    public FirewallRuleDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

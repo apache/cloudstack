@@ -232,7 +232,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
-                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue());
+                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), true);
                 _detailsDao.persist(vo);
             }
         }
@@ -388,7 +388,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         if (details != null) {
             List<StoragePoolDetailVO> detailsVO = new ArrayList<StoragePoolDetailVO>();
             for (String key : details.keySet()) {
-                detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key)));
+                detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key), true));
             }
             _detailsDao.saveDetails(detailsVO);
         }

@@ -45,6 +45,7 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return dao.findById(id);
     }
 
+    @Override
     public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id) {
         GenericDao<? extends T, K> dao = (GenericDao<? extends T, K>)GenericDaoBase.getDao(entityType);
         return dao.findByIdIncludingRemoved(id);

@@ -48,10 +48,11 @@ public class AutoScaleVmGroupDetailVO implements ResourceDetail {
     public AutoScaleVmGroupDetailVO() {
     }
 
-    public AutoScaleVmGroupDetailVO(long id, String name, String value) {
+    public AutoScaleVmGroupDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
