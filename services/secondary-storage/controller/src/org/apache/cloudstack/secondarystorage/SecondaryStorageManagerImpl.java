@@ -123,7 +123,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SecondaryStorageVm;
@@ -371,7 +370,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     allowedCidrs.add(cidr);
                 }
             }
-            List<? extends Nic> nics = _networkModel.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
         String copyPasswd = _configDao.getValue("secstorage.copy.password");

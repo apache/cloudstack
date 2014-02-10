@@ -64,8 +64,8 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     HostDao _hostDao;
     @Inject
     ResourceManager _resourceMgr;
-    protected SearchBuilder<CommandExecLogVO> ActiveCommandSearch;
-    protected SearchBuilder<HostVO> HostSearch;
+    protected SearchBuilder<CommandExecLogVO> activeCommandSearch;
+    protected SearchBuilder<HostVO> hostSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -77,16 +77,16 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
 
-        HostSearch = _hostDao.createSearchBuilder();
-        HostSearch.and("dc", HostSearch.entity().getDataCenterId(), Op.EQ);
-        HostSearch.and("status", HostSearch.entity().getStatus(), Op.EQ);
+        hostSearch = _hostDao.createSearchBuilder();
+        hostSearch.and("dc", hostSearch.entity().getDataCenterId(), Op.EQ);
+        hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
 
-        ActiveCommandSearch = _cmdExecLogDao.createSearchBuilder();
-        ActiveCommandSearch.and("created", ActiveCommandSearch.entity().getCreated(), Op.GTEQ);
-        ActiveCommandSearch.join("hostSearch", HostSearch, ActiveCommandSearch.entity().getInstanceId(), HostSearch.entity().getId(), JoinType.INNER);
+        activeCommandSearch = _cmdExecLogDao.createSearchBuilder();
+        activeCommandSearch.and("created", activeCommandSearch.entity().getCreated(), Op.GTEQ);
+        activeCommandSearch.join("hostSearch", hostSearch, activeCommandSearch.entity().getInstanceId(), hostSearch.entity().getId(), JoinType.INNER);
 
-        HostSearch.done();
-        ActiveCommandSearch.done();
+        hostSearch.done();
+        activeCommandSearch.done();
         return true;
     }
 
@@ -112,12 +112,12 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         }
 
         List<SecondaryStorageVmVO> alreadyRunning =
-            _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating, State.Starting);
+                _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating, State.Starting);
         if (alreadyRunning.size() == 0) {
             s_logger.info("No running secondary storage vms found in datacenter id=" + dataCenterId + ", starting one");
 
             List<SecondaryStorageVmVO> stopped =
-                _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Stopped, State.Stopping);
+                    _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Stopped, State.Stopping);
             if (stopped.size() == 0 || !suspendAutoLoading) {
                 List<SecondaryStorageVmVO> stopping = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, State.Stopping);
                 if (stopping.size() > 0) {
@@ -141,7 +141,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             List<CommandExecLogVO> activeCmds = listActiveCommands(dataCenterId, cutTime);
             if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
                 s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
-                    "), starting a new one");
+                        "), starting a new one");
                 return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
             }
         }
@@ -166,7 +166,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     }
 
     private List<CommandExecLogVO> listActiveCommands(long dcId, Date cutTime) {
-        SearchCriteria<CommandExecLogVO> sc = ActiveCommandSearch.create();
+        SearchCriteria<CommandExecLogVO> sc = activeCommandSearch.create();
 
         sc.setParameters("created", cutTime);
         sc.setJoinParameters("hostSearch", "dc", dcId);
