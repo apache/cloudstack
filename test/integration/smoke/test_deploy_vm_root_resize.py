@@ -76,9 +76,9 @@ class TestDeployVM(cloudstackTestCase):
         self.domain = get_domain(self.apiclient, self.testdata)
         self.zone = get_zone(self.apiclient, self.testdata)
         self.testdata["mode"] = self.zone.networktype
-#        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 #       for testing with specific template
-        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
+#        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
         
 
         #create a user account
