@@ -62,11 +62,14 @@ from marvin.integration.lib.base import (Configurations,
                                          Template,
                                          Resources,
                                          PhysicalNetwork,
-                                         Host)
+                                         Host,
+                                         PublicIPAddress)
 from marvin.integration.lib.utils import (get_process_status,
-                                          xsplit)
+                                          xsplit,
+                                          validateList)
 
 from marvin.sshClient import SshClient
+from marvin.codes import PASS
 import random
 
 #Import System modules
@@ -907,3 +910,20 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         return None, None
 
     return physical_network, vlan
+
+def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
+    """ Check if the given IP is in the correct state (given)
+    and return True/False accordingly"""
+    retriesCount = 10
+    while True:
+        portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
+        assert validateList(portableips)[0] == PASS, "IPs list validation failed"
+        if str(portableips[0].state).lower() == state:
+            break
+        elif retriesCount == 0:
+           return False
+        else:
+            retriesCount -= 1
+            time.sleep(60)
+            continue
+    return True
