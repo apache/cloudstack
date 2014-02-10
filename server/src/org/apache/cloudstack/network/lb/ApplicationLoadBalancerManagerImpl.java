@@ -383,6 +383,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         String keyword = cmd.getKeyword();
         Scheme scheme = cmd.getScheme();
         Long networkId = cmd.getNetworkId();
+        Boolean display = cmd.getDisplay();
 
         Map<String, String> tags = cmd.getTags();
 
@@ -406,6 +407,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         sb.and("sourceIpAddressNetworkId", sb.entity().getSourceIpNetworkId(), SearchCriteria.Op.EQ);
         sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         //list only load balancers having not null sourceIp/sourceIpNtwkId
         sb.and("sourceIpAddress", sb.entity().getSourceIp(), SearchCriteria.Op.NNULL);
@@ -465,6 +467,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         Pair<List<ApplicationLoadBalancerRuleVO>, Integer> result = _lbDao.searchAndCount(sc, searchFilter);

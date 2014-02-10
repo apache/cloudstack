@@ -1383,6 +1383,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         Boolean canUseForDeploy = cmd.canUseForDeploy();
         Map<String, String> tags = cmd.getTags();
         Boolean forVpc = cmd.getForVpc();
+        Boolean display = cmd.getDisplay();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -1515,33 +1516,33 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
-                                specifyIpRanges, vpcId, tags), searchFilter, permittedAccounts));
+                                specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn.addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true, restartRequired,
-                                    specifyIpRanges, vpcId, tags), searchFilter, domainId, false));
+                                    specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
-                                specifyIpRanges, vpcId, tags), searchFilter, path, isRecursive));
+                                specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired,
-                                specifyIpRanges, vpcId, tags), searchFilter, path, isRecursive));
+                                specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn.addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true, restartRequired,
-                                    specifyIpRanges, vpcId, tags), searchFilter, caller.getDomainId(), true));
+                                    specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(
                     buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired,
-                            specifyIpRanges, vpcId, tags), searchFilter);
+                            specifyIpRanges, vpcId, tags, display), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -1608,7 +1609,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType,
             String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId,
-            Map<String, String> tags) {
+            Map<String, String> tags, Boolean display) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1620,6 +1621,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (display != null) {
+            sc.addAnd("displayNetwork", SearchCriteria.Op.EQ, display);
         }
 
         if (id != null) {
@@ -4007,14 +4012,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         Long nicId = cmd.getNicId();
         long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
-
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
             ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
             throw ex;
         }
+
         _accountMgr.checkAccess(caller, null, true, userVm);
         return _networkMgr.listVmNics(vmId, nicId, networkId);
     }

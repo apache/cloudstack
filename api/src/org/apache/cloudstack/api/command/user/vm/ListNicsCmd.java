@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -59,6 +60,9 @@ public class ListNicsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list nic of the specific vm's network")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +95,15 @@ public class ListNicsCmd extends BaseListCmd {
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
+    }
+
+
+    public Boolean getDisplay() {
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            return true;
+        }
+        return display;
     }
 
     /////////////////////////////////////////////////////

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
-import com.cloud.projects.Project;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -95,10 +94,9 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName + "; accept " + getAccept());
-        Project project = _projectService.updateInvitation(projectId, accountName, token, getAccept());
-        if (project != null) {
-            ProjectResponse response = _responseGenerator.createProjectResponse(project);
-            response.setResponseName(getCommandName());
+        boolean result = _projectService.updateInvitation(projectId, accountName, token, getAccept());
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to join the project");

@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.user.Account;
+
 public abstract class BaseListAccountResourcesCmd extends BaseListDomainResourcesCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
@@ -23,5 +27,13 @@ public abstract class BaseListAccountResourcesCmd extends BaseListDomainResource
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public Boolean getDisplay() {
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            return true;
+        }
+        return null;
     }
 }

@@ -93,12 +93,13 @@ public interface VpcService {
      * @param restartRequired TODO
      * @param tags TODO
      * @param projectId TODO
+     * @param display TODO
      * @param vpc
      * @return
      */
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
         String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
-        Map<String, String> tags, Long projectId);
+        Map<String, String> tags, Long projectId, Boolean display);
 
     /**
      * Starts VPC which includes starting VPC provider and applying all the neworking rules on the backend
