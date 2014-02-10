@@ -25,7 +25,7 @@
 
 # set environment variables
 
-SHORTNAME="$0"
+SHORTNAME=`basename $0`
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 LOGFILE=/var/log/cloudstack/ipallocator/ipallocator.log
