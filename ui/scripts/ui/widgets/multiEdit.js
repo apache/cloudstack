@@ -927,7 +927,7 @@
                     response: {
                         success: function(args) {
                             $(args.data).each(function() {
-                                $('<option>').val(this.name).html(_s(this.description))
+                                $('<option>').val(this.name).html(_l(_s(this.description)))
                                     .appendTo($select);
                             });
                             _medit.refreshItemWidths($multi);

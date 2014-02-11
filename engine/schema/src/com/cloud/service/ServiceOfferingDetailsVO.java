@@ -60,6 +60,10 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
         return resourceId;
     }
 
+    public void setResourceId(long serviceOfferingId) {
+        this.resourceId = serviceOfferingId;
+    }
+
     @Override
     public String getName() {
         return name;

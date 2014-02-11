@@ -54,6 +54,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.event.EventTypes;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -503,6 +505,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final CallContext ctx = CallContext.current();
         final Long callerUserId = ctx.getCallingUserId();
         final Account caller = ctx.getCallingAccount();
+        String vmUUID = params.get(ApiConstants.VIRTUAL_MACHINE_ID);
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
@@ -519,7 +522,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 params.put("id", objectId.toString());
             } else {
                 // Extract the uuid before params are processed and id reflects internal db id
-                objectUuid = params.get("id");
+                objectUuid = params.get(ApiConstants.ID);
                 dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(cmdObj, params));
             }
 
@@ -538,9 +541,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             long startEventId = ctx.getStartEventId();
             asyncCmd.setStartEventId(startEventId);
 
+            // Add the resource id in the call context, also add some other first class object ids (for now vm) if available.
+            // TODO - this should be done for all the uuids passed in the cmd - so should be moved where uuid to id conversion happens.
             if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
                 ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), objectUuid);
             }
+            if(vmUUID != null){
+                ctx.putContextParameter(ReflectUtil.getEntityName(VirtualMachine.class), vmUUID);
+            }
+
             // save the scheduled event
             final Long eventId =
                 ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),

@@ -130,6 +130,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -2079,13 +2080,56 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         offering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
-        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
-            if (details != null) {
-                List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
-                for (Entry<String, String> detailEntry : details.entrySet()) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
+        List<ServiceOfferingDetailsVO> detailsVO = null;
+        if (details != null) {
+            // Check if the user has passed the gpu-type before passing the VGPU type
+            if (!details.containsKey(GPU.Keys.pciDevice.toString()) && details.containsKey(GPU.Keys.vgpuType.toString())) {
+                throw new InvalidParameterValueException("Please specify the gpu type");
+            }
+            detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+            for (Entry<String, String> detailEntry : details.entrySet()) {
+                String value = null;
+                if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
+                    for (GPU.Type type : GPU.Type.values()) {
+                        if (detailEntry.getValue().equals(type.toString())) {
+                            value = detailEntry.getValue();
+                        }
+                    }
+                    if (value == null) {
+                        throw new InvalidParameterValueException("Please specify valid gpu type");
+                    }
                 }
+                if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
+                    if (details.get(GPU.Keys.pciDevice.toString()).equals(GPU.Type.GPU_Passthrough.toString())) {
+                        throw new InvalidParameterValueException("vgpuTypes are supported only with vGPU pciDevice");
+                    }
+                    if (detailEntry.getValue() == null) {
+                        throw new InvalidParameterValueException("With vGPU as pciDevice, vGPUType value cannot be null");
+                    }
+                    for (GPU.vGPUType entry : GPU.vGPUType.values()) {
+                        if (detailEntry.getValue().equals(entry.getType())) {
+                            value = entry.getType();
+                        }
+                    }
+                    if (value == null || detailEntry.getValue().equals(GPU.vGPUType.passthrough.getType())) {
+                        throw new InvalidParameterValueException("Please specify valid vGPU type");
+                    }
+                }
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
+            }
+            // If pciDevice type is passed, put the default VGPU type as 'passthrough'
+            if (details.containsKey(GPU.Keys.pciDevice.toString())
+                    && !details.containsKey(GPU.Keys.vgpuType.toString())) {
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(),
+                        GPU.Keys.vgpuType.toString(), GPU.vGPUType.passthrough.getType(), true));
+            }
+        }
 
+        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+            if (detailsVO != null && !detailsVO.isEmpty()) {
+                for (int index = 0; index < detailsVO.size(); index++) {
+                    detailsVO.get(index).setResourceId(offering.getId());
+                }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());

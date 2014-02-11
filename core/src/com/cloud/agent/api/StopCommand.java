@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
@@ -23,6 +24,7 @@ public class StopCommand extends RebootCommand {
     private String urlPort = null;
     private String publicConsoleProxyIpAddress = null;
     boolean executeInSequence = false;
+    private GPUDeviceTO gpuDevice;
 
     protected StopCommand() {
     }
@@ -62,4 +64,11 @@ public class StopCommand extends RebootCommand {
         return this.publicConsoleProxyIpAddress;
     }
 
+    public GPUDeviceTO getGpuDevice() {
+        return this.gpuDevice;
+    }
+
+    public void setGpuDevice(GPUDeviceTO gpuDevice) {
+        this.gpuDevice = gpuDevice;
+    }
 }

@@ -81,6 +81,7 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.gpu.GPU;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -89,7 +90,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -213,6 +217,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     DataStoreManager dataStoreMgr;
     @Inject
     protected ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    protected ResourceManager _resourceMgr;
+    @Inject
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
     protected List<DeploymentPlanner> _planners;
 
@@ -353,6 +361,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
+            ServiceOfferingDetailsVO offeringDetails = null;
             if (host == null) {
                 s_logger.debug("The last host of this VM cannot be found");
             } else if (avoids.shouldAvoid(host)) {
@@ -360,6 +369,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 s_logger.debug("The last Host, hostId: " + host.getId() +
                     " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null
+                    && !_resourceMgr.isGPUDeviceAvailable(host.getId(), offeringDetails.getValue())){
+                s_logger.debug("The last host of this VM does not have required GPU devices available");
             } else {
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     boolean hostTagsMatch = true;

@@ -92,12 +92,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -170,6 +172,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private HostDao _hostDao;
     @Inject
     private SnapshotDao _snapshotDao;
+    @Inject
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
@@ -1471,6 +1475,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (vm != null && vm.getState() == State.Running) {
+            // Check if the VM is GPU enabled.
+            if(_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
+                throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+            }
             // Check if the underlying hypervisor supports storage motion.
             Long hostId = vm.getHostId();
             if (hostId != null) {

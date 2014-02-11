@@ -4390,6 +4390,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
                 vmStates.putAll(getAllVms(conn));
+                conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
+                vmStates.putAll(getAllVms(conn));
             } catch (LibvirtException e) {
                 s_logger.debug("Failed to get connection: " + e.getMessage());
             }
@@ -4485,6 +4487,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_hypervisorType == HypervisorType.LXC) {
             try {
                 conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
+                vmStates.putAll(getHostVmStateReport(conn));
+                conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
                 vmStates.putAll(getHostVmStateReport(conn));
             } catch (LibvirtException e) {
                 s_logger.debug("Failed to get connection: " + e.getMessage());

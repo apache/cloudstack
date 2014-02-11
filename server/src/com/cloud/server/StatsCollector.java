@@ -54,6 +54,7 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -175,6 +176,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private AutoScaleVmProfileDao _asProfileDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private HostGpuGroupsDao _hostGpuGroupsDao;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -188,6 +191,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
     int vmDiskStatsInterval = 0;
+    List<Long> hostIds = null;
 
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
@@ -325,6 +329,23 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     }
                 }
                 _hostStats = hostStats;
+                // Get a subset of hosts with GPU support from the list of "hosts"
+                List<HostVO> gpuEnabledHosts = new ArrayList<HostVO>();
+                if (hostIds != null) {
+                    for (HostVO host : hosts) {
+                        if (hostIds.contains(host.getId())) {
+                            gpuEnabledHosts.add(host);
+                        }
+                    }
+                } else {
+                    // Check for all the hosts managed by CloudStack.
+                    gpuEnabledHosts = hosts;
+                }
+                for (HostVO host : gpuEnabledHosts) {
+                    HashMap<String, HashMap<String, Long>> groupDetails = _resourceMgr.getGPUStatistics(host);
+                    _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
+                }
+                hostIds = _hostGpuGroupsDao.listHostIds();
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve host stats", t);
             }

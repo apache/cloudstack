@@ -1804,7 +1804,9 @@
                             memory: {
                             	label: 'label.memory.mb'
                             },
-                            
+                            vgpu: {
+                                label: 'VGPU'
+                            },
                             haenable: {
                                 label: 'label.ha.enabled',
                                 converter: cloudStack.converters.toBooleanText

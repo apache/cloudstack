@@ -361,6 +361,71 @@
                                         }
                                     },
 
+                                    pciDevice: {
+                                        label: 'GPU Type',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: '',
+                                                description: ''
+                                            });
+                                            items.push({
+                                                id: 'GPU_Passthrough',
+                                                description: 'GPU-Passthrough'
+                                            });
+                                            items.push({
+                                                id: 'VGPU',
+                                                description: 'VGPU'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                var $fields = $form.find('.field');
+                                                if (($(this).val() == "") || $(this).val() == "GPU-Passthrough") {
+                                                  $form.find('[rel=vgpuType]').hide();
+                                                } else if ($(this).val() == "VGPU") {
+                                                  $form.find('[rel=vgpuType]').css('display', 'block');
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    vgpuType: {
+                                        label: 'VGPU Type',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: '',
+                                                description: ''
+                                            });
+                                            items.push({
+                                                id: 'GRID K100',
+                                                description: 'GRID K100'
+                                            });
+                                            items.push({
+                                                id: 'GRID K140Q',
+                                                description: 'GRID K140Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K200',
+                                                description: 'GRID K200'
+                                            });
+                                            items.push({
+                                                id: 'GRID K240Q',
+                                                description: 'GRID K240Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K260Q',
+                                                description: 'GRID K260Q'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+
                                     domainId: {
                                         label: 'label.domain',
                                         docID: 'helpComputeOfferingDomain',
@@ -426,6 +491,14 @@
                                 var array1 = [];
                                 if (args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != "") {
                                     array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" + "=" + args.data.plannerMode);
+                                }
+
+                                if (args.data.pciDevice != "") {
+                                    array1.push("&serviceofferingdetails[1].pciDevice" + "=" + args.data.pciDevice);
+                                }
+
+                                if (args.data.pciDevice == "VGPU") {
+                                    array1.push("&serviceofferingdetails[2].vgpuType" + "=" + args.data.vgpuType);
                                 }
 
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {

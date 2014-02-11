@@ -22,6 +22,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.event.EventTypes;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -83,12 +85,17 @@ public class ApiDispatcher {
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
-            String uuid = params.get("uuid");
+            String uuid = params.get(ApiConstants.UUID);
             ctx.setStartEventId(Long.valueOf(startEventId));
 
             // Fow now use the key from EventTypes.java rather than getInstanceType bcz the later doesn't refer to the interfaces
+            // Add the resource id in the call context, also add some other first class object ids (for now vm) if available.
+            // TODO - this should be done for all the uuids passed in the cmd - so should be moved where uuid to id conversion happens.
             if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
                 ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), uuid);
+            }
+            if(params.get(ApiConstants.VIRTUAL_MACHINE_ID) != null){
+                ctx.putContextParameter(ReflectUtil.getEntityName(VirtualMachine.class), params.get(ApiConstants.VIRTUAL_MACHINE_ID));
             }
 
             // Synchronise job on the object if needed

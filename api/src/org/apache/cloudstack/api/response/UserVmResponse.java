@@ -164,6 +164,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the memory allocated for the virtual machine")
     private Integer memory;
 
+    @SerializedName(ApiConstants.VGPU)
+    @Param(description = "the vgpu type used by the virtual machine")
+    private String vgpu;
+
     @SerializedName("cpuused")
     @Param(description = "the amount of the vm's CPU currently used")
     private String cpuUsed;
@@ -420,6 +424,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return memory;
     }
 
+    public String getVgpu() {
+        return vgpu;
+    }
     public String getCpuUsed() {
         return cpuUsed;
     }
@@ -643,6 +650,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.memory = memory;
     }
 
+    public void setVgpu(String vgpu) {
+        this.vgpu = vgpu;
+    }
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }

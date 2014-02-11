@@ -103,6 +103,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -139,6 +140,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
@@ -275,6 +277,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected RulesManager rulesMgr;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    @Inject
+    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected EntityManager _entityMgr;
 
@@ -1026,6 +1030,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 throw new ConcurrentOperationException("Unable to transition to a new state.");
                             }
 
+                            // Update GPU device capacity
+                            GPUDeviceTO gpuDevice = startAnswer.getVirtualMachine().getGpuDevice();
+                            if (gpuDevice != null) {
+                                _resourceMgr.updateGPUDetails(destHostId, gpuDevice.getGroupDetails());
+                            }
+
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
@@ -1221,6 +1231,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
+                GPUDeviceTO gpuDevice = stop.getGpuDevice();
+                if (gpuDevice != null) {
+                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
+                }
                 if (!answer.getResult()) {
                     s_logger.debug("Unable to stop VM due to " + answer.getDetails());
                     return false;
@@ -1483,6 +1497,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
                 }
                 vmGuru.finalizeStop(profile, answer);
+                GPUDeviceTO gpuDevice = stop.getGpuDevice();
+                if (gpuDevice != null) {
+                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
+                }
             } else {
                 throw new CloudRuntimeException("Invalid answer received in response to a StopCommand on " + vm.instanceName);
             }

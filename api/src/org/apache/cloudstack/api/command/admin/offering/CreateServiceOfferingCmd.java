@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -206,13 +208,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        if (details == null || details.isEmpty()) {
-            return null;
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<String, String>();
+            Collection<?> props = details.values();
+            Iterator<?> iter = props.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                detailsMap.putAll(detail);
+            }
         }
-
-        Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
-        return params;
+        return detailsMap;
     }
 
     public Long getBytesReadRate() {
