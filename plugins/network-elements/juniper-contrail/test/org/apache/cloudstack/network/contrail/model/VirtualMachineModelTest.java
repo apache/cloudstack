@@ -28,11 +28,10 @@ import junit.framework.TestCase;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiConnectorMock;
 
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
 import org.apache.cloudstack.network.contrail.management.ModelDatabase;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
@@ -118,7 +117,5 @@ public class VirtualMachineModelTest extends TestCase {
 
         //verify
         assertTrue(vmModel.verify(controller));
-
     }
-
 }
