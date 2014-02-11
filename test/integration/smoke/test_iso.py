@@ -39,7 +39,7 @@ class TestCreateIso(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
         self.services["domainid"] = self.domain.id
         self.services["iso_2"]["zoneid"] = self.zone.id

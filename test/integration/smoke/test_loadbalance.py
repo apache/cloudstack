@@ -38,7 +38,7 @@ class TestLoadBalance(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         template = get_template(
                             cls.apiclient,
                             cls.zone.id,
