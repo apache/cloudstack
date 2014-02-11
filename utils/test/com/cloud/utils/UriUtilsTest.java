@@ -47,6 +47,10 @@ public class UriUtilsTest {
                 "http://localhost/foo/bar?password=1234", true).startsWith(
                 "http://localhost/foo/bar"));
 
+        //just to see if it is still ok with multiple parameters
+        Assert.assertEquals("http://localhost/foo/bar?param1=true&param2=12345", UriUtils
+                .getUpdateUri("http://localhost/foo/bar?param1=true&param2=12345", false));
+
         //XXX: Interesting cases not covered:
         // * port is ignored and left out from the return value
     }

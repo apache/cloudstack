@@ -143,7 +143,7 @@ public class UriUtils {
             URIBuilder builder = new URIBuilder(url);
             builder.removeQuery();
 
-            String updatedQuery = new String();
+            StringBuilder updatedQuery = new StringBuilder();
             List<NameValuePair> queryParams = getUserDetails(query);
             ListIterator<NameValuePair> iterator = queryParams.listIterator();
             while (iterator.hasNext()) {
@@ -156,14 +156,16 @@ public class UriUtils {
                     value = param.getValue();
                 }
 
-                if (updatedQuery.isEmpty()) {
-                    updatedQuery += (param.getName() + "=" + value);
+                if (updatedQuery.length() == 0) {
+                    updatedQuery.append(param.getName()).append('=')
+                            .append(value);
                 } else {
-                    updatedQuery += ("&" + param.getName() + "=" + value);
+                    updatedQuery.append('&').append(param.getName())
+                            .append('=').append(value);
                 }
             }
 
-            String schemeAndHost = new String();
+            String schemeAndHost = "";
             URI newUri = builder.build();
             if (newUri.getScheme() != null) {
                 schemeAndHost = newUri.getScheme() + "://" + newUri.getHost();
