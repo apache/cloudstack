@@ -1753,12 +1753,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw ex;
         }
 
-        // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(String.valueOf(id), "templateId");
-            throw ex;
-        }
+        verifyTemplateId(id);
 
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
@@ -1833,6 +1828,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(id, template);
 
         return _tmpltDao.findById(id);
+    }
+
+    void verifyTemplateId(Long id) {
+        // Don't allow to modify system template
+        if (id.equals(Long.valueOf(1))) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
+            ex.addProxyObject(String.valueOf(id), "templateId");
+            throw ex;
+        }
     }
 
     @Override
