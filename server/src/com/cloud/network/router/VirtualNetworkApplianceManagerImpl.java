@@ -2327,12 +2327,23 @@ Listener, Configurable {
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
-        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0));
+
+
+        String serviceMonitringSet = SetServiceMonitor.valueIn(router.getDataCenterId());
+        //String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
+
+        if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
+            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), true);
+        } else {
+            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), false);
+        }
+
+
 
         return true;
     }
 
-    private void finalizeMonitorServiceOnStrat(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider, final long networkId) {
+    private void finalizeMonitorServiceOnStrat(Commands cmds, VirtualMachineProfile profile, DomainRouterVO router, Provider provider, long networkId, Boolean add) {
 
         final NetworkVO network = _networkDao.findById(networkId);
 
@@ -2373,6 +2384,9 @@ Listener, Configurable {
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
+        if (!add) {
+            command.setAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE, add.toString());
+        }
         cmds.addCommand("monitor", command);
     }
 
@@ -4212,6 +4226,6 @@ Listener, Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor};
     }
 }

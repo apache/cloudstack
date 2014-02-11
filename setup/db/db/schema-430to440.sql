@@ -468,6 +468,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_details` (
   CONSTRAINT `fk_autoscale_vmgroup_details__autoscale_vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_details__autoscale_vmgroup_id`(`autoscale_vmgroup_id`) REFERENCES `autoscale_vmgroups`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+<<<<<<< Updated upstream
 ALTER TABLE `cloud`.`snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 ALTER TABLE `cloud`.`vm_snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 
@@ -527,3 +528,5 @@ UPDATE `cloud`.`vpc_details` set `display`=1 where id> 0;
 
 ALTER TABLE `cloud`.`vpc_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 UPDATE `cloud`.`vpc_gateway_details` set `display`=1 where id> 0;
+=======
+>>>>>>> Stashed changes

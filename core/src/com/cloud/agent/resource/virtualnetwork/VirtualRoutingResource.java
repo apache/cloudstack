@@ -605,8 +605,14 @@ public class VirtualRoutingResource {
 
     protected Answer execute(SetMonitorServiceCommand cmd) {
         String config = cmd.getConfiguration();
+        String disableMonitoring =  cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE);
+
 
         String args = " -c " + config;
+        if (disableMonitoring != null) {
+            args = args + " -d";
+        }
+
         ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "monitor_service.sh", args);
 
         if (!result.isSuccess()) {
