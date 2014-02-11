@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -684,7 +685,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
                     fetchFromDedicatedRange = true;
                     sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
-                    errorMessage.append(", vlanId id=" + dedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
                 } else if (nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                     sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
                     errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());
