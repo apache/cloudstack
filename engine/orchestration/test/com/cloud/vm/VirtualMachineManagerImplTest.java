@@ -30,6 +30,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import junit.framework.Assert;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -46,9 +48,9 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
@@ -61,6 +63,8 @@ import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -257,9 +261,7 @@ public class VirtualMachineManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testScaleVM2() throws Exception {
 
-        DeployDestination dest = new DeployDestination(null, null, null, _host);
-        long l = 1L;
-
+        new DeployDestination(null, null, null, _host);
         doReturn(3L).when(_vmInstance).getId();
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
@@ -269,9 +271,9 @@ public class VirtualMachineManagerImplTest {
         doReturn(1L).when(hostVO).getClusterId();
         when(CapacityManager.CpuOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
         ScaleVmCommand reconfigureCmd =
-            new ScaleVmCommand("myVmName", newServiceOffering.getCpu(), newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(),
-                newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
-        Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
+                new ScaleVmCommand("myVmName", newServiceOffering.getCpu(), newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(),
+                        newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+        new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance.getUuid(), getSvcoffering(256), false);
 
@@ -298,7 +300,6 @@ public class VirtualMachineManagerImplTest {
 
     private ServiceOfferingVO getSvcoffering(int ramSize) {
 
-        long id = 4L;
         String name = "name";
         String displayText = "displayText";
         int cpu = 1;
@@ -309,7 +310,7 @@ public class VirtualMachineManagerImplTest {
         boolean useLocalStorage = false;
 
         ServiceOfferingVO serviceOffering =
-            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 
@@ -408,7 +409,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm with its volumes within a cluster.
     @Test
     public void testMigrateWithVolumeWithinCluster() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-        VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -420,7 +421,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm with its volumes across a cluster.
     @Test
     public void testMigrateWithVolumeAcrossCluster() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-        VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -433,7 +434,7 @@ public class VirtualMachineManagerImplTest {
     // other is local.
     @Test(expected = CloudRuntimeException.class)
     public void testMigrateWithVolumeFail1() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-        VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -448,7 +449,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm fails when vm is not in Running state.
     @Test(expected = ConcurrentOperationException.class)
     public void testMigrateWithVolumeFail2() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-        VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -457,5 +458,49 @@ public class VirtualMachineManagerImplTest {
         when(_vmMock.getState()).thenReturn(State.Stopped);
 
         _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+    }
+
+    @Test
+    public void testSendStopWithOkAnswer() throws Exception {
+        VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "ok", true);
+        when(profile.getVirtualMachine()).thenReturn(vm);
+        when(vm.getHostId()).thenReturn(1L);
+        when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
+
+        boolean actual = _vmMgr.sendStop(guru, profile, false);
+
+        Assert.assertTrue(actual);
+    }
+
+    @Test
+    public void testSendStopWithFailAnswer() throws Exception {
+        VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "fail", false);
+        when(profile.getVirtualMachine()).thenReturn(vm);
+        when(vm.getHostId()).thenReturn(1L);
+        when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
+
+        boolean actual = _vmMgr.sendStop(guru, profile, false);
+
+        Assert.assertFalse(actual);
+    }
+
+    @Test
+    public void testSendStopWithNullAnswer() throws Exception {
+        VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
+        when(profile.getVirtualMachine()).thenReturn(vm);
+        when(vm.getHostId()).thenReturn(1L);
+        when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(null);
+
+        boolean actual = _vmMgr.sendStop(guru, profile, false);
+
+        Assert.assertFalse(actual);
     }
 }
