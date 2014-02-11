@@ -1410,7 +1410,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         Long nextMac = mac + 1;
                         dc.setMacAddress(nextMac);
 
-                        privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, true);
+                        s_logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                        privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                         _privateIpDao.persist(privateIp);
 
                         _dcDao.update(dc.getId(), dc);
