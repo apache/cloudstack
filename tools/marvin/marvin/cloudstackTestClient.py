@@ -26,25 +26,26 @@ from codes import (FAILED, PASS, ADMIN, DOMAIN_ADMIN,
                    USER, SUCCESS, XEN_SERVER)
 from configGenerator import ConfigManager
 from marvin.lib import utils
-from marvin.cloudstackException import GetDetailExceptionInfo
+from cloudstackException import GetDetailExceptionInfo
 from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
 
-class CSTestClient(object):
-    '''
-    @Desc  : CloudStackTestClient is encapsulated entity for creating and
+'''
+@Desc  : CloudStackTestClient is encapsulated entity for creating and
          getting various clients viz., apiclient,
          user api client, dbconnection, test Data parsed
          information etc
-    @Input :
-         mgmt_details : Management Server Details
-         dbsvr_details: Database Server details of Management \
+@Input : mgmtDetails : Management Server Details
+         dbSvrDetails: Database Server details of Management \
                        Server. Retrieved from configuration file.
-         async_timeout : Timeout for Async queries
-         default_worker_threads : Number of worker threads
+         asyncTimeout : Timeout for Async queries
+         defaultWorkerThreads : Number of worker threads
          logger : provides logging facilities for this library
          zone : The zone on which test suites using this test client will run
-    '''
+'''
+
+
+class CSTestClient(object):
     def __init__(self, mgmt_details,
                  dbsvr_details,
                  async_timeout=3600,
@@ -132,9 +133,9 @@ class CSTestClient(object):
                 list_user = listUsers.listUsersCmd()
                 list_user.account = "admin"
                 list_user_res = self.__apiClient.listUsers(list_user)
-                if list_user_res == FAILED or list_user_res is None or\
+                if list_user_res is None or\
                         (validateList(list_user_res)[0] != PASS):
-                    self.__logger.error("__createApiClient: API "
+                    self.__logger.debug("__createApiClient: API "
                                         "Client Creation Failed")
                     return FAILED
 
@@ -199,6 +200,7 @@ class CSTestClient(object):
             register_user.id = userid
             register_user_res = \
                 self.__apiClient.registerUserKeys(register_user)
+
             if register_user_res == FAILED:
                 return FAILED
             return (register_user_res.apikey, register_user_res.secretkey)
@@ -230,11 +232,9 @@ class CSTestClient(object):
                configuration file. They can overwrite it with
                providing their own configuration file as well.
             '''
-            print "******************PATH*****************",self.__testDataFilePath
             self.__configObj = ConfigManager(self.__testDataFilePath)
-            if self.__configObj:
+            if self.__configObj is not None:
                 self.__parsedTestDataConfig = self.__configObj.getConfig()
-                print "\n**************************************HTTTTTT***",self.__parsedTestDataConfig
             else:
                 self.__logger.error("createTestClient : Not able to create "
                                     "ConfigManager Object")
@@ -246,12 +246,7 @@ class CSTestClient(object):
             '''
             3. Creates API Client
             '''
-            ret = self.__createApiClient()
-            if ret == FAILED:
-                self.__logger.error("********Test Client Creation Failed********")
-            else:
-                self.__logger.debug("********Test Client Creation Successful********")
-            return ret
+            return self.__createApiClient()
         except Exception, e:
             self.__logger.exception("Exception Occurred "
                                     "Under createTestClient "
@@ -373,7 +368,7 @@ class CSTestClient(object):
         return self.__configObj
 
     def getApiClient(self):
-        if self.__apiClient:
+        if self.__apiClient is not None:
             self.__apiClient.id = self.identifier
             return self.__apiClient
         return None

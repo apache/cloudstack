@@ -48,7 +48,7 @@ class TestDeployVM(cloudstackTestCase):
 
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 

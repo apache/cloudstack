@@ -20,7 +20,7 @@ import contextlib
 from mysql import connector
 from mysql.connector import errors
 from contextlib import closing
-from marvin import cloudstackException
+import cloudstackException
 import sys
 import os
 

@@ -37,7 +37,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.cleanup = []
         # Get Zone and pod
-        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
 
         return

@@ -38,7 +38,7 @@ from requests import (
     Timeout,
     RequestException
 )
-from marvin.cloudstackException import GetDetailExceptionInfo
+from cloudstackException import GetDetailExceptionInfo
 
 
 class CSConnection(object):
