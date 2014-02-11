@@ -43,7 +43,6 @@ import com.cloud.vm.VirtualMachine;
 @Local(value = FenceBuilder.class)
 public class XenServerFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(XenServerFencer.class);
-    String _name;
 
     @Inject
     HostDao _hostDao;

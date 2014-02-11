@@ -19,12 +19,14 @@
 
 package com.cloud.hypervisor.xen.resource;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,11 +43,12 @@ import org.mockito.Spy;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
-
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.XsHost;
 
@@ -171,4 +174,19 @@ public class CitrixResourceBaseTest {
         verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
         verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
     }
+
+
+	@Test
+	public void testSetNicDevIdIfCorrectVifIsNotNull() throws Exception {
+		IpAddressTO ip = mock (IpAddressTO.class);
+		when (ip.isAdd()).thenReturn(false);
+		VIF correctVif = null;
+		try {
+			_resource.setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
+		} 
+		catch (NullPointerException e)
+		{
+			fail("this test is meant to show that null pointer is not thrown");
+		}
+	}
 }

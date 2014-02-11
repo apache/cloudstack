@@ -7297,14 +7297,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 VM router = getVM(conn, routerName);
 
                 VIF correctVif = getVifByMac(conn, router, ip.getVifMacAddress());
-                if (correctVif == null) {
-                    if (ip.isAdd()) {
-                        throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
-                    } else {
-                        s_logger.debug("VIF to deassociate IP with does not exist, return success");
-                    }
-                }
-                ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+                setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
             }
         } catch (Exception e) {
             s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
@@ -7313,6 +7306,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return new ExecutionResult(true, null);
     }
+
+	protected void setNicDevIdIfCorrectVifIsNotNull(Connection conn,
+			IpAddressTO ip, VIF correctVif) throws InternalErrorException,
+			BadServerResponse, XenAPIException, XmlRpcException {
+		if (correctVif == null) {
+		    if (ip.isAdd()) {
+		        throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
+		    } else {
+		        s_logger.debug("VIF to deassociate IP with does not exist, return success");
+		    }
+		} else {
+         ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+		}
+	}
 
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
         Connection conn = getConnection();
