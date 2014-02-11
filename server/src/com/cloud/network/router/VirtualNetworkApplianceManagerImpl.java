@@ -256,6 +256,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -288,7 +289,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
-        VirtualMachineGuru, Listener, Configurable {
+        VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -674,6 +675,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
+
+        VirtualMachine.State.getStateMachine().registerListener(this);
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
@@ -3490,14 +3493,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         
     }
-    
-    private void createVmDataCommand(VirtualRouter router, UserVm vm, NicVO nic, String publicKey, Commands cmds) {
-        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-        String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
-        cmds.addCommand("vmdata",
-                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(),
-                        vm.getHostName(), vm.getInstanceName(), vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
-        
+
+    private void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
+        final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+        final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+        cmds.addCommand(
+                "vmdata",
+                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(),
+                        vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
     }
 
     private void createVmDataCommandForVMs(DomainRouterVO router, Commands cmds, long guestNetworkId) {
@@ -4300,5 +4303,40 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled};
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
+            if (vo.getType() == VirtualMachine.Type.DomainRouter) {
+                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+            }
+        }
+        return true;
+    }
+
+    protected class RebootTask extends ManagedContextRunnable {
+
+        long _routerId;
+
+        public RebootTask(long routerId) {
+            _routerId = routerId;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                s_logger.info("Reboot router " + _routerId + " to refresh network rules");
+                rebootRouter(_routerId, true);
+            } catch (Exception e) {
+                s_logger.warn("Error while rebooting the router", e);
+            }
+        }
     }
 }
