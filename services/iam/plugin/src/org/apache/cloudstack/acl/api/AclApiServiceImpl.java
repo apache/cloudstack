@@ -273,15 +273,14 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     private void createPolicyAndAddToDomainGroup(String policyName, String description, String entityType,
             Long entityId, String action, AccessType accessType, Long domainId, Boolean recursive) {
 
-        AclPolicy policy = _iamSrv.createAclPolicy(policyName, description, null);
-       _iamSrv.addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE.toString(),
-               entityId, action, accessType.toString(), Permission.Allow, recursive);
-
-       List<Long> policyList = new ArrayList<Long>();
-       policyList.add(new Long(policy.getId()));
-
        Domain domain = _domainDao.findById(domainId);
        if (domain != null) {
+            AclPolicy policy = _iamSrv.createAclPolicy(policyName, description, null, domain.getPath());
+            _iamSrv.addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE.toString(),
+                    entityId, action, accessType.toString(), Permission.Allow, recursive);
+            List<Long> policyList = new ArrayList<Long>();
+            policyList.add(new Long(policy.getId()));
+
            List<AclGroup> domainGroups = listDomainGroup(domain);
            if (domainGroups != null) {
                for (AclGroup group : domainGroups) {
@@ -352,7 +351,12 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_CREATE, eventDescription = "Creating Acl Policy", create = true)
     public AclPolicy createAclPolicy(Account caller, final String aclPolicyName, final String description, final Long parentPolicyId) {
-        return _iamSrv.createAclPolicy(aclPolicyName, description, parentPolicyId);
+        Long domainId = caller.getDomainId();
+        Domain callerDomain = _domainDao.findById(domainId);
+        if (callerDomain == null) {
+            throw new InvalidParameterValueException("Caller does not have a domain");
+        }
+        return _iamSrv.createAclPolicy(aclPolicyName, description, parentPolicyId, callerDomain.getPath());
     }
 
     @DB

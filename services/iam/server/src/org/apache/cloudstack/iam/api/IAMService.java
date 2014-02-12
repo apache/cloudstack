@@ -40,7 +40,7 @@ public interface IAMService {
     Pair<List<AclGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize);
 
     /* ACL Policy related interfaces */
-    AclPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId);
+    AclPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId, String path);
 
     boolean deleteAclPolicy(long aclPolicyId);
 

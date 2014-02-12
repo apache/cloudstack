@@ -294,7 +294,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public AclPolicy createAclPolicy(final String aclPolicyName, final String description, final Long parentPolicyId) {
+    public AclPolicy createAclPolicy(final String aclPolicyName, final String description, final Long parentPolicyId, final String path) {
 
         // check if the policy is already existing
         AclPolicy ro = _aclPolicyDao.findByName(aclPolicyName);
@@ -308,6 +308,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             @Override
             public AclPolicy doInTransaction(TransactionStatus status) {
                 AclPolicyVO rvo = new AclPolicyVO(aclPolicyName, description);
+                rvo.setPath(path);
 
                 AclPolicy role = _aclPolicyDao.persist(rvo);
                 if (parentPolicyId != null) {
