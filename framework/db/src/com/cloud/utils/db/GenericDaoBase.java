@@ -396,10 +396,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         final List<T> result = new ArrayList<T>();
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
-            int i = 0;
+            int i = 1;
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
-                    prepareAttribute(++i, pstmt, value.first(), value.second());
+                    prepareAttribute(i++, pstmt, value.first(), value.second());
                 }
             }
 
@@ -431,10 +431,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @Override
     @SuppressWarnings("unchecked")
     public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
+        if (sc == null) {
+            throw new CloudRuntimeException("Call to customSearchIncludingRemoved with null search Criteria");
+        }
         if (sc.isSelectAll()) {
             return (List<M>)searchIncludingRemoved((SearchCriteria<T>)sc, filter, null, false);
         }
-        String clause = sc != null ? sc.getWhereClause() : null;
+        String clause = sc.getWhereClause();
         if (clause != null && clause.length() == 0) {
             clause = null;
         }
@@ -445,11 +448,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
-        if (sc != null) {
-            joins = sc.getJoins();
-            if (joins != null) {
-                addJoins(str, joins);
-            }
+        joins = sc.getJoins();
+        if (joins != null) {
+            addJoins(str, joins);
         }
 
         List<Object> groupByValues = addGroupBy(str, sc);
@@ -461,10 +462,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
-            int i = 0;
+            int i = 1;
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
-                    prepareAttribute(++i, pstmt, value.first(), value.second());
+                    prepareAttribute(i++, pstmt, value.first(), value.second());
                 }
             }
 
@@ -1070,6 +1071,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected List<Object> addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
+        if (sc == null)
+            return null;
         Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
         if (groupBys != null) {
             groupBys.first().toSql(sql);
@@ -1179,6 +1182,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     // FIXME: Does not work for joins.
     @Override
     public int expunge(final SearchCriteria<T> sc) {
+        if (sc == null) {
+            throw new CloudRuntimeException("Call to throw new expunge with null search Criteria");
+        }
+
         final StringBuilder str = new StringBuilder("DELETE FROM ");
         str.append(_table);
         str.append(" WHERE ");
