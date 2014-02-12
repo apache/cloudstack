@@ -30,7 +30,7 @@ import urlparse
 import datetime
 from platform import system
 from marvin.cloudstackAPI import cloudstackAPIClient, listHosts
-from marvin.cloudstackException import GetDetailExceptionInfo
+from cloudstackException import GetDetailExceptionInfo
 from marvin.sshClient import SshClient
 from marvin.codes import (
                           SUCCESS,

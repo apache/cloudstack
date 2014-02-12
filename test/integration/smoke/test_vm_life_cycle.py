@@ -39,7 +39,7 @@ class TestDeployVM(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         #If local storage is enabled, alter the offerings to use localstorage

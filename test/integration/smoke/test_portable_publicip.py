@@ -39,7 +39,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
 
         # Get Zone, Domain
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(

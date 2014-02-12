@@ -16,7 +16,7 @@
 # under the License.
 
 import threading
-from marvin import cloudstackException
+import cloudstackException
 import time
 import Queue
 import copy

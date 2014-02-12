@@ -682,12 +682,11 @@ if __name__ == "__main__":
         Step1 : Parse and Create the config from input config provided
         '''
         cfg = configGenerator.getSetupConfig(options.input)
-        print "\n***********CONFIG*******",cfg
         log_obj = MarvinLog("CSLog")
         log_check = False
         if log_obj is not None:
             log_check = True
-            ret = log_obj.createLogs("DeployDataCenter",
+            ret = log_obj.createLogs("DataCenter",
                                      cfg.logger)
             if ret != FAILED:
                 log_folder_path = log_obj.getLogFolderPath()
