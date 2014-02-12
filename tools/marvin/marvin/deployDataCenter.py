@@ -27,6 +27,7 @@ from os import path
 from time import sleep
 from optparse import OptionParser
 from marvin.codes import (FAILED, SUCCESS)
+from marvin.lib.utils import (random_gen)
 from sys import exit
 
 
@@ -479,32 +480,48 @@ class DeployDataCenters(object):
         else:
             return ret
 
-    def createZones(self, zones):
-        for zone in zones:
-            createzone = createZone.createZoneCmd()
-            createzone.dns1 = zone.dns1
-            createzone.dns2 = zone.dns2
-            createzone.internaldns1 = zone.internaldns1
-            createzone.internaldns2 = zone.internaldns2
-            createzone.name = zone.name
-            createzone.securitygroupenabled = zone.securitygroupenabled
-            createzone.localstorageenabled = zone.localstorageenabled
-            createzone.networktype = zone.networktype
-            if zone.securitygroupenabled != "true":
-                createzone.guestcidraddress = zone.guestcidraddress
-
-            zoneresponse = self.apiClient.createZone(createzone)
-            if zoneresponse != FAILED and zoneresponse.id is not None:
-                zoneId = zoneresponse.id
-                self.tcRunLogger.debug("Zone Name : %s Id : %s "
-                                       "Created Successfully" %
-                                       (str(zone.name), str(zoneId)))
+    def createZone(self, zone, rec=0):
+        try:
+            zoneresponse = self.apiClient.createZone(zone)
+            if zoneresponse == FAILED:
+                self.tcRunLogger.\
+                    exception("====Zone : %s Creation Failed=====" %
+                              str(zone.name))
+                if not rec:
+                    zone.name = zone.name + random_gen()
+                    self.tcRunLogger.\
+                        debug("====Recreating Zone With New Name : "
+                              "%s" % zone.name)
+                    return self.createZone(zone, 1)
             else:
                 self.tcRunLogger.\
-                    exception("====ZoneCreation :  %s Failed=====" %
-                              str(zone.name))
-                exit(1)
+                    debug("Zone Name : %s Id : %s Created Successfully" %
+                          (str(zone.name), str(zoneresponse.id)))
+                return zoneresponse.id
+        except Exception, e:
+            print "\nException Occurred under createZone %s" % \
+                  GetDetailExceptionInfo(e)
+            return FAILED
 
+    def createZones(self, zones):
+        for zone in zones:
+            zonecmd = createZone.createZoneCmd()
+            zonecmd.dns1 = zone.dns1
+            zonecmd.dns2 = zone.dns2
+            zonecmd.internaldns1 = zone.internaldns1
+            zonecmd.internaldns2 = zone.internaldns2
+            zonecmd.name = zone.name
+            zonecmd.securitygroupenabled = zone.securitygroupenabled
+            zonecmd.localstorageenabled = zone.localstorageenabled
+            zonecmd.networktype = zone.networktype
+            if zone.securitygroupenabled != "true":
+                zonecmd.guestcidraddress = zone.guestcidraddress
+            ret = self.createZone(zonecmd)
+            if ret == FAILED:
+                self.tcRunLogger.\
+                    exception("====Zone Creation Failed. So Exiting=====")
+                exit(1)
+            zoneId = ret
             for pnet in zone.physical_networks:
                 phynetwrk = self.createPhysicalNetwork(pnet, zoneId)
                 self.configureProviders(phynetwrk, pnet.providers)
