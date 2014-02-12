@@ -68,6 +68,7 @@ class MarvinLog:
     def __setLogHandler(self, log_file_path, log_format=None,
                         log_level=logging.DEBUG):
         '''
+        @Name : __setLogHandler
         @Desc: Adds the given Log handler to the current logger
         @Input: log_file_path: Log File Path as where to store the logs
                log_format : Format of log messages to be dumped
@@ -100,7 +101,8 @@ class MarvinLog:
         @Input: logfolder_to_remove: Path of Log to remove
         '''
         try:
-            os.rmdir(logfolder_to_remove)
+            if os.path.isdir(logfolder_to_remove):
+                os.rmdir(logfolder_to_remove)
         except Exception, e:
             print "\n Exception Occurred Under __cleanPreviousLogs :%s" % \
                   GetDetailExceptionInfo(e)
@@ -131,21 +133,15 @@ class MarvinLog:
         @Output : SUCCESS\FAILED
         '''
         try:
-            if log_cfg is None:
-                print "\nInvalid Log Folder Configuration." \
-                      "Please Check Config File"
-                return FAILED
-            if test_module_name is None:
-                temp_path = time.strftime("%b_%d_%Y_%H_%M_%S",
+            temp_ts = time.strftime("%b_%d_%Y_%H_%M_%S",
                                           time.localtime())
+            if test_module_name is None:
+                temp_path = temp_ts
             else:
-                temp_path = str(test_module_name.split(".py")[0])
+                temp_path = str(test_module_name) + "__" + str(temp_ts)
 
-            if (('LogFolderPath' in log_cfg.__dict__.keys()) and
+            if ((log_cfg is not None) and ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
-                self.__cleanPreviousLogs(log_cfg.
-                                         __dict__.
-                                         get('LogFolderPath') + "/MarvinLogs")
                 temp_dir = \
                     log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
             else:

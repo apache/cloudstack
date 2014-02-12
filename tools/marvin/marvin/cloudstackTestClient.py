@@ -26,26 +26,24 @@ from codes import (FAILED, PASS, ADMIN, DOMAIN_ADMIN,
                    USER, SUCCESS, XEN_SERVER)
 from configGenerator import ConfigManager
 from marvin.lib import utils
-from cloudstackException import GetDetailExceptionInfo
+from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
 
-'''
-@Desc  : CloudStackTestClient is encapsulated entity for creating and
+class CSTestClient(object):
+    '''
+    @Desc  : CloudStackTestClient is encapsulated entity for creating and
          getting various clients viz., apiclient,
          user api client, dbconnection, test Data parsed
          information etc
-@Input : mgmtDetails : Management Server Details
+    @Input : mgmtDetails : Management Server Details
          dbSvrDetails: Database Server details of Management \
                        Server. Retrieved from configuration file.
          asyncTimeout : Timeout for Async queries
          defaultWorkerThreads : Number of worker threads
          logger : provides logging facilities for this library
          zone : The zone on which test suites using this test client will run
-'''
-
-
-class CSTestClient(object):
+    '''
     def __init__(self, mgmt_details,
                  dbsvr_details,
                  async_timeout=3600,
