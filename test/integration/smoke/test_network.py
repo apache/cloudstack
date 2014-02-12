@@ -46,7 +46,7 @@ class TestPublicIP(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Create Accounts & networks
         cls.account = Account.create(
@@ -541,7 +541,7 @@ class TestRebootRouter(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,

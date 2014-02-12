@@ -15,8 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 import marvin
-import sys
+from sys import stdout, exit
 import logging
+import time
+import os
 import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.marvinInit import MarvinInit
@@ -24,9 +26,7 @@ from nose.plugins.base import Plugin
 from marvin.codes import (SUCCESS,
                           FAILED,
                           EXCEPTION)
-from marvin.cloudstackException import GetDetailExceptionInfo 
-import time
-import os
+from marvin.cloudstackException import GetDetailExceptionInfo
 
 
 class MarvinPlugin(Plugin):
@@ -37,17 +37,13 @@ class MarvinPlugin(Plugin):
     name = "marvin"
 
     def __init__(self):
-        self.identifier = None
-        self.testClient = None
-        self.parsedConfig = None
+        self.__identifier = None
+        self.__testClient = None
+        self.__parsedConfig = None
         '''
         Contains Config File
         '''
         self.__configFile = None
-        '''
-        Signifies the flag whether to load new API Information
-        '''
-        self.__loadNewApiFlag = None
         '''
         Signifies the Zone against which all tests will be Run
         '''
@@ -57,12 +53,12 @@ class MarvinPlugin(Plugin):
         '''
         self.__deployDcFlag = None
         self.conf = None
-        self.debugStream = sys.stdout
-        self.testRunner = None
-        self.testResult = SUCCESS
-        self.startTime = None
-        self.testName = None
-        self.tcRunLogger = None
+        self.__debugStream = stdout
+        self.__testRunner = None
+        self.__testResult = SUCCESS
+        self.__startTime = None
+        self.__testName = None
+        self.__tcRunLogger = None
         Plugin.__init__(self)
 
     def configure(self, options, conf):
@@ -77,27 +73,13 @@ class MarvinPlugin(Plugin):
                 return
             else:
                 self.enabled = True
-
         self.__configFile = options.configFile
-        self.__loadNewApiFlag = options.loadNewApiFlag
         self.__deployDcFlag = options.deployDc
         self.__zoneForTests = options.zone
         self.conf = conf
-        test_mod_name = None
-        if self.startMarvin(test_mod_name) == FAILED:
-            print "\nExiting Marvin"
+        if self.startMarvin() == FAILED:
+            print "\nExiting Marvin. Please Check"
             exit(1)
-
-    def getModName(self):
-        if len(self.conf.testNames) == 0:
-            dir_path = getattr(self.conf.options,'where')
-            if dir_path is not None:
-                temp = os.path.split(dir_path[0].strip())
-                return temp
-        else:
-            first_entry = self.conf.testNames[0]
-            temp = os.path.split(first_entry)
-            return os.path.splitext(temp)[0]
 
     def options(self, parser, env):
         """
@@ -111,7 +93,7 @@ class MarvinPlugin(Plugin):
                                "The config file containing the datacenter and "
                                "other management server "
                                "information is specified")
-        parser.add_option("--deploy-dc", action="store_true",
+        parser.add_option("--deploy", action="store_true",
                           default=False,
                           dest="deployDc",
                           help="Deploys the DC with Given Configuration."
@@ -120,11 +102,6 @@ class MarvinPlugin(Plugin):
                           default=None,
                           dest="zone",
                           help="Runs all tests against this specified zone")
-        parser.add_option("--load-new-apis", action="store_true",
-                          default=False,
-                          dest="loadNewApiFlag",
-                          help="Loads the New Apis with Given Api Xml File."
-                               "Creates the new Api's from commands.xml File")
         Plugin.options(self, parser, env)
 
     def wantClass(self, cls):
@@ -134,77 +111,125 @@ class MarvinPlugin(Plugin):
             return True
         return None
 
-        
     def __checkImport(self, filename):
         '''
         @Name : __checkImport
-        @Desc : Verifies to Import the test Module before running and check
+        @Desc : Verifies to run the available test module for any Import
+                Errors before running and check
                 whether if it is importable.
                 This will check for test modules which has some issues to be
                 getting imported.
                 Returns False or True based upon the result.
         '''
         try:
-            __import__(filename)
-            print "\n*******************", filename
-            return True
+            if os.path.isfile(filename):
+                ret = os.path.splitext(filename)
+                if ret[1] == ".py":
+                    os.system("python " + filename)
+                    return True
+            return False
         except ImportError, e:
-            self.tcRunLogger.exception("Module : %s Import "
-                                       "Failed Reason :%s"
-                                       % (filename, GetDetailExceptionInfo(e)))
+            print "FileName :%s : Error : %s" % \
+                  (filename, GetDetailExceptionInfo(e))
             return False
 
     def wantFile(self, filename):
         '''
         @Desc : Only python files will be used as test modules
         '''
-        print "\n*******************", filename
-        if os.path.isfile(filename):
-            if os.path.splitext(filename) != ".py":
-                return False
-            else:
-                return self.__checkImport(filename)
-        return False
+        return self.__checkImport(filename)
 
     def loadTestsFromTestCase(self, cls):
         if cls.__name__ != 'cloudstackTestCase':
-            self.identifier = cls.__name__
+            self.__identifier = cls.__name__
             self._injectClients(cls)
 
     def beforeTest(self, test):
-        self.testName = test.__str__().split()[0]
-        self.testClient.identifier = '-'.join([self.identifier, self.testName])
-        self.tcRunLogger.name = test.__str__()
-
-    def prepareTestRunner(self, runner):
-        return self.testRunner
+        self.__testName = test.__str__().split()[0]
+        self.__testClient.identifier = '-'.\
+            join([self.__identifier, self.__testName])
+        if self.__tcRunLogger:
+            self.__tcRunLogger.name = test.__str__()
 
     def startTest(self, test):
         """
         Currently used to record start time for tests
         Dump Start Msg of TestCase to Log
         """
-        self.tcRunLogger.debug("\n\n::::::::::::STARTED : TC: " +
-                               str(self.testName) + " :::::::::::")
-        self.startTime = time.time()
+        if self.__tcRunLogger:
+            self.__tcRunLogger.debug("\n\n::::::::::::STARTED : TC: " +
+                                     str(self.__testName) + " :::::::::::")
+        self.__startTime = time.time()
 
     def handleError(self, test, err):
         '''
         Adds Exception throwing test cases and information to log.
         '''
-        self.tcRunLogger.fatal("%s: %s: %s" %
-                               (EXCEPTION, self.testName, GetDetailExceptionInfo(err)))
-        self.testResult = EXCEPTION
+        if self.__tcRunLogger:
+            self.__tcRunLogger.\
+                fatal("%s: %s: %s" % (EXCEPTION,
+                                      self.__testName,
+                                      GetDetailExceptionInfo(err)))
+        self.__testResult = EXCEPTION
+
+    def prepareTestRunner(self, runner):
+        if self.__testRunner:
+            return self.__testRunner
 
     def handleFailure(self, test, err):
         '''
         Adds Failing test cases and information to log.
         '''
-        self.tcRunLogger.fatal("%s: %s: %s" %
-                               (FAILED, self.testName, GetDetailExceptionInfo(err)))
-        self.testResult = FAILED
+        if self.__tcRunLogger:
+            self.__tcRunLogger.\
+                fatal("%s: %s: %s" %
+                      (FAILED, self.__testName, GetDetailExceptionInfo(err)))
+        self.__testResult = FAILED
 
-    def startMarvin(self, test_module_name):
+    def __getModName(self, inp, type='file'):
+        '''
+        @Desc : Returns the module name from the path
+        @Output: trimmed down module name, used for logging
+        @Input: type:Whether the type is file or dir
+                inp:input element
+        '''
+        if type == 'file':
+            temp = os.path.splitext(inp)[0]
+            return os.path.split(temp)[-1]
+        if type == 'dir':
+            return os.path.split(inp)[-1]
+
+    def __runSuite(self, test_suite=None):
+        try:
+            if test_suite:
+                if self.wantFile(test_suite) is True:
+                    test_mod_name = self.__getModName(test_suite)
+                    temp_obj = MarvinInit(self.__configFile,
+                                          None, test_mod_name,
+                                          self.__zoneForTests)
+                    if temp_obj and temp_obj.init() == SUCCESS:
+                        print "\nMarvin Initialization Successful." \
+                              "Test Suite:%s" % str(test_suite)
+                        self.__testClient = temp_obj.getTestClient()
+                        self.__tcRunLogger = temp_obj.getLogger()
+                        self.__parsedConfig = temp_obj.getParsedConfig()
+                        self.__debugStream = temp_obj.getResultFile()
+                        self.__testRunner = nose.core.\
+                            TextTestRunner(stream=self.__debugStream,
+                                           descriptions=True,
+                                           verbosity=2)
+                        return SUCCESS
+            return FAILED
+        except Exception, e:
+            print "\n Exception Occurred when running suite :%s Error : %s" \
+                % (test_suite, GetDetailExceptionInfo(e))
+            return FAILED
+
+    def __runSuites(self, suites):
+        for suite in suites:
+            self.__runSuite(suite)
+
+    def startMarvin(self):
         '''
         @Name : startMarvin
         @Desc : Initializes the Marvin
@@ -214,26 +239,21 @@ class MarvinPlugin(Plugin):
                 Creates a debugstream for tc debug log
         '''
         try:
-            obj_marvininit = MarvinInit(self.__configFile,
-                                        self.__loadNewApiFlag,
-                                        self.__deployDcFlag,
-                                        test_module_name,
-                                        self.__zoneForTests)
-            if obj_marvininit.init() == SUCCESS:
-                self.testClient = obj_marvininit.getTestClient()
-                self.tcRunLogger = obj_marvininit.getLogger()
-                self.parsedConfig = obj_marvininit.getParsedConfig()
-                self.debugStream = obj_marvininit.getDebugFile()
-                self.testRunner = nose.core.TextTestRunner(stream=
-                                                           self.debugStream,
-                                                           descriptions=True,
-                                                           verbosity=2,
-                                                           config=self.conf)
-                print "\nMarvin Initialization Successful"
-                return SUCCESS
-            else:
-                print "\nMarvin Initialization Failed"
-                return FAILED
+            if self.__deployDcFlag:
+                print "\nStep1 :Deploy Flag is Enabled, will deployDC"
+                obj_marvininit = MarvinInit(self.__configFile,
+                                            self.__deployDcFlag,
+                                            "DeployDc",
+                                            self.__zoneForTests)
+                if not obj_marvininit or obj_marvininit.init() != SUCCESS:
+                    return FAILED
+            print "\nStep2: Now Start Running Test Suites"
+            for suites in self.conf.testNames:
+                if os.path.isdir(suites):
+                    self.__runSuites(suites)
+                if os.path.isfile(suites):
+                    self.__runSuite(suites)
+            return SUCCESS
         except Exception, e:
             print "Exception Occurred under startMarvin: %s" % \
                   GetDetailExceptionInfo(e)
@@ -244,28 +264,30 @@ class MarvinPlugin(Plugin):
         Currently used to record end time for tests
         """
         endTime = time.time()
-        if self.startTime is not None:
-            totTime = int(endTime - self.startTime)
-            self.tcRunLogger.debug("TestCaseName: %s; Time Taken: "
-                                   "%s Seconds; "
-                                   "StartTime: %s; EndTime: %s; Result: %s"
-                                   % (self.testName, str(totTime),
-                                      str(time.ctime(self.startTime)),
-                                      str(time.ctime(endTime)),
-                                      self.testResult))
+        if self.__startTime:
+            totTime = int(endTime - self.__startTime)
+            if self.__tcRunLogger:
+                self.__tcRunLogger.\
+                    debug("TestCaseName: %s; "
+                          "Time Taken: %s Seconds; StartTime: %s; "
+                          "EndTime: %s; Result: %s" %
+                          (self.__testName, str(totTime),
+                           str(time.ctime(self.__startTime)),
+                           str(time.ctime(endTime)),
+                           self.__testResult))
 
     def _injectClients(self, test):
-        setattr(test, "debug", self.tcRunLogger.debug)
-        setattr(test, "info", self.tcRunLogger.info)
-        setattr(test, "warn", self.tcRunLogger.warning)
-        setattr(test, "error", self.tcRunLogger.error)
-        setattr(test, "testClient", self.testClient)
-        setattr(test, "config", self.parsedConfig)
-        if self.testClient.identifier is None:
-            self.testClient.identifier = self.identifier
-        setattr(test, "clstestclient", self.testClient)
+        setattr(test, "debug", self.__tcRunLogger.debug)
+        setattr(test, "info", self.__tcRunLogger.info)
+        setattr(test, "warn", self.__tcRunLogger.warning)
+        setattr(test, "error", self.__tcRunLogger.error)
+        setattr(test, "testClient", self.__testClient)
+        setattr(test, "config", self.__parsedConfig)
+        if self.__testClient.identifier is None:
+            self.__testClient.identifier = self.__identifier
+        setattr(test, "clstestclient", self.__testClient)
         if hasattr(test, "user"):
             # when the class-level attr applied. all test runs as 'user'
-            self.testClient.getUserApiClient(test.UserName,
-                                             test.DomainName,
-                                             test.AcctType)
+            self.__testClient.getUserApiClient(test.UserName,
+                                               test.DomainName,
+                                               test.AcctType)

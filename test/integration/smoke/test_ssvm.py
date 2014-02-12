@@ -38,7 +38,7 @@ class TestSSVMs(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
         self.services = Services().services
-        self.zone = get_zone(self.apiclient, self.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         return
 
     def tearDown(self):

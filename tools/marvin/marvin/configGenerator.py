@@ -20,6 +20,8 @@ import os
 from optparse import OptionParser
 import jsonHelper
 from marvin.codes import *
+from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.config.test_data import test_data
 
 
 class managementServer(object):
@@ -53,12 +55,6 @@ class logger(object):
         self.LogFolderPath = None
 
 
-class apiLoadCfg(object):
-    def __init__(self):
-        self.ParsedApiDestFolder = None
-        self.ApiSpecFile = None
-
-
 class cloudstackConfiguration(object):
     def __init__(self):
         self.zones = []
@@ -66,6 +62,7 @@ class cloudstackConfiguration(object):
         self.dbSvr = None
         self.globalConfig = []
         self.logger = []
+        self.TestData = None
 
 
 class zone(object):
@@ -332,10 +329,7 @@ class ConfigManager(object):
               "getConfig" API,once configObj is returned.
     '''
     def __init__(self, cfg_file=None):
-        if cfg_file is None:
-            self.__filePath = "config/test_data.cfg"
-        else:
-            self.__filePath = cfg_file
+        self.__filePath = cfg_file
         self.__parsedCfgDict = None
         '''
         Set the Configuration
@@ -343,8 +337,10 @@ class ConfigManager(object):
         self.__setConfig()
 
     def __setConfig(self):
-        if self.__verifyFile() is not False:
-            self.__parsedCfgDict = self.__parseConfig()
+        if not self.__verifyFile():
+            dirPath = os.path.dirname(__file__)
+            self.__filePath = str(os.path.join(dirPath, "config/test_data.py"))
+        self.__parsedCfgDict = self.__parseConfig()
 
     def __parseConfig(self):
         '''
@@ -357,17 +353,21 @@ class ConfigManager(object):
         '''
         config_dict = None
         try:
-            configlines = []
-            with open(file, 'r') as fp:
-                for line in fp:
-                    if len(line) != 0:
+            if self.__filePath.endswith(".py"):
+                config_dict = test_data
+            else:
+                configLines = []
+                with open(file, 'r') as fp:
+                    for line in fp:
                         ws = line.strip()
-                        if ws[0] not in ["#"]:
-                            configlines.append(ws)
-            config_dict = json.loads("\n".join(configlines))
+                        if not ws.startswith("#"):
+                            configLines.append(ws)
+                config = json.loads("\n".join(configLines))
+                config_dict = config
         except Exception, e:
             #Will replace with log once we have logging done
-            print "\n Exception occurred under __parseConfig", e
+            print "\n Exception occurred under ConfigManager:__parseConfig" \
+                  " :%s", GetDetailExceptionInfo(e)
         finally:
             return config_dict
 
@@ -382,7 +382,7 @@ class ConfigManager(object):
         '''
         if self.__filePath is None or self.__filePath == '':
             return False
-        return False if os.path.exists(self.__filePath) is False else True
+        return os.path.exists(self.__filePath)
 
     def getSectionData(self, section=None):
         '''
@@ -894,18 +894,19 @@ def generate_setup_config(config, file=None):
 
 
 def getSetupConfig(file):
-    if not os.path.exists(file):
-        raise IOError("config file %s not found. \
-                      please specify a valid config file" % file)
-    config = cloudstackConfiguration()
-    configLines = []
-    with open(file, 'r') as fp:
-        for line in fp:
-            ws = line.strip()
-            if not ws.startswith("#"):
-                configLines.append(ws)
-    config = json.loads("\n".join(configLines))
-    return jsonHelper.jsonLoader(config)
+    try:
+        config = cloudstackConfiguration()
+        configLines = []
+        with open(file, 'r') as fp:
+            for line in fp:
+                ws = line.strip()
+                if not ws.startswith("#"):
+                    configLines.append(ws)
+        config = json.loads("\n".join(configLines))
+        return jsonHelper.jsonLoader(config)
+    except Exception, e:
+        print "\nException Occurred under getSetupConfig %s" % \
+              GetDetailExceptionInfo(e)
 
 if __name__ == "__main__":
     parser = OptionParser()

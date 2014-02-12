@@ -65,7 +65,8 @@ class MarvinLog:
         self.__logger = logging.getLogger(self.__loggerName)
         self.__logger.setLevel(logging.DEBUG)
 
-    def __setLogHandler(self, log_file_path, log_format=None,
+    def __setLogHandler(self, log_file_path,
+                        log_format=None,
                         log_level=logging.DEBUG):
         '''
         @Name : __setLogHandler
@@ -122,7 +123,9 @@ class MarvinLog:
         '''
         return self.__logFolderDir
 
-    def createLogs(self, test_module_name=None, log_cfg=None):
+    def createLogs(self,
+                   test_module_name=None,
+                   log_cfg=None):
         '''
         @Name : createLogs
         @Desc : Gets the Logger with file paths initialized and created
@@ -134,13 +137,14 @@ class MarvinLog:
         '''
         try:
             temp_ts = time.strftime("%b_%d_%Y_%H_%M_%S",
-                                          time.localtime())
+                                    time.localtime())
             if test_module_name is None:
                 temp_path = temp_ts
             else:
                 temp_path = str(test_module_name) + "__" + str(temp_ts)
 
-            if ((log_cfg is not None) and ('LogFolderPath' in log_cfg.__dict__.keys()) and
+            if ((log_cfg is not None) and
+                    ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
                 temp_dir = \
                     log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
@@ -151,7 +155,6 @@ class MarvinLog:
             print "\n*********Log Folder Path: %s. " \
                   "All logs will be available here **************" \
                   % str(self.__logFolderDir)
-
             os.makedirs(self.__logFolderDir)
 
             '''

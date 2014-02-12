@@ -18,14 +18,14 @@
 Initializes the marvin and does required prerequisites
 for starting it.
    1. Parses the configuration file passed to marvin and creates a
-   parsed config
+   parsed config.
    2. Initializes the logging required for marvin.All logs are
    now made available under a single timestamped folder.
-   3. Deploys the Data Center based upon input
+   3. Deploys the Data Center based upon input.
 
 '''
-
-from marvin.configGenerator import getSetupConfig
+import marvin
+from marvin import configGenerator
 from marvin.marvinLog import MarvinLog
 from marvin.deployDataCenter import DeployDataCenters
 from marvin.cloudstackTestClient import CSTestClient
@@ -44,37 +44,36 @@ import logging
 import string
 import random
 from sys import exit
-from marvin.codegenerator import CodeGenerator
 
 
 class MarvinInit:
     def __init__(self, config_file,
-                 load_api_flag=None,
                  deploy_dc_flag=None,
-                 test_module_name=None,
+                 test_mod_name="deploydc",
                  zone=None):
         self.__configFile = config_file
         self.__deployFlag = deploy_dc_flag
-        self.__loadApiFlag = load_api_flag
-        self.__parsedConfig = None
         self.__logFolderPath = None
         self.__tcRunLogger = None
+        self.__testModName = test_mod_name
         self.__testClient = None
         self.__tcResultFile = None
-        self.__testModuleName = test_module_name
         self.__testDataFilePath = None
         self.__zoneForTests = None
+        self.__parsedConfig = None
 
     def __parseConfig(self):
         '''
-        @Name: __parseConfig 
+        @Name: __parseConfig
         @Desc : Parses the configuration file passed and assigns
         the parsed configuration
         @Output : SUCCESS or FAILED
         '''
         try:
-            self.__parsedConfig = getSetupConfig(self.__configFile)
-
+            if not os.path.isfile(self.__configFile):
+                return FAILED
+            self.__parsedConfig = configGenerator.\
+                getSetupConfig(self.__configFile)
             return SUCCESS
         except Exception, e:
             print "\nException Occurred Under __parseConfig : " \
@@ -93,10 +92,11 @@ class MarvinInit:
     def getLogger(self):
         return self.__tcRunLogger
 
-    def getDebugFile(self):
+    def getResultFile(self):
         '''
         @Name : getDebugFile
-        @Desc : Returns the Result file to be used for writing 
+        @Desc : Creates the result file at a given path.
+        @Output : Returns the Result file to be used for writing
                 test outputs
         '''
         if self.__logFolderPath is not None:
@@ -120,8 +120,7 @@ class MarvinInit:
                (self.__setTestDataPath() != FAILED) and
                (self.__initLogging() != FAILED) and
                (self.__createTestClient() != FAILED) and
-               (self.__deployDC() != FAILED) and
-               (self.__loadNewApiFromXml() != FAILED)):
+               (self.__deployDC() != FAILED)):
                 return SUCCESS
             else:
                 return FAILED
@@ -145,12 +144,10 @@ class MarvinInit:
         '''
         try:
             log_obj = MarvinLog("CSLog")
-            if log_obj is None:
-                return FAILED
-            else:
+            if log_obj:
                 ret = log_obj.\
-                    createLogs(self.__testModuleName,
-                            self.__parsedConfig.logger)
+                    createLogs(self.__testModName,
+                               self.__parsedConfig.logger)
                 if ret != FAILED:
                     self.__logFolderPath = log_obj.getLogFolderPath()
                     self.__tcRunLogger = log_obj.getLogger()
@@ -176,7 +173,7 @@ class MarvinInit:
                                              test_data_filepath=
                                              self.__testDataFilePath,
                                              zone=self.__zoneForTests)
-            if self.__testClient is not None:
+            if self.__testClient:
                 return self.__testClient.createTestClient()
             else:
                 return FAILED
@@ -185,46 +182,11 @@ class MarvinInit:
                   GetDetailExceptionInfo(e)
             return FAILED
 
-    def __loadNewApiFromXml(self):
-        '''
-        @Desc: Kept for future usage
-               Will enhance later.
-        '''
-        try:
-            return SUCCESS
-            if self.__loadApiFlag:
-                apiLoadCfg = self.__parsedConfig.apiLoadCfg
-                api_dst_dir = apiLoadCfg.ParsedApiDestFolder + "/cloudstackAPI"
-                api_spec_file = apiLoadCfg.ApiSpecFile
-
-                if not os.path.exists(api_dst_dir):
-                    try:
-                        os.mkdir(api_dst_dir)
-                    except Exception, e:
-                        print "Failed to create folder %s, " \
-                              "due to %s" % (api_dst_dir,
-                                             GetDetailExceptionInfo(e))
-                        return FAILED
-                mgt_details = self.__parsedConfig.mgtSvr[0]
-                cg = CodeGenerator(api_dst_dir)
-                if os.path.exists(api_spec_file):
-                    cg.generateCodeFromXML(api_spec_file)
-                elif mgt_details is not None:
-                    endpoint_url = 'http://%s:8096/client/api?' \
-                                   'command=listApis&response=json' \
-                                   % mgt_details.mgtSvrIp
-                    cg.generateCodeFromJSON(endpoint_url)
-            return SUCCESS
-        except Exception, e:
-            print "\n Exception Occurred Under __loadNewApiFromXml : %s" \
-                  % GetDetailExceptionInfo(e)
-            return FAILED
-
     def __setTestDataPath(self):
         '''
         @Name : __setTestDataPath
-        @Desc: Sets the TestData Path for tests to run
-        @Output: Returns SUCCESS or FAILED
+        @Desc : Sets the TestData Path for tests to run
+        @Output:Returns SUCCESS or FAILED
         '''
         try:
             if ((self.__parsedConfig.TestData is not None) and
@@ -240,19 +202,19 @@ class MarvinInit:
         '''
         @Name : __deployDC
         @Desc : Deploy the DataCenter and returns accordingly.
-        @Output : SUCCESS or FAILED
+        @Output: SUCCESS or FAILED
         '''
         try:
             ret = SUCCESS
             if self.__deployFlag:
                 deploy_obj = DeployDataCenters(self.__testClient,
-                                           self.__parsedConfig,
-                                           self.__tcRunLogger)
+                                               self.__parsedConfig,
+                                               self.__tcRunLogger)
                 ret = deploy_obj.deploy()
-            if ret == SUCCESS:
-                print "Deploy DC Successful"
-            else:
-                print "Deploy DC Failed"
+                if ret == SUCCESS:
+                    print "Deploy DC Successful"
+                else:
+                    print "Deploy DC Failed"
             return ret
         except Exception, e:
             print "\n Exception Occurred Under __deployDC : %s" % \

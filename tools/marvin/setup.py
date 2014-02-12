@@ -44,7 +44,7 @@ setup(name="Marvin",
     platforms=("Any",),
     url="https://builds.apache.org/job/cloudstack-marvin/",
     packages=["marvin", "marvin.cloudstackAPI",
-              "marvin.lib", "marvin.sandbox",
+              "marvin.lib", "marvin.config","marvin.sandbox",
               "marvin.sandbox.advanced", "marvin.sandbox.advancedsg", "marvin.sandbox.basic"],
     license="LICENSE.txt",
     install_requires=[

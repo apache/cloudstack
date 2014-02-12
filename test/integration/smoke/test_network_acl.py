@@ -32,7 +32,7 @@ class TestNetworkACL(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
 
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,

@@ -17,7 +17,6 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
@@ -43,10 +42,9 @@ class TestCreateVolume(cloudstackTestCase):
         testClient = super(TestCreateVolume, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
-
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
@@ -224,7 +222,7 @@ class TestVolumes(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
