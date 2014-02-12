@@ -255,16 +255,16 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     private void addDomainWideResourceAccess(Map<String, Object> params) {
 
-        String entityType = (String) params.get(ApiConstants.ENTITY_TYPE);
+        AclEntityType entityType = (AclEntityType)params.get(ApiConstants.ENTITY_TYPE);
         Long entityId = (Long) params.get(ApiConstants.ENTITY_ID);
         Long domainId = (Long) params.get(ApiConstants.DOMAIN_ID);
         Boolean isRecursive = (Boolean) params.get(ApiConstants.SUBDOMAIN_ACCESS);
 
-        if (AclEntityType.Network.toString().equals(entityType)) {
-            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType,
+        if (entityType == AclEntityType.Network) {
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType.toString(),
                     entityId, "listNetworks", AccessType.UseEntry, domainId, isRecursive);
-        } else if (AclEntityType.AffinityGroup.toString().equals(entityType)) {
-            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide affinityGroup", entityType,
+        } else if (entityType == AclEntityType.AffinityGroup) {
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide affinityGroup", entityType.toString(),
                     entityId, "listAffinityGroups", AccessType.UseEntry, domainId, isRecursive);
         }
 
