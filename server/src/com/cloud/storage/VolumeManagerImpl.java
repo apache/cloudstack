@@ -328,7 +328,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Inject
     StorageManager storageMgr;
     private int _customDiskOfferingMinSize = 1;
-    private final int _customDiskOfferingMaxSize = 1024;
+    private int _customDiskOfferingMaxSize = 1024;
     private long _maxVolumeSizeInGb;
     private boolean _recreateSystemVmEnabled;
     private boolean _storageHAMigrationEnabled;    
@@ -2704,6 +2704,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 _customDiskOfferingMinSizeStr, Integer
                 .parseInt(Config.CustomDiskOfferingMinSize
                         .getDefaultValue()));
+
+        String _customDiskOfferingMaxSizeStr = _configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
+        Integer defaultCustomDiskOfferingMaxSize = Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue());
+        _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr, defaultCustomDiskOfferingMaxSize);
 
         String maxVolumeSizeInGbString = _configDao
                 .getValue("storage.max.volume.size");
