@@ -101,10 +101,12 @@
                     var clickAction = function() {
                         $('#user-options a').eq(0).trigger('click');
                     };
+
                     cloudStack.dialog.notice({
                         message: _l('label.session.expired'),
                         clickAction: clickAction
-                    });
+                    }).closest('.ui-dialog').overlay();
+
                     return false;
                 }
             }
