@@ -382,10 +382,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
-        ManagedObjectReference mor = null;
-        if (serviceContext != null) {
-            mor = serviceContext.getHostMorByPath(hostInventoryPath);
+        if (serviceContext == null) {
+            throw new CloudRuntimeException("Invalid serviceContext");
         }
+        ManagedObjectReference mor = serviceContext.getHostMorByPath(hostInventoryPath);
         String privateTrafficLabel = null;
         privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
         if (privateTrafficLabel == null) {

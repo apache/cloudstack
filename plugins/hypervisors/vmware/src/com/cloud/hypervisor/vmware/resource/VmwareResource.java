@@ -663,8 +663,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
-        boolean result = true;
-
         try {
             SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(), fileName, null);
         } catch (Exception e) {
@@ -1065,9 +1063,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
-        int i = 0;
-        String[] results = new String[cmd.getIpAddresses().length];
-
         VmwareContext context = getServiceContext();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -1142,15 +1137,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private ExecutionResult NetworkElementCommandnup(IpAssocCommand cmd) {
-        String[] results = new String[cmd.getIpAddresses().length];
-
         VmwareContext context = getServiceContext();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
             IpAddressTO[] ips = cmd.getIpAddresses();
             String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-            String controlIp = VmwareResource.getRouterSshControlIp(cmd);
+            VmwareResource.getRouterSshControlIp(cmd);
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
 
@@ -4477,10 +4470,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                         null);
                         return new CreateAnswer(cmd, vol);
                     } finally {
-                        vmMo.detachAllDisks();
 
                         s_logger.info("Destroy dummy VM after volume creation");
-                        vmMo.destroy();
+                        if (vmMo != null) {
+                            s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
+                            vmMo.detachAllDisks();
+                            vmMo.destroy();
+                        }
                     }
                 } else {
                     VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(cmd.getTemplateUrl()), true);
@@ -4537,8 +4533,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     return new CreateAnswer(cmd, vol);
                 } finally {
                     s_logger.info("Destroy dummy VM after volume creation");
-                    vmMo.detachAllDisks();
-                    vmMo.destroy();
+                    if (vmMo != null) {
+                        s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
+                        vmMo.detachAllDisks();
+                        vmMo.destroy();
+                    }
                 }
             }
         } catch (Throwable e) {
