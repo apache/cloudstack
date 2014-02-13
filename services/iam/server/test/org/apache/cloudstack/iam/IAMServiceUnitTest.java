@@ -145,13 +145,13 @@ public class IAMServiceUnitTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void createAclPolicyTest() {
-        AclPolicy policy = _iamService.createAclPolicy("policy1", "my first policy", null);
+        AclPolicy policy = _iamService.createAclPolicy("policy1", "my first policy", null, "/root/mydomain");
         assertNotNull("Acl policy 'policy1' failed to create ", policy);
 
         AclPolicyVO rvo = new AclPolicyVO("policy2", "second policy");
         when(_aclPolicyDao.findByName(eq("policy2"))).thenReturn(rvo);
 
-        _iamService.createAclPolicy("policy2", "second policy", null);
+        _iamService.createAclPolicy("policy2", "second policy", null, "/root/mydomain");
     }
 
     @Test(expected = InvalidParameterValueException.class)

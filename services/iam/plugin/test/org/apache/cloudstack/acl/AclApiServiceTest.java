@@ -43,6 +43,7 @@ import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
@@ -52,10 +53,11 @@ import org.apache.cloudstack.iam.server.AclGroupVO;
 import org.apache.cloudstack.iam.server.AclPolicyPermissionVO;
 import org.apache.cloudstack.iam.server.AclPolicyVO;
 import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
+
 import com.cloud.api.ApiServerService;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -63,7 +65,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.network.dao.NetworkDomainDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -194,7 +195,7 @@ public class AclApiServiceTest {
         List<AclPolicy> policies = new ArrayList<AclPolicy>();
         policies.add(policy);
         Pair<List<AclPolicy>, Integer> policyList = new Pair<List<AclPolicy>, Integer>(policies, 1);
-        when(_iamSrv.createAclPolicy("policy1", "tester policy1", null)).thenReturn(policy);
+        when(_iamSrv.createAclPolicy("policy1", "tester policy1", null, callerDomainPath)).thenReturn(policy);
         when(_iamSrv.listAclPolicies(null, null, callerDomainPath, 0L, 20L)).thenReturn(policyList);
 
         AclPolicy createdPolicy = _aclSrv.createAclPolicy(caller, "policy1", "tester policy1", null);
