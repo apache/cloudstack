@@ -110,16 +110,16 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
         this.customer = customer;
     }
 
-    public String getResourceId() {
-        return this.resourceId;
+    public String getKey() {
+        return this.key;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        String rId = this.getResourceId();
-        result = prime * result + ((rId== null) ? 0 : rId.hashCode());
+        String key = this.getKey();
+        result = prime * result + ((key == null) ? 0 : key.hashCode());
         return result;
     }
 
@@ -129,13 +129,14 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
             return true;
         if (obj == null)
             return false;
-        if (this.getClass() != obj.getClass())
+        if (getClass() != obj.getClass())
             return false;
         ResourceTagResponse other = (ResourceTagResponse) obj;
-        String rId = this.getResourceId();
-        if (rId == null && other.getResourceId() != null) {
-            return false;
-        } else if (!rId.equals(other.getResourceId()))
+        String key = this.getKey();
+        if (key == null) {
+            if (other.getKey() != null)
+                return false;
+        } else if (!key.equals(other.getKey()))
             return false;
         return true;
     }
