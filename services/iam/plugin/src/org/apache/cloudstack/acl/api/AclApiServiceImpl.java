@@ -409,7 +409,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         Class<?> cmdClass = _apiServer.getCmdClass(action);
         AccessType accessType = null;
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
-            accessType = AccessType.ListEntry;
+            accessType = AccessType.UseEntry;
         }
         return _iamSrv.addAclPermissionToAclPolicy(aclPolicyId, entityType, scope.toString(), scopeId, action,
                 accessType.toString(), perm, recursive);

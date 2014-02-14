@@ -123,7 +123,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
-                if (accessType != null && accessType == AccessType.ModifyEntry) {
+                if (accessType != null && accessType == AccessType.OperateEntry) {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {

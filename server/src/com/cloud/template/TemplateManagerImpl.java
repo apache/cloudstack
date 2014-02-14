@@ -367,7 +367,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template id=" + templateId);
         }
 
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.ModifyEntry, true, vmTemplate);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, vmTemplate);
 
         prepareTemplateInAllStoragePools(vmTemplate, zoneId);
         return vmTemplate;
@@ -413,7 +413,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
 
@@ -689,7 +689,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return template;
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         boolean success = copy(userId, template, srcSecStore, dstZone);
 
@@ -1028,7 +1028,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         if (template.getFormat() == ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid template.");
@@ -1051,7 +1051,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         if (template.getFormat() != ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid iso.");
@@ -1752,7 +1752,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // do a permission check
-        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
         if (cmd.isRoutingType() != null) {
             if (!_accountService.isRootAdmin(account.getId())) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");

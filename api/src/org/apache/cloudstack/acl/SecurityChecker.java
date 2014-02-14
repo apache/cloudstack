@@ -31,11 +31,8 @@ import com.cloud.utils.component.Adapter;
 public interface SecurityChecker extends Adapter {
 
     public enum AccessType {
-        ListEntry,
-        ModifyEntry,
         ModifyProject,
         UseNetwork,
-        DeleteEntry,
         OperateEntry,
         UseEntry
     }

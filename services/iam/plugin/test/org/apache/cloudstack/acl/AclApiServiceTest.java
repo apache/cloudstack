@@ -274,11 +274,11 @@ public class AclApiServiceTest {
         when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(clz);
         when(
                 _iamSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
-                        AccessType.ListEntry.toString(), Permission.Allow, false)).thenReturn(policy);
+                        AccessType.UseEntry.toString(), Permission.Allow, false)).thenReturn(policy);
         _aclSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false);
         Pair<List<AclPolicy>, Integer> policyList = new Pair<List<AclPolicy>, Integer>(policies, 1);
         List<AclPolicyPermission> policyPerms = new ArrayList<AclPolicyPermission>();
-        AclPolicyPermission perm = new AclPolicyPermissionVO(policyId, "listVirtualMachines", AclEntityType.VirtualMachine.toString(), AccessType.ListEntry.toString(),
+        AclPolicyPermission perm = new AclPolicyPermissionVO(policyId, "listVirtualMachines", AclEntityType.VirtualMachine.toString(), AccessType.UseEntry.toString(),
                 PermissionScope.RESOURCE.toString(),
                 resId, Permission.Allow, false);
         policyPerms.add(perm);

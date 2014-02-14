@@ -1815,7 +1815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // do a permission check
-        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
 
         if(cmd.isRoutingType() != null){
             if (!_accountService.isRootAdmin(account.getId())) {

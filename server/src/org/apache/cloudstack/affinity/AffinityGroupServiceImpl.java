@@ -263,7 +263,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             affinityGroupId = group.getId();
         }
         // check permissions
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, group);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, group);
 
         final Long affinityGroupIdFinal = affinityGroupId;
         Transaction.execute(new TransactionCallbackNoReturn() {
