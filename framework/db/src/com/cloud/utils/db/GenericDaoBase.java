@@ -554,7 +554,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 final Enum<?>[] enums = (Enum<?>[])field.getType().getEnumConstants();
                 for (final Enum<?> e : enums) {
                     if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
-                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
+                            (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
                         field.set(entity, e);
                         return;
                     }
@@ -768,7 +768,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected int addJoinAttributes(int count, PreparedStatement pstmt, Collection<JoinBuilder<SearchCriteria<?>>> joins) throws SQLException {
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             for (final Pair<Attribute, Object> value : join.getT().getValues()) {
-                prepareAttribute(++count, pstmt, value.first(), value.second());
+                prepareAttribute(count++, pstmt, value.first(), value.second());
             }
         }
 
@@ -1255,18 +1255,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
-                .append(join.getType().getName())
-                .append(" ")
-                .append(join.getSecondAttribute().table)
-                .append(" ON ")
-                .append(join.getFirstAttribute().table)
-                .append(".")
-                .append(join.getFirstAttribute().columnName)
-                .append("=")
-                .append(join.getSecondAttribute().table)
-                .append(".")
-                .append(join.getSecondAttribute().columnName)
-                .append(" ");
+            .append(join.getType().getName())
+            .append(" ")
+            .append(join.getSecondAttribute().table)
+            .append(" ON ")
+            .append(join.getFirstAttribute().table)
+            .append(".")
+            .append(join.getFirstAttribute().columnName)
+            .append("=")
+            .append(join.getSecondAttribute().table)
+            .append(".")
+            .append(join.getSecondAttribute().columnName)
+            .append(" ");
             str.insert(fromIndex, onClause);
             String whereClause = join.getT().getWhereClause();
             if ((whereClause != null) && !"".equals(whereClause)) {
