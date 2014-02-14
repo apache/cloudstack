@@ -270,9 +270,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
-            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-            String bootArgs = to.getBootArgs();
-            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            if (!sbMacSequence.toString().isEmpty()) {
+                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+                String bootArgs = to.getBootArgs();
+                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            }
 
         }
 
