@@ -34,8 +34,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient()
         zone_name = cls.testClient.getZoneForTests()
-        cls.domain = get_domain(cls.apiclient) 
         cls.apiclient = cls.testClient.getApiClient()
+        cls.domain = get_domain(cls.apiclient) 
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
