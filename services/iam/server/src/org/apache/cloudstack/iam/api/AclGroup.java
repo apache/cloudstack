@@ -16,14 +16,19 @@
 // under the License.
 package org.apache.cloudstack.iam.api;
 
-public interface AclGroup {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface AclGroup extends InternalIdentity, Identity {
 
     String getName();
 
     String getDescription();
 
+    @Override
     long getId();
 
+    @Override
     String getUuid();
 
     String getPath();

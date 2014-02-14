@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.iam.api;
 
-public interface AclPolicy {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface AclPolicy extends InternalIdentity, Identity {
 
     String getName();
 
@@ -26,8 +29,10 @@ public interface AclPolicy {
         Static, Dynamic
     }
 
+    @Override
     long getId();
 
+    @Override
     String getUuid();
 
     String getPath();

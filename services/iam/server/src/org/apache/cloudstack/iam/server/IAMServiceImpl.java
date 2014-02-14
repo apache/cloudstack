@@ -651,7 +651,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                     + "; failed to revoke permission from policy.");
         }
         // remove entry from acl_entity_permission table
-        AclPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, null);
+        AclPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, Permission.Allow);
         if (permit != null) {
             // not removed yet
             _policyPermissionDao.remove(permit.getId());
