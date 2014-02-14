@@ -179,8 +179,14 @@ def get_domain(apiclient, domain_id=None, domain_name=None):
         cmd.name = domain_name
     if domain_id is not None:
         cmd.id = domain_id
-    cmd_out = apiclient.listRegions(cmd)
-    return FAILED if validateList(cmd_out)[0] != PASS else cmd_out
+    cmd_out = apiclient.listDomains(cmd)
+    if validateList(cmd_out)[0] != PASS:
+	 return FAILED
+    
+    if (domain_id is None and domain_name is None): 
+        return cmd_out[0]
+    else:
+        return cmd_out
 
 
 def get_zone(apiclient, zone_name=None, zone_id=None):
@@ -248,19 +254,7 @@ def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="fea
     @Output : FAILED in case of any failure
               template Information matching the inputs
     '''
-
-    '''
-    Get OS TypeID First based upon ostype_desc
-    '''
-    cmd = listOsTypes.listOsTypesCmd()
-    cmd.description = ostype_desc
-    ostypes_out = apiclient.listOsTypes(cmd)
-
-    if (validateList(ostypes_out)[0] != PASS): return FAILED
-
-    ostype_id = ostypes_out[0].id
-
-    listcmd = listTemplates.listTemplatesCmd()
+    cmd = listTemplates.listTemplatesCmd()
     cmd.templatefilter = template_filter
     if domain_id is not None:
         cmd.domainid = domain_id
@@ -284,7 +278,7 @@ def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="fea
     if validateList(list_templatesout)[0] != PASS: return FAILED
 
     for template in list_templatesout:
-        if template.ostypeid == ostype_id and template.isready and template.templatetype == template_type:
+        if template.isready and template.templatetype == template_type:
             return template
     '''
     Return Failed if None of the templates matched
