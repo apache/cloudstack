@@ -38,6 +38,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -57,8 +60,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -2226,12 +2227,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             // check permissions
             checkAccess(caller, domain);
-        }
-
-        if (id != null) {
-            // look for an individual entity, no other permission criteria are needed
-            permittedResources.add(id);
-            return;
         }
 
         if (accountName != null) {

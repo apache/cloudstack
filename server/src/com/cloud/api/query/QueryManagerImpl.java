@@ -2902,6 +2902,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 // exclude the caller, only include those granted and not owned by self
                 permittedDomains.remove(caller.getDomainId());
                 permittedAccounts.remove(caller.getAccountId());
+                for (Long tid : permittedResources) {
+                    // remove it if it is owned by the caller
+                    VMTemplateVO tmpl = _templateDao.findById(tid);
+                    if (tmpl != null && tmpl.getAccountId() == caller.getAccountId()) {
+                        permittedResources.remove(tid);
+                    }
+                }
                 // building ACL search criteria
                 SearchCriteria<TemplateJoinVO> aclSc = _templateJoinDao.createSearchCriteria();
                 _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);

@@ -1174,7 +1174,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        //_accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template); //TODO: should we replace all ModifyEntry as OperateEntry?
 
         // If the template is removed throw an error.
         if (template.getRemoved() != null) {
