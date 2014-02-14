@@ -2895,6 +2895,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         List<InterfaceDef> ifaces = null;
+        List<DiskDef> disks = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -2904,6 +2905,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
+            disks = getDisks(conn, vmName);
             dm = conn.domainLookupByName(vmName);
             /*
                 We replace the private IP address with the address of the destination host.
@@ -2926,7 +2928,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
              */
             destDomain = dm.migrate(dconn, (1 << 0), xmlDesc, vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
 
-            _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(cmd.getVirtualMachine());
+            for (DiskDef disk : disks) {
+                cleanupDisk(disk);
+            }
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
