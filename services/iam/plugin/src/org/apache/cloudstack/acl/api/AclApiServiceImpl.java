@@ -469,8 +469,12 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
             for (AclPolicyPermission permission : permissions) {
                 AclPermissionResponse perm = new AclPermissionResponse();
                 perm.setAction(permission.getAction());
-                perm.setEntityType(AclEntityType.valueOf(permission.getEntityType()));
-                perm.setScope(PermissionScope.valueOf(permission.getScope()));
+                if (permission.getEntityType() != null) {
+                    perm.setEntityType(AclEntityType.valueOf(permission.getEntityType()));
+                }
+                if (permission.getScope() != null) {
+                    perm.setScope(PermissionScope.valueOf(permission.getScope()));
+                }
                 perm.setScopeId(permission.getScopeId());
                 perm.setPermission(permission.getPermission());
                 response.addPermission(perm);
