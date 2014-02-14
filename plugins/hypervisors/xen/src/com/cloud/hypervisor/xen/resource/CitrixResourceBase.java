@@ -1956,7 +1956,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
@@ -2029,8 +2028,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        String[] results = new String[cmd.getIpAddresses().length];
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
@@ -7307,19 +7304,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new ExecutionResult(true, null);
     }
 
-	protected void setNicDevIdIfCorrectVifIsNotNull(Connection conn,
-			IpAddressTO ip, VIF correctVif) throws InternalErrorException,
-			BadServerResponse, XenAPIException, XmlRpcException {
-		if (correctVif == null) {
-		    if (ip.isAdd()) {
-		        throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
-		    } else {
-		        s_logger.debug("VIF to deassociate IP with does not exist, return success");
-		    }
-		} else {
-         ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
-		}
-	}
+    protected void setNicDevIdIfCorrectVifIsNotNull(Connection conn, IpAddressTO ip, VIF correctVif) throws InternalErrorException, BadServerResponse, XenAPIException,
+    XmlRpcException {
+        if (correctVif == null) {
+            if (ip.isAdd()) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
+            } else {
+                s_logger.debug("VIF to deassociate IP with does not exist, return success");
+            }
+        } else {
+            ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+        }
+    }
 
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
         Connection conn = getConnection();
