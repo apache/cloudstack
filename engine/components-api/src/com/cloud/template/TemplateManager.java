@@ -32,6 +32,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
@@ -115,7 +116,13 @@ public interface TemplateManager {
 
     TemplateInfo prepareIso(long isoId, long dcId);
 
-
+    
+    /**
+     * Adds ISO definition to given vm profile
+     *
+     * @param VirtualMachineProfile
+     */
+    void prepareIsoForVmProfile(VirtualMachineProfile profile);
 
 
 }
