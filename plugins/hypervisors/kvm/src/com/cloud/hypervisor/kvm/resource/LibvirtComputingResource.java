@@ -4436,7 +4436,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
                 String vmName = dm.getName();
-                vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
+
+                // TODO : for XS/KVM (host-based resource), we require to remove
+                // VM completely from host, for some reason, KVM seems to still keep
+                // Stopped VM around, to work-around that, reporting only powered-on VM
+                //
+                if (state == PowerState.PowerOn)
+                    vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {
@@ -4460,7 +4466,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 String vmName = dm.getName();
                 s_logger.trace("VM " + vmName + ": powerstate = " + ps + "; vm state=" + state.toString());
 
-                vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
+                // TODO : for XS/KVM (host-based resource), we require to remove
+                // VM completely from host, for some reason, KVM seems to still keep
+                // Stopped VM around, to work-around that, reporting only powered-on VM
+                //
+                if (state == PowerState.PowerOn)
+                    vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {
