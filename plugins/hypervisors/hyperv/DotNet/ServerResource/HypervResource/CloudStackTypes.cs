@@ -900,6 +900,5 @@ namespace HypervResource
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
-        public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

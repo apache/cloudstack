@@ -2042,40 +2042,6 @@ namespace HypervResource
             }
         }
 
-        // POST api/HypervResource/HostVmStateReportCommand
-        [HttpPost]
-        [ActionName(CloudStackTypes.HostVmStateReportCommand)]
-        public JContainer HostVmStateReportCommand([FromBody]dynamic cmd)
-        {
-            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
-            {
-                logger.Info(CloudStackTypes.HostVmStateReportCommand + cmd.ToString());
-
-                string details = null;
-                Dictionary<string, string>[] hostVmStateReport = null;
-
-                try
-                {
-                    var vmCollection = wmiCallsV2.GetComputerSystemCollection();
-                    hostVmStateReport = new Dictionary<string, string>[vmCollection.Count];
-                    int i = 0;
-                    foreach (ComputerSystem vm in vmCollection)
-                    {
-                        var dict = new Dictionary<string, string>();
-                        dict.Add(vm.ElementName, EnabledState.ToCloudStackPowerState(vm.EnabledState));
-                        hostVmStateReport[i++] = dict;
-                    }
-                }
-                catch (Exception sysEx)
-                {
-                    details = CloudStackTypes.HostVmStateReportCommand + " failed due to " + sysEx.Message;
-                    logger.Error(details, sysEx);
-                }
-
-                return JArray.FromObject(hostVmStateReport);
-            }
-        }
-
         public static System.Net.NetworkInformation.NetworkInterface GetNicInfoFromIpAddress(string ipAddress, out string subnet)
         {
             System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();

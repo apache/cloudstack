@@ -62,7 +62,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -133,7 +132,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
 /**
  * Implementation of dummy resource to be returned from discoverer.
@@ -141,7 +139,6 @@ import com.cloud.vm.VirtualMachineName;
 @Local(value = ServerResource.class)
 public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource {
     public static final int DEFAULT_AGENT_PORT = 8250;
-    public static final String HOST_VM_STATE_REPORT_COMMAND = "org.apache.cloudstack.HostVmStateReportCommand";
     private static final Logger s_logger = Logger.getLogger(HypervDirectConnectResource.class.getName());
 
     private static final Gson s_gson = GsonHelper.getGson();
@@ -209,7 +206,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         defaultStartRoutCmd.setPrivateIpAddress(_agentIp);
         defaultStartRoutCmd.setStorageIpAddress(_agentIp);
         defaultStartRoutCmd.setPool(_clusterGuid);
-        defaultStartRoutCmd.setHostVmStateReport(getHostVmStateReport());
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \""
                 + _agentIp + "\"");
@@ -332,7 +328,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, getHostVmStateReport());
+    	// TODO, need to report VM states on host
+        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, null);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");
@@ -346,50 +343,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             return null;
         }
         return pingCmd;
-    }
-
-    public final ArrayList<Map<String, String>> requestHostVmStateReport() {
-        URI agentUri = null;
-        try {
-            agentUri = new URI("https", null, _agentIp, _port, "/api/HypervResource/" + HOST_VM_STATE_REPORT_COMMAND, null, null);
-        } catch (URISyntaxException e) {
-            String errMsg = "Could not generate URI for Hyper-V agent";
-            s_logger.error(errMsg, e);
-            return null;
-        }
-        String incomingCmd = postHttpRequest("{}", agentUri);
-
-        if (incomingCmd == null) {
-            return null;
-        }
-        ArrayList<Map<String, String>> result = null;
-        try {
-            result = s_gson.fromJson(incomingCmd, new TypeToken<ArrayList<HashMap<String, String>>>() {
-            }.getType());
-        } catch (Exception ex) {
-            String errMsg = "Failed to deserialize Command[] " + incomingCmd;
-            s_logger.error(errMsg, ex);
-        }
-        s_logger.debug("HostVmStateReportCommand received response "
-                + s_gson.toJson(result));
-        if (!result.isEmpty()) {
-            return result;
-        }
-        return null;
-    }
-
-    protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
-        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
-        ArrayList<Map<String, String>> vmList = requestHostVmStateReport();
-        if (vmList == null || vmList.isEmpty()) {
-            return null;
-        }
-
-        for (Map<String, String> vmMap : vmList) {
-            String name = (String)vmMap.keySet().toArray()[0];
-            vmStates.put(name, new HostVmStateReportEntry(PowerState.valueOf(vmMap.get(name)), _guid, null));
-        }
-        return vmStates;
     }
 
     // TODO: Is it valid to return NULL, or should we throw on error?
