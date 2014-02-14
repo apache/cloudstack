@@ -22,6 +22,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 
 #Import Integration Libraries
 
+from marvin.codes import FAILED
 #base - contains all resources as entities and defines create, delete, list operations on them
 from marvin.lib.base import Account, VirtualMachine, ServiceOffering
 

@@ -17,6 +17,7 @@
 """ Tests for VPN in VPC
 """
 #Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *

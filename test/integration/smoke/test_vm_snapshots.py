@@ -17,6 +17,7 @@
 
 # Import Local Modules
 import marvin
+from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *

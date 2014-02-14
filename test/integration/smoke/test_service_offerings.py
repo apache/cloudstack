@@ -17,6 +17,7 @@
 """ BVT tests for Service offerings"""
 
 #Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import changeServiceForVirtualMachine,updateServiceOffering
 from marvin.lib.utils import (isAlmostEqual,

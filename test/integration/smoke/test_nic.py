@@ -16,6 +16,7 @@
 # under the License.
 """ NIC tests for VM """
 import marvin
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
