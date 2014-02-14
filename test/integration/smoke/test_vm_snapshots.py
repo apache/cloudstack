@@ -40,7 +40,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     cls.services["ostype"]
                     )
         if cls.template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id

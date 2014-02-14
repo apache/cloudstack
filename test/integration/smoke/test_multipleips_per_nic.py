@@ -53,7 +53,7 @@ class TestDeployVM(cloudstackTestCase):
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
 
         if self.template == FAILED:
-            self.fail("get_template() failed to return template with description %s" % self.testdata["ostype"])
+            assert False, "get_template() failed to return template with description %s" % self.testdata["ostype"]
 
         #create a user account
         self.account = Account.create(

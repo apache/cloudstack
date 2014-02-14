@@ -46,7 +46,7 @@ class TestNetworkACL(cloudstackTestCase):
         )
         
         if cls.template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\

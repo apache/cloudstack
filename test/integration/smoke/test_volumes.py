@@ -61,7 +61,7 @@ class TestCreateVolume(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -244,7 +244,7 @@ class TestVolumes(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id

@@ -55,7 +55,7 @@ class TestDeployVM(cloudstackTestCase):
             cls.services["ostype"]
         )
         if template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -216,7 +216,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if template == FAILED:
-            cls.fail("get_template() failed to return template with description %s" % cls.services["ostype"])
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
