@@ -22,7 +22,7 @@ from marvin.lib.base import (ServiceOffering,
 from marvin.lib.common import get_template, get_zone, list_virtual_machines
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
-
+from marvin.codes import FAILED
 import random
 import string
 
