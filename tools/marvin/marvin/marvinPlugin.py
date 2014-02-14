@@ -227,6 +227,8 @@ class MarvinPlugin(Plugin):
 
     def __runSuites(self, suites):
         for suite in suites:
+            if os.path.isdir(suite):
+                return self.__runSuites(suite)
             self.__runSuite(suite)
 
     def startMarvin(self):
@@ -240,14 +242,17 @@ class MarvinPlugin(Plugin):
         '''
         try:
             if self.__deployDcFlag:
-                print "\nStep1 :Deploy Flag is Enabled, will deployDC"
+                print "\n***Step1 :Deploy Flag is Enabled, will deployDC****"
                 obj_marvininit = MarvinInit(self.__configFile,
                                             self.__deployDcFlag,
                                             "DeployDc",
                                             self.__zoneForTests)
                 if not obj_marvininit or obj_marvininit.init() != SUCCESS:
                     return FAILED
-            print "\nStep2: Now Start Running Test Suites"
+            print "\n*******Now Start Running Test Suites***"
+            if len(self.conf.testNames) == 0:
+                print "\n*** No Test Suites are provided, please check**"
+                return FAILED
             for suites in self.conf.testNames:
                 if os.path.isdir(suites):
                     self.__runSuites(suites)

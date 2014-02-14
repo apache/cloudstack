@@ -5,7 +5,6 @@ test_data = {
                 "regionendpoint": "http://region2:8080/client"
         },
         "zone": "NA",
-        
         "domain": { "name": "domain" },
         
         "project": {

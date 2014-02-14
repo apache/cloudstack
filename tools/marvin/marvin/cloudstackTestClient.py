@@ -96,8 +96,10 @@ class CSTestClient(object):
         @Output : Returns the Zone Name
         '''
         if self.__zone is None:
-            if self.__parsedTestDataConfig is not None:
-                self.__zone = self.__parsedTestDataConfig.get("zone")
+            if self.__parsedTestDataConfig:
+                ret = self.__parsedTestDataConfig.get("zone")
+                if ret != "NA":
+                    self.__zone = ret 
         return self.__zone
 
     def __setHypervisorToClient(self):
