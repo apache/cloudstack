@@ -75,6 +75,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -156,6 +157,7 @@ import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -181,6 +183,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -496,6 +499,38 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
         _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
         return extractUrl;
+    }
+
+    @Override
+    public void prepareIsoForVmProfile(VirtualMachineProfile profile) {
+        UserVmVO vm = _userVmDao.findById(profile.getId());
+        if (vm.getIsoId() != null) {
+            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            if (template == null){
+                s_logger.error("Failed to prepare ISO on secondary or cache storage");
+                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
+            }
+            if (template.isBootable()) {
+                profile.setBootLoaderType(BootloaderType.CD);
+            }
+
+            GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
+            String displayName = null;
+            if (guestOS != null) {
+                displayName = guestOS.getDisplayName();
+            }
+
+            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setGuestOsType(displayName);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            profile.addDisk(disk);
+        } else {
+            TemplateObjectTO iso = new TemplateObjectTO();
+            iso.setFormat(ImageFormat.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            profile.addDisk(disk);
+        }
+
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {

@@ -2909,6 +2909,7 @@ ServerResource {
         }
 
         List<InterfaceDef> ifaces = null;
+        List<DiskDef> disks = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -2917,6 +2918,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
+            disks = getDisks(conn, vmName);
             dm = conn.domainLookupByName(vmName);
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp()
                     + "/system");
@@ -2926,6 +2928,12 @@ ServerResource {
              */
             destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), vmName, "tcp:"
                     + cmd.getDestinationIp(), _migrateSpeed);
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() == DiskDef.deviceType.CDROM
+                        && disk.getDiskPath() != null) {
+                    cleanupDisk(conn, disk);
+                }
+            }
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
