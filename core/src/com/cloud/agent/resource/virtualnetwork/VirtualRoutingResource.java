@@ -87,6 +87,37 @@ import java.util.Map;
  *  }
  **/
 public class VirtualRoutingResource {
+    protected class VRScripts {
+        protected static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
+        protected static final String S2SVPN_IPSEC = "ipsectunnel.sh";
+        protected static final String DHCP = "edithosts.sh";
+        protected static final String DNSMASQ_CONFIG = "dnsmasq.sh";
+        protected static final String FIREWALL_EGRESS = "firewall_egress.sh";
+        protected static final String FIREWALL_INGRESS = "firewall_ingress.sh";
+        protected static final String FIREWALL_NAT = "firewall_nat.sh";
+        protected static final String IPALIAS_CREATE = "createipAlias.sh";
+        protected static final String IPALIAS_DELETE = "deleteipAlias.sh";
+        protected static final String IPASSOC = "ipassoc.sh";
+        protected static final String LB = "loadbalancer.sh";
+        protected static final String MONITOR_SERVICE = "monitor_service.sh";
+        protected static final String PASSWORD = "savepassword.sh";
+        protected static final String RVR_CHECK = "checkrouter.sh";
+        protected static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
+        protected static final String VMDATA = "vmdata.py";
+        protected static final String VERSION = "get_template_version.sh";
+        protected static final String VPC_ACL = "vpc_acl.sh";
+        protected static final String VPC_GUEST_NETWORK = "vpc_guestnw.sh";
+        protected static final String VPC_IPASSOC = "vpc_ipassoc.sh";
+        protected static final String VPC_LB = "vpc_loadbalancer.sh";
+        protected static final String VPC_PRIVATEGW = "vpc_privateGateway.sh";
+        protected static final String VPC_PRIVATEGW_ACL = "vpc_privategw_acl.sh";
+        protected static final String VPC_PORTFORWARDING = "vpc_portforwarding.sh";
+        protected static final String VPC_SOURCE_NAT = "vpc_snat.sh";
+        protected static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
+        protected static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
+        protected static final String VPN_L2TP = "vpn_l2tp.sh";
+    }
+
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
 
@@ -190,7 +221,7 @@ public class VirtualRoutingResource {
                 args += "-u ";
                 args += userpwd.getUsernamePassword();
             }
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpn_l2tp.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPN_L2TP, args);
             if (!result.isSuccess()) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername() + ":" + result.getDetails());
             }
@@ -217,7 +248,7 @@ public class VirtualRoutingResource {
         }
         args += " -C " + cmd.getLocalCidr();
         args += " -i " + cmd.getPublicInterface();
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpn_l2tp.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPN_L2TP, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -259,9 +290,9 @@ public class VirtualRoutingResource {
         ExecutionResult result;
 
         if (trafficType == FirewallRule.TrafficType.Egress) {
-            result = _vrDeployer.executeInVR(routerAccessIp, "firewall_egress.sh", args);
+            result = _vrDeployer.executeInVR(routerAccessIp, VRScripts.FIREWALL_EGRESS, args);
         } else {
-            result = _vrDeployer.executeInVR(routerAccessIp, "firewall_ingress.sh", args);
+            result = _vrDeployer.executeInVR(routerAccessIp, VRScripts.FIREWALL_INGRESS, args);
         }
 
         if (!result.isSuccess()) {
@@ -288,7 +319,7 @@ public class VirtualRoutingResource {
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "firewall_nat.sh", args.toString());
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.FIREWALL_NAT, args.toString());
 
             if (!result.isSuccess()) {
                 results[i++] = "Failed";
@@ -311,7 +342,7 @@ public class VirtualRoutingResource {
             args += " -l " + rule.getSrcIp();
             args += " -r " + rule.getDstIp();
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_staticnat.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_STATIC_NAT, args);
 
             if (!result.isSuccess()) {
                 results[i++] = null;
@@ -345,7 +376,7 @@ public class VirtualRoutingResource {
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "firewall_nat.sh", args.toString());
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.FIREWALL_NAT, args.toString());
 
             if (!result.isSuccess()) {
                 results[i++] = "Failed";
@@ -416,10 +447,10 @@ public class VirtualRoutingResource {
 
         if (cmd.getVpcId() == null) {
             args = " -i " + routerIp + args;
-            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "loadbalancer.sh", args);
+            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.LB, args);
         } else {
             args = " -i " + cmd.getNic().getIp() + args;
-            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_loadbalancer.sh", args);
+            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_LB, args);
         }
 
         return new Answer(cmd, result.isSuccess(), result.getDetails());
@@ -437,7 +468,7 @@ public class VirtualRoutingResource {
 
         String args = "-d " + json;
 
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vmdata.py", args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VMDATA, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -449,7 +480,7 @@ public class VirtualRoutingResource {
         String args = "-v " + vmIpAddress;
         args += " -p " + password;
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "savepassword.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.PASSWORD, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -481,7 +512,7 @@ public class VirtualRoutingResource {
             args += " -N";
         }
 
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "edithosts.sh", args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.DHCP, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -491,7 +522,7 @@ public class VirtualRoutingResource {
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "createipAlias.sh", args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.IPALIAS_CREATE, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -507,7 +538,7 @@ public class VirtualRoutingResource {
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "deleteipAlias.sh", args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.IPALIAS_DELETE, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -517,7 +548,7 @@ public class VirtualRoutingResource {
         for (DhcpTO dhcpTo : dhcpTos) {
             args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "dnsmasq.sh", args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.DNSMASQ_CONFIG, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -529,14 +560,14 @@ public class VirtualRoutingResource {
             args += ip + " ";
         }
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "checkbatchs2svpn.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.S2SVPN_CHECK, args);
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "checkrouter.sh", null);
+        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.RVR_CHECK, null);
         if (!result.isSuccess()) {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
@@ -544,14 +575,14 @@ public class VirtualRoutingResource {
     }
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "bumpup_priority.sh", null);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.RVR_BUMPUP_PRI, null);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "get_template_version.sh", null);
+        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.VERSION, null);
         if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
         }
@@ -604,7 +635,7 @@ public class VirtualRoutingResource {
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "ipsectunnel.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.S2SVPN_IPSEC, args);
         if (!result.isSuccess()) {
             return new Answer(cmd, false, "Configure site to site VPN failed due to " + result.getDetails());
         }
@@ -621,7 +652,7 @@ public class VirtualRoutingResource {
             args = args + " -d";
         }
 
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "monitor_service.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.MONITOR_SERVICE, args);
 
         if (!result.isSuccess()) {
             return new Answer(cmd, false, result.getDetails());
@@ -663,7 +694,7 @@ public class VirtualRoutingResource {
         if (domainName != null && !domainName.isEmpty()) {
             args += " -e " + domainName;
         }
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_guestnw.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_GUEST_NETWORK, args);
 
         if (!result.isSuccess()) {
             return new Answer(cmd, false, "Creating guest network failed due to " + result.getDetails());
@@ -695,12 +726,12 @@ public class VirtualRoutingResource {
             args += " -M " + nic.getMac();
             if (privateGw != null) {
                 args += " -a " + rule;
-                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_privategw_acl.sh", args);
+                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_PRIVATEGW_ACL, args);
             } else {
                 args += " -i " + nic.getIp();
                 args += " -m " + netmask;
                 args += " -a " + rule;
-                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_acl.sh", args);
+                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_ACL, args);
             }
 
             if (!result.isSuccess()) {
@@ -727,7 +758,7 @@ public class VirtualRoutingResource {
         args += pubIP.getPublicIp();
         args += " -c ";
         args += dev;
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_snat.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_SOURCE_NAT, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -744,7 +775,7 @@ public class VirtualRoutingResource {
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_portforwarding.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_PORTFORWARDING, args);
 
             if (!result.isSuccess()) {
                 results[i++] = "Failed";
@@ -787,7 +818,7 @@ public class VirtualRoutingResource {
             args += " -n ";
             args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_ipassoc.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_IPASSOC, args);
             if (!result.isSuccess()) {
                 results[i++] = ip.getPublicIp() + " - vpc_ipassoc failed:" + result.getDetails();
                 break;
@@ -797,7 +828,7 @@ public class VirtualRoutingResource {
                 snatArgs += " -l " + ip.getPublicIp();
                 snatArgs += " -c " + nicName;
 
-                result = _vrDeployer.executeInVR(routerIP, "vpc_privateGateway.sh", snatArgs);
+                result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_PRIVATEGW, snatArgs);
                 if (result != null) {
                     results[i++] = ip.getPublicIp() + " - vpc_privateGateway failed:" + result.getDetails();
                     break;
@@ -821,7 +852,7 @@ public class VirtualRoutingResource {
             }
 
             String args = " -a " + sb.toString();
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_staticroute.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_STATIC_ROUTE, args);
 
             if (!result.isSuccess()) {
                 for (int i = 0; i < results.length; i++) {
@@ -873,7 +904,7 @@ public class VirtualRoutingResource {
                 args += " -n";
             }
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "ipassoc.sh", args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.IPASSOC, args);
             if (result.isSuccess()) {
                 results[i++] = ip.getPublicIp() + " - success";
             } else {
