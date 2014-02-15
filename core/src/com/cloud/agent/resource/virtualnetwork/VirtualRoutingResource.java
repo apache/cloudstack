@@ -474,13 +474,12 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final SavePasswordCommand cmd) {
         final String password = cmd.getPassword();
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmIpAddress = cmd.getVmIpAddress();
 
         String args = "-v " + vmIpAddress;
         args += " -p " + password;
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.PASSWORD, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.PASSWORD, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -512,7 +511,7 @@ public class VirtualRoutingResource {
             args += " -N";
         }
 
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.DHCP, args);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.DHCP, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -553,21 +552,17 @@ public class VirtualRoutingResource {
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
-        final String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
         String args = "";
         for (String ip : cmd.getVpnIps()) {
             args += ip + " ";
         }
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.S2SVPN_CHECK, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_CHECK, args);
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.RVR_CHECK, null);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RVR_CHECK, null);
         if (!result.isSuccess()) {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
@@ -575,14 +570,12 @@ public class VirtualRoutingResource {
     }
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.RVR_BUMPUP_PRI, null);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RVR_BUMPUP_PRI, null);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, VRScripts.VERSION, null);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VERSION, null);
         if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
         }
@@ -635,7 +628,7 @@ public class VirtualRoutingResource {
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), VRScripts.S2SVPN_IPSEC, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_IPSEC, args);
         if (!result.isSuccess()) {
             return new Answer(cmd, false, "Configure site to site VPN failed due to " + result.getDetails());
         }
@@ -662,7 +655,6 @@ public class VirtualRoutingResource {
 
     protected Answer execute(SetupGuestNetworkCommand cmd) {
         NicTO nic = cmd.getNic();
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
@@ -694,7 +686,7 @@ public class VirtualRoutingResource {
         if (domainName != null && !domainName.isEmpty()) {
             args += " -e " + domainName;
         }
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_GUEST_NETWORK, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_GUEST_NETWORK, args);
 
         if (!result.isSuccess()) {
             return new Answer(cmd, false, "Creating guest network failed due to " + result.getDetails());
@@ -750,7 +742,6 @@ public class VirtualRoutingResource {
     }
 
     protected Answer execute(SetSourceNatCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         IpAddressTO pubIP = cmd.getIpAddress();
         String dev = "eth" + pubIP.getNicDevId();
         String args = " -A ";
@@ -758,7 +749,7 @@ public class VirtualRoutingResource {
         args += pubIP.getPublicIp();
         args += " -c ";
         args += dev;
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_SOURCE_NAT, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_SOURCE_NAT, args);
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
@@ -788,7 +779,6 @@ public class VirtualRoutingResource {
     }
 
     public IpAssocAnswer execute(IpAssocVpcCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getIpAddresses().length];
         String args = "";
         String snatArgs = "";
@@ -818,7 +808,7 @@ public class VirtualRoutingResource {
             args += " -n ";
             args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_IPASSOC, args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_IPASSOC, args);
             if (!result.isSuccess()) {
                 results[i++] = ip.getPublicIp() + " - vpc_ipassoc failed:" + result.getDetails();
                 break;
@@ -828,7 +818,7 @@ public class VirtualRoutingResource {
                 snatArgs += " -l " + ip.getPublicIp();
                 snatArgs += " -c " + nicName;
 
-                result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_PRIVATEGW, snatArgs);
+                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_PRIVATEGW, snatArgs);
                 if (result != null) {
                     results[i++] = ip.getPublicIp() + " - vpc_privateGateway failed:" + result.getDetails();
                     break;
@@ -840,7 +830,6 @@ public class VirtualRoutingResource {
     }
 
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             String[] results = new String[cmd.getStaticRoutes().length];
             String[][] rules = cmd.generateSRouteRules();
@@ -852,7 +841,7 @@ public class VirtualRoutingResource {
             }
 
             String args = " -a " + sb.toString();
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, VRScripts.VPC_STATIC_ROUTE, args);
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VPC_STATIC_ROUTE, args);
 
             if (!result.isSuccess()) {
                 for (int i = 0; i < results.length; i++) {
