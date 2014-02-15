@@ -138,69 +138,59 @@ public class VirtualRoutingResource {
                 return new Answer(cmd, false, rc.getDetails());
             }
 
-            Answer answer;
             if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-                answer = execute((SetPortForwardingRulesVpcCommand)cmd);
+                return execute((SetPortForwardingRulesVpcCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                answer = execute((SetPortForwardingRulesCommand)cmd);
+                return execute((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof SetStaticRouteCommand) {
-                answer = execute((SetStaticRouteCommand)cmd);
+                return execute((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                answer = execute((SetStaticNatRulesCommand)cmd);
+                return execute((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                answer = execute((LoadBalancerConfigCommand)cmd);
+                return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof SavePasswordCommand) {
-                answer = execute((SavePasswordCommand)cmd);
+                return execute((SavePasswordCommand)cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                answer = execute((DhcpEntryCommand)cmd);
+                return execute((DhcpEntryCommand)cmd);
             } else if (cmd instanceof CreateIpAliasCommand) {
-                answer = execute((CreateIpAliasCommand)cmd);
+                return execute((CreateIpAliasCommand)cmd);
             } else if (cmd instanceof DnsMasqConfigCommand) {
-                answer = execute((DnsMasqConfigCommand)cmd);
+                return execute((DnsMasqConfigCommand)cmd);
             } else if (cmd instanceof DeleteIpAliasCommand) {
-                answer = execute((DeleteIpAliasCommand)cmd);
+                return execute((DeleteIpAliasCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-                answer = execute((VmDataCommand)cmd);
+                return execute((VmDataCommand)cmd);
             } else if (cmd instanceof CheckRouterCommand) {
-                answer = execute((CheckRouterCommand)cmd);
+                return execute((CheckRouterCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-                answer = execute((SetFirewallRulesCommand)cmd);
+                return execute((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
-                answer = execute((BumpUpPriorityCommand)cmd);
+                return execute((BumpUpPriorityCommand)cmd);
             } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-                answer = execute((RemoteAccessVpnCfgCommand)cmd);
+                return execute((RemoteAccessVpnCfgCommand)cmd);
             } else if (cmd instanceof VpnUsersCfgCommand) {
-                answer = execute((VpnUsersCfgCommand)cmd);
+                return execute((VpnUsersCfgCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
-                answer = execute((GetDomRVersionCmd)cmd);
+                return execute((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-                answer = execute((Site2SiteVpnCfgCommand)cmd);
+                return execute((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-                answer = execute((CheckS2SVpnConnectionsCommand)cmd);
+                return execute((CheckS2SVpnConnectionsCommand)cmd);
             } else if (cmd instanceof SetMonitorServiceCommand) {
-                answer = execute((SetMonitorServiceCommand)cmd);
+                return execute((SetMonitorServiceCommand)cmd);
             } else if (cmd instanceof SetupGuestNetworkCommand) {
-                answer = execute((SetupGuestNetworkCommand)cmd);
+                return execute((SetupGuestNetworkCommand)cmd);
             } else if (cmd instanceof SetNetworkACLCommand) {
-                answer = execute((SetNetworkACLCommand)cmd);
+                return execute((SetNetworkACLCommand)cmd);
             } else if (cmd instanceof SetSourceNatCommand) {
-                answer = execute((SetSourceNatCommand)cmd);
+                return execute((SetSourceNatCommand)cmd);
             } else if (cmd instanceof IpAssocVpcCommand) {
-                answer = execute((IpAssocVpcCommand)cmd);
+                return execute((IpAssocVpcCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                answer = execute((IpAssocCommand)cmd);
+                return execute((IpAssocCommand)cmd);
             } else {
-                answer = Answer.createUnsupportedCommandAnswer(cmd);
+                return Answer.createUnsupportedCommandAnswer(cmd);
             }
-
-            rc = _vrDeployer.cleanupCommand((NetworkElementCommand)cmd);
-            if (!rc.isSuccess()) {
-                s_logger.error("Failed to clean up VR command due to " + rc.getDetails());
-                // TODO fail it more properly in the future, some commands may need specific answer rather than generic answer
-                answer = new Answer(cmd, false, rc.getDetails());
-            }
-
-            return answer;
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
