@@ -25,7 +25,6 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
@@ -47,7 +46,6 @@ import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
@@ -631,7 +629,7 @@ public class VirtualRoutingResource {
         return new Answer(cmd);
     }
 
-    protected SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+    protected Answer execute(SetupGuestNetworkCommand cmd) {
         NicTO nic = cmd.getNic();
         String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
@@ -668,9 +666,9 @@ public class VirtualRoutingResource {
         ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_guestnw.sh", args);
 
         if (!result.isSuccess()) {
-            return new SetupGuestNetworkAnswer(cmd, false, "Creating guest network failed due to " + result.getDetails());
+            return new Answer(cmd, false, "Creating guest network failed due to " + result.getDetails());
         }
-        return new SetupGuestNetworkAnswer(cmd, true, "success");
+        return new Answer(cmd, true, "success");
     }
 
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
@@ -720,7 +718,7 @@ public class VirtualRoutingResource {
         }
     }
 
-    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+    protected Answer execute(SetSourceNatCommand cmd) {
         String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         IpAddressTO pubIP = cmd.getIpAddress();
         String dev = "eth" + pubIP.getNicDevId();
@@ -730,7 +728,7 @@ public class VirtualRoutingResource {
         args += " -c ";
         args += dev;
         ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_snat.sh", args);
-        return new SetSourceNatAnswer(cmd, result.isSuccess(), result.getDetails());
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
