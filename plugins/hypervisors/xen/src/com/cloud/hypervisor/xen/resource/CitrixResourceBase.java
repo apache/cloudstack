@@ -569,7 +569,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
         if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
-            cleanupNetworkElementCommand((IpAssocCommand)cmd);
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
         }
         return new ExecutionResult(true, null);
     }
