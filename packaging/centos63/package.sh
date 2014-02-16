@@ -40,7 +40,7 @@ if [ -n "$1" ] ; then
 fi
 
 
-VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep '^[0-9]\.'`
+VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
 if echo $VERSION | grep SNAPSHOT ; then
   REALVER=`echo $VERSION | cut -d '-' -f 1`
   DEFVER="-D_ver $REALVER"
