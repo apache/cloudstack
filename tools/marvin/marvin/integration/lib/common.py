@@ -63,13 +63,14 @@ from marvin.integration.lib.base import (Configurations,
                                          Resources,
                                          PhysicalNetwork,
                                          Host,
-                                         PublicIPAddress)
+                                         PublicIPAddress,
+                                         NetworkOffering)
 from marvin.integration.lib.utils import (get_process_status,
                                           xsplit,
                                           validateList)
 
 from marvin.sshClient import SshClient
-from marvin.codes import PASS
+from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, BASIC_ZONE, FAIL
 import random
 
 #Import System modules
@@ -917,3 +918,54 @@ def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
             time.sleep(60)
             continue
     return True
+
+def setSharedNetworkParams(networkServices, range=20):
+    """Fill up the services dictionary for shared network using random subnet"""
+
+    # @range: range decides the endip. Pass the range as "x" if you want the difference between the startip
+    # and endip as "x"
+    # Set the subnet number of shared networks randomly prior to execution
+    # of each test case to avoid overlapping of ip addresses
+    shared_network_subnet_number = random.randrange(1,254)
+
+    networkServices["gateway"] = "172.16."+str(shared_network_subnet_number)+".1"
+    networkServices["startip"] = "172.16."+str(shared_network_subnet_number)+".2"
+    networkServices["endip"] = "172.16."+str(shared_network_subnet_number)+"."+str(range+1)
+    networkServices["netmask"] = "255.255.255.0"
+    return networkServices
+
+def createEnabledNetworkOffering(apiclient, networkServices):
+    """Create and enable network offering according to the type
+
+       @output: List, containing [ Result,Network Offering,Reason ]
+                 Ist Argument('Result') : FAIL : If exception or assertion error occurs
+                                          PASS : If network offering
+                                          is created and enabled successfully
+                 IInd Argument(Net Off) : Enabled network offering
+                                                In case of exception or
+                                                assertion error, it will be None
+                 IIIrd Argument(Reason) :  Reason for failure,
+                                              default to None
+    """
+    try:
+        resultSet = [FAIL, None, None]
+        # Create network offering
+        network_offering = NetworkOffering.create(apiclient, networkServices, conservemode=False)
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(network_offering, apiclient, id=network_offering.id,
+                               state="enabled")
+    except Exception as e:
+        resultSet[2] = e
+        return resultSet
+    return [PASS, network_offering, None]
+
+def shouldTestBeSkipped(networkType, zoneType):
+    """Decide which test to skip, according to type of network and zone type"""
+
+    # If network type is isolated or vpc and zone type is basic, then test should be skipped
+    skipIt = False
+    if ((networkType.lower() == str(ISOLATED_NETWORK).lower() or networkType.lower() == str(VPC_NETWORK).lower())
+            and (zoneType.lower() == BASIC_ZONE)):
+        skipIt = True
+    return skipIt
