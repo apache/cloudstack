@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
-//import java.util.List;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -45,28 +44,7 @@ import org.junit.Test;
 
 public class RESTServiceConnectorTest {
     protected static final String UUID = "aaaa";
-    protected static final String UUID2 = "bbbb";
-    protected static final String SCHEMA = "myTestSchema";
-    protected static final String SCHEMA2 = "myTestSchema2";
-    protected static final String HREF = "myTestHref";
-    protected static final String HREF2 = "myTestHref2";
-    protected static final String DISPLAY_NAME = "myTestName";
     protected static final String UUID_JSON_RESPONSE = "{\"uuid\" : \"aaaa\"}";
-    protected static final String SEC_PROFILE_JSON_RESPONSE =
-            "{\"uuid\" : \"aaaa\","
-                    + "\"display_name\" : \"myTestName\","
-                    + "\"href\" : \"myTestHref\","
-                    + "\"schema\" : \"myTestSchema\"}";
-
-    protected static final String SEC_PROFILE_LIST_JSON_RESPONSE = "{\"results\" : [{\"uuid\" : \"aaaa\","
-            + "\"display_name\" : \"myTestName\","
-            + "\"href\" : \"myTestHref\","
-            + "\"schema\" : \"myTestSchema\"},"
-            + "{ \"uuid\" : \"bbbb\","
-            + "\"display_name\" : \"myTestName2\","
-            + "\"href\" : \"myTestHref2\","
-            + "\"schema\" : \"myTestSchema2\"}],"
-            + "\"result_count\": 2}";
 
     RESTServiceConnector connector;
     HttpClient client = mock(HttpClient.class);
@@ -175,9 +153,6 @@ public class RESTServiceConnectorTest {
         verify(gm, times(1)).getStatusCode();
     }
 
-    /* Bit of a roundabout way to ensure that login is called after an un authorized result
-     * It not possible to properly mock login()
-     */
     @Test(expected = CloudstackRESTException.class)
     public void testExecuteMethodWithLogin() throws CloudstackRESTException, HttpException, IOException {
         final GetMethod gm = mock(GetMethod.class);
@@ -185,6 +160,34 @@ public class RESTServiceConnectorTest {
         when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
         connector.executeMethod(gm);
         verify(gm, times(1)).getStatusCode();
+    }
+
+    /* Bit of a roundabout way to ensure that login is called after an un authorized result
+     * It not possible to properly mock login()
+     */
+    public void testExecuteMethodWithLoginSucced2ndAttempt() throws CloudstackRESTException, HttpException, IOException {
+        // Prepare
+        final GetMethod gm = mock(GetMethod.class);
+        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
+
+        final RESTValidationStrategy previousValidationStrategy = connector.validation;
+        connector.validation = new RESTValidationStrategy(){
+            @Override
+            protected void login(final String protocol, final HttpClient client)
+                    throws CloudstackRESTException {
+                // Do nothing
+            }
+        };
+        connector.setAdminCredentials("admin", "adminpass");
+        connector.setControllerAddress("localhost");
+
+        // Execute
+        connector.executeMethod(gm);
+        // Leave mock object as is was
+        connector.validation = previousValidationStrategy;
+
+        // Assert/verify
+        verify(gm, times(2)).getStatusCode();
     }
 
     @Test
