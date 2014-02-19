@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
 
-@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class, entityType = { AclEntityType.VirtualMachine })
 public class StopRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
     private static final String s_name = "stoprouterresponse";
