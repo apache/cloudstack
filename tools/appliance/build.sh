@@ -26,7 +26,14 @@ else
 fi
 
 build_date=`date +%Y-%m-%d`
-branch=`git status | grep '# On branch' | awk '{print $4}'`
+
+# set fixed or leave empty to use git to determine
+branch=master
+
+if [ -z "$branch" ] ; then
+  branch=`git status | grep '# On branch' | awk '{print $4}'`
+fi
+
 if [ -z "$branch" ] ; then
     branch=unknown
 fi
