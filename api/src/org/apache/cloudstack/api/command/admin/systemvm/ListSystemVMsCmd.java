@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listSystemVms", description = "List system virtual machines.", responseObject = SystemVmResponse.class)
+@APICommand(name = "listSystemVms", description = "List system virtual machines.", responseObject = SystemVmResponse.class, entityType = { AclEntityType.VirtualMachine })
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 
