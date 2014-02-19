@@ -247,6 +247,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
@@ -536,6 +537,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    /**
+     * Registers the vm to the inventory given the vmx file.
+     */
+    private void registerVm(String vmName, DatastoreMO dsMo) throws Exception{
+
+        //1st param
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+        DatacenterMO dataCenterMo = new DatacenterMO(getServiceContext(), dcMor);
+        ManagedObjectReference vmFolderMor = dataCenterMo.getVmFolder();
+
+        //2nd param
+        String vmxFilePath = dsMo.searchFileInSubFolders(vmName + ".vmx", false);
+
+        // 5th param
+        ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+
+        ManagedObjectReference morTask = getServiceContext().getService().registerVMTask(vmFolderMor, vmxFilePath, vmName, false, morPool, hyperHost.getMor());
+        boolean result = getServiceContext().getVimClient().waitForTask(morTask);
+        if (!result) {
+            throw new Exception("Unable to register vm due to " + TaskMO.getTaskFailureInfo(getServiceContext(), morTask));
+        } else {
+            getServiceContext().waitForTaskProgressDone(morTask);
+        }
+
     }
 
     private Answer execute(ResizeVolumeCommand cmd) {
@@ -1450,12 +1478,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
 
                     if (rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter)) {
-                        s_logger.warn("WARN!!! Folder already exists on datastore for new VM " + vmNameOnVcenter + ", erase it");
-                        rootDiskDataStoreDetails.second().deleteFile(String.format("[%s] %s/", rootDiskDataStoreDetails.second().getName(), vmNameOnVcenter),
-                                dcMo.getMor(), false);
-                    }
-
-                    if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
+                        registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
+                        vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+                        tearDownVm(vmMo);
+                    }else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
                             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
@@ -1765,6 +1791,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+    }
+
+    private void tearDownVm(VirtualMachineMO vmMo) throws Exception{
+
+        if(vmMo == null) return;
+
+        boolean hasSnapshot = false;
+        hasSnapshot = vmMo.hasSnapshot();
+        if (!hasSnapshot)
+            vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
+        else
+            vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+        vmMo.ensureScsiDeviceController();
     }
 
     @Override
