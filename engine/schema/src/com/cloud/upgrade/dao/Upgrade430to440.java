@@ -61,6 +61,7 @@ public class Upgrade430to440 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         populateIAMGroupAccountMap(conn);
         secondaryIpsAccountAndDomainIdsUpdate(conn);
+        moveCidrsToTheirOwnTable(conn);
     }
 
     // populate iam_group_account_map table for existing accounts
@@ -244,7 +245,58 @@ public class Upgrade430to440 implements DbUpgrade {
     }
 
 
+    private void moveCidrsToTheirOwnTable(Connection conn) {
+        PreparedStatement pstmtItem = null;
+        PreparedStatement pstmtCidr = null;
+        ResultSet rsItems = null;
 
+        String networkAclItemSql = "SELECT id, cidr FROM `cloud`.`network_acl_item`";
+
+        s_logger.debug("Moving network acl item cidrs to a row per cidr");
+        try {
+            pstmtItem = conn.prepareStatement(networkAclItemSql);
+            rsItems = pstmtItem.executeQuery();
+
+            // for each network acl item
+            while(rsItems.next()) {
+                long itemId = rsItems.getLong(1);
+                // get the source cidr list
+                String cidrList = rsItems.getString(2);
+                s_logger.debug("Moving '" + cidrList +  "' to a row per cidr");
+                // split it
+                String[] cidrArray = cidrList.split(",");
+                // insert a record per cidr
+                String networkAclItemCidrSql = "INSERT INTO `cloud`.`network_acl_item_cidr` (network_acl_item_id, cidr) VALUES (?,?)";
+                for(String cidr: cidrArray)
+                {
+                    pstmtCidr = conn.prepareStatement(networkAclItemCidrSql);
+                    pstmtCidr.setLong(1,itemId);
+                    pstmtCidr.setString(2,cidr);
+                    pstmtCidr.executeUpdate();
+                }
+                pstmtCidr.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while Moving network acl item cidrs to a row per cidr", e);
+        } finally {
+
+            if (pstmtItem != null) {
+                try {
+                    pstmtItem.close();
+
+                } catch (SQLException e) {
+                }
+            }
+            if (pstmtCidr != null) {
+                try {
+                    pstmtCidr.close();
+
+                } catch (SQLException e) {
+                }
+            }
+        }
+        s_logger.debug("Done moving network acl item cidrs to a row per cidr");
+    }
 
 
     @Override
