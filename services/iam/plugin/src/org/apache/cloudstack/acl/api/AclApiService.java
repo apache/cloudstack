@@ -20,9 +20,9 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.api.response.AclGroupResponse;
-import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.acl.AclGroupResponse;
+import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;

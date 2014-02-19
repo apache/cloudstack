@@ -14,14 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.command;
+package org.apache.cloudstack.api.command.acl;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -31,6 +30,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.api.AclPolicy;
 

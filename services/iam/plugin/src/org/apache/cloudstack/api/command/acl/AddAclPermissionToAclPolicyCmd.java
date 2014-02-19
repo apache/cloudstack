@@ -14,16 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.command;
-
-import java.util.List;
+package org.apache.cloudstack.api.command.acl;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -32,9 +30,10 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.iam.api.AclGroup;
+import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,10 +41,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "addAccountToAclGroup", description = "add account to an acl group", responseObject = AclGroupResponse.class)
-public class AddAccountToAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddAccountToAclGroupCmd.class.getName());
-    private static final String s_name = "addaccounttoaclgroupresponse";
+@APICommand(name = "addAclPermissionToAclPolicy", description = "Add Acl permission to an acl policy", responseObject = AclPolicyResponse.class)
+public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(AddAclPermissionToAclPolicyCmd.class.getName());
+    private static final String s_name = "addaclpermissiontoaclpolicyresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -56,13 +55,22 @@ public class AddAccountToAclGroupCmd extends BaseAsyncCmd {
 
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
-            required = true, description = "The ID of the acl group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclPolicyResponse.class,
+            required = true, description = "The ID of the acl policy")
     private Long id;
 
-    @ACL
-    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AccountResponse.class, description = "comma separated list of account id that are going to be assigned to the acl group.")
-    private List<Long> accountIdList;
+    @Parameter(name = ApiConstants.ACL_ACTION, type = CommandType.STRING, required = true, description = "action api name.")
+    private String action;
+
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, required = false, description = "entity class simple name.")
+    private String entityType;
+
+    @Parameter(name = ApiConstants.ACL_SCOPE, type = CommandType.STRING,
+            required = false, description = "acl permission scope")
+    private String scope;
+
+    @Parameter(name = ApiConstants.ACL_SCOPE_ID, type = CommandType.UUID, required = false, description = "The ID of the permission scope id")
+    private Long scopeId;
 
 
     /////////////////////////////////////////////////////
@@ -75,13 +83,27 @@ public class AddAccountToAclGroupCmd extends BaseAsyncCmd {
     }
 
 
-    public List<Long> getAccountIdList() {
-        return accountIdList;
+    public String getAction() {
+        return action;
     }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public Long getScopeId() {
+        return scopeId;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
 
     @Override
@@ -98,30 +120,32 @@ public class AddAccountToAclGroupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclApiSrv.addAccountsToGroup(accountIdList, id);
-        if (result != null){
-            AclGroupResponse response = _aclApiSrv.createAclGroupResponse(result);
+        CallContext.current().setEventDetails("Acl policy Id: " + getId());
+        // Only explicit ALLOW is supported for this release, no explicit deny
+        AclPolicy result = _aclApiSrv.addAclPermissionToAclPolicy(id, entityType, PermissionScope.valueOf(scope),
+                scopeId, action, Permission.Allow, false);
+        if (result != null) {
+            AclPolicyResponse response = _aclApiSrv.createAclPolicyResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add accounts to acl group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to grant permission to acl policy " + getId());
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_GROUP_UPDATE;
+        return EventTypes.EVENT_ACL_POLICY_GRANT;
     }
 
     @Override
     public String getEventDescription() {
-        return "adding accounts to acl group";
+        return "granting permission to acl policy";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclGroup;
+        return ApiCommandJobType.AclPolicy;
     }
 
 }

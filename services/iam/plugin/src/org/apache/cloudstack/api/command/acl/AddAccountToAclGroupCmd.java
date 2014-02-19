@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.command;
+package org.apache.cloudstack.api.command.acl;
 
 import java.util.List;
 
@@ -23,17 +23,18 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.acl.AclGroupResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.api.AclGroup;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -41,10 +42,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "attachAclPolicyToAccount", description = "attach acl policy to accounts", responseObject = SuccessResponse.class)
-public class AttachAclPolicyToAccountCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AttachAclPolicyToAccountCmd.class.getName());
-    private static final String s_name = "attachaclpolicytoaccountresponse";
+@APICommand(name = "addAccountToAclGroup", description = "add account to an acl group", responseObject = AclGroupResponse.class)
+public class AddAccountToAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(AddAccountToAclGroupCmd.class.getName());
+    private static final String s_name = "addaccounttoaclgroupresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -55,12 +56,12 @@ public class AttachAclPolicyToAccountCmd extends BaseAsyncCmd {
 
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclPolicyResponse.class,
-            required = true, description = "The ID of the acl policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
+            required = true, description = "The ID of the acl group")
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AccountResponse.class, description = "comma separated list of account id that the policy will attach to.")
+    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AccountResponse.class, description = "comma separated list of account id that are going to be assigned to the acl group.")
     private List<Long> accountIdList;
 
 
@@ -97,26 +98,30 @@ public class AttachAclPolicyToAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl policy Id: " + getId());
-        _aclApiSrv.attachAclPolicyToAccounts(id, accountIdList);
-        SuccessResponse response = new SuccessResponse();
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+        CallContext.current().setEventDetails("Acl group Id: " + getId());
+        AclGroup result = _aclApiSrv.addAccountsToGroup(accountIdList, id);
+        if (result != null){
+            AclGroupResponse response = _aclApiSrv.createAclGroupResponse(result);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add accounts to acl group");
+        }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_ACCOUNT_POLICY_UPDATE;
+        return EventTypes.EVENT_ACL_GROUP_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "adding acl policy to accounts";
+        return "adding accounts to acl group";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Account;
+        return ApiCommandJobType.AclGroup;
     }
 
 }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.response;
+package org.apache.cloudstack.api.response.acl;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

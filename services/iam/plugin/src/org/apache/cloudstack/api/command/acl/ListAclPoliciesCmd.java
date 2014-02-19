@@ -14,27 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.command;
+package org.apache.cloudstack.api.command.acl;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
 
 
-@APICommand(name = "listAclGroups", description = "Lists acl groups", responseObject = AclGroupResponse.class)
-public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAclGroupsCmd.class.getName());
+@APICommand(name = "listAclPolicies", description = "Lists acl policies", responseObject = AclPolicyResponse.class)
+public class ListAclPoliciesCmd extends BaseListDomainResourcesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListAclPoliciesCmd.class.getName());
 
-    private static final String s_name = "listaclgroupsresponse";
+    private static final String s_name = "listaclpoliciesresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -43,18 +43,18 @@ public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists acl groups by name")
-    private String aclGroupName;
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists acl policies by name")
+    private String aclPolicyName;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the acl group by the id provided", entityType = AclGroupResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the acl policy by the id provided", entityType = AclPolicyResponse.class)
     private Long id;
 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public String getAclGroupName() {
-        return aclGroupName;
+    public String getAclPolicyName() {
+        return aclPolicyName;
     }
 
 
@@ -74,7 +74,7 @@ public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
     @Override
     public void execute(){
 
-        ListResponse<AclGroupResponse> response = _aclApiSrv.listAclGroups(id, aclGroupName, getDomainId(),
+        ListResponse<AclPolicyResponse> response = _aclApiSrv.listAclPolicies(id, aclPolicyName, getDomainId(),
                 getStartIndex(), getPageSizeVal());
         response.setResponseName(getCommandName());
         setResponseObject(response);
@@ -83,6 +83,6 @@ public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclGroup;
+        return ApiCommandJobType.AclPolicy;
     }
 }

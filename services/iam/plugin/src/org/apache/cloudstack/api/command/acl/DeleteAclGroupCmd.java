@@ -14,27 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api.command;
+package org.apache.cloudstack.api.command.acl;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.acl.AclGroupResponse;
 
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
 
-@APICommand(name = "listAclPolicies", description = "Lists acl policies", responseObject = AclPolicyResponse.class)
-public class ListAclPoliciesCmd extends BaseListDomainResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAclPoliciesCmd.class.getName());
-
-    private static final String s_name = "listaclpoliciesresponse";
+@APICommand(name = "deleteAclGroup", description = "Deletes acl group", responseObject = SuccessResponse.class)
+public class DeleteAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteAclGroupCmd.class.getName());
+    private static final String s_name = "deleteaclgroupresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -43,22 +47,16 @@ public class ListAclPoliciesCmd extends BaseListDomainResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists acl policies by name")
-    private String aclPolicyName;
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the acl policy by the id provided", entityType = AclPolicyResponse.class)
+    @ACL
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "The ID of the acl group.", required = true, entityType = AclGroupResponse.class)
     private Long id;
 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public String getAclPolicyName() {
-        return aclPolicyName;
-    }
 
-
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
@@ -72,17 +70,33 @@ public class ListAclPoliciesCmd extends BaseListDomainResourcesCmd {
     }
 
     @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
     public void execute(){
+        boolean result = _aclApiSrv.deleteAclGroup(id);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete acl group");
+        }
+    }
 
-        ListResponse<AclPolicyResponse> response = _aclApiSrv.listAclPolicies(id, aclPolicyName, getDomainId(),
-                getStartIndex(), getPageSizeVal());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ACL_GROUP_DELETE;
+    }
 
+    @Override
+    public String getEventDescription() {
+        return "Deleting Acl group";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclPolicy;
+        return ApiCommandJobType.AclGroup;
     }
 }
