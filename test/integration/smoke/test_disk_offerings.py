@@ -110,8 +110,8 @@ class TestDiskOfferings(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         testClient = super(TestDiskOfferings, cls).getClsTestClient()
-        self.apiclient = self.testClient.getApiClient()
-        self.services = self.testClient.getParsedTestDataConfig()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
         
         cls.disk_offering_1 = DiskOffering.create(
                                                   cls.apiclient,

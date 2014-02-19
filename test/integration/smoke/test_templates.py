@@ -232,7 +232,7 @@ class TestTemplates(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient, cls.getZoneForTests())
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()

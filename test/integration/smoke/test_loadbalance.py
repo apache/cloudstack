@@ -45,10 +45,10 @@ class TestLoadBalance(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        if cls.template == FAILED:
+        if template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         
-        cls.services["server"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -63,7 +63,7 @@ class TestLoadBalance(cloudstackTestCase):
                                         )
         cls.vm_1 = VirtualMachine.create(
                                     cls.apiclient,
-                                    cls.services["server"],
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -71,7 +71,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     )
         cls.vm_2 = VirtualMachine.create(
                                     cls.apiclient,
-                                    cls.services["server"],
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -79,7 +79,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     )
         cls.vm_3 = VirtualMachine.create(
                                     cls.apiclient,
-                                    cls.services["server"],
+                                    cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
@@ -90,7 +90,7 @@ class TestLoadBalance(cloudstackTestCase):
                                             cls.account.name,
                                             cls.zone.id,
                                             cls.account.domainid,
-                                            cls.services["server"]
+                                            cls.services["virtual_machine"]
                                             )
         # Open up firewall port for SSH
         cls.fw_rule = FireWallRule.create(
@@ -140,7 +140,7 @@ class TestLoadBalance(cloudstackTestCase):
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                                     (e, ip_addr))
-        time.sleep(self.services["lb_switch_wait"])
+        time.sleep(10)
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])

@@ -29,11 +29,12 @@ class TestVmSnapshot(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestVmSnapshot, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+	testClient = super(TestVmSnapshot, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getClsTestClient().getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
         template = get_template(
                     cls.apiclient,

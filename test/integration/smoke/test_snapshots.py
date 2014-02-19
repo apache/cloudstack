@@ -42,7 +42,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         if template == FAILED:
-            self.assert "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id

@@ -42,7 +42,7 @@ class TestCreateIso(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
         self.services["domainid"] = self.domain.id
-        self.services["iso_2"]["zoneid"] = self.zone.id
+        self.services["iso2"]["zoneid"] = self.zone.id
         
         self.account = Account.create(
                             self.apiclient,
@@ -57,8 +57,8 @@ class TestCreateIso(cloudstackTestCase):
         if not isinstance(ostypes, list):
             raise unittest.SkipTest("OSTypeId for given description not found")
 
-        self.services["iso_1"]["ostypeid"] = ostypes[0].id
-        self.services["iso_2"]["ostypeid"] = ostypes[0].id
+        self.services["iso1"]["ostypeid"] = ostypes[0].id
+        self.services["iso2"]["ostypeid"] = ostypes[0].id
         self.services["ostypeid"] = ostypes[0].id
 
         self.cleanup = [self.account]
@@ -87,7 +87,7 @@ class TestCreateIso(cloudstackTestCase):
 
         iso = Iso.create(
                          self.apiclient, 
-                         self.services["iso_2"],
+                         self.services["iso2"],
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
@@ -118,17 +118,17 @@ class TestCreateIso(cloudstackTestCase):
         
         self.assertEqual(
                             iso_response.displaytext,
-                            self.services["iso_2"]["displaytext"],
+                            self.services["iso2"]["displaytext"],
                             "Check display text of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.name,
-                            self.services["iso_2"]["name"],
+                            self.services["iso2"]["name"],
                             "Check name of newly created ISO"
                         )
         self.assertEqual(
                             iso_response.zoneid,
-                            self.services["iso_2"]["zoneid"],
+                            self.services["iso2"]["zoneid"],
                             "Check zone ID of newly created ISO"
                         )
         return
@@ -143,12 +143,12 @@ class TestISO(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.getZoneForTests())
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.domain = get_domain(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         
         cls.services["domainid"] = cls.domain.id
-        cls.services["iso_1"]["zoneid"] = cls.zone.id
-        cls.services["iso_2"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
+        cls.services["iso2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
@@ -171,13 +171,13 @@ class TestISO(cloudstackTestCase):
         if not isinstance(ostypes, list):
             raise unittest.SkipTest("OSTypeId for given description not found")
 
-        cls.services["iso_1"]["ostypeid"] = ostypes[0].id
-        cls.services["iso_2"]["ostypeid"] = ostypes[0].id
+        cls.services["iso1"]["ostypeid"] = ostypes[0].id
+        cls.services["iso2"]["ostypeid"] = ostypes[0].id
         cls.services["ostypeid"] = ostypes[0].id
 
         cls.iso_1 = Iso.create(
                                cls.apiclient, 
-                               cls.services["iso_1"],
+                               cls.services["iso1"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
@@ -189,7 +189,7 @@ class TestISO(cloudstackTestCase):
             
         cls.iso_2 = Iso.create(
                                cls.apiclient, 
-                               cls.services["iso_2"],
+                               cls.services["iso2"],
                                account=cls.account.name,
                                domainid=cls.account.domainid
                                )
@@ -336,8 +336,8 @@ class TestISO(cloudstackTestCase):
         
         cmd = extractIso.extractIsoCmd()
         cmd.id = self.iso_2.id
-        cmd.mode = self.services["iso_2"]["mode"]
-        cmd.zoneid = self.services["iso_2"]["zoneid"]
+        cmd.mode = self.services["iso2"]["mode"]
+        cmd.zoneid = self.services["iso2"]["zoneid"]
         list_extract_response = self.apiclient.extractIso(cmd)
 
         try:
@@ -358,12 +358,12 @@ class TestISO(cloudstackTestCase):
                         )
         self.assertEqual(
                             list_extract_response.extractMode,
-                            self.services["iso_2"]["mode"],
+                            self.services["iso2"]["mode"],
                             "Check mode of extraction"
                         )
         self.assertEqual(
                             list_extract_response.zoneid,
-                            self.services["iso_2"]["zoneid"],
+                            self.services["iso2"]["zoneid"],
                             "Check zone ID of extraction"
                         )
         self.assertEqual(

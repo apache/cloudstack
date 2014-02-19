@@ -239,8 +239,12 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
 
     cmd_out = apiclient.listPods(cmd)
 
-    return FAILED if (validateList(cmd_out)[0] != PASS) else cmd_out
-
+    if validateList(cmd_out)[0] != PASS: return FAILED
+    
+    if (pod_id is None and pod_name is None): 
+        return cmd_out[0]
+    else:
+        return cmd_out
 
 def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
                  template_id=None, template_name=None, account=None, domain_id=None, project_id=None,

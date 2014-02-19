@@ -37,7 +37,6 @@ class TestPublicIP(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.services = Services().services
 
     @classmethod
     def setUpClass(cls):
@@ -538,7 +537,7 @@ class TestRebootRouter(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
-        self.services = self.testClient.testClient.getParsedTestDataConfig()
+        self.services = self.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
@@ -710,7 +709,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,
@@ -847,7 +846,7 @@ class TestDeleteAccount(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.getZoneForTests())
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         template = get_template(
                             self.apiclient,
                             self.zone.id,

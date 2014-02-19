@@ -35,9 +35,10 @@ class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):
 
+	self.testClient = super(TestSSVMs, cls).getClsTestClient()
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         return
 

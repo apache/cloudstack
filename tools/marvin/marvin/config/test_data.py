@@ -6,7 +6,15 @@ test_data = {
         },
         "zone": "NA",
         "domain": { "name": "domain" },
-        
+	"email" : "test@test.com",
+	"gateway" : "172.1.1.1",
+        "netmask" : "255.255.255.0",
+        "startip" : "172.1.1.10",
+        "endip" : "172.1.1.20",
+        "regionid" : "1",
+        "vlan" :"10",
+        "isportable" : "true",       
+ 
         "project": {
             "name": "Project",
             "displaytext": "Test project"
@@ -307,7 +315,7 @@ test_data = {
             "isextractable": True,
             "isfeatured": True,
             "ispublic": True,
-            "ostype": "CentOS 5.3 (64-bit)",
+            "ostype": "CentOS 5.6 (64-bit)",
         },
         "iso2": {
             "displaytext": "Test ISO 2",
@@ -316,7 +324,7 @@ test_data = {
             "isextractable": True,
             "isfeatured": True,
             "ispublic": True,
-            "ostype": "CentOS 5.3 (64-bit)",
+            "ostype": "CentOS 5.6 (64-bit)",
             "mode": 'HTTP_DOWNLOAD',
         },
         "isfeatured": True,
@@ -333,7 +341,7 @@ test_data = {
         "template_2": {
             "displaytext": "Public Template",
             "name": "Public template",
-            "ostype": "CentOS 5.3 (64-bit)",
+            "ostype": "CentOS 5.6 (64-bit)",
             "isfeatured": True,
             "ispublic": True,
             "isextractable": True,
@@ -348,7 +356,7 @@ test_data = {
             "endport": "22",
             "cidrlist": "0.0.0.0/0"
         },
-        "ostype": "CentOS 5.3 (64-bit)",
+        "ostype": "CentOS 5.6 (64-bit)",
         "sleep": 90,
         "timeout": 10,
         "advanced_sg": {
