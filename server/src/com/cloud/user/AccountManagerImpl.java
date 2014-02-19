@@ -2295,8 +2295,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 List<Long> grantedAccounts = qs.getAuthorizedAccounts(caller, action);
                 List<Long> grantedResources = qs.getAuthorizedResources(caller, action);
 
-                if (domainId != null) {
-                    // specific domain is specified
+                if (permittedAccounts.isEmpty() && domainId != null) {
+                    // specific domain and no account is specified
                     if (grantedDomains.contains(domainId)) {
                         permittedDomains.add(domainId);
                     } else {
