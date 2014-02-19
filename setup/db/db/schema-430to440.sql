@@ -1654,3 +1654,11 @@ CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
   PRIMARY KEY (`id`),
   UNIQUE `u_op_vpc_distributed_router_sequence_no_vpc_id`(`vpc_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_item_cidr` (
+  `id` bigint unsigned UNIQUE NOT NULL auto_increment,
+  `network_acl_item_id` bigint unsigned NOT NULL COMMENT 'Network ACL Item id',
+  `cidr` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_acl_item_id` FOREIGN KEY `fk_network_acl_item_id`(`network_acl_item_id`) REFERENCES `network_acl_item`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
