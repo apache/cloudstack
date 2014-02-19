@@ -37,6 +37,11 @@ import com.cloud.utils.net.NetUtils;
 @Table(name = "network_acl_item")
 public class NetworkACLItemVO implements NetworkACLItem {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = 2790623532888742060L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
