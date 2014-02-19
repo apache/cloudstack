@@ -938,23 +938,15 @@
                                             required: true
                                         }
                                     }
-                                }, {
-                                    id: {
-                                        label: 'label.id'
+                                }, { 
+                                	isready: {
+                                        label: 'state.ready',
+                                        converter: cloudStack.converters.toBooleanText
                                     },
-                                    zonename: {
-                                        label: 'label.zone.name'
+                                    status: {
+                                        label: 'label.status'
                                     },
-                                    zoneid: {
-                                        label: 'label.zone.id'
-                                    },
-                                    displaytext: {
-                                        label: 'label.description',
-                                        isEditable: true,
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
+                                     
                                     hypervisor: {
                                         label: 'label.hypervisor'
                                     },
@@ -968,17 +960,8 @@
                                                 return false;
                                         },
                                         converter: cloudStack.converters.toBooleanText
-                                    },
-                                    templatetype: {
-                                        label: 'label.type'
-                                    },
-                                    isready: {
-                                        label: 'state.ready',
-                                        converter: cloudStack.converters.toBooleanText
-                                    },
-                                    status: {
-                                        label: 'label.status'
-                                    },
+                                    },   
+                                                                                                    
                                     size: {
                                         label: 'label.size',
                                         converter: function(args) {
@@ -1036,12 +1019,8 @@
                                                 return false;
                                         },
                                         converter: cloudStack.converters.toBooleanText
-                                    },
-                                    crossZones: {
-                                        label: 'label.cross.zones',
-                                        converter: cloudStack.converters.toBooleanText
-                                    },
-
+                                    },                                    
+                                    
                                     ostypeid: {
                                         label: 'label.os.type',
                                         isEditable: true,
@@ -1067,6 +1046,21 @@
                                         }
                                     },
 
+                                    zonename: {
+                                        label: 'label.zone.name'
+                                    },  
+                                    crossZones: {
+                                        label: 'label.cross.zones',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    displaytext: {
+                                        label: 'label.description',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    },        
+                                    
                                     domain: {
                                         label: 'label.domain'
                                     },
@@ -1076,6 +1070,17 @@
                                     created: {
                                         label: 'label.created',
                                         converter: cloudStack.converters.toLocalDate
+                                    },
+                                    
+                                    templatetype: {
+                                        label: 'label.type'
+                                    },
+                                    
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    zoneid: {
+                                        label: 'label.zone.id'
                                     }
                                 }],
 
