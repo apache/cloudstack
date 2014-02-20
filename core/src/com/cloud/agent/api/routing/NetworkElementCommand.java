@@ -62,4 +62,8 @@ public abstract class NetworkElementCommand extends Command {
     public void setRouterAccessIp(String routerAccessIp) {
         this.routerAccessIp = routerAccessIp;
     }
+
+    public int getAnswersCount() {
+        return 1;
+    }
 }

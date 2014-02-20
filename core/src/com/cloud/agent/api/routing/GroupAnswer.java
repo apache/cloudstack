@@ -34,7 +34,7 @@ public class GroupAnswer extends Answer {
         this.results = results;
     }
 
-    String[] getResults() {
+    public String[] getResults() {
         return results;
     }
 }
