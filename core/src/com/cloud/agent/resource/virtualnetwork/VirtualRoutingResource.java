@@ -236,6 +236,16 @@ public class VirtualRoutingResource {
         }
     }
 
+    private Answer applyConfigSingle(NetworkElementCommand cmd, List<ConfigItem> cfg) {
+        for (ConfigItem c : cfg) {
+            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
+            if (!result.isSuccess()) {
+                return new Answer(cmd, false, result.getDetails());
+            }
+        }
+        return new Answer(cmd);
+    }
+
     private List<ConfigItem> generateConfig(VpnUsersCfgCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
         for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
@@ -254,13 +264,7 @@ public class VirtualRoutingResource {
 
     private Answer execute(VpnUsersCfgCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        for (ConfigItem c : cfg) {
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-            if (!result.isSuccess()) {
-                return new Answer(cmd, false, "Configure VPN user failed: " + result.getDetails());
-            }
-        }
-        return new Answer(cmd);
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
@@ -289,9 +293,7 @@ public class VirtualRoutingResource {
 
     private Answer execute(RemoteAccessVpnCfgCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
@@ -543,9 +545,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(VmDataCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
@@ -563,9 +563,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final SavePasswordCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
@@ -604,9 +602,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final DhcpEntryCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
@@ -624,9 +620,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(DeleteIpAliasCommand cmd) {
@@ -650,9 +644,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final DeleteIpAliasCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
@@ -670,9 +662,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
@@ -701,9 +691,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
@@ -769,9 +757,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(Site2SiteVpnCfgCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
@@ -791,9 +777,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(SetMonitorServiceCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
@@ -838,9 +822,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(SetupGuestNetworkCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetNetworkACLCommand cmd) {
@@ -911,9 +893,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(SetSourceNatCommand cmd) {
         List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return applyConfigSingle(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetPortForwardingRulesVpcCommand cmd) {
