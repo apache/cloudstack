@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.as.AutoScaleVmProfile;
@@ -53,6 +54,9 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "the otherdeployparameters of the autoscale vm profile")
     private String otherDeployParams;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, since = "4.4", description = "availability zone for the auto deployed virtual machine")
+    private Long zoneId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -73,9 +77,13 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
         return serviceOffId;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
+
 
     @Override
     public String getCommandName() {

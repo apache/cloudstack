@@ -155,4 +155,8 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     public void setPassive(boolean passive) {
         this.passive = passive;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

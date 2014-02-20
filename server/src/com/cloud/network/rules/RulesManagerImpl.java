@@ -25,11 +25,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
@@ -1483,5 +1482,22 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 result.add(lbRule);
         }
         return result;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
+    public PortForwardingRule updatePortForwardingRule(long id, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+        PortForwardingRuleVO rule = _portForwardingDao.findById(id);
+        if (rule == null) {
+            throw new InvalidParameterValueException("Unable to find " + id);
+        }
+        _accountMgr.checkAccess(caller, null, true, rule);
+
+        if (customId != null) {
+            rule.setUuid(customId);
+        }
+        _portForwardingDao.update(id, rule);
+        return _portForwardingDao.findById(id);
     }
 }

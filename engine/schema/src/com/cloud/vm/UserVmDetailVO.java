@@ -48,10 +48,11 @@ public class UserVmDetailVO implements ResourceDetail {
     public UserVmDetailVO() {
     }
 
-    public UserVmDetailVO(long vmId, String name, String value) {
+    public UserVmDetailVO(long vmId, String name, String value, boolean display) {
         this.resourceId = vmId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

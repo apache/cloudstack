@@ -102,6 +102,7 @@ public class EventTypes {
     // Network Events
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
+    public static final String EVENT_NET_IP_UPDATE = "NET.IPUPDATE";
     public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
     public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";
     public static final String EVENT_NET_RULE_ADD = "NET.RULEADD";
@@ -112,6 +113,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
+    public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
@@ -285,16 +287,19 @@ public class EventTypes {
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
     public static final String EVENT_REMOTE_ACCESS_VPN_DESTROY = "VPN.REMOTE.ACCESS.DESTROY";
+    public static final String EVENT_REMOTE_ACCESS_VPN_UPDATE = "VPN.REMOTE.ACCESS.UPDATE";
     public static final String EVENT_VPN_USER_ADD = "VPN.USER.ADD";
     public static final String EVENT_VPN_USER_REMOVE = "VPN.USER.REMOVE";
     public static final String EVENT_S2S_VPN_GATEWAY_CREATE = "VPN.S2S.VPN.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_GATEWAY_DELETE = "VPN.S2S.VPN.GATEWAY.DELETE";
+    public static final String EVENT_S2S_VPN_GATEWAY_UPDATE = "VPN.S2S.VPN.GATEWAY.UPDATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
     public static final String EVENT_S2S_VPN_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
     public static final String EVENT_S2S_VPN_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
     public static final String EVENT_S2S_VPN_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
+    public static final String EVENT_S2S_VPN_CONNECTION_UPDATE = "VPN.S2S.CONNECTION.UPDATE";
 
     // Network
     public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";
@@ -364,6 +369,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
     public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
+    public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
     public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";

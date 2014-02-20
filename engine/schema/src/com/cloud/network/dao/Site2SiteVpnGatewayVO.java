@@ -112,4 +112,8 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     public long getAccountId() {
         return accountId;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

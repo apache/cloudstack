@@ -1175,8 +1175,17 @@
                                 if (actionName == 'moveDrag') return false;
 
                                 rowActions[actionName]($tr);
+                                var map1 = {};
                                 $tr.closest('tbody').find('tr').each(function() {
+                                	/* 
+                                	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                                	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                                	 */
+                                	var objId = $(this).data('json-obj').id;
+                                	if(!(objId in map1)) { 
                                     sort($(this), action);
+                                		map1[objId] = 1;
+                                	}                                       
                                 });
 
                                 return false;
@@ -1197,7 +1206,15 @@
                             rowActions._std($tr, function() {});
 
                             $tr.closest('tbody').find('tr').each(function() {
+                            	/* 
+                            	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                            	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                            	 */
+                            	var objId = $(this).data('json-obj').id;
+                            	if(!(objId in map1)) { 
                                 sort($(this), reorder.moveDrag);
+                            	    map1[objId] = 1;
+                            	}
                             });
                         }
                     });
@@ -1252,13 +1269,13 @@
                         allowedActions: allowedActions
                     }
                 );
-
-                $listView.trigger('cloudStack.listView.addRow', {
-                    $tr: $tr
-                });
             }
 
-            // Add sub-select
+          $tr.closest('.list-view').trigger('cloudStack.listView.addRow', {
+            $tr: $tr
+          });
+
+          // Add sub-select
             if (subselect) {
                 var $td = $tr.find('td.first');
                 var $select = $('<div></div>').addClass('subselect').append(

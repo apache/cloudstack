@@ -417,7 +417,7 @@
                                 }
                             },
                             vpcLimit: {
-                                label: 'VPC limits',
+                                label: 'label.VPC.limits',
                                 isEditable: function(args) {
                                     if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;

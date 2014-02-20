@@ -19,26 +19,25 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class)
-public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
+public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "updateautoscalevmprofileresponse";
@@ -145,5 +144,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.AutoScaleVmProfile;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), AutoScaleVmProfile.class);
+        }
     }
 }

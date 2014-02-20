@@ -28,6 +28,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {UUIDManager.class})

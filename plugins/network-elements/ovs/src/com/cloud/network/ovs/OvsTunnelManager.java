@@ -26,8 +26,8 @@ public interface OvsTunnelManager extends Manager {
 
     boolean isOvsTunnelEnabled();
 
-    public void VmCheckAndCreateTunnel(VirtualMachineProfile vm, Network nw, DeployDestination dest);
+    public void vmCheckAndCreateTunnel(VirtualMachineProfile vm, Network nw, DeployDestination dest);
 
-    public void CheckAndDestroyTunnel(VirtualMachine vm, Network nw);
+    public void checkAndDestroyTunnel(VirtualMachine vm, Network nw);
 
 }

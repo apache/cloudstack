@@ -48,10 +48,11 @@ public class RemoteAccessVpnDetailVO implements ResourceDetail {
     public RemoteAccessVpnDetailVO() {
     }
 
-    public RemoteAccessVpnDetailVO(long id, String name, String value) {
+    public RemoteAccessVpnDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

@@ -388,6 +388,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || destroyVmGraceperiod != null);
+
         if (templateId != null) {
             vmProfile.setTemplateId(templateId);
         }
@@ -404,9 +406,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmProfile.setDestroyVmGraceperiod(destroyVmGraceperiod);
         }
 
+        if (cmd.getCustomId() != null) {
+            vmProfile.setUuid(cmd.getCustomId());
+        }
+
         List<AutoScaleVmGroupVO> vmGroupList = _autoScaleVmGroupDao.listByAll(null, profileId);
         for (AutoScaleVmGroupVO vmGroupVO : vmGroupList) {
-            if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+            if (physicalParameterUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state");
             }
         }
@@ -438,6 +444,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long templateId = cmd.getTemplateId();
         String otherDeployParams = cmd.getOtherDeployParams();
         Long serviceOffId = cmd.getServiceOfferingId();
+        Long zoneId = cmd.getZoneId();
 
         SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(_autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmProfileVO> sb = searchWrapper.getSearchBuilder();
@@ -446,6 +453,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
         sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
         sb.and("otherDeployParams", sb.entity().getOtherDeployParams(), SearchCriteria.Op.LIKE);
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         SearchCriteria<AutoScaleVmProfileVO> sc = searchWrapper.buildSearchCriteria();
 
         if (id != null) {
@@ -460,6 +468,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (serviceOffId != null) {
             sc.setParameters("serviceOfferingId", serviceOffId);
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
         }
 
         return searchWrapper.search();
@@ -964,8 +976,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
 
-        if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
-            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated only when it is in disabled state");
+        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || interval != null);
+
+        if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
         }
 
         if (minMembers != null) {
@@ -976,8 +990,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroupVO.setMaxMembers(maxMembers);
         }
 
-        if (interval != null) {
+        if (maxMembers != null) {
             vmGroupVO.setInterval(interval);
+        }
+
+        if (cmd.getCustomId() != null) {
+            vmGroupVO.setUuid(cmd.getCustomId());
         }
 
         vmGroupVO = checkValidityAndPersist(vmGroupVO, scaleUpPolicyIds, scaleDownPolicyIds);

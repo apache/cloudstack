@@ -48,10 +48,11 @@ public class NetworkDetailVO implements ResourceDetail {
     public NetworkDetailVO() {
     }
 
-    public NetworkDetailVO(long networkId, String name, String value) {
+    public NetworkDetailVO(long networkId, String name, String value, boolean display) {
         this.resourceId = networkId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

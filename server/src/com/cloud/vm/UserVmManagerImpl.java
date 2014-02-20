@@ -34,9 +34,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -69,8 +66,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -81,7 +78,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -93,7 +91,6 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -218,7 +215,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -253,11 +249,11 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.uuididentity.UUIDManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
@@ -412,7 +408,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     VpcManager _vpcMgr;
     @Inject
-    TemplateManager templateMgr;
+    TemplateManager _templateMgr;
     @Inject
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
@@ -1431,7 +1427,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
         List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
         for (String key : details.keySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key));
+            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key), true);
             detailList.add(detailVO);
         }
         _uservmDetailsDao.saveDetails(detailList);
@@ -1445,7 +1441,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         details.remove(UsageEventVO.DynamicParameters.memory.name());
         List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
         for (String key : details.keySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key));
+            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, key, details.get(key), true);
             detailList.add(detailVO);
         }
         _uservmDetailsDao.saveDetails(detailList);
@@ -1915,8 +1911,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isDynamicallyScalable == null) {
             isDynamicallyScalable = vm.isDynamicallyScalable();
         }
-
-        _uuidMgr.checkUuid(customId, UserVm.class);
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId);
 
@@ -2997,34 +2991,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
-
-        if (vm.getIsoId() != null) {
-            TemplateInfo template = templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
-            if (template == null) {
-                s_logger.error("Failed to prepare ISO on secondary or cache storage");
-                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
-            }
-            if (template.isBootable()) {
-                profile.setBootLoaderType(BootloaderType.CD);
-            }
-
-            GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
-            String displayName = null;
-            if (guestOS != null) {
-                displayName = guestOS.getDisplayName();
-            }
-
-            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
-            iso.setGuestOsType(displayName);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
-            profile.addDisk(disk);
-        } else {
-            TemplateObjectTO iso = new TemplateObjectTO();
-            iso.setFormat(ImageFormat.ISO);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
-            profile.addDisk(disk);
-        }
-
+        _templateMgr.prepareIsoForVmProfile(profile);
         return true;
     }
 
@@ -3933,7 +3900,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             collectVmDiskStatistics(uservm);
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
-        return _vmDao.findById(vmId);
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
+            return _vmDao.findById(vmId);
+        } else {
+            return vmInstance;
+        }
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
@@ -4732,14 +4704,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
 
-        // For VMware hypervisor since the old root volume is replaced by the new root volume in storage, force expunge old root volume
+        // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
         if (vm.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.info("Expunging volume " + root.getId() + " from primary data store");
-            AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
-            try {
-                future.get();
-            } catch (Exception e) {
-                s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+            VolumeInfo volumeInStorage = volFactory.getVolume(root.getId());
+            if (volumeInStorage != null) {
+                s_logger.info("Expunging volume " + root.getId() + " from primary data store");
+                AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+                }
             }
         }
 

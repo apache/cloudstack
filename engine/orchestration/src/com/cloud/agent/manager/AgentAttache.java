@@ -130,7 +130,7 @@ public abstract class AgentAttache {
         _maintenance = maintenance;
         _requests = new LinkedList<Request>();
         _agentMgr = agentMgr;
-        _nextSequence = s_rand.nextInt(Short.MAX_VALUE) << 48;
+        _nextSequence = new Long(s_rand.nextInt(Short.MAX_VALUE)) << 48;
         _outstandingTaskCount = new AtomicInteger(0);
     }
 

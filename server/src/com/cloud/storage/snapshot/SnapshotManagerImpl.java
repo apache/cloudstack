@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -54,7 +53,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
@@ -64,7 +62,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -94,17 +91,14 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -138,45 +132,37 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager, SnapshotApiService {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
-    protected VMTemplateDao _templateDao;
+    private VMTemplateDao _templateDao;
     @Inject
-    protected UserVmDao _vmDao;
+    private UserVmDao _vmDao;
     @Inject
-    protected VolumeDao _volsDao;
+    private VolumeDao _volsDao;
     @Inject
-    protected AccountDao _accountDao;
+    private AccountDao _accountDao;
     @Inject
-    protected DataCenterDao _dcDao;
+    private SnapshotDao _snapshotDao;
     @Inject
-    protected DiskOfferingDao _diskOfferingDao;
+    private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
-    protected SnapshotDao _snapshotDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    protected SnapshotDataStoreDao _snapshotStoreDao;
+    private final SnapshotPolicyDao _snapshotPolicyDao = null;
     @Inject
-    protected PrimaryDataStoreDao _storagePoolDao;
+    private SnapshotScheduleDao _snapshotScheduleDao;
     @Inject
-    protected SnapshotPolicyDao _snapshotPolicyDao = null;
+    private DomainDao _domainDao;
     @Inject
-    protected SnapshotScheduleDao _snapshotScheduleDao;
+    private StorageManager _storageMgr;
     @Inject
-    protected DomainDao _domainDao;
+    private SnapshotScheduler _snapSchedMgr;
     @Inject
-    protected StorageManager _storageMgr;
-    @Inject
-    protected AgentManager _agentMgr;
-    @Inject
-    protected SnapshotScheduler _snapSchedMgr;
-    @Inject
-    protected AccountManager _accountMgr;
+    private AccountManager _accountMgr;
     @Inject
     private AlertManager _alertMgr;
     @Inject
-    protected ClusterDao _clusterDao;
+    private ClusterDao _clusterDao;
     @Inject
     private ResourceLimitService _resourceLimitMgr;
-    @Inject
-    private SecondaryStorageVmManager _ssvmMgr;
     @Inject
     private DomainManager _domainMgr;
     @Inject
@@ -185,33 +171,23 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private ConfigurationDao _configDao;
     @Inject
     private VMSnapshotDao _vmSnapshotDao;
-    String _name;
     @Inject
-    TemplateManager templateMgr;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    VolumeOrchestrationService volumeMgr;
+    private SnapshotService snapshotSrv;
     @Inject
-    DataStoreManager dataStoreMgr;
+    private VolumeDataFactory volFactory;
     @Inject
-    SnapshotService snapshotSrv;
+    private SnapshotDataFactory snapshotFactory;
     @Inject
-    VolumeDataFactory volFactory;
-    @Inject
-    SnapshotDataFactory snapshotFactory;
-    @Inject
-    EndPointSelector _epSelector;
+    private EndPointSelector _epSelector;
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
-    StorageStrategyFactory _storageStrategyFactory;
+    private StorageStrategyFactory _storageStrategyFactory;
 
     private int _totalRetries;
     private int _pauseInterval;
-    private int _backupsnapshotwait;
-    Boolean backup;
-
-    protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
-    protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
     @Override
     public Answer sendToPool(Volume vol, Command cmd) {
@@ -970,8 +946,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
-        _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
-        backup = Boolean.parseBoolean(_configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));

@@ -48,6 +48,7 @@
          * Dialog with form
          */
         createForm: function(args) {
+            var cancel = args.cancel;
             var $formContainer = $('<div>').addClass('form-container');
             var $form = $('<form>').appendTo($formContainer)
                     .submit(function() {
@@ -122,6 +123,10 @@
                             $(this).dialog('destroy');
 
                             $('.hovered-elem').hide();
+
+                            if (cancel) {
+                                cancel();
+                            }
                         }
                     }]
                 });

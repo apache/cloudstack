@@ -41,6 +41,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
     }
 
     @Override
+    @SuppressWarnings("access")
     public void handle(HttpExchange t) throws IOException {
         try {
             Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());

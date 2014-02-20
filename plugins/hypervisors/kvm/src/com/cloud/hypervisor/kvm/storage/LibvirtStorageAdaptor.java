@@ -129,9 +129,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNfsStoragePool(Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(poolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid, host, path, targetPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -170,7 +170,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine nfs storage pool with: " + l.toString());
+                    s_logger.debug("Failed to undefine " + fsType.toString() + " storage pool with: " + l.toString());
                 }
             }
             return null;
@@ -310,11 +310,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new InternalErrorException("volume:" + srcPath + " is not exits");
         }
         String result = Script.runSimpleBashScript("cp " + srcPath + " " + destPath + File.separator + volumeName, timeout);
-        if (result != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return result == null;
     }
 
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
@@ -349,14 +345,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.RBD;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.GLUSTERFS) {
+                type = StoragePoolType.Gluster;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(), type, this, storage);
 
-            if (pool.getType() != StoragePoolType.RBD) {
+            if (pool.getType() != StoragePoolType.RBD)
                 pool.setLocalPath(spd.getTargetPath());
-            } else {
+            else
                 pool.setLocalPath("");
+
+            if (pool.getType() == StoragePoolType.RBD
+             || pool.getType() == StoragePoolType.Gluster) {
                 pool.setSourceHost(spd.getSourceHost());
                 pool.setSourcePort(spd.getSourcePort());
                 pool.setSourceDir(spd.getSourceDir());
@@ -488,9 +489,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNfsStoragePool(conn, name, host, path);
+                    sp = createNetfsStoragePool(poolType.NETFS, conn, name, host, path);
                 } catch (LibvirtException e) {
-                    s_logger.error("Failed to create mount");
+                    s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
+                    s_logger.error(e.getStackTrace());
+                    throw new CloudRuntimeException(e.toString());
+                }
+            } else if (type == StoragePoolType.Gluster) {
+                try {
+                    sp = createNetfsStoragePool(poolType.GLUSTERFS, conn, name, host, path);
+                } catch (LibvirtException e) {
+                    s_logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
                     throw new CloudRuntimeException(e.toString());
                 }
@@ -619,6 +628,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
                 r.confSet("key", pool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -730,6 +740,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
                 r.confSet("key", pool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -840,6 +851,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             Rados r = new Rados(srcPool.getAuthUserName());
                             r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                             r.confSet("key", srcPool.getAuthSecret());
+                            r.confSet("client_mount_timeout", "30");
                             r.connect();
                             s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -877,12 +889,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             Rados rSrc = new Rados(srcPool.getAuthUserName());
                             rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                             rSrc.confSet("key", srcPool.getAuthSecret());
+                            rSrc.confSet("client_mount_timeout", "30");
                             rSrc.connect();
                             s_logger.debug("Succesfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                             Rados rDest = new Rados(destPool.getAuthUserName());
                             rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                             rDest.confSet("key", destPool.getAuthSecret());
+                            rDest.confSet("client_mount_timeout", "30");
                             rDest.connect();
                             s_logger.debug("Succesfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 
@@ -1062,6 +1076,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rados r = new Rados(destPool.getAuthUserName());
                 r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                 r.confSet("key", destPool.getAuthSecret());
+                r.confSet("client_mount_timeout", "30");
                 r.connect();
                 s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 

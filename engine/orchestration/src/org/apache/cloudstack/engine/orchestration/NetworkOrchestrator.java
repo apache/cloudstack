@@ -997,11 +997,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean equals(Object o) {
-        return super.equals(o);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
 
@@ -1538,11 +1533,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        // remove the dhcpservice ip if this is the last nic in subnet.
-        if (vm.getType() == Type.User && isDhcpAccrossMultipleSubnetsSupported(network) && isLastNicInSubnet(nic) && network.getTrafficType() == TrafficType.Guest
-                && network.getGuestType() == GuestType.Shared) {
-            removeDhcpServiceInSubnet(nic);
+        if (vm.getType() == Type.User
+                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
+                && network.getTrafficType() == TrafficType.Guest
+                && network.getGuestType() == GuestType.Shared
+                && isLastNicInSubnet(nic)) {
+            // remove the dhcpservice ip if this is the last nic in subnet.
+            DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+            if (dhcpServiceProvider != null
+                    && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
+                removeDhcpServiceInSubnet(nic);
+            }
         }
+
         NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
@@ -1553,12 +1556,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    public boolean isDhcpAccrossMultipleSubnetsSupported(Network network) {
-        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
-            return false;
-        }
+    public boolean isDhcpAccrossMultipleSubnetsSupported(DhcpServiceProvider dhcpServiceProvider) {
 
-        DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         Map<Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
         String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
         if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
@@ -2429,8 +2428,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return null;
         }
 
-        return (DhcpServiceProvider)_networkModel.getElementImplementingProvider(DhcpProvider);
-
+        NetworkElement element = _networkModel.getElementImplementingProvider(DhcpProvider);
+        if ( element instanceof DhcpServiceProvider ) {
+            return (DhcpServiceProvider)element;
+        } else {
+            return null;
+        }
     }
 
     protected boolean isSharedNetworkWithServices(Network network) {

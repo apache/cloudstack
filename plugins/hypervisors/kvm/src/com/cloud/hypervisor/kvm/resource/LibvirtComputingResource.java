@@ -199,6 +199,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -207,6 +208,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -216,9 +218,11 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+import org.libvirt.StorageVol;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -228,6 +232,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1151,12 +1156,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Script command = new Script("/bin/sh", _timeout);
         command.add("-c");
         command.add("ovs-vsctl br-exists " + networkName);
-        String result = command.execute(null);
-        if ("0".equals(result)) {
-            return true;
-        } else {
-            return false;
-        }
+        return "0".equals(command.execute(null));
     }
 
     private boolean passCmdLine(String vmName, String cmdLine) throws InternalErrorException {
@@ -1313,7 +1313,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else if (cmd instanceof UnPlugNicCommand) {
                 return execute((UnPlugNicCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
-                return _virtRouterResource.executeRequest(cmd);
+                return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
             } else if (cmd instanceof CheckSshCommand) {
                 return execute((CheckSshCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
@@ -1750,8 +1750,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
-        } else if ((poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.SharedMountPoint || poolType == StoragePoolType.Filesystem) &&
-                volFormat == PhysicalDiskFormat.QCOW2) {
+        } else if ((poolType == StoragePoolType.NetworkFilesystem
+                  || poolType == StoragePoolType.SharedMountPoint
+                  || poolType == StoragePoolType.Filesystem
+                  || poolType == StoragePoolType.Gluster)
+                  && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
         return null;
@@ -1773,45 +1776,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String path = vol.getPath();
             String type = getResizeScriptType(pool, vol);
 
-            /**
-             * RBD volumes can't be resized via a Bash script or via libvirt
-             *
-             * libvirt-java doesn't implemented resizing volumes, so we have to do this manually
-             *
-             * Future fix would be to hand this over to libvirt
-             */
-            if (pool.getType() == StoragePoolType.RBD) {
+            if (type == null) {
+                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+            } else if (type.equals("QCOW2") && shrinkOk) {
+                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+            }
+
+            s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+
+            /* libvirt doesn't support resizing (C)LVM devices, so we have to do that via a Bash script */
+            if (pool.getType() != StoragePoolType.CLVM) {
+                s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
-                    Rados r = new Rados(pool.getAuthUserName());
-                    r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-                    r.confSet("key", pool.getAuthSecret());
-                    r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    Connect conn = LibvirtConnection.getConnection();
+                    StorageVol v = conn.storageVolLookupByPath(path);
 
-                    IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage image = rbd.open(vol.getName());
+                    int flags = 1;
+                    if (shrinkOk) {
+                        flags = 4;
+                    }
 
-                    s_logger.debug("Resizing RBD volume " + vol.getName() + " to " + newSize + " bytes");
-                    image.resize(newSize);
-                    rbd.close(image);
-
-                    r.ioCtxDestroy(io);
-                    s_logger.debug("Succesfully resized RBD volume " + vol.getName() + " to " + newSize + " bytes");
-                } catch (RadosException e) {
-                    return new ResizeVolumeAnswer(cmd, false, e.toString());
-                } catch (RbdException e) {
+                    v.resize(newSize, flags);
+                } catch (LibvirtException e) {
                     return new ResizeVolumeAnswer(cmd, false, e.toString());
                 }
             } else {
-                if (type == null) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-                } else if (type.equals("QCOW2") && shrinkOk) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
-                }
-
-                s_logger.debug("got to the stage where we execute the volume resize, params:" + path + "," + currentSize + "," + newSize + "," + type + "," +
-                        vmInstanceName + "," + shrinkOk);
+                s_logger.debug("Volume " + path + " is of the type LVM and can not be resized using libvirt. Invoking resize script.");
                 final Script resizecmd = new Script(_resizeVolumePath, _cmdsTimeout, s_logger);
                 resizecmd.add("-s", String.valueOf(newSize));
                 resizecmd.add("-c", String.valueOf(currentSize));
@@ -2234,6 +2224,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         Rados r = new Rados(primaryPool.getAuthUserName());
                         r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                         r.confSet("key", primaryPool.getAuthSecret());
+                        r.confSet("client_mount_timeout", "30");
                         r.connect();
                         s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -2316,6 +2307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     Rados r = new Rados(primaryPool.getAuthUserName());
                     r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                     r.confSet("key", primaryPool.getAuthSecret());
+                    r.confSet("client_mount_timeout", "30");
                     r.connect();
                     s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -2906,6 +2898,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         List<InterfaceDef> ifaces = null;
+        List<DiskDef> disks = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -2915,6 +2908,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
+            disks = getDisks(conn, vmName);
             dm = conn.domainLookupByName(vmName);
             /*
                 We replace the private IP address with the address of the destination host.
@@ -2937,7 +2931,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
              */
             destDomain = dm.migrate(dconn, (1 << 0), xmlDesc, vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
 
-            _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(cmd.getVirtualMachine());
+            for (DiskDef disk : disks) {
+                cleanupDisk(disk);
+            }
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
@@ -3330,13 +3326,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (pubKeyFile.exists()) {
-            String pubKey = cmd.getPubKey();
-            try {
-                FileOutputStream pubkStream = new FileOutputStream(pubKeyFile);
-                pubkStream.write(pubKey.getBytes());
-                pubkStream.close();
+            try (FileOutputStream pubkStream = new FileOutputStream(pubKeyFile)) {
+                pubkStream.write(cmd.getPubKey().getBytes());
             } catch (FileNotFoundException e) {
-                result = "File" + SSHPUBKEYPATH + "is not found:" + e.toString();
+                result = "File" + SSHPUBKEYPATH + "is not found:"
+                        + e.toString();
                 s_logger.debug(result);
             } catch (IOException e) {
                 result = "Write file " + SSHPUBKEYPATH + ":" + e.toString();
@@ -3711,6 +3705,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, diskProtocol.RBD);
+                } else if (pool.getType() == StoragePoolType.Gluster) {
+                    String mountpoint = pool.getLocalPath();
+                    String path = physicalDisk.getPath();
+                    String glusterVolume = pool.getSourceDir().replace("/", "");
+                    disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
+                            null, devId, diskBusType, diskProtocol.GLUSTER);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                 } else {
@@ -3868,6 +3868,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
                             attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingPool.getType() == StoragePoolType.Gluster) {
+                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
+                            null, devId, DiskDef.diskBus.VIRTIO, diskProtocol.GLUSTER);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -4402,24 +4405,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         int cpuSockets = 0;
         String cap = null;
         try {
-            Connect conn = LibvirtConnection.getConnection();
+            final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
-            boolean result = false;
-            try {
-                BufferedReader in = new BufferedReader(new FileReader("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"));
-                speed = Long.parseLong(in.readLine()) / 1000;
-                result = true;
-            } catch (FileNotFoundException e) {
-
-            } catch (IOException e) {
-
-            } catch (NumberFormatException e) {
-
-            }
-
-            if (!result) {
-                speed = hosts.mhz;
-            }
+            speed = getCpuSpeed(hosts);
 
             cpuSockets = hosts.sockets;
             cpus = hosts.cpus;
@@ -4458,6 +4446,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram + ", cpu sockets=" + cpuSockets);
 
         return info;
+    }
+
+    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
+        try (final Reader reader = new FileReader(
+                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
+            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
+        } catch (IOException | NumberFormatException e) {
+            s_logger.warn("Could not read cpuinfo_max_freq");
+            return nodeInfo.mhz;
+        }
     }
 
     protected String rebootVM(Connect conn, String vmName) {

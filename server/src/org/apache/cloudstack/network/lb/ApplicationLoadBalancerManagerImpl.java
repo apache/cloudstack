@@ -24,15 +24,14 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -524,5 +523,23 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("No network rule conflicts detected for " + newLbRule + " against " + (lbRules.size() - 1) + " existing rules");
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
+    public ApplicationLoadBalancerRule deleteApplicationLoadBalancer(Long id, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+        ApplicationLoadBalancerRuleVO rule = _lbDao.findById(id);
+
+        if (rule == null) {
+            throw new InvalidParameterValueException("Unable to find load balancer " + id);
+        }
+        _accountMgr.checkAccess(caller, null, true, rule);
+        if (customId != null) {
+            rule.setUuid(customId);
+        }
+        _lbDao.update(id, rule);
+
+        return _lbDao.findById(id);
     }
 }

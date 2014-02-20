@@ -693,11 +693,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol = copyVolume(rootDiskPool, volume, vm, rootDiskTmplt, dcVO, pod, diskVO, svo, rootDiskHyperType);
             if (vol != null) {
                 // Moving of Volume is successful, decrement the volume resource count from secondary for an account and increment it into primary storage under same account.
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, volume.getSize());
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.getSize());
             }
         }
 
+        if (vol == null) {
+            throw new CloudRuntimeException("Volume shouldn't be null " + volume.getId());
+        }
         VolumeVO volVO = _volsDao.findById(vol.getId());
         volVO.setFormat(getSupportedImageFormatForCluster(rootDiskHyperType));
         _volsDao.update(volVO.getId(), volVO);
@@ -943,10 +946,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vm.addDisk(disk);
         }
 
-        if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
-            DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
-            DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
-            vm.addDisk(iso);
+        //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
+        if (vm.getType() == VirtualMachine.Type.User) {
+            _tmpltMgr.prepareIsoForVmProfile(vm);
+            //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
+            //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
+            //vm.addDisk(iso);
         }
     }
 

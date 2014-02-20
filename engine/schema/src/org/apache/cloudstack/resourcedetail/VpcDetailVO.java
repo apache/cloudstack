@@ -48,10 +48,11 @@ public class VpcDetailVO implements ResourceDetail {
     public VpcDetailVO() {
     }
 
-    public VpcDetailVO(long id, String name, String value) {
+    public VpcDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

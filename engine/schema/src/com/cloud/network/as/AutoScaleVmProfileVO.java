@@ -216,4 +216,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public long getAutoScaleUserId() {
         return autoscaleUserId;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

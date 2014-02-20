@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.Site2SiteCustomerGatewayDetailVO;
 public class Site2SiteCustomerGatewayDetailsDaoImpl extends ResourceDetailsDaoBase<Site2SiteCustomerGatewayDetailVO> implements Site2SiteCustomerGatewayDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new Site2SiteCustomerGatewayDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new Site2SiteCustomerGatewayDetailVO(resourceId, key, value, display));
     }
 }

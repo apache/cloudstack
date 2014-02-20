@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.db;
 
 import java.io.Serializable;
@@ -70,4 +73,6 @@ public interface EntityManager {
     public <T> List<? extends T> list(Class<T> entityType);
 
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
+
+    public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
 }

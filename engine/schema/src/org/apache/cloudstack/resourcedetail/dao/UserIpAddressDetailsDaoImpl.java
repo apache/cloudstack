@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.UserIpAddressDetailVO;
 public class UserIpAddressDetailsDaoImpl extends ResourceDetailsDaoBase<UserIpAddressDetailVO> implements UserIpAddressDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new UserIpAddressDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new UserIpAddressDetailVO(resourceId, key, value, display));
     }
 }

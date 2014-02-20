@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +26,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,6 +46,9 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume")
     private String path;
+
+    @Parameter(name = ApiConstants.CHAIN_INFO, type = CommandType.STRING, description = "The chain info of the volume")
+    private String chainInfo;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
@@ -87,7 +89,10 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
         return displayVolume;
     }
 
-/////////////////////////////////////////////////////
+    public String getChainInfo() {
+        return chainInfo;
+    }
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
@@ -140,7 +145,8 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(), getCustomId(), getEntityOwnerId());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
+                getCustomId(), getEntityOwnerId(), getChainInfo());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());
@@ -149,4 +155,12 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
         }
     }
+
+    @Override
+    public void checkUuid() {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), Volume.class);
+        }
+    }
+
 }

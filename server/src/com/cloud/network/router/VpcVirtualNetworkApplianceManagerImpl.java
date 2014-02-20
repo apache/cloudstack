@@ -16,27 +16,10 @@
 // under the License.
 package com.cloud.network.router;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -126,6 +109,20 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
@@ -339,7 +336,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmds.addCommand("setupguestnetwork", setupCmd);
             sendCommandsToRouter(router, cmds);
 
-            SetupGuestNetworkAnswer setupAnswer = cmds.getAnswer(SetupGuestNetworkAnswer.class);
+            Answer setupAnswer = cmds.getAnswer("setupguestnetwork");
             String setup = add ? "set" : "destroy";
             if (!(setupAnswer != null && setupAnswer.getResult())) {
                 s_logger.warn("Unable to " + setup + " guest network on router " + router);

@@ -48,10 +48,11 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
     protected ServiceOfferingDetailsVO() {
     }
 
-    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value) {
+    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value, boolean display) {
         this.resourceId = serviceOfferingId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

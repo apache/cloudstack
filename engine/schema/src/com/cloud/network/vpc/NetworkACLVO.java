@@ -82,4 +82,7 @@ public class NetworkACLVO implements NetworkACL {
         return name;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

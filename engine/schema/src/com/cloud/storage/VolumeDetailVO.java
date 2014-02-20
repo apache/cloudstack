@@ -48,10 +48,11 @@ public class VolumeDetailVO implements ResourceDetail {
     public VolumeDetailVO() {
     }
 
-    public VolumeDetailVO(long volumeId, String name, String value) {
+    public VolumeDetailVO(long volumeId, String name, String value, boolean display) {
         this.resourceId = volumeId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

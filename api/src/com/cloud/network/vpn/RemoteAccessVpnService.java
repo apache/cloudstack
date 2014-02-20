@@ -52,4 +52,9 @@ public interface RemoteAccessVpnService {
     List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
 
     RemoteAccessVpn getRemoteAccessVpn(long vpnAddrId);
+
+    RemoteAccessVpn getRemoteAccessVpnById(long vpnId);
+
+    RemoteAccessVpn updateRemoteAccessVpn(long id, String customId);
+
 }

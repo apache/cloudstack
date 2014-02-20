@@ -122,9 +122,10 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.attached,
         volumes.removed,
         volumes.pod_id,
-    volumes.display_volume,
+        volumes.display_volume,
         volumes.format,
-    volumes.path,
+        volumes.path,
+        volumes.chain_info,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -224,7 +225,7 @@ CREATE TABLE `cloud`.`user_details` (
   `user_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
   `value` varchar(1024) NOT NULL,
-  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_details__user_id` FOREIGN KEY `fk_user_details__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -453,7 +454,77 @@ CREATE TABLE `cloud`.`autoscale_vmprofile_details` (
   `autoscale_vmprofile_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
   `value` varchar(1024) NOT NULL,
-  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end autoscale_vmprofile',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_autoscale_vmprofile_details__autoscale_vmprofile_id` FOREIGN KEY `fk_autoscale_vmprofile_details__autoscale_vmprofile_id`(`autoscale_vmprofile_id`) REFERENCES `autoscale_vmprofiles`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `autoscale_vmgroup_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_details__autoscale_vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_details__autoscale_vmgroup_id`(`autoscale_vmgroup_id`) REFERENCES `autoscale_vmgroups`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+ALTER TABLE `cloud`.`vm_snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+
+ALTER TABLE `cloud`.`data_center_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`data_center_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`service_offering_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`service_offering_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`disk_offering_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`disk_offering_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`firewall_rule_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`firewall_rule_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_acl_item_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_acl_item_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_acl_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_acl_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`nic_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`nic_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`storage_pool_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`storage_pool_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`remote_access_vpn_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`remote_access_vpn_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_customer_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_customer_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_vpn_connection_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_vpn_connection_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_vpn_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_vpn_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_ip_address_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`user_ip_address_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_vm_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`user_vm_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vm_template_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vm_template_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`volume_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`volume_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vpc_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vpc_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vpc_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vpc_gateway_details` set `display`=1 where id> 0;

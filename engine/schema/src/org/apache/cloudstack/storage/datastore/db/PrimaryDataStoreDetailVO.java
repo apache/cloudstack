@@ -45,10 +45,11 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail {
     @Column(name = "display")
     private boolean display;
 
-    public PrimaryDataStoreDetailVO(long poolId, String name, String value) {
+    public PrimaryDataStoreDetailVO(long poolId, String name, String value, boolean display) {
         this.resourceId = poolId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     protected PrimaryDataStoreDetailVO() {

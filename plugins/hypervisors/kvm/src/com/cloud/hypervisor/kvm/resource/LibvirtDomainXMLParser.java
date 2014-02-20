@@ -76,7 +76,7 @@ public class LibvirtDomainXMLParser {
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.diskBus.valueOf(bus.toUpperCase()),
                         DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
-                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
@@ -100,8 +100,8 @@ public class LibvirtDomainXMLParser {
                     } else if (type.equalsIgnoreCase("block")) {
                         def.defBlockBasedDisk(diskDev, diskLabel,
                             DiskDef.diskBus.valueOf(bus.toUpperCase()));
-                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                     }
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 }
 
                 NodeList iotune = disk.getElementsByTagName("iotune");
@@ -145,8 +145,9 @@ public class LibvirtDomainXMLParser {
                 if ((bandwidth != null) && (bandwidth.getLength() != 0)) {
                     Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
                     Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
-                    if (inbound == outbound)
+                    if (inbound.equals(outbound)) {
                         networkRateKBps = inbound;
+                    }
                 }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);

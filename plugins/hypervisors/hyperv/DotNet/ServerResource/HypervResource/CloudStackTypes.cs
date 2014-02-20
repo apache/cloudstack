@@ -61,7 +61,7 @@ namespace HypervResource
             get
             {
                 string uncPath = null;
-                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem")))
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem") || uri.Scheme.Equals("smb")))
                 {
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
@@ -584,7 +584,11 @@ namespace HypervResource
         /// <summary>
         /// 
         /// </summary>
-        OCFS2
+        OCFS2,
+        /// <summary>
+        /// for hyper-v
+        /// </summary>
+        SMB
     }
 
     public enum StorageResourceType
@@ -914,5 +918,6 @@ namespace HypervResource
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
+        public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

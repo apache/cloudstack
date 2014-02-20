@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 public class NetworkACLItemDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkACLItemDetailVO> implements NetworkACLItemDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new NetworkACLItemDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new NetworkACLItemDetailVO(resourceId, key, value, display));
     }
 }

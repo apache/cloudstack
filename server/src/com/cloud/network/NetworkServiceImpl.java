@@ -1939,7 +1939,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(final long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix,
-            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
+            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String customId) {
 
         boolean restartNetwork = false;
 
@@ -1982,6 +1982,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+
+        if (customId != null) {
+            network.setUuid(customId);
         }
 
         // display flag is not null and has changed
@@ -3865,10 +3869,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
         if (network.getVpcId() != null) {
+            // release the acquired IP addrress before throwing the exception
+            // else it will always be in allocating state
+            releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" + " to VPC.Specify vpcId to associate ip address to VPC");
         }
         return _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, true);
@@ -4022,6 +4032,29 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @Inject
     public void setNetworkGurus(List<NetworkGuru> networkGurus) {
         this._networkGurus = networkGurus;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_UPDATE, eventDescription = "updating public ip address", async = true)
+    public IpAddress updateIP(Long id, String customId) {
+        Account caller = CallContext.current().getCallingAccount();
+        IPAddressVO ipVO = _ipAddressDao.findById(id);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id");
+        }
+
+        // verify permissions
+        if (ipVO.getAllocatedToAccountId() != null) {
+            _accountMgr.checkAccess(caller, null, true, ipVO);
+        } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new PermissionDeniedException("Only Root admin can update non-allocated ip addresses");
+        }
+
+        if (customId != null) {
+            ipVO.setUuid(customId);
+        }
+        _ipAddressDao.update(id, ipVO);
+        return _ipAddressDao.findById(id);
     }
 
 }

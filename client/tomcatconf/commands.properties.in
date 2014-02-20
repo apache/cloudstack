@@ -137,6 +137,7 @@ listDedicatedGuestVlanRanges=1
 associateIpAddress=15
 disassociateIpAddress=15
 listPublicIpAddresses=15
+updatePublicIpAddress=15
 
 #### firewall commands
 listPortForwardingRules=15
@@ -349,6 +350,8 @@ listHypervisors=15
 createRemoteAccessVpn=15
 deleteRemoteAccessVpn=15
 listRemoteAccessVpns=15
+updateRemoteAccessVpn=15
+
 
 addVpnUser=15
 removeVpnUser=15
@@ -401,11 +404,13 @@ deleteProjectInvitation=15
 createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
+updateFirewallRule=15
 
 ####
 createEgressFirewallRule=15
 deleteEgressFirewallRule=15
 listEgressFirewallRules=15
+updateEgressFirewallRule=15
 
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=1
@@ -469,6 +474,7 @@ createNetworkACLList=15
 deleteNetworkACLList=15
 replaceNetworkACLList=15
 listNetworkACLLists=15
+updateNetworkACLList=15
 
 
 #### Static route commands
@@ -498,6 +504,8 @@ resetVpnConnection=15
 listVpnCustomerGateways=15
 listVpnGateways=15
 listVpnConnections=15
+updateVpnConnection=15
+updateVpnGateway=15
 
 #### router commands
 createVirtualRouterElement=7
@@ -593,6 +601,11 @@ addBigSwitchVnsDevice=1
 deleteBigSwitchVnsDevice=1
 listBigSwitchVnsDevices=1
 
+#### stratosphere ssp commands
+
+addStratosphereSsp=1
+deleteStratoshereSsp=1
+
 #### host simulator commands
 
 configureSimulator=1
@@ -646,6 +659,7 @@ removedeleteUcsManager=1
 createLoadBalancer=15
 listLoadBalancers=15
 deleteLoadBalancer=15
+updateLoadBalancer=15
 
 #Internal Load Balancer Element commands
 configureInternalLoadBalancerElement=7

@@ -37,7 +37,7 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type", required = true)
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "list by resource id", required = true)
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "list by resource id")
     private String resourceId;
 
     @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "list by key")

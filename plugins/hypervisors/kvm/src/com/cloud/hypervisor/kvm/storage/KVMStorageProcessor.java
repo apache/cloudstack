@@ -558,7 +558,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     protected Answer copyToObjectStore(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         NfsTO srcStore = (NfsTO)srcData.getDataStore();
         String srcPath = srcData.getPath();
@@ -600,9 +599,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected Answer backupSnapshotForObjectStore(CopyCommand cmd) {
-        DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         DataTO cacheData = cmd.getCacheTO();
         if (cacheData == null) {
@@ -675,14 +672,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                     Rados r = new Rados(primaryPool.getAuthUserName());
                     r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                     r.confSet("key", primaryPool.getAuthSecret());
+                    r.confSet("client_mount_timeout", "30");
                     r.connect();
                     s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                     IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
                     RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-
-                    long startTime = System.currentTimeMillis() / 1000;
 
                     File snapDir = new File(snapshotDestPath);
                     s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively");
@@ -935,6 +931,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
                         attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingPool.getType() == StoragePoolType.Gluster) {
+                    String mountpoint = attachingPool.getLocalPath();
+                    String path = attachingDisk.getPath();
+                    String glusterVolume = attachingPool.getSourceDir().replace("/", "");
+                    diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
+                        null, devId, DiskDef.diskBus.VIRTIO, diskProtocol.GLUSTER);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -1095,6 +1097,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         Rados r = new Rados(primaryPool.getAuthUserName());
                         r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
                         r.confSet("key", primaryPool.getAuthSecret());
+                        r.confSet("client_mount_timeout", "30");
                         r.connect();
                         s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 

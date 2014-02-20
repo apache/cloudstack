@@ -78,6 +78,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.projects.dao.ProjectDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -109,6 +110,9 @@ public class AffinityApiUnitTest {
 
     @Inject
     AccountDao _accountDao;
+
+    @Inject
+    ProjectDao _projectDao;
 
     @Inject
     EventDao _eventDao;
@@ -215,6 +219,11 @@ public class AffinityApiUnitTest {
         @Bean
         public AccountDao accountDao() {
             return Mockito.mock(AccountDao.class);
+        }
+
+        @Bean
+        public ProjectDao projectDao() {
+            return Mockito.mock(ProjectDao.class);
         }
 
         @Bean

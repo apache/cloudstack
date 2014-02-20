@@ -36,8 +36,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -85,6 +83,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -443,7 +442,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
-                _dcDetailsDao.addDetail(resourceId, name, value);
+                _dcDetailsDao.addDetail(resourceId, name, value, true);
                 break;
             case Cluster:
                 ClusterVO cluster = _clusterDao.findById(resourceId);
@@ -465,7 +464,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (pool == null) {
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
-                _storagePoolDetailsDao.addDetail(resourceId, name, value);
+                _storagePoolDetailsDao.addDetail(resourceId, name, value, true);
 
                 break;
 
@@ -2039,7 +2038,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (details != null) {
                 List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
                 for (Entry<String, String> detailEntry : details.entrySet()) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue()));
+                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
                 }
 
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
@@ -2864,40 +2863,55 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 String otherVlanGateway = vlan.getVlanGateway();
                 String otherVlanNetmask = vlan.getVlanNetmask();
                 // Continue if it's not IPv4
-                if (otherVlanGateway == null || otherVlanNetmask == null) {
+                if ( otherVlanGateway == null || otherVlanNetmask == null ) {
                     continue;
                 }
-                if (vlan.getNetworkId() == null) {
+                if ( vlan.getNetworkId() == null ) {
                     continue;
                 }
                 String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
-                if (!NetUtils.isNetworksOverlap(newCidr, otherCidr)) {
+                if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
                     continue;
                 }
                 // from here, subnet overlaps
-                if (!NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag())) {
-                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName()
-                            + " has overlapped with the subnet. Please specify a different gateway/netmask.");
-                }
-                if (vlan.getNetworkId() != networkId) {
-                    throw new InvalidParameterValueException("This subnet is overlapped with subnet in other network " + vlan.getNetworkId() + " in zone " + zone.getName()
-                            + " . Please specify a different gateway/netmask.");
+                if ( !vlanId.equals(vlan.getVlanTag()) ) {
+                    boolean overlapped = false;
+                    if( network.getTrafficType() == TrafficType.Public ) {
+                        overlapped = true;
+                    } else {
+                        Long nwId = vlan.getNetworkId();
+                        if ( nwId != null ) {
+                            Network nw = _networkModel.getNetwork(nwId);
+                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
+                                overlapped = true;
+                            }
+                        }
 
-                }
-                String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
-                String otherVlanStartIP = otherVlanIpRange[0];
-                String otherVlanEndIP = null;
-                if (otherVlanIpRange.length > 1) {
-                    otherVlanEndIP = otherVlanIpRange[1];
-                }
+                    }
+                    if ( overlapped ) {
+                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                                + " in zone " + zone.getName()
+                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                    }
+                } else {
 
-                //extend IP range
-                if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
-                    throw new InvalidParameterValueException("The IP range has already been added with gateway " + otherVlanGateway + " ,and netmask " + otherVlanNetmask
-                            + ", Please specify the gateway/netmask if you want to extend ip range");
-                }
-                if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                    throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." + " Please specify a different start IP/end IP.");
+                    String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
+                    String otherVlanStartIP = otherVlanIpRange[0];
+                    String otherVlanEndIP = null;
+                    if (otherVlanIpRange.length > 1) {
+                        otherVlanEndIP = otherVlanIpRange[1];
+                    }
+
+                    // extend IP range
+                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
+                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
+                                + ", Please specify the gateway/netmask if you want to extend ip range" );
+                    }
+                    if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                        throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                                " Please specify a different start IP/end IP.");
+                    }
                 }
             }
         }
@@ -4294,7 +4308,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean isOfferingForVpc(NetworkOffering offering) {
-        boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.VPCVirtualRouter);
+        boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.VPCVirtualRouter) ||
+                              _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.JuniperContrailVpcRouter);
+
         return vpcProvider;
     }
 

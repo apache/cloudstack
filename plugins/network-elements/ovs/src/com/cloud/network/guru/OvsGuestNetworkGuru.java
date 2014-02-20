@@ -144,10 +144,6 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         if (network.getCidr() != null) {
             implemented.setCidr(network.getCidr());
         }
-        String name = network.getName();
-        if (name == null || name.isEmpty()) {
-            name = ((NetworkVO)network).getUuid();
-        }
 
         // do we need to create switch right now?
 

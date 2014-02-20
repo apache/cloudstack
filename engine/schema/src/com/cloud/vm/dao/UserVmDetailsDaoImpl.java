@@ -29,8 +29,8 @@ import com.cloud.vm.UserVmDetailVO;
 public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new UserVmDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new UserVmDetailVO(resourceId, key, value, display));
     }
 
 }

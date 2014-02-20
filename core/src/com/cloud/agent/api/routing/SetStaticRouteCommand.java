@@ -17,13 +17,13 @@
 
 package com.cloud.agent.api.routing;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.net.NetUtils;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class SetStaticRouteCommand extends NetworkElementCommand {
     StaticRouteProfile[] staticRoutes;
@@ -58,5 +58,10 @@ public class SetStaticRouteCommand extends NetworkElementCommand {
         }
         result[0] = toAdd.toArray(new String[toAdd.size()]);
         return result;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return staticRoutes.length;
     }
 }

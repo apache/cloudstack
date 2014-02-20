@@ -3228,7 +3228,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean forDisplay = cmd.forDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceIdStr = cmd.getResourceId();
-        long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        Long resourceId = null;
+        if (resourceIdStr != null) {
+            resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        }
         List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
         ResourceDetail requestedDetail = null;
 

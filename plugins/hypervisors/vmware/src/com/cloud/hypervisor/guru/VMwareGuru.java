@@ -27,8 +27,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -71,7 +69,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -86,50 +83,46 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
-    NetworkDao _networkDao;
+    private NetworkDao _networkDao;
     @Inject
-    GuestOSDao _guestOsDao;
+    private GuestOSDao _guestOsDao;
     @Inject
-    HostDao _hostDao;
+    private HostDao _hostDao;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    private HostDetailsDao _hostDetailsDao;
     @Inject
-    CommandExecLogDao _cmdExecLogDao;
+    private CommandExecLogDao _cmdExecLogDao;
     @Inject
-    VmwareManager _vmwareMgr;
+    private VmwareManager _vmwareMgr;
     @Inject
-    SecondaryStorageVmManager _secStorageMgr;
+    private SecondaryStorageVmManager _secStorageMgr;
     @Inject
-    NetworkModel _networkMgr;
+    private NetworkModel _networkMgr;
     @Inject
-    ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Inject
-    NicDao _nicDao;
+    private NicDao _nicDao;
     @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
+    private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
-    PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    private VMInstanceDao _vmDao;
     @Inject
-    VMInstanceDao _vmDao;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ClusterManager _clusterMgr;
+    private ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
@@ -157,9 +150,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (details == null)
             details = new HashMap<String, String>();
 
+        Type vmType = vm.getType();
+        boolean userVm = !(vmType.equals(VirtualMachine.Type.DomainRouter) || vmType.equals(VirtualMachine.Type.ConsoleProxy)
+                || vmType.equals(VirtualMachine.Type.SecondaryStorageVm));
+
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO ||
-            vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (!userVm) {
 
             if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
@@ -186,8 +182,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
-            // user vm
+        if (userVm) {
             if (diskDeviceType == null) {
                 details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
@@ -204,12 +199,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        long clusterId = this.getClusterId(vm.getId());
+        long clusterId = getClusterId(vm.getId());
         details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
 
-        if (vm.getVirtualMachine() instanceof DomainRouterVO) {
+        if (vmType.equals(VirtualMachine.Type.DomainRouter)) {
 
             NicProfile publicNicProfile = null;
             for (NicProfile nicProfile : nicProfiles) {
@@ -275,15 +270,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
-            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-            String bootArgs = to.getBootArgs();
-            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            if (!sbMacSequence.toString().isEmpty()) {
+                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+                String bootArgs = to.getBootArgs();
+                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            }
 
         }
 
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
+        if (userVm) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
                 s_logger.debug("Nested virtualization requested, adding flag to vm configuration");

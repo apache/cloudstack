@@ -32,8 +32,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -42,6 +40,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -203,7 +202,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler, Provider.JuniperContrailVpcRouter);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -308,6 +307,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // Just here for 4.1, replaced by commit 836ce6c1 in newer versions
         Set<Network.Provider> sdnProviders = new HashSet<Network.Provider>();
         sdnProviders.add(Provider.NiciraNvp);
+        sdnProviders.add(Provider.JuniperContrailVpcRouter);
 
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
@@ -424,14 +424,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<VpcOfferingServiceMapVO> map = _vpcOffSvcMapDao.listByVpcOffId(vpcOffId);
 
         for (VpcOfferingServiceMapVO instance : map) {
-            Service service = Service.getService(instance.getService());
+            String service = instance.getService();
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(service, providers);
+            serviceProviderMap.put(Service.getService(service), providers);
         }
 
         return serviceProviderMap;
@@ -769,14 +769,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(long vpcId, String vpcName, String displayText) {
+    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId) {
         CallContext.current().setEventDetails(" Id: " + vpcId);
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         VpcVO vpcToUpdate = _vpcDao.findById(vpcId);
         if (vpcToUpdate == null) {
-            throw new InvalidParameterValueException("Unable to find vpc offering " + vpcId);
+            throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
 
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
@@ -789,6 +789,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (displayText != null) {
             vpc.setDisplayText(displayText);
+        }
+
+        if (customId != null) {
+            vpc.setUuid(customId);
         }
 
         if (_vpcDao.update(vpcId, vpc)) {
@@ -1191,6 +1195,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcElements == null) {
             vpcElements = new ArrayList<VpcProvider>();
             vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
+            vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.JuniperContrailVpcRouter.getName()));
         }
 
         if (vpcElements == null) {
@@ -1405,7 +1410,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         Long nextMac = mac + 1;
                         dc.setMacAddress(nextMac);
 
-                        privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, true);
+                        s_logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                        privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                         _privateIpDao.persist(privateIp);
 
                         _dcDao.update(dc.getId(), dc);

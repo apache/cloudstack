@@ -106,7 +106,6 @@ import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
@@ -178,11 +177,6 @@ public class ChildTestConfiguration {
     @Bean
     public ProjectManager projectMgr() {
         return Mockito.mock(ProjectManager.class);
-    }
-
-    @Bean
-    public SecondaryStorageVmManager ssvmMgr() {
-        return Mockito.mock(SecondaryStorageVmManager.class);
     }
 
     @Bean

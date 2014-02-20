@@ -210,6 +210,11 @@
                     zoneCount: function (data) {
                         $.ajax({
                             url: createURL('listZones'),
+                            data: {
+                            	listAll: true,
+                                page: 1,
+                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                            },
                             success: function (json) {
                                 dataFns.podCount($.extend(data, {
                                     zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count: 0,
@@ -223,6 +228,7 @@
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -238,6 +244,7 @@
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -261,6 +268,7 @@
                     hostCount: function (data) {
                         var data2 = {
                             type: 'routing',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -277,6 +285,7 @@
                     
                     primaryStorageCount: function (data) {
                         var data2 = {
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -294,6 +303,7 @@
                     secondaryStorageCount: function (data) {
                         var data2 = {
                             type: 'SecondaryStorage',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -312,6 +322,7 @@
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
+                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -325,7 +336,7 @@
                     
                     virtualRouterCount: function (data) {
                         var data2 = {
-                            projectid: -1,
+                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -334,24 +345,35 @@
                             data: data2,
                             success: function (json) {
                                 var total1 = json.listroutersresponse.count ? json.listroutersresponse.count: 0;
+                                var total2 = 0; //reset
                                 
+                                /*
+                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                 */   
+                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                 var data3 = {
                                     listAll: true,
+	                                    projectid: -1,
                                     page: 1,
                                     pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                                 };
                                 $.ajax({
                                     url: createURL('listRouters'),
                                     data: data3,
+	                                    async: false,
                                     success: function (json) {
-                                        var total2 = json.listroutersresponse.count ? json.listroutersresponse.count: 0;
+	                                        total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;	                                        
+	                                    }
+	                                });
+                                }
+                                                                
                                         dataFns.capacity($.extend(data, {
                                             virtualRouterCount: (total1 + total2)
                                         }));
                                     }
                                 });
-                            }
-                        });
                     },
                     
                     capacity: function (data) {
@@ -562,15 +584,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -2356,10 +2378,16 @@
                                                     routers.push(item);
                                                 });
                                                 
-                                                // Get project routers
+                                                /*
+                                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                                 */   
+                                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
+	                                                    async: false,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router ?
                                                         json.listroutersresponse.router:[];
@@ -2367,14 +2395,16 @@
                                                         $(items).map(function (index, item) {
                                                             routers.push(item);
                                                         });
+	                                                    }
+	                                                });
+                                                }
+                                                
                                                         args.response.success({
                                                             actionFilter: routerActionfilter,
                                                             data: $(routers).map(mapRouterType)
                                                         });
                                                     }
                                                 });
-                                            }
-                                        });
                                     },
                                     detailView: {
                                         name: 'Virtual applicance details',
@@ -2547,7 +2577,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -3073,7 +3103,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -3444,25 +3474,32 @@
                                                     routers.push(item);
                                                 });
                                                 
-                                                // Get project routers
+                                                /*
+                                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                                 */   
+                                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                 $.ajax({
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
-                                                    async: true,
+	                                                    async: false,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router;
                                                         $(items).map(function (index, item) {
                                                             routers.push(item);
                                                         });
+	                                                    }
+	                                                });
+                                                }
+                                                
                                                         args.response.success({
                                                             actionFilter: routerActionfilter,
                                                             data: $(routers).map(mapRouterType)
                                                         });
                                                     }
                                                 });
-                                            }
-                                        });
                                     },
                                     detailView: {
                                         name: 'Virtual applicance details',
@@ -3671,7 +3708,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -6264,7 +6301,7 @@
                                                                     getUpdatedItem: function (json) {
                                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                         $.ajax({
-                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                            url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
@@ -7720,7 +7757,7 @@
                                                                             getUpdatedItem: function (json) {
                                                                                 //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                                 $.ajax({
-                                                                                    url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                                    url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                                     dataType: "json",
                                                                                     async: false,
                                                                                     success: function (json) {
@@ -8336,24 +8373,24 @@
                                                             routers.push(item);
                                                         });
                                                         
-                                                        //get project-owned routers
-                                                        var toSearchByProjectid = true;
+                                                        //if account is specified in advanced search, don't search project-owned routers
+                                                        var accountIsNotSpecifiedInAdvSearch = true;
                                                         if (args.filterBy != null) {
-                                                            if (args.filterBy.advSearch != null && typeof (args.filterBy.advSearch) == "object") {
-                                                                //advanced search
-                                                                if ('account' in args.filterBy.advSearch && args.filterBy.advSearch.account.length > 0) {
-                                                                    //if account is specified in advanced search, don't search project-owned routers
-                                                                    toSearchByProjectid = false; //since account and projectid can't be specified together
+                                                            if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
+                                                                if ('account' in args.filterBy.advSearch  && args.filterBy.advSearch.account.length > 0) { 
+                                                                    accountIsNotSpecifiedInAdvSearch = false;  //since account and projectid can't be specified together
                                                                 }
                                                             }
                                                         }
-                                                        if (toSearchByProjectid) {
+                                                        if (accountIsNotSpecifiedInAdvSearch) {                                                        
+				                                            /*
+				                                             * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+				                                             * because in project view, all API calls are appended with projectid=[projectID].  
+				                                             * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+				                                             */   
+				                                            if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                             $.ajax({
-                                                                url: createURL('listRouters'),
-                                                                data: $.extend(data, {
-                                                                    listAll: true,
-                                                                    projectid: -1
-                                                                }),
+					                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
                                                                 async: false,
                                                                 success: function (json) {
                                                                     var items = json.listroutersresponse.router ? json.listroutersresponse.router:[];
@@ -8362,7 +8399,14 @@
                                                                     });
                                                                 }
                                                             });
+				
                                                         }
+                                                    }
+			                                                                                        
+			                                            args.response.success({
+			                                                actionFilter: routerActionfilter,
+			                                                data: $(routers).map(mapRouterType)
+			                                            });                                                    
                                                     }
                                                 });
                                                 
@@ -8420,7 +8464,7 @@
                                 	var array1 = [];
                                 	
                                 	// ***** non XenServer (begin) *****
-                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "Ovm", "LXC"];
+                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal"];
                                 	
                                         	var supportSocketHypervisors = {
                                         		"Hyperv": 1, 
@@ -8492,8 +8536,8 @@
                                 	var currentPage = 1;
                                 	var returnedHostCount = 0;
                                 	
-                                	var returnedHostCountForXenServer = 0;
-                                	var returnedHostCountForXenServer620 = 0;                                 	
+                                	var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
+                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
                                 	var returnedHostCpusocketsSumForXenServer620 = 0;    
                                 	
                                 	var callListHostsWithPage = function() {                                                		
@@ -8523,7 +8567,7 @@
                                         					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
                                         				} 
                                     				} else {
-                                    					returnedHostCountForXenServer++;
+                                    					returnedHostCountForXenServer61x++;
                                     				}
                                     			}  
                                     			
@@ -8538,8 +8582,8 @@
                                 	callListHostsWithPage();                                	                                                  	
                                 	
                                 	array1.push({
-                                        hypervisor: 'XenServer',
-                                        hosts: returnedHostCountForXenServer,
+                                        hypervisor: 'XenServer 6.1.x and before',
+                                        hosts: returnedHostCountForXenServer61x,
                                         sockets: 'N/A'                                                   
                                     });
                                 	
@@ -8632,10 +8676,17 @@
                                         $(items).map(function (index, item) {
                                             routers.push(item);
                                         });
-                                        // Get project routers
+                                
+                                /*
+                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                 * because in project view, all API calls are appended with projectid=[projectID].  
+                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                 */   
+                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                         $.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
+	                                    async: false,
                                             success: function (json) {
                                                 var items = json.listroutersresponse.router ?
                                                 json.listroutersresponse.router:[];
@@ -8643,14 +8694,16 @@
                                                 $(items).map(function (index, item) {
                                                     routers.push(item);
                                                 });
+	                                    }
+	                                });
+                                }
+                                
                                                 args.response.success({
                                                     actionFilter: routerActionfilter,
                                                     data: $(routers).map(mapRouterType)
                                                 });
                                             }
                                         });
-                                    }
-                                });
                             },
                             detailView: {
                                 name: 'Virtual applicance details',
@@ -8892,7 +8945,7 @@
                                                             getUpdatedItem: function (json) {
                                                                 //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                                 $.ajax({
-                                                                    url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                                    url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                                     dataType: "json",
                                                                     async: false,
                                                                     success: function (json) {
@@ -10117,7 +10170,7 @@
                                                     getUpdatedItem: function (json) {
                                                         //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
                                                         $.ajax({
-                                                            url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                                            url: createURL("listSystemVms&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
                                                             dataType: "json",
                                                             async: false,
                                                             success: function (json) {
@@ -14832,16 +14885,19 @@
                     section: 'primary-storage',
                     fields: {
                         name: {
-                            label: 'label.name'
+                            label: 'label.name',
+                            truncate: true
                         },
                         ipaddress: {
                             label: 'label.server'
                         },
                         path: {
-                            label: 'label.path'
+                            label: 'label.path',
+                            truncate: true
                         },
                         clustername: {
-                            label: 'label.cluster'
+                            label: 'label.cluster',
+                            truncate: true
                         },
                         scope: {
                             label: 'Scope'
@@ -15605,9 +15661,12 @@
                                 } else if (args.data.protocol == "SMB") {
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = smbURL(server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
-                                } else if (args.data.protocol == "PreSetup") {
+                                        path = "/" + path;
+                                    url = smbURL(server, path);
+                                    array1.push("&details[0].user=" + args.data.smbUsername);
+                                    array1.push("&details[1].password=" + todb(args.data.smbPassword));
+                                    array1.push("&details[2].domain=" + args.data.smbDomain);
+                                } else if (args.data.protocol == "PreSetup") {                                    
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
                                     path = "/" + path;
@@ -16002,16 +16061,16 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add UCS Manager',
+                            label: 'label.add.ucs.manager',
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'Add UCS Manager';
+                                    return 'label.add.ucs.manager';
                                 }
                             },
                             
                             createForm: {
-                                title: 'Add UCS Manager',
+                                title: 'label.add.ucs.manager',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -17009,12 +17068,17 @@
                                             var zoneid = args.data.zoneid;
                                             var nfs_server = args.data.nfsServer;
                                             var path = args.data.path;
-                                            var url = smbURL(nfs_server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
-                                            
+                                            var url = smbURL(nfs_server, path);
                                             $.extend(data, {
                                                 provider: args.data.provider,
                                                 zoneid: zoneid,
-                                                url: url
+                                                url: url,
+                                                'details[0].key': 'user',
+                                                'details[0].value': args.data.smbUsername,
+                                                'details[1].key': 'password',
+                                                'details[1].value': args.data.smbPassword,
+                                                'details[2].key': 'domain',
+                                                'details[2].value': args.data.smbDomain
                                             });
                                             
                                             $.ajax({

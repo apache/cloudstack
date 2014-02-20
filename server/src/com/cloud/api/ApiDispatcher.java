@@ -33,8 +33,6 @@ import java.util.regex.Matcher;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -44,8 +42,10 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -59,6 +59,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -157,6 +158,13 @@ public class ApiDispatcher {
                 }
             }
         }
+
+        if (cmd instanceof BaseAsyncCustomIdCmd) {
+            ((BaseAsyncCustomIdCmd)cmd).checkUuid();
+        } else if (cmd instanceof BaseCustomIdCmd) {
+            ((BaseCustomIdCmd)cmd).checkUuid();
+        }
+
         cmd.execute();
 
     }

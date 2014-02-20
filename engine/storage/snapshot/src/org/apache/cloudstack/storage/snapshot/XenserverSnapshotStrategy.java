@@ -197,6 +197,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
+        if (Snapshot.State.Error.equals(snapshotVO.getState())) {
+            snapshotDao.remove(snapshotId);
+            return true;
+        }
+
         if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
             s_logger.debug("delete snapshot on primary storage:");
             snapshotVO.setState(Snapshot.State.Destroyed);

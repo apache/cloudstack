@@ -39,7 +39,7 @@ public interface MonitoringService extends ControlledEntity, Identity, InternalI
 
     String getServiceName();
 
-    String getPidFile();
+    String getServicePidFile();
 
     String getServicePath();
 }

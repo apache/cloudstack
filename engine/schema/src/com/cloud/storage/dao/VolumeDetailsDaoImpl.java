@@ -29,8 +29,8 @@ import com.cloud.storage.VolumeDetailVO;
 public class VolumeDetailsDaoImpl extends ResourceDetailsDaoBase<VolumeDetailVO> implements VolumeDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new VolumeDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new VolumeDetailVO(resourceId, key, value, display));
     }
 
 }

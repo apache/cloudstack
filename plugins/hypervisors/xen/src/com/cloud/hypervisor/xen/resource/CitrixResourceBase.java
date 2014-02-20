@@ -412,7 +412,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (clazz == CreateCommand.class) {
             return execute((CreateCommand)cmd);
         } else if (cmd instanceof NetworkElementCommand) {
-            return _vrResource.executeRequest(cmd);
+            return _vrResource.executeRequest((NetworkElementCommand)cmd);
         } else if (clazz == CheckConsoleProxyLoadCommand.class) {
             return execute((CheckConsoleProxyLoadCommand)cmd);
         } else if (clazz == WatchConsoleProxyLoadCommand.class) {
@@ -569,7 +569,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
         if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
-            cleanupNetworkElementCommand((IpAssocCommand)cmd);
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
         }
         return new ExecutionResult(true, null);
     }
@@ -1312,7 +1312,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (guestOsTypeName.toLowerCase().contains("windows")) {
             vmr.VCPUsMax = (long)vmSpec.getCpus();
         } else {
-            vmr.VCPUsMax = 32L;
+            // XenServer has a documented limit of 16 vcpus per vm
+            vmr.VCPUsMax = 2L * vmSpec.getCpus();
+            if (vmr.VCPUsMax > 16)
+            {
+                vmr.VCPUsMax = 16L;
+            }
         }
 
         vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
@@ -1951,7 +1956,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
@@ -2024,8 +2028,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        String[] results = new String[cmd.getIpAddresses().length];
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
@@ -7292,14 +7294,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 VM router = getVM(conn, routerName);
 
                 VIF correctVif = getVifByMac(conn, router, ip.getVifMacAddress());
-                if (correctVif == null) {
-                    if (ip.isAdd()) {
-                        throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
-                    } else {
-                        s_logger.debug("VIF to deassociate IP with does not exist, return success");
-                    }
-                }
-                ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+                setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
             }
         } catch (Exception e) {
             s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
@@ -7307,6 +7302,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return new ExecutionResult(true, null);
+    }
+
+    protected void setNicDevIdIfCorrectVifIsNotNull(Connection conn, IpAddressTO ip, VIF correctVif) throws InternalErrorException, BadServerResponse, XenAPIException,
+    XmlRpcException {
+        if (correctVif == null) {
+            if (ip.isAdd()) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
+            } else {
+                s_logger.debug("VIF to deassociate IP with does not exist, return success");
+            }
+        } else {
+            ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+        }
     }
 
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {

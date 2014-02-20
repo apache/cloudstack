@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,6 +25,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -145,6 +144,14 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
+        }
+    }
+
+    @Override
+    public void checkUuid() {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), UserVm.class);
+
         }
     }
 }

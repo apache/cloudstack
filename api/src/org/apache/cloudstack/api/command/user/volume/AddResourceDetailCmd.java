@@ -49,6 +49,9 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "resource id to create the details for")
     private String resourceId;
 
+    @Parameter(name = ApiConstants.DISPLAY, type = CommandType.BOOLEAN, description = "pass false if you want this detail to be disabled for the regular user. True by default")
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +78,14 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     public String getResourceId() {
         return resourceId;
+    }
+
+    public boolean forDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
 /////////////////////////////////////////////////////
@@ -104,7 +115,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        _resourceMetaDataService.addResourceMetaData(getResourceId(), getResourceType(), getDetails());
+        _resourceMetaDataService.addResourceMetaData(getResourceId(), getResourceType(), getDetails(), forDisplay());
         setResponseObject(new SuccessResponse(getCommandName()));
     }
 }

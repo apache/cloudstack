@@ -114,11 +114,12 @@ public interface NetworkACLService {
      * @param sourcePortEnd
      * @param icmpCode
      * @param icmpType
+     * @param newUUID TODO
      * @return
      * @throws ResourceUnavailableException
      */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID) throws ResourceUnavailableException;
 
     /**
      * Associates ACL with specified Network
@@ -128,5 +129,7 @@ public interface NetworkACLService {
      * @throws ResourceUnavailableException
      */
     boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException;
+
+    NetworkACL updateNetworkACL(Long id, String customId);
 
 }

@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.image.datastore;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +36,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -95,7 +98,30 @@ public class ImageStoreHelper {
         if (store.getName() == null) {
             store.setName(store.getUuid());
         }
+
         store.setRole((DataStoreRole)params.get("role"));
+
+        if ("cifs".equalsIgnoreCase((String) params.get("protocol")) && details != null) {
+            String user = details.get("user");
+            String password = details.get("password");
+            String domain = details.get("domain");
+            String updatedPath = (String) params.get("url");
+
+            if (user == null || password == null) {
+                String errMsg = "Missing cifs user and password details. Add them as details parameter.";
+                throw new InvalidParameterValueException(errMsg);
+            } else {
+                try {
+                    password = DBEncryptionUtil.encrypt(URLEncoder.encode(password, "UTF-8"));
+                    details.put("password", password);
+                    updatedPath += "?user=" + user + "&password=" + password + "&domain=" + domain;
+                } catch (UnsupportedEncodingException e) {
+                    throw new CloudRuntimeException("Error while generating the cifs url. " + e.getMessage());
+                }
+                store.setUrl(updatedPath);
+            }
+        }
+
         store = imageStoreDao.persist(store);
 
         // persist details

@@ -31,22 +31,22 @@ public class NatRuleTest {
 
     @Test
     public void testNatRuleEncoding() {
-        Gson gson =
-            new GsonBuilder().registerTypeAdapter(NatRule.class, new com.cloud.network.nicira.NiciraNvpApi.NatRuleAdapter())
+        final Gson gson =
+            new GsonBuilder().registerTypeAdapter(NatRule.class, new NiciraNvpApi.NatRuleAdapter())
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
 
-        DestinationNatRule rn1 = new DestinationNatRule();
+        final DestinationNatRule rn1 = new DestinationNatRule();
         rn1.setToDestinationIpAddress("10.10.10.10");
         rn1.setToDestinationPort(80);
-        Match mr1 = new Match();
+        final Match mr1 = new Match();
         mr1.setSourceIpAddresses("11.11.11.11/24");
         mr1.setEthertype("IPv4");
         mr1.setProtocol(6);
         rn1.setMatch(mr1);
 
-        String jsonString = gson.toJson(rn1);
-        NatRule dnr = gson.fromJson(jsonString, NatRule.class);
+        final String jsonString = gson.toJson(rn1);
+        final NatRule dnr = gson.fromJson(jsonString, NatRule.class);
 
         assertTrue(dnr instanceof DestinationNatRule);
         assertTrue(rn1.equals(dnr));

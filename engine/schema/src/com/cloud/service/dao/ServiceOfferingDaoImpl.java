@@ -182,7 +182,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
         List<ServiceOfferingDetailsVO> resourceDetails = new ArrayList<ServiceOfferingDetailsVO>();
         for (String key : details.keySet()) {
-            resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key)));
+            resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key), true));
         }
 
         detailsDao.saveDetails(resourceDetails);

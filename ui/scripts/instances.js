@@ -148,19 +148,16 @@
             },
             fields: {
                 name: {
-                    label: 'label.name',
-                    truncate: true
+                    label: 'label.name'
                 },
                 instancename: {
                     label: 'label.internal.name'
                 },
                 displayname: {
-                    label: 'label.display.name',
-                    truncate: true
+                    label: 'label.display.name'
                 },
                 zonename: {
-                    label: 'label.zone.name',
-                    truncate: true
+                    label: 'label.zone.name'
                 },
                 state: {
                     label: 'label.state',
@@ -504,7 +501,7 @@
                                         _custom: {
                                             jobId: jid,
                                             getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
@@ -574,7 +571,7 @@
                         compactLabel: 'label.destroy',
                         createForm: {
                             title: 'label.action.destroy.instance', 
-                            desc: 'Please confirm that you want to destroy this instance',
+                            desc: 'label.action.destroy.instance',
                             preFilter: function(args) {
                             	if (isAdmin() || isDomainAdmin()) {
                             		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
@@ -584,7 +581,7 @@
                             },
                             fields: {
                             	expunge: {
-                                    label: 'Expunge',
+                                    label: 'label.expunge',
                                     isBoolean: true,
                                     isChecked: false
                                 }
@@ -698,18 +695,18 @@
                         }
                     },
                     reset: {
-                        label: 'Reset VM',
-                        textLabel: 'Reset VM',
+                        label: 'label.resetVM',
+                        textLabel: 'label.resetVM',
                         messages: {
                             confirm: function(args) {
-                                return 'Do you want to restore the VM ?';
+                                return 'message.restoreVM';
                             },
                             notification: function(args) {
-                                return 'Reset VM';
+                                return 'label.resetVM';
                             },
                             complete: function(args) {
                             	if (args.password != null && args.password.length > 0)
-                                    return 'Password has been reset to ' + args.password;
+                                    return 'label.password.reset.confirm' + args.password;
                             	else
                             		return null;
                             }
@@ -745,7 +742,7 @@
                     },
 
                     changeAffinity: {
-                        label: 'Change affinity',
+                        label: 'label.change.affinity',
 
                         action: {
                             custom: cloudStack.uiCustom.affinity({
@@ -874,7 +871,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Change affinity';
+                                return 'label.change.affinity';
                             }
                         },
                         notification: {
@@ -1291,7 +1288,7 @@
                                                     });
                                                 } else {
                                                     cloudStack.dialog.notice({
-                                                        message: _l('No Hosts are avaialble for Migration')
+                                                        message: _l(dictionary['message.no.host.available'])
                                                     }); //Only a single host in the set up
                                                 }
                                             }
@@ -1574,10 +1571,10 @@
                         },
                         messages: {
                             confirm: function(args) {
-                                return 'Do you really want to scale Up your instance ?';
+                                return 'message.instance.scaled.up.confirm';
                             },
                             notification: function(args) {
-                                return 'Instance Scaled Up';
+                                return 'label.instance.scaled.up';
                             }
                         },
                         notification: {
@@ -1586,9 +1583,9 @@
                     },
                    
                     assignVmToAnotherAccount: {
-                        label: 'Assign Instance to Another Account',
+                        label: 'label.assign.instance.another',
                         createForm: {
-                            title: 'Assign Instance to Another Account',
+                            title: 'label.assign.instance.another',
                             fields: {                                
                             	domainid: {
                 				    label: 'label.domain',
@@ -1646,7 +1643,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Assign Instance to Another Account';
+                                return 'label.assign.instance.another';
                             }
                         },
                         notification: {
@@ -1735,7 +1732,7 @@
                             },
 
                             isdynamicallyscalable: {
-                                label: 'Dynamically Scalable',
+                                label: 'label.dynamically.scalable',
                                 isBoolean: true,
                                 isEditable: true,
                                 converter: cloudStack.converters.toBooleanText
@@ -1771,7 +1768,7 @@
                             },
 
                             xenserverToolsVersion61plus: {
-                                label: 'XenServer Tools Version 6.1+',
+                                label: 'label.Xenserver.Tools.Version61plus',
                                 isBoolean: true,
                                 isEditable: function () {
                                     if (isAdmin())
@@ -1895,18 +1892,18 @@
                         multiple: true,
                         actions: {
                             add: {
-                                label: 'Add network to VM',
+                                label: 'label.network.addVM',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you would like to add a new VM NIC for this network.';
+                                        return 'message.network.addVMNIC';
                                     },
                                     notification: function(args) {
-                                        return 'Add network to VM';
+                                        return 'label.network.addVM';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Add network to VM',
-                                    desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                                    title: 'label.network.addVM',
+                                    desc: 'message.network.addVM.desc',
                                     fields: {
                                         networkid: {
                                             label: 'label.network',
@@ -1955,13 +1952,13 @@
                             },
 
                             makeDefault: {
-                                label: 'Set default NIC',
+                                label: 'label.set.default.NIC',
                                 messages: {
                                     confirm: function() {
-                                        return 'Please confirm that you would like to make this NIC the default for this VM.';
+                                        return 'message.set.default.NIC';
                                     },
                                     notification: function(args) {
-                                        return 'Set default NIC'
+                                        return 'label.set.default.NIC'
                                     }
                                 },
                                 action: function(args) {
@@ -1978,7 +1975,7 @@
                                                 }
                                             });
                                             cloudStack.dialog.notice({
-                                                message: _l('Please manually update the default NIC on the VM now.')
+                                                message: _l(dictionary['message.set.default.NIC.manual'])
                                             });
                                         }
                                     });
@@ -2022,14 +2019,14 @@
                         },
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name',
                                 header: true
                             },
                             networkname: {
-                                label: 'Network Name'
+                                label: 'label.network.name'
                             },
                             type: {
                                 label: 'label.type'
@@ -2045,13 +2042,13 @@
                             },
 
                             ip6address: {
-                                label: 'IPv6 IP Address'
+                                label: 'label.ipv6.address'
                             },
                             ip6gateway: {
-                                label: 'IPv6 Gateway'
+                                label: 'label.ipv6.gateway'
                             },
                             ip6cidr: {
-                                label: 'IPv6 CIDR'
+                                label: 'label.ipv6.CIDR'
                             },
 
                             isdefault: {

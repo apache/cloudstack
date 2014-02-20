@@ -190,15 +190,19 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
     @Param(description = "an optional field whether to the display the volume to the end user or not.")
-    private Boolean displayVm;
+    private Boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "The path of the volume")
+    @Param(description = "the path of the volume")
     private String path;
 
     @SerializedName(ApiConstants.STORAGE_ID)
     @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since = "4.3")
     private String storagePoolId;
+
+    @SerializedName(ApiConstants.CHAIN_INFO)
+    @Param(description = "the chain info of the volume", since = "4.4")
+    String chainInfo;
 
     public String getPath() {
         return path;
@@ -406,15 +410,23 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.tags.add(tag);
     }
 
-    public Boolean getDisplayVm() {
-        return displayVm;
+    public Boolean getDisplayVolume() {
+        return displayVolume;
     }
 
-    public void setDisplayVm(Boolean displayVm) {
-        this.displayVm = displayVm;
+    public void setDisplayVolume(Boolean displayVm) {
+        this.displayVolume = displayVm;
     }
 
     public void setStoragePoolId(String storagePoolId) {
         this.storagePoolId = storagePoolId;
+    }
+
+    public String getChainInfo() {
+        return chainInfo;
+    }
+
+    public void setChainInfo(String chainInfo) {
+        this.chainInfo = chainInfo;
     }
 }

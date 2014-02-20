@@ -1742,7 +1742,7 @@
                                 preFilter: function(args) {
                                     var $availability = args.$form.find('.form-item[rel=availability]');
                                     var $lbType = args.$form.find('.form-item[rel=lbType]');
-                                    var $systemOfferingForRouter = args.$form.find('.form-item[rel=systemOfferingForRouter]');
+                                    var $serviceofferingid = args.$form.find('.form-item[rel=serviceofferingid]');
                                     var $conservemode = args.$form.find('.form-item[rel=conservemode]');
                                     var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');
                                     var hasAdvancedZones = false;
@@ -1884,9 +1884,9 @@
                                             }
                                         });
                                         if (havingVirtualRouterForAtLeastOneService == true) {
-                                            $systemOfferingForRouter.css('display', 'inline-block');
+                                            $serviceofferingid.css('display', 'inline-block');
                                         } else {
-                                            $systemOfferingForRouter.hide();
+                                            $serviceofferingid.hide();
                                         }
 
 
@@ -2307,7 +2307,7 @@
                                     },
 
                                     //show or hide upon checked services and selected providers above (begin)
-                                    systemOfferingForRouter: {
+                                    serviceofferingid: {
                                         label: 'System Offering for Router',
                                         isHidden: true,
                                         docID: 'helpNetworkOfferingSystemOffering',
@@ -2600,8 +2600,8 @@
                                     delete inputData.egresspolicy;
                                 }
 
-                                if (args.$form.find('.form-item[rel=systemOfferingForRouter]').css("display") == "none")
-                                    delete inputData.systemOfferingForRouter;
+                                if (args.$form.find('.form-item[rel=serviceofferingid]').css("display") == "none")
+                                    delete inputData.serviceofferingid;
 
                                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 

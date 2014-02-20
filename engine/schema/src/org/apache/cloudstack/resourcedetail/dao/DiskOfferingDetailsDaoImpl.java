@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOfferingDetailVO> implements DiskOfferingDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new DiskOfferingDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new DiskOfferingDetailVO(resourceId, key, value, display));
     }
 }
