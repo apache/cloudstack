@@ -1210,7 +1210,7 @@
                         },
                         stop: function(event, ui) {
                             rowActions._std($tr, function() {});
-
+                            var map1 = {};
                             $tr.closest('tbody').find('tr').each(function() {
                             	/* 
                             	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
