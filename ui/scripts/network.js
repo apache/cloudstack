@@ -3232,6 +3232,10 @@
                                                     }
                                                 },
                                                 filters: false,
+                                                subselect: {
+                                                    label: 'label.use.vm.ip',
+                                                    dataProvider: instanceSecondaryIPSubselect
+                                                },
                                                 dataProvider: function(args) {
                                                     var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                                                         args.context.multiRule[0]['_itemData'] : [];
@@ -3485,7 +3489,21 @@
                                                 };
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
+                                               
+                                                if (args.context.ipAddresses[0].isportable) {
+                                                    var subselect = args.itemData[0]._subselect.split(',');
+                                                    //var networkid = subselect[0];
+                                                    var vmguestip = subselect[1];
 
+                                                    //data.networkid = networkid;
+
+                                                    if (parseInt(vmguestip) !== -1) {
+                                                        data.vmguestip = vmguestip;
+                                                    }
+                                                } else if (args.itemData[0]._subselect && args.itemData[0]._subselect != -1) {
+                                                    data.vmguestip = args.itemData[0]._subselect;
+                                                }           
+                                                
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
                                                     data: data,
