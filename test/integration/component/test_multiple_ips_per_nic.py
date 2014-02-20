@@ -34,7 +34,10 @@ from marvin.integration.lib.base import (Account,
                                          VPC,
                                          NIC,
                                          Domain,
-                                         PublicIPAddress)
+                                         PublicIPAddress,
+                                         StaticNATRule,
+                                         FireWallRule,
+                                         NATRule)
 from marvin.integration.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
@@ -44,7 +47,7 @@ from marvin.integration.lib.common import (get_domain,
                                            shouldTestBeSkipped)
 
 from nose.plugins.attrib import attr
-from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK
+from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK, FAIL
 from ddt import ddt, data
 
 def createNetwork(self, networkType):
@@ -101,6 +104,31 @@ def CreateEnabledNetworkOffering(apiclient, networkServices):
     result = createEnabledNetworkOffering(apiclient, networkServices)
     assert result[0] == PASS, "Network offering creation/enabling failed due to %s" % result[2]
     return result[1]
+
+def createNetworkRules(self, virtual_machine, network, vmguestip, networktype, ruletype):
+    """ Acquire public ip in the given network, open firewall if required and
+        create NAT rule for the public ip to the given guest vm ip address"""
+
+    try:
+        public_ip = PublicIPAddress.create(self.api_client,accountid=self.account.name,
+                                           zoneid=self.zone.id,domainid=self.account.domainid,
+                                           networkid=network.id, vpcid = network.vpcid if networktype == VPC_NETWORK else None)
+
+        if networktype != VPC_NETWORK:
+            FireWallRule.create(self.apiclient,ipaddressid=public_ip.ipaddress.id,
+                                      protocol='TCP', cidrlist=[self.services["fwrule"]["cidr"]],
+                                      startport=self.services["fwrule"]["startport"],endport=self.services["fwrule"]["endport"])
+
+        if ruletype == "nat":
+            NATRule.create(self.api_client, virtual_machine,
+                       self.services["natrule"],ipaddressid=public_ip.ipaddress.id,
+                       networkid=network.id, vmguestip = vmguestip)
+        elif ruletype == "staticnat":
+            StaticNATRule.enable(self.apiclient, public_ip.ipaddress.id, virtual_machine.id, network.id, vmguestip=vmguestip)
+    except Exception:
+        return FAIL
+
+    return PASS
 
 @ddt
 class TestBasicOperations(cloudstackTestCase):
@@ -449,4 +477,377 @@ class TestBasicOperations(cloudstackTestCase):
         except Exception as e:
             self.fail("Removing seondary IP %s from NIC failed as expected with Exception %s" % (ipaddress_1.id,e))
 
+        return
+
+@ddt
+class TestNetworkRules(cloudstackTestCase):
+    """Test PF/NAT/static nat rules with the secondary IPs
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cloudstackTestClient = super(TestNetworkRules,cls).getClsTestClient()
+        cls.api_client = cloudstackTestClient.getApiClient()
+
+        # Fill services from the external config file
+        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.mode = str(cls.zone.networktype).lower()
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls._cleanup = [cls.service_offering]
+        cls.services["shared_network_offering"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+
+        cls.shared_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["shared_network_offering"])
+        cls._cleanup.append(cls.shared_network_offering)
+
+        if cls.mode == "advanced":
+            cls.isolated_network_offering = CreateEnabledNetworkOffering(cls.api_client, cls.services["isolated_network_offering"])
+            cls._cleanup.append(cls.isolated_network_offering)
+            cls.isolated_network_offering_vpc = CreateEnabledNetworkOffering(cls.api_client, cls.services["nw_offering_isolated_vpc"])
+            cls._cleanup.append(cls.isolated_network_offering_vpc)
+            cls.vpc_off = VpcOffering.create(cls.api_client, cls.services["vpc_offering"])
+            cls.vpc_off.update(cls.api_client, state='Enabled')
+            cls._cleanup.append(cls.vpc_off)
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = [ ]
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the resources created
+            cleanup_resources(self.apiclient, self.cleanup)
+            self.cleanup[:] = []
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def VerifyStaticNatForPublicIp(self, ipaddressid, natrulestatus):
+        """ List public IP and verify that NAT rule status for the IP is as desired """
+
+        publiciplist = PublicIPAddress.list(self.apiclient, id=ipaddressid, listall=True)
+        self.assertEqual(validateList(publiciplist)[0], PASS, "Public IP list validation failed")
+        self.assertEqual(publiciplist[0].isstaticnat, natrulestatus, "isstaticnat should be %s, it is %s" %
+                (natrulestatus, publiciplist[0].isstaticnat))
+
+        return
+
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
+    def test_add_PF_rule(self, value):
+        """ Add secondary IP to NIC of a VM"""
+
+        # Steps:
+        # 1. Create Account and create network in it (isoalted/ shared/ vpc)
+        # 2. Deploy a VM in this network and account
+        # 3. Add 2 secondary IPs to the default nic of VM
+        # 4. Acquire public IP, open firewall for it, and
+        #    create NAT rule for this public IP to the 1st secondary IP
+        # 5. Repeat step 4 for another public IP
+        # 6. Repeat step 4 for 2nd secondary IP
+        # 7. Repeat step 4 for invalid secondary IP
+
+        # Validations:
+        # 1. Step 4 should succeed
+        # 2. Step 5 should succeed
+        # 3. Step 6 should succeed
+        # 4. Step 7 should fail
+
+        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        self.cleanup.append(self.account)
+
+        network = createNetwork(self, value)
+
+        try:
+            virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                    networkids=[network.id],serviceofferingid=self.service_offering.id,
+                                                    accountid=self.account.name,domainid=self.account.domainid)
+        except Exception as e:
+            self.fail("vm creation failed: %s" % e)
+
+        try:
+            ipaddress_1 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        try:
+            ipaddress_2 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_1.ipaddress, value, ruletype="nat"),
+                PASS, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_1.ipaddress, value, ruletype="nat"),
+                PASS, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_2.ipaddress, value, ruletype="nat"),
+                PASS, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, "255.255.255.300", value, ruletype="nat"),
+                FAIL, "Failure in NAT rule creation")
+        return
+
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
+    def test_delete_PF_nat_rule(self, value):
+        """ Add secondary IP to NIC of a VM"""
+
+        # Steps:
+        # 1. Create Account and create network in it (isoalted/ shared/ vpc)
+        # 2. Deploy a VM in this network and account
+        # 3. Add secondary IP to the default nic of VM
+        # 4. Acquire public IP, open firewall for it, and
+        #    create NAT rule for this public IP to the 1st secondary IP
+        # 5. Try to delete secondary IP when NAT rule exists for it
+        # 6. Delete firewall rule and NAT rule
+
+        # Validations:
+        # 1. Step 5 should fail
+        # 2. Step 6 should succeed
+
+        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        self.cleanup.append(self.account)
+
+        network = createNetwork(self, value)
+        firewallrule = None
+
+        try:
+            virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                    networkids=[network.id],serviceofferingid=self.service_offering.id,
+                                                    accountid=self.account.name,domainid=self.account.domainid)
+        except Exception as e:
+            self.fail("vm creation failed: %s" % e)
+
+        try:
+            ipaddress_1 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        public_ip = PublicIPAddress.create(self.api_client,accountid=self.account.name,
+                                           zoneid=self.zone.id,domainid=self.account.domainid,
+                                           networkid=network.id, vpcid = network.vpcid if value == VPC_NETWORK else None)
+
+        if value != VPC_NETWORK:
+            firewallrule = FireWallRule.create(self.apiclient,ipaddressid=public_ip.ipaddress.id,
+                                      protocol='TCP', cidrlist=[self.services["fwrule"]["cidr"]],
+                                      startport=self.services["fwrule"]["startport"],endport=self.services["fwrule"]["endport"])
+
+        # Create NAT rule
+        natrule = NATRule.create(self.api_client, virtual_machine,
+                       self.services["natrule"],ipaddressid=public_ip.ipaddress.id,
+                       networkid=network.id, vmguestip = ipaddress_1.ipaddress)
+        try:
+            NIC.removeIp(self.apiclient, ipaddressid=ipaddress_1.id)
+            self.fail("Removing secondary IP succeeded while it had active NAT rule on it, should have failed")
+        except Exception as e:
+            self.debug("Removing secondary IP with active NAT rule failed as expected")
+
+        if firewallrule:
+            try:
+                firewallrule.delete(self.apiclient)
+            except Exception as e:
+                self.fail("Exception while deleting firewall rule %s: %s" % (firewallrule.id, e))
+
+        try:
+            natrule.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Exception while deleting nat rule %s: %s" % (natrule.id, e))
+        return
+
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
+    def test_disassociate_ip_mapped_to_secondary_ip_through_PF_rule(self, value):
+        """ Add secondary IP to NIC of a VM"""
+
+        ## Steps:
+        # 1. Create Account and create network in it (isoalted/ shared/ vpc)
+        # 2. Deploy a VM in this network and account
+        # 3. Add secondary IP to the default nic of VM
+        # 4. Acquire public IP, open firewall for it, and
+        #    create NAT rule for this public IP to the 1st secondary IP
+        # 5. Try to delete the public IP used for NAT rule
+
+        # Validations:
+        # 1. Step 5 should succeed
+
+        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        self.cleanup.append(self.account)
+
+        network = createNetwork(self, value)
+
+        try:
+            virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                    networkids=[network.id],serviceofferingid=self.service_offering.id,
+                                                    accountid=self.account.name,domainid=self.account.domainid)
+        except Exception as e:
+            self.fail("vm creation failed: %s" % e)
+
+        try:
+            ipaddress_1 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        public_ip = PublicIPAddress.create(self.api_client,accountid=self.account.name,
+                                           zoneid=self.zone.id,domainid=self.account.domainid,
+                                           networkid=network.id, vpcid = network.vpcid if value == VPC_NETWORK else None)
+
+        if value != VPC_NETWORK:
+            FireWallRule.create(self.apiclient,ipaddressid=public_ip.ipaddress.id,
+                                      protocol='TCP', cidrlist=[self.services["fwrule"]["cidr"]],
+                                      startport=self.services["fwrule"]["startport"],endport=self.services["fwrule"]["endport"])
+
+        # Create NAT rule
+        natrule = NATRule.create(self.api_client, virtual_machine,
+                       self.services["natrule"],ipaddressid=public_ip.ipaddress.id,
+                       networkid=network.id, vmguestip = ipaddress_1.ipaddress)
+
+        try:
+            public_ip.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Exception while deleting nat rule %s: %s" % (natrule.id, e))
+        return
+
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
+    def test_add_static_nat_rule(self, value):
+        """ Add secondary IP to NIC of a VM"""
+
+        # Steps:
+        # 1. Create Account and create network in it (isoalted/ shared/ vpc)
+        # 2. Deploy a VM in this network and account
+        # 3. Add 2 secondary IPs to the default nic of VM
+        # 4. Acquire public IP, open firewall for it, and
+        #    create static NAT rule for this public IP to the 1st secondary IP
+        # 5. Repeat step 4 for another public IP
+        # 6. Repeat step 4 for 2nd secondary IP
+        # 7. Repeat step 4 for invalid secondary IP
+        # 8. Try to remove 1st secondary IP (with active static nat rule)
+
+        # Validations:
+        # 1. Step 4 should succeed
+        # 2. Step 5 should succeed
+        # 3. Step 6 should succeed
+        # 4. Step 7 should fail
+        # 5. Step 8 should succeed
+
+        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        self.cleanup.append(self.account)
+
+        network = createNetwork(self, value)
+
+        try:
+            virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                    networkids=[network.id],serviceofferingid=self.service_offering.id,
+                                                    accountid=self.account.name,domainid=self.account.domainid)
+        except Exception as e:
+            self.fail("vm creation failed: %s" % e)
+
+        try:
+            ipaddress_1 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        try:
+            ipaddress_2 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_1.ipaddress, value, ruletype="staticnat"),
+                PASS, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_1.ipaddress, value, ruletype="staticnat"),
+                FAIL, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, ipaddress_2.ipaddress, value, ruletype="staticnat"),
+                PASS, "Failure in creating NAT rule")
+        self.assertEqual(createNetworkRules(self, virtual_machine, network, "255.255.255.300", value, ruletype="staticnat"),
+                FAIL, "Failure in NAT rule creation")
+
+        try:
+            NIC.removeIp(self.apiclient, ipaddress_1.id)
+            self.fail("Ip address should not get removed when active static NAT rule is defined for it")
+        except Exception as e:
+            self.debug("Exception while removing secondary ip address as expected because static nat rule is present for it")
+        return
+
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
+    def test_disable_static_nat(self, value):
+        """ Add secondary IP to NIC of a VM"""
+
+        # Steps:
+        # 1. Create Account and create network in it (isoalted/ shared/ vpc)
+        # 2. Deploy a VM in this network and account
+        # 3. Add 2 secondary IPs to the default nic of VM
+        # 4. Acquire public IP, open firewall for it, and
+        #    enable static NAT rule for this public IP to the 1st secondary IP
+        # 5. Disable the static nat rule and enable it again
+
+        # Validations:
+        # 1. Verify step 5 by listing seconday IP and checking the appropriate flag
+
+        self.account = Account.create(self.apiclient,self.services["account"],domainid=self.domain.id)
+        self.cleanup.append(self.account)
+
+        network = createNetwork(self, value)
+
+        try:
+            virtual_machine = VirtualMachine.create(self.apiclient,self.services["virtual_machine"],
+                                                    networkids=[network.id],serviceofferingid=self.service_offering.id,
+                                                    accountid=self.account.name,domainid=self.account.domainid)
+        except Exception as e:
+            self.fail("vm creation failed: %s" % e)
+
+        try:
+            ipaddress_1 = NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
+        except Exception as e:
+            self.fail("Failed while adding secondary IP to NIC of vm %s" % virtual_machine.id)
+
+        public_ip = PublicIPAddress.create(self.api_client,accountid=self.account.name,
+                                           zoneid=self.zone.id,domainid=self.account.domainid,
+                                           networkid=network.id, vpcid = network.vpcid if value == VPC_NETWORK else None)
+
+        if value != VPC_NETWORK:
+            FireWallRule.create(self.apiclient,ipaddressid=public_ip.ipaddress.id,
+                                      protocol='TCP', cidrlist=[self.services["fwrule"]["cidr"]],
+                                      startport=self.services["fwrule"]["startport"],endport=self.services["fwrule"]["endport"])
+
+        StaticNATRule.enable(self.apiclient, public_ip.ipaddress.id, virtual_machine.id,
+                    network.id, vmguestip=ipaddress_1.ipaddress)
+
+        self.VerifyStaticNatForPublicIp(public_ip.ipaddress.id, True)
+
+        # Disabling static NAT
+        StaticNATRule.disable(self.apiclient, public_ip.ipaddress.id)
+
+        self.VerifyStaticNatForPublicIp(public_ip.ipaddress.id, False)
+
+        StaticNATRule.enable(self.apiclient, public_ip.ipaddress.id, virtual_machine.id,
+                    network.id, vmguestip=ipaddress_1.ipaddress)
+
+        self.VerifyStaticNatForPublicIp(public_ip.ipaddress.id, True)
+
+        public_ip.delete(self.apiclient)
         return
