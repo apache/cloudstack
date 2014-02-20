@@ -1878,10 +1878,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
-            int i = 0;
+            int i = 1;
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
-                    prepareAttribute(++i, pstmt, value.first(), value.second());
+                    prepareAttribute(i++, pstmt, value.first(), value.second());
                 }
             }
 
