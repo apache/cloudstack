@@ -395,7 +395,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (clz == CreateCommand.class) {
                 answer = execute((CreateCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
-                return _vrResource.executeRequest(cmd);
+                return _vrResource.executeRequest((NetworkElementCommand)cmd);
             } else if (clz == ReadyCommand.class) {
                 answer = execute((ReadyCommand)cmd);
             } else if (clz == GetHostStatsCommand.class) {

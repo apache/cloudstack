@@ -412,7 +412,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (clazz == CreateCommand.class) {
             return execute((CreateCommand)cmd);
         } else if (cmd instanceof NetworkElementCommand) {
-            return _vrResource.executeRequest(cmd);
+            return _vrResource.executeRequest((NetworkElementCommand)cmd);
         } else if (clazz == CheckConsoleProxyLoadCommand.class) {
             return execute((CheckConsoleProxyLoadCommand)cmd);
         } else if (clazz == WatchConsoleProxyLoadCommand.class) {

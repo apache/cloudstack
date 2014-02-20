@@ -22,7 +22,6 @@ import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -130,9 +129,9 @@ public class VirtualRoutingResource {
         this._vrDeployer = deployer;
     }
 
-    public Answer executeRequest(final Command cmd) {
+    public Answer executeRequest(final NetworkElementCommand cmd) {
         try {
-            ExecutionResult rc = _vrDeployer.prepareCommand((NetworkElementCommand)cmd);
+            ExecutionResult rc = _vrDeployer.prepareCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to prepare VR command due to " + rc.getDetails());
                 return new Answer(cmd, false, rc.getDetails());
@@ -194,7 +193,7 @@ public class VirtualRoutingResource {
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
-            ExecutionResult rc = _vrDeployer.cleanupCommand((NetworkElementCommand)cmd);
+            ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to cleanup VR command due to " + rc.getDetails());
             }

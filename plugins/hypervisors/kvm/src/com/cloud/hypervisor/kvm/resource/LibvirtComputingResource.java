@@ -1313,7 +1313,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else if (cmd instanceof UnPlugNicCommand) {
                 return execute((UnPlugNicCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
-                return _virtRouterResource.executeRequest(cmd);
+                return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
             } else if (cmd instanceof CheckSshCommand) {
                 return execute((CheckSshCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
