@@ -373,13 +373,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
 
         long ownerId = cmd.getEntityOwnerId();
-        Boolean displayVolumeEnabled = cmd.getDisplayVolume();
+        Boolean displayVolume = cmd.getDisplayVolume();
 
         // permission check
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
 
-        if (displayVolumeEnabled == null) {
-            displayVolumeEnabled = true;
+        if (displayVolume == null) {
+            displayVolume = true;
         } else {
             if (!_accountMgr.isRootAdmin(caller.getType())) {
                 throw new PermissionDeniedException("Cannot update parameter displayvolume, only admin permitted ");
@@ -387,7 +387,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume, displayVolumeEnabled);
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume, displayVolume);
 
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
@@ -528,7 +528,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for primary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage, displayVolumeEnabled, new Long(size));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage, displayVolume, new Long(size));
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -552,13 +552,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolume, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
-    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolumeEnabled, final Long zoneId,
+    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolume, final Long zoneId,
             final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
@@ -577,7 +577,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setInstanceId(null);
                 volume.setUpdated(new Date());
                 volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
-                volume.setDisplayVolume(displayVolumeEnabled);
+                volume.setDisplayVolume(displayVolume);
                 if (parentVolume != null) {
                     volume.setTemplateId(parentVolume.getTemplateId());
                     volume.setFormat(parentVolume.getFormat());
@@ -596,8 +596,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolumeEnabled);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolumeEnabled, new Long(volume.getSize()));
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
                 return volume;
             }
         });

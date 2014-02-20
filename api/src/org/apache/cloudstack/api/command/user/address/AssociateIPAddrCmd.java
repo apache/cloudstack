@@ -18,8 +18,7 @@ package org.apache.cloudstack.api.command.user.address;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,6 +36,7 @@ import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -102,6 +102,9 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                required = false,
                description = "region ID from where portable ip is to be associated.")
     private Integer regionId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -195,6 +198,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
     }
 
+    public Boolean getDisplayIp() {
+        return display;
+    }
+
     @Override
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
@@ -274,7 +281,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             IpAddress ip = null;
 
             if (!isPortable()) {
-                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId());
+                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp());
             } else {
                 ip = _networkService.allocatePortableIP(_accountService.getAccount(getEntityOwnerId()), 1, getZoneId(), getNetworkId(), getVpcId());
             }

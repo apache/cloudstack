@@ -528,3 +528,9 @@ UPDATE `cloud`.`vpc_details` set `display`=1 where id> 0;
 
 ALTER TABLE `cloud`.`vpc_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 UPDATE `cloud`.`vpc_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the ip address can be displayed to the end user';
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the vpc can be displayed to the end user';
+
+
+

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -69,7 +70,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the network to the end user or not.")
+ description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     /////////////////////////////////////////////////////

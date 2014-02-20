@@ -114,6 +114,9 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "is_portable")
     private boolean portable = false;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     protected IPAddressVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -333,5 +336,14 @@ public class IPAddressVO implements IpAddress {
     @Override
     public Long getNetworkId() {
         return sourceNetworkId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }

@@ -1826,7 +1826,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
-        Boolean isDisplayVmEnabled = cmd.getDisplayVm();
+        Boolean isDisplayVm = cmd.getDisplayVm();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
@@ -1842,17 +1842,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vmInstance);
 
         //If the flag is specified and is changed
-        if (isDisplayVmEnabled != null && isDisplayVmEnabled != vmInstance.isDisplayVm()) {
-            if (!_accountMgr.isRootAdmin(caller.getType())) {
-                throw new PermissionDeniedException("Cannot update parameter displayvm, only admin permitted ");
-            }
+        if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplayVm()) {
             ServiceOffering offering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
-            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.user_vm, isDisplayVmEnabled);
-            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.cpu, isDisplayVmEnabled, new Long(offering.getCpu()));
-            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.memory, isDisplayVmEnabled, new Long(offering.getRamSize()));
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.user_vm, isDisplayVm);
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.cpu, isDisplayVm, new Long(offering.getCpu()));
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.memory, isDisplayVm, new Long(offering.getRamSize()));
         }
 
-        return updateVirtualMachine(id, displayName, group, ha, isDisplayVmEnabled, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId());
+        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId());
     }
 
     @Override
@@ -2460,7 +2457,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate tmplt, String hostName, String displayName, Account owner,
             Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData,
-            String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVmEnabled, String keyboard,
+            String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard,
             List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
@@ -2524,7 +2521,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
-        resourceLimitCheck(owner, isDisplayVmEnabled, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
@@ -2765,7 +2762,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             hypervisorType = template.getHypervisorType();
         }
 
-        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, hypervisor, caller, isDisplayVmEnabled, keyboard, accountId,
+        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, hypervisor, caller, isDisplayVm, keyboard, accountId,
                 offering, isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters);
 
         // Assign instance to the group
@@ -2794,7 +2791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
-            final Long diskOfferingId, final Long diskSize, final String userData, final HypervisorType hypervisor, final Account caller, final Boolean isDisplayVmEnabled,
+            final Long diskOfferingId, final Long diskSize, final String userData, final HypervisorType hypervisor, final Account caller, final Boolean isDisplayVm,
             final String keyboard, final long accountId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey,
             final LinkedHashMap<String, NicProfile> networkNicMap, final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType,
             final Map<String, String> customParameters) throws InsufficientCapacityException {
@@ -2824,11 +2821,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     customParameters.remove("rootdisksize");
                 }
 
-                if (isDisplayVmEnabled != null) {
-                    if (!_accountMgr.isRootAdmin(caller.getType())) {
-                        throw new PermissionDeniedException("Cannot update parameter displayvm, only admin permitted ");
-                    }
-                    vm.setDisplayVm(isDisplayVmEnabled);
+                if (isDisplayVm != null) {
+                    vm.setDisplayVm(isDisplayVm);
                 } else {
                     vm.setDisplayVm(true);
                 }
@@ -2906,7 +2900,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //Update Resource Count for the given account
-                resourceCountIncrement(accountId, isDisplayVmEnabled, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountIncrement(accountId, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
                 return vm;
             }
         });

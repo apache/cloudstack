@@ -85,4 +85,6 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
 
     Long getNetworkId();
 
+    boolean isDisplay();
+
 }

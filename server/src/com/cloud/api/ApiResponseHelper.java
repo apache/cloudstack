@@ -714,6 +714,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ipResponse.setForDisplay(ipAddr.isDisplay());
+
         ipResponse.setPortable(ipAddr.isPortable());
 
         //set tag information
@@ -2783,6 +2785,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
+        response.setForDisplay(vpc.isDisplay());
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();

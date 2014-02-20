@@ -231,4 +231,9 @@ public class PublicIp implements PublicIpAddress {
     public Long getIpMacAddress() {
         return _addr.getMacAddress();
     }
+
+    @Override
+    public boolean isDisplay() {
+        return _addr.isDisplay();
+    }
 }

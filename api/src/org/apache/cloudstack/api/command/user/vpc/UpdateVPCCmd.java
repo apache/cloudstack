@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -48,6 +49,9 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC")
     private String displayText;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpc to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,6 +66,10 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getDisplayVpc() {
+        return display;
     }
 
     /////////////////////////////////////////////////////
@@ -84,7 +92,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), this.getCustomId());
+        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), this.getCustomId(), getDisplayVpc());
         if (result != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(result);
             response.setResponseName(getCommandName());

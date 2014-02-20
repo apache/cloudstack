@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -170,7 +171,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             + "Mutually exclusive with affinitygroupids parameter")
     private List<String> affinityGroupNameList;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters.")

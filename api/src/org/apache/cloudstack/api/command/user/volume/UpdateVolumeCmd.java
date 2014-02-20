@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,7 +63,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_VOLUME,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the volume to the end user or not.")
+ description = "an optional field, whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
     /////////////////////////////////////////////////////

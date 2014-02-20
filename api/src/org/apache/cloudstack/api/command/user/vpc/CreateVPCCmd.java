@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -87,6 +88,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
                    "True by default.", since = "4.3")
     private Boolean start;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpc to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -130,9 +134,13 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
         return true;
     }
 
+    public Boolean getDisplayVpc() {
+        return display;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
-        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain());
+        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain(), getDisplayVpc());
         if (vpc != null) {
             setEntityId(vpc.getId());
             setEntityUuid(vpc.getUuid());

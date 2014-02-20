@@ -513,7 +513,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp) throws ResourceAllocationException, InsufficientAddressCapacityException,
             ConcurrentOperationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -537,7 +537,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
-                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
                     } else {
                         throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone"
                                 + " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
@@ -548,7 +548,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             _accountMgr.checkAccess(caller, null, false, ipOwner);
         }
 
-        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
+        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
     }
 
     @Override
@@ -1022,11 +1022,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             zoneId = pNtwk.getDataCenterId();
         }
 
-        if (displayNetwork != null) {
-            if (!_accountMgr.isRootAdmin(caller.getType())) {
-                throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
-            }
-        } else {
+        if (displayNetwork == null) {
             displayNetwork = true;
         }
 
@@ -1990,10 +1986,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         // display flag is not null and has changed
         if (displayNetwork != null && displayNetwork != network.getDisplayNetwork()) {
-            if (!_accountMgr.isRootAdmin(callerAccount.getType())) {
-                throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
-            }
-
             // Update resource count if it needs to be updated
             NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (_networkMgr.resourceCountNeedsUpdate(networkOffering, network.getAclType())) {
@@ -4036,7 +4028,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_UPDATE, eventDescription = "updating public ip address", async = true)
-    public IpAddress updateIP(Long id, String customId) {
+    public IpAddress updateIP(Long id, String customId, Boolean displayIp) {
         Account caller = CallContext.current().getCallingAccount();
         IPAddressVO ipVO = _ipAddressDao.findById(id);
         if (ipVO == null) {
@@ -4053,6 +4045,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         if (customId != null) {
             ipVO.setUuid(customId);
         }
+
+        if (displayIp != null) {
+            ipVO.setDisplay(displayIp);
+        }
+
         _ipAddressDao.update(id, ipVO);
         return _ipAddressDao.findById(id);
     }

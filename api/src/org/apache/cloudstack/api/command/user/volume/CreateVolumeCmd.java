@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -34,6 +33,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -97,7 +97,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,

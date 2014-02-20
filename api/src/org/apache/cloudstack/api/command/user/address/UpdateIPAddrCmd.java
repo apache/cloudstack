@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
@@ -51,6 +52,9 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -61,6 +65,10 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getDisplayIp() {
+        return display;
     }
 
 
@@ -76,6 +84,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public String getEventDescription() {
         return ("Updating ip address with id=" + id);
     }
+
 
     @Override
     public long getEntityOwnerId() {
@@ -114,7 +123,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-        IpAddress result = _networkService.updateIP(getId(), this.getCustomId());
+        IpAddress result = _networkService.updateIP(getId(), this.getCustomId(), getDisplayIp());
         IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
         ipResponse.setResponseName(getCommandName());
         setResponseObject(ipResponse);

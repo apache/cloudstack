@@ -584,7 +584,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain)
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
         throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(vpcOwnerId);
@@ -630,12 +630,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain);
+        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc);
     }
 
     @DB
     protected Vpc createVpc(final long zoneId, final long vpcOffId, final Account vpcOwner, final String vpcName, final String displayText, final String cidr,
-        final String networkDomain) {
+            final String networkDomain, final Boolean displayVpc) {
 
         //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
@@ -658,6 +658,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             @Override
             public VpcVO doInTransaction(TransactionStatus status) {
                 VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, networkDomain);
+                if (displayVpc != null) {
+                    vpc.setDisplay(displayVpc);
+                }
                 vpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(zoneId, vpcOffId));
                 _resourceLimitMgr.incrementResourceCount(vpcOwner.getId(), ResourceType.vpc);
 
@@ -769,7 +772,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId) {
+    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc) {
         CallContext.current().setEventDetails(" Id: " + vpcId);
         Account caller = CallContext.current().getCallingAccount();
 
@@ -793,6 +796,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (customId != null) {
             vpc.setUuid(customId);
+        }
+
+        if (displayVpc != null) {
+            vpc.setDisplay(displayVpc);
         }
 
         if (_vpcDao.update(vpcId, vpc)) {
@@ -2020,6 +2027,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 //update ip address with networkId
                 ip.setVpcId(vpcId);
                 ip.setSourceNat(isSourceNatFinal);
+
                 _ipAddressDao.update(ipId, ip);
 
                 //mark ip as allocated

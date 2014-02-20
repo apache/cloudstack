@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -67,7 +68,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
                length = 32768)
     private String userData;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,

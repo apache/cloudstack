@@ -550,7 +550,6 @@ public class ApiConstants {
     public static final String PASSIVE = "passive";
     public static final String VERSION = "version";
     public static final String START = "start";
-    public static final String DISPLAY = "display";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
