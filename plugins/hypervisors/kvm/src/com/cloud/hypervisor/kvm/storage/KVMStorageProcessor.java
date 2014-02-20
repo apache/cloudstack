@@ -971,6 +971,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             return new AttachAnswer(e.toString());
         } catch (InternalErrorException e) {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
