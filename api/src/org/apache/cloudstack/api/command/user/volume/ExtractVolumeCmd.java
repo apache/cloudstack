@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +39,7 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = { AclEntityType.Volume })
+@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = { IAMEntityType.Volume })
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 

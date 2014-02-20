@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -47,7 +47,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "scaleSystemVm", responseObject = SystemVmResponse.class, description = "Scale the service offering for a system vm (console proxy or secondary storage). "
-        + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.", entityType = { AclEntityType.VirtualMachine })
+        + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.", entityType = { IAMEntityType.VirtualMachine })
 public class ScaleSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";

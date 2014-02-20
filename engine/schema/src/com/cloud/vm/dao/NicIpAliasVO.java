@@ -28,7 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -235,8 +235,8 @@ public class NicIpAliasVO implements NicIpAlias  {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.NicIpAlias;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.NicIpAlias;
     }
 
 }

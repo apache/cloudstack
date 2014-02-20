@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.admin.vpc;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +43,7 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPrivateGateway", description = "Creates a private gateway", responseObject = PrivateGatewayResponse.class, entityType = { AclEntityType.PrivateGateway })
+@APICommand(name = "createPrivateGateway", description = "Creates a private gateway", responseObject = PrivateGatewayResponse.class, entityType = { IAMEntityType.PrivateGateway })
 public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayCmd.class.getName());
 

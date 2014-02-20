@@ -27,7 +27,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 @Entity
@@ -126,8 +126,8 @@ public class AffinityGroupVO implements AffinityGroup {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.AffinityGroup;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AffinityGroup;
     }
 
 }

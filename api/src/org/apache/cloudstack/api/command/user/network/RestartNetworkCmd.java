@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +41,7 @@ import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
             description = "Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules",
-            responseObject = IPAddressResponse.class, entityType = { AclEntityType.Network })
+            responseObject = IPAddressResponse.class, entityType = { IAMEntityType.Network })
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";

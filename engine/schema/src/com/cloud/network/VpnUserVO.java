@@ -27,7 +27,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.Encrypt;
 
@@ -129,7 +129,7 @@ public class VpnUserVO implements VpnUser {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VpnUser;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VpnUser;
     }
 }

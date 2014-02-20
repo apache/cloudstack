@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -45,7 +45,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "authorizeSecurityGroupEgress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since = "3.0.0", entityType = { AclEntityType.SecurityGroup })
+@APICommand(name = "authorizeSecurityGroupEgress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since = "3.0.0", entityType = { IAMEntityType.SecurityGroup })
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());

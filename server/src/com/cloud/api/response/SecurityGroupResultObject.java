@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -212,7 +212,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.SecurityGroup;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.SecurityGroup;
     }
 }

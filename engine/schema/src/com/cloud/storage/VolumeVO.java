@@ -32,7 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
@@ -590,8 +590,8 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Volume;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Volume;
     }
 
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {

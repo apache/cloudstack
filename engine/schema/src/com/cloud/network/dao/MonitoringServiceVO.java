@@ -25,7 +25,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.MonitoringService;
 
@@ -120,8 +120,8 @@ public class MonitoringServiceVO implements MonitoringService {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.MonitorService;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.MonitorService;
     }
 
 }

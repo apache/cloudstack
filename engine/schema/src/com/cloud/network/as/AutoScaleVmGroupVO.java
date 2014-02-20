@@ -30,7 +30,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.GenericDao;
@@ -215,7 +215,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.AutoScaleVmGroup;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AutoScaleVmGroup;
     }
 }

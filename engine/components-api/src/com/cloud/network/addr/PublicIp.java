@@ -18,7 +18,7 @@ package com.cloud.network.addr;
 
 import java.util.Date;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.network.PublicIpAddress;
@@ -235,7 +235,7 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.PublicIpAddress;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.PublicIpAddress;
     }
 }

@@ -22,7 +22,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -665,7 +665,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Volume;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Volume;
     }
 }

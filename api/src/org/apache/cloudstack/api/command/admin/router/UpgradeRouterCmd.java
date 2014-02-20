@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class, entityType = { AclEntityType.VirtualMachine })
+@APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
 public class UpgradeRouterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "changeserviceforrouterresponse";

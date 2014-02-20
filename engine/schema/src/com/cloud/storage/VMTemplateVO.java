@@ -31,7 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
@@ -635,8 +635,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VirtualMachineTemplate;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachineTemplate;
     }
 
 }

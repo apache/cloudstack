@@ -25,7 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.utils.db.GenericDao;
@@ -164,7 +164,7 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.ProjectInvitation;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.ProjectInvitation;
     }
 }

@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class, entityType = { AclEntityType.AutoScalePolicy })
+@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class, entityType = { IAMEntityType.AutoScalePolicy })
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScalePolicyCmd.class.getName());
 

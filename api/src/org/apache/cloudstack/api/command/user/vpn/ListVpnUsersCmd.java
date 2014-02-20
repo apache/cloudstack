@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import com.cloud.network.VpnUser;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVpnUsers", description = "Lists vpn users", responseObject = VpnUsersResponse.class, entityType = { AclEntityType.VpnUser })
+@APICommand(name = "listVpnUsers", description = "Lists vpn users", responseObject = VpnUsersResponse.class, entityType = { IAMEntityType.VpnUser })
 public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVpnUsersCmd.class.getName());
 

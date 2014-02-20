@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(name = "deleteRemoteAccessVpn", description = "Destroys a l2tp/ipsec remote access vpn", responseObject = SuccessResponse.class, entityType = { AclEntityType.RemoteAccessVpn })
+@APICommand(name = "deleteRemoteAccessVpn", description = "Destroys a l2tp/ipsec remote access vpn", responseObject = SuccessResponse.class, entityType = { IAMEntityType.RemoteAccessVpn })
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 

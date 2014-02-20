@@ -25,7 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.ApiCommandJobType;
 
 import com.cloud.utils.db.GenericDao;
@@ -203,8 +203,8 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.AsyncJob;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AsyncJob;
     }
 
     @Override

@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +43,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class, entityType = { AclEntityType.FirewallRule })
+@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class, entityType = { IAMEntityType.FirewallRule })
 public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateFirewallRuleCmd.class.getName());
 
@@ -335,8 +335,8 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.FirewallRule;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
     }
 
 }

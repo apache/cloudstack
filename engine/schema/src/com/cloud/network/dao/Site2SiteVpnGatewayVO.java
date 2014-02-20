@@ -26,7 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.db.GenericDao;
@@ -121,7 +121,7 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Site2SiteVpnGateway;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Site2SiteVpnGateway;
     }
 }

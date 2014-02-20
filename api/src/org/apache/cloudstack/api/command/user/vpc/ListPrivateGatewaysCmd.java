@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class, entityType = { AclEntityType.VpcGateway })
+@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class, entityType = { IAMEntityType.VpcGateway })
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 

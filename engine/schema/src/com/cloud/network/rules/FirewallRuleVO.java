@@ -34,7 +34,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -272,7 +272,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.FirewallRule;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
     }
 }

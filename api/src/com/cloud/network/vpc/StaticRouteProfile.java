@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 public class StaticRouteProfile implements StaticRoute {
     private long id;
@@ -104,8 +104,8 @@ public class StaticRouteProfile implements StaticRoute {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.StaticRoute;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.StaticRoute;
     }
 
 }

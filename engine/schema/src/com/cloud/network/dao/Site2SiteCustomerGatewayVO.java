@@ -26,7 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
@@ -211,7 +211,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Site2SiteCustomerGateway;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Site2SiteCustomerGateway;
     }
 }

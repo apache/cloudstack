@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, entityType = { AclEntityType.Site2SiteVpnGateway })
+@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, entityType = { IAMEntityType.Site2SiteVpnGateway })
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
 

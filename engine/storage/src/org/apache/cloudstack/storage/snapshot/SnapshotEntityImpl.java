@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -185,8 +185,8 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Snapshot;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Snapshot;
     }
 
 }

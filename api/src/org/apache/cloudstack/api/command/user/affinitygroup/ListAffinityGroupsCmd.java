@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-@APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class, entityType = { AclEntityType.AffinityGroup })
+@APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class, entityType = { IAMEntityType.AffinityGroup })
 public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupsCmd.class.getName());
 

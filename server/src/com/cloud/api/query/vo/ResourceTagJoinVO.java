@@ -23,7 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
@@ -182,7 +182,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.ResourceTag;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.ResourceTag;
     }
 }

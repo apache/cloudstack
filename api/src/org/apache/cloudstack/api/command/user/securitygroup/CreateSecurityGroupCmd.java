@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "createSecurityGroup", responseObject = SecurityGroupResponse.class, description = "Creates a security group", entityType = { AclEntityType.SecurityGroup })
+@APICommand(name = "createSecurityGroup", responseObject = SecurityGroupResponse.class, description = "Creates a security group", entityType = { IAMEntityType.SecurityGroup })
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 

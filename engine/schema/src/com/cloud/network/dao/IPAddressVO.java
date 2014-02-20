@@ -31,7 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.IpAddress;
 import com.cloud.utils.net.Ip;
@@ -338,7 +338,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.IpAddress;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.IpAddress;
     }
 }

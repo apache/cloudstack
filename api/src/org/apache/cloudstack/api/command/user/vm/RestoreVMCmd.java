@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
+@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
 public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";

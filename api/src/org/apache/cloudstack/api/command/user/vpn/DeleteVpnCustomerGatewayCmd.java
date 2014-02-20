@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVpnCustomerGateway", description = "Delete site to site vpn customer gateway", responseObject = SuccessResponse.class, entityType = { AclEntityType.Site2SiteCustomerGateway })
+@APICommand(name = "deleteVpnCustomerGateway", description = "Delete site to site vpn customer gateway", responseObject = SuccessResponse.class, entityType = { IAMEntityType.Site2SiteCustomerGateway })
 public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnCustomerGatewayCmd.class.getName());
 

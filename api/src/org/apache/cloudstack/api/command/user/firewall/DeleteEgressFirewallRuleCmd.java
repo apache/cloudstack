@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an ggress firewall rule", responseObject = SuccessResponse.class, entityType = { AclEntityType.FirewallRule })
+@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an ggress firewall rule", responseObject = SuccessResponse.class, entityType = { IAMEntityType.FirewallRule })
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteEgressFirewallRuleCmd.class.getName());
     private static final String s_name = "deleteegressfirewallruleresponse";

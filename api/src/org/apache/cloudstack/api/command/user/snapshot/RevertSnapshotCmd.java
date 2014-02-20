@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class, entityType = { AclEntityType.Snapshot })
+@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class, entityType = { IAMEntityType.Snapshot })
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     private static final String s_name = "revertsnapshotresponse";
 

@@ -28,7 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -219,7 +219,7 @@ public class VpcGatewayVO implements VpcGateway {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VpcGateway;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VpcGateway;
     }
 }

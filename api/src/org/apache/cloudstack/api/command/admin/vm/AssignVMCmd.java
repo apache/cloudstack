@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "assignVirtualMachine",
             description = "Change ownership of a VM from one account to another. This API is available for Basic zones with security groups and Advanced zones with guest networks. A root administrator can reassign a VM from any account to any other account in any domain. A domain administrator can reassign a VM to any account in the same domain.",
             responseObject = UserVmResponse.class,
-            since = "3.0.0", entityType = { AclEntityType.VirtualMachine })
+            since = "3.0.0", entityType = { IAMEntityType.VirtualMachine })
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 

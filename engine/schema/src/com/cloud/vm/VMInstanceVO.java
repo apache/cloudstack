@@ -36,7 +36,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
@@ -502,8 +502,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VirtualMachine;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
     }
 
     public VirtualMachine.PowerState getPowerState() {

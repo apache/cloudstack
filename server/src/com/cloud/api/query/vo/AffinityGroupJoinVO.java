@@ -23,7 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 import com.cloud.vm.VirtualMachine;
@@ -194,8 +194,8 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.AffinityGroup;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AffinityGroup;
     }
 
 }

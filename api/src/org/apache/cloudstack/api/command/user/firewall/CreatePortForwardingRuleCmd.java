@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +44,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 
-@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = { AclEntityType.PortForwardingRule })
+@APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class, entityType = { IAMEntityType.PortForwardingRule })
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
@@ -417,8 +417,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.FirewallRule;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
     }
 
 }

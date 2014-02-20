@@ -33,7 +33,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -223,8 +223,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.AutoScaleVmProfile;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AutoScaleVmProfile;
     }
 
 }

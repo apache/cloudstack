@@ -18,7 +18,7 @@ package com.cloud.network;
 
 import java.net.URI;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -279,7 +279,7 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Network;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Network;
     }
 }

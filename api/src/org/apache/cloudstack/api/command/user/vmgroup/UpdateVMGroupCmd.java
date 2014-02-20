@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vmgroup;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class, entityType = { AclEntityType.InstanceGroup })
+@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class, entityType = { IAMEntityType.InstanceGroup })
 public class UpdateVMGroupCmd extends BaseCmd {
 
     private static final String s_name = "updateinstancegroupresponse";

@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -40,7 +40,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
- "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
+ "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
 public class UpdateVMCmd extends BaseCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";

@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE})
@@ -45,5 +45,5 @@ public @interface APICommand {
 
     RoleType[] authorized() default {};
 
-    AclEntityType[] entityType() default {};
+    IAMEntityType[] entityType() default {};
 }

@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -45,7 +45,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
                                             "The virtual machine must be in a \"Stopped\" state for " +
- "this command to take effect.", responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
+ "this command to take effect.", responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";

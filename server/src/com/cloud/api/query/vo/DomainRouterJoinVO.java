@@ -26,7 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
@@ -514,7 +514,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VirtualMachine;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
     }
 }

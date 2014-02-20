@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.network.as.AutoScalePolicy;
 
-@APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class, entityType = { AclEntityType.AutoScalePolicy })
+@APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class, entityType = { IAMEntityType.AutoScalePolicy })
 public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 

@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.Volume })
 public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";

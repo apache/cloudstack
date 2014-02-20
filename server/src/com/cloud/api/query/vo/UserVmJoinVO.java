@@ -28,7 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
@@ -913,7 +913,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VirtualMachine;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
     }
 }

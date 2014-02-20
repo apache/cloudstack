@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -37,7 +37,7 @@ import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since = "3.0.0", entityType = { AclEntityType.SecurityGroup })
+@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since = "3.0.0", entityType = { IAMEntityType.SecurityGroup })
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
 

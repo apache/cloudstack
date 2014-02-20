@@ -36,7 +36,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
@@ -672,7 +672,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
                             //send event for storing the domain wide resource access
                             Map<String, Object> params = new HashMap<String, Object>();
-                            params.put(ApiConstants.ENTITY_TYPE, AclEntityType.Network);
+                            params.put(ApiConstants.ENTITY_TYPE, IAMEntityType.Network);
                             params.put(ApiConstants.ENTITY_ID, id);
                             params.put(ApiConstants.DOMAIN_ID, domainId);
                             params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccess == null ? true : subdomainAccess);
@@ -2203,7 +2203,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                     _networkAccountDao.remove(networkAccount.getId());
 
                                 // remove its related ACL permission
-                                Pair<AclEntityType, Long> networkMsg = new Pair<AclEntityType, Long>(AclEntityType.Network, networkFinal.getId());
+                                Pair<IAMEntityType, Long> networkMsg = new Pair<IAMEntityType, Long>(IAMEntityType.Network, networkFinal.getId());
                                 _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                             }
 

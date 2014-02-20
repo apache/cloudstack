@@ -29,5 +29,5 @@ public interface ControlledEntity extends OwnedBy, PartOf {
         Account, Domain
     }
 
-    AclEntityType getEntityType();
+    IAMEntityType getEntityType();
 }

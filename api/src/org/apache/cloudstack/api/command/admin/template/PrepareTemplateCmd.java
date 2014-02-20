@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "load template into primary storage", entityType = { AclEntityType.VirtualMachineTemplate })
+@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "load template into primary storage", entityType = { IAMEntityType.VirtualMachineTemplate })
 public class PrepareTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 

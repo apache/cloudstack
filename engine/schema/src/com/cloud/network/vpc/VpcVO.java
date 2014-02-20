@@ -26,7 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -186,7 +186,7 @@ public class VpcVO implements Vpc {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Vpc;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Vpc;
     }
 }

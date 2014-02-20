@@ -28,7 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -188,7 +188,7 @@ public class UserIpv6AddressVO implements UserIpv6Address {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.UserIpv6Address;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.UserIpv6Address;
     }
 }

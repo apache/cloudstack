@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 
 
-@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
+@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.Volume })
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 

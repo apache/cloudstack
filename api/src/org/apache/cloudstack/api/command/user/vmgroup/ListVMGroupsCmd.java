@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vmgroup;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class, entityType = { AclEntityType.InstanceGroup })
+@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class, entityType = { IAMEntityType.InstanceGroup })
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 

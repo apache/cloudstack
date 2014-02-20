@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.template;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {AclEntityType.VirtualMachineTemplate}, responseView = ResponseView.Restricted)
+@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {IAMEntityType.VirtualMachineTemplate}, responseView = ResponseView.Restricted)
 public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 

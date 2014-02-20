@@ -27,7 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -544,7 +544,7 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.VirtualMachineTemplate;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachineTemplate;
     }
 }

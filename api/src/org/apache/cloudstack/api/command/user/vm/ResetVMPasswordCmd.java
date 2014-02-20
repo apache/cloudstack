@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -40,7 +40,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
                     "The virtual machine must be in a \"Stopped\" state and the template must already " +
- "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
+ "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 

@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 import com.cloud.network.Network;
@@ -586,7 +586,7 @@ public class NetworkVO implements Network {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.Network;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Network;
     }
 }

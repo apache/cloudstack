@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.network.as.AutoScaleVmProfile;
 
-@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class, entityType = { AclEntityType.AutoScaleVmProfile })
+@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class, entityType = { IAMEntityType.AutoScaleVmProfile })
 public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmProfilesCmd.class.getName());
 

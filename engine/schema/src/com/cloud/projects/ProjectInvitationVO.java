@@ -28,7 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -149,7 +149,7 @@ public class ProjectInvitationVO implements ProjectInvitation {
     }
 
     @Override
-    public AclEntityType getEntityType() {
-        return AclEntityType.ProjectInvitation;
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.ProjectInvitation;
     }
 }

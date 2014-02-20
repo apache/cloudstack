@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,7 +45,7 @@ import com.cloud.user.User;
 
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
- responseObject = AutoScaleVmProfileResponse.class, entityType = { AclEntityType.AutoScaleVmProfile })
+ responseObject = AutoScaleVmProfileResponse.class, entityType = { IAMEntityType.AutoScaleVmProfile })
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());

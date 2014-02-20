@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
 
-@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class, entityType = { AclEntityType.Condition })
+@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class, entityType = { IAMEntityType.Condition })
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
     private static final String s_name = "conditionresponse";

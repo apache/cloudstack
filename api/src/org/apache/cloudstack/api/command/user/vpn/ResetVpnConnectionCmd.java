@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetVpnConnection", description = "Reset site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = { AclEntityType.Site2SiteVpnConnection })
+@APICommand(name = "resetVpnConnection", description = "Reset site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = { IAMEntityType.Site2SiteVpnConnection })
 public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVpnConnectionCmd.class.getName());
 

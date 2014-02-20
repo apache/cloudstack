@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -46,7 +46,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.exception.InvalidParameterValueException;
 
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
