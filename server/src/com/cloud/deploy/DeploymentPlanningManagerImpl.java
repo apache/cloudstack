@@ -316,6 +316,15 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         host.getClusterId());
                 }
 
+                Pod pod = _podDao.findById(host.getPodId());
+                Cluster cluster = _clusterDao.findById(host.getClusterId());
+
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    return dest;
+                }
+
                 // search for storage under the zone, pod, cluster of the host.
                 DataCenterDeployment lastPlan =
                     new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId(), null,
@@ -333,8 +342,6 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         suitableHosts, suitableVolumeStoragePools, avoids,
                         getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
                     if (potentialResources != null) {
-                        Pod pod = _podDao.findById(host.getPodId());
-                        Cluster cluster = _clusterDao.findById(host.getClusterId());
                         Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                         // remove the reused vol<->pool from destination, since
                         // we don't have to prepare this volume.
@@ -395,10 +402,22 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                             // search for storage under the zone, pod, cluster
                             // of
                         // the last host.
-                            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
-                                    host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
-                            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
-                                    vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+
+
+                        Pod pod = _podDao.findById(host.getPodId());
+                        Cluster cluster = _clusterDao.findById(host.getClusterId());
+
+                        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                            DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
+                            s_logger.debug("Returning Deployment Destination: " + dest);
+                            return dest;
+                        }
+
+                        DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
+                                host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
+                        Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
+                                vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+
                         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                         List<Volume> readyAndReusedVolumes = result.second();
 
@@ -411,8 +430,6 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 suitableHosts, suitableVolumeStoragePools, avoids,
                                 getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
                             if (potentialResources != null) {
-                                Pod pod = _podDao.findById(host.getPodId());
-                                Cluster cluster = _clusterDao.findById(host.getClusterId());
                                 Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                                 // remove the reused vol<->pool from
                                     // destination, since we don't have to

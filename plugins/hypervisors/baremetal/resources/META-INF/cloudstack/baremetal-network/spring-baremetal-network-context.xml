@@ -42,5 +42,5 @@
 
     <bean id="BaremetalDhcpManager"
         class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl" />
-    
+
 </beans>
