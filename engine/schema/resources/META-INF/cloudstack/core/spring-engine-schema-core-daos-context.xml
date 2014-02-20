@@ -222,6 +222,7 @@
   <bean id="PortableIpRangeDaoImpl" class="org.apache.cloudstack.region.PortableIpRangeDaoImpl" />
   <bean id="portForwardingRulesDaoImpl" class="com.cloud.network.rules.dao.PortForwardingRulesDaoImpl" />
   <bean id="portProfileDaoImpl" class="com.cloud.network.dao.PortProfileDaoImpl" />
+  <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
   <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
   <bean id="primaryDataStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.volume.db.PrimaryDataStoreDetailsDaoImpl" />
   <bean id="privateIpDaoImpl" class="com.cloud.network.vpc.dao.PrivateIpDaoImpl" />
@@ -259,7 +260,6 @@
   <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
   <bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
-  <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
   <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />

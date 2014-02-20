@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,14 +72,13 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         if (!dskCh.useLocalStorage()) {
             return null;
         }
-
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         // data disk and host identified from deploying vm (attach volume case)
         if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
-            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());
-            for (StoragePoolHostVO hostPool : hostPools) {
-                StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
+            List<StoragePoolVO> hostTagsPools = null;
+            hostTagsPools =_storagePoolDao.findLocalStoragePoolsByHostAndTags(plan.getHostId(), dskCh.getTags());
+            for (StoragePoolVO pool : hostTagsPools) {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
