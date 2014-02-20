@@ -47,6 +47,9 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume")
     private String path;
 
+    @Parameter(name = ApiConstants.CHAIN_INFO, type = CommandType.STRING, description = "The chain info of the volume")
+    private String chainInfo;
+
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
@@ -86,7 +89,10 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
         return displayVolume;
     }
 
-/////////////////////////////////////////////////////
+    public String getChainInfo() {
+        return chainInfo;
+    }
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
@@ -139,7 +145,8 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(), getCustomId(), getEntityOwnerId());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
+                getCustomId(), getEntityOwnerId(), getChainInfo());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());

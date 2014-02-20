@@ -41,6 +41,7 @@ public class ApiConstants {
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
+    public static final String CHAIN_INFO = "chaininfo";
     public static final String CIDR = "cidr";
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
