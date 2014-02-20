@@ -204,7 +204,11 @@ public class AsyncJobExecutionContext  {
         s_currentExectionContext.set(currentContext);
     }
 
-    public static String getOriginJobContextId() {
-        return String.valueOf(CallContext.current().getContextId());
+    public static String getOriginJobId() {
+        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (context != null && context.getJob() != null)
+            return "Job-" + context.getJob().getId();
+
+        return "";
     }
 }

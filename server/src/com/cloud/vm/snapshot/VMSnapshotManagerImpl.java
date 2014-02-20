@@ -875,7 +875,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     workJob.setStep(VmWorkJobVO.Step.Starting);
                     workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
-                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                     // save work context info (there are some duplications)
                     VmWorkCreateVMSnapshot workInfo = new VmWorkCreateVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -923,7 +923,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     workJob.setStep(VmWorkJobVO.Step.Starting);
                     workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
-                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                     // save work context info (there are some duplications)
                     VmWorkDeleteVMSnapshot workInfo = new VmWorkDeleteVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -971,7 +971,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     workJob.setStep(VmWorkJobVO.Step.Starting);
                     workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
-                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                     // save work context info (there are some duplications)
                     VmWorkRevertToVMSnapshot workInfo = new VmWorkRevertToVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -1019,7 +1019,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     workJob.setStep(VmWorkJobVO.Step.Starting);
                     workJob.setVmType(VirtualMachine.Type.Instance);
                     workJob.setVmInstanceId(vm.getId());
-                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                     // save work context info (there are some duplications)
                     VmWorkDeleteAllVMSnapshots workInfo = new VmWorkDeleteAllVMSnapshots(callingUser.getId(), callingAccount.getId(), vm.getId(),

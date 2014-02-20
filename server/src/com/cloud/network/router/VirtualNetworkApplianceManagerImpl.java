@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -106,6 +105,7 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -4194,26 +4194,26 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
     }
 
-    private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
-        final List<Long> jobIds = new ArrayList<Long>();
-        for (final DomainRouterVO router : routers) {
-            if (!checkRouterVersion(router)) {
-                s_logger.debug("Upgrading template for router: " + router.getId());
-                final Map<String, String> params = new HashMap<String, String>();
-                params.put("ctxUserId", "1");
-                params.put("ctxAccountId", "" + router.getAccountId());
+    private List<Long> rebootRouters(List<DomainRouterVO> routers){
+        List<Long> jobIds = new ArrayList<Long>();
+        for(DomainRouterVO router: routers){
+            if(!checkRouterVersion(router)){
+                    s_logger.debug("Upgrading template for router: "+router.getId());
+                    ApiDispatcher.getInstance();
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("ctxUserId", "1");
+                    params.put("ctxAccountId", "" + router.getAccountId());
 
-                final RebootRouterCmd cmd = new RebootRouterCmd();
-                ComponentContext.inject(cmd);
-                params.put("id", "" + router.getId());
-                params.put("ctxStartEventId", "1");
-                final AsyncJobVO job =
-                        new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(), ApiGsonHelper.getBuilder()
-                                .create()
-                                .toJson(params), router.getId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
-                job.setDispatcher(_asyncDispatcher.getName());
-                final long jobId = _asyncMgr.submitAsyncJob(job);
-                jobIds.add(jobId);
+                    RebootRouterCmd cmd = new RebootRouterCmd();
+                    ComponentContext.inject(cmd);
+                    params.put("id", ""+router.getId());
+                    params.put("ctxStartEventId", "1");
+                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(),
+                            ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
+                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                    job.setDispatcher(_asyncDispatcher.getName());
+                    long jobId = _asyncMgr.submitAsyncJob(job);
+                    jobIds.add(jobId);
             } else {
                 s_logger.debug("Router: " + router.getId() + " is already at the latest version. No upgrade required");
             }

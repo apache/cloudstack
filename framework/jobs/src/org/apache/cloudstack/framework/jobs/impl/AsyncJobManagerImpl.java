@@ -34,8 +34,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -428,6 +430,24 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private Runnable getExecutorRunnable(final AsyncJob job) {
         return new ManagedContextRunnable() {
+
+            @Override
+            public void run() {
+                // register place-holder context to avoid installing system account call context
+                if (CallContext.current() == null)
+                    CallContext.registerPlaceHolderContext();
+
+                if (job.getRelated() != null && !job.getRelated().isEmpty())
+                    NDC.push("Job-" + job.getRelated() + "/" + "Job-" + job.getId());
+                else
+                    NDC.push("Job-" + job.getId());
+                try {
+                    super.run();
+                } finally {
+                    NDC.pop();
+                }
+            }
+
             @Override
             protected void runInContext() {
                 long runNumber = getJobRunNumber();

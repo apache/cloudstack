@@ -42,7 +42,7 @@ public abstract class ManagedContextRunnable implements Runnable {
     }
 
     @Override
-    final public void run() {
+    public void run() {
         getContext().runWithContext(new Runnable() {
             @Override
             public void run() {
