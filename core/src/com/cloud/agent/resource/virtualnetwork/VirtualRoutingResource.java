@@ -298,7 +298,7 @@ public class VirtualRoutingResource {
 
         // Use the last answer as final answer
         if (answersCount == 1) {
-            ExecutionResult result = new ExecutionResult(false, "Not executed");
+            ExecutionResult result = new ExecutionResult(true, "Not configure to be apply");
             for (ConfigItem c : cfg) {
                 result = applyConfigToVR(cmd, c);
                 if (!result.isSuccess()) {
