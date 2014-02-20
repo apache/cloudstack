@@ -170,6 +170,8 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 			params.put(ApiConstants.PRIVATE_IP, ipmiIp);
 			params.put(ApiConstants.USERNAME, username);
 			params.put(ApiConstants.PASSWORD, password);
+            params.put("vmDao", _vmDao);
+            params.put("configDao", _configDao);
 			
 			String resourceClassName = _configDao.getValue(Config.ExternalBaremetalResourceClassName.key());
 			BareMetalResourceBase resource = null;
@@ -284,6 +286,8 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 	    HashMap<String, Object> params = super.buildConfigParams(host);
         params.put("hostId", host.getId());
         params.put("ipaddress", host.getPrivateIpAddress());
+        params.put("vmDao", _vmDao);
+        params.put("configDao", _configDao);
         return params;
 	}
 

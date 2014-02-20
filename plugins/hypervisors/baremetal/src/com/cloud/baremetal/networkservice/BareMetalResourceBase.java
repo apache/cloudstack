@@ -34,7 +34,6 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -86,9 +85,10 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 	protected Script2 _forcePowerOffCommand;
 	protected Script2 _bootOrRebootCommand;
 	protected String _vmName;
-	protected VMInstanceDao vmDao;
     protected int ipmiRetryTimes = 5;
 
+    protected ConfigurationDao configDao;
+    protected VMInstanceDao vmDao;
 
 	private void changeVmState(String vmName, VirtualMachine.State state) {
 		synchronized (_vms) {
@@ -126,6 +126,8 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_password = (String) params.get(ApiConstants.PASSWORD);
 		_vmName = (String) params.get("vmName");
 		String echoScAgent = (String) params.get(BaremetalManager.EchoSecurityGroupAgent);
+        vmDao = (VMInstanceDao) params.get("vmDao");
+        configDao = (ConfigurationDao) params.get("configDao");
 
 		if (_pod == null) {
 			throw new ConfigurationException("Unable to get the pod");
@@ -156,7 +158,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		    _isEchoScAgent = Boolean.valueOf(echoScAgent);
 		}
 
-        ConfigurationDao configDao = ComponentContext.getComponent(ConfigurationDao.class);
         String ipmiIface = "default";
         try {
             ipmiIface = configDao.getValue(Config.BaremetalIpmiLanInterface.key());
@@ -330,7 +331,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     protected Map<String, State> fullSync() {
         Map<String, State> states = new HashMap<String, State>();
         if (hostId != null) {
-            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             for (VMInstanceVO vm : vms) {
                 states.put(vm.getInstanceName(), vm.getState());
@@ -349,7 +349,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     protected Map<String, HostVmStateReportEntry> getHostVmStateReport() {
         Map<String, HostVmStateReportEntry> states = new HashMap<String, HostVmStateReportEntry>();
         if (hostId != null) {
-            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             for (VMInstanceVO vm : vms) {
                 states.put(
@@ -412,7 +411,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		}
 
         if (hostId != null) {
-            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             if (vms.isEmpty()) {
                 return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
