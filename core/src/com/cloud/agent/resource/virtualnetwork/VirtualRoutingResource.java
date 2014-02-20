@@ -133,6 +133,8 @@ public class VirtualRoutingResource {
                 return new Answer(cmd, false, rc.getDetails());
             }
 
+            assert cmd.getRouterAccessIp() != null : "Why there is no access IP for VR?";
+
             if (cmd.isQuery()) {
                 return executeQueryCommand(cmd);
             }
@@ -421,7 +423,7 @@ public class VirtualRoutingResource {
 
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
-            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(rule.revoked() ? "-D" : "-A");
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -p ").append(rule.getStringSrcPortRange());
@@ -812,7 +814,7 @@ public class VirtualRoutingResource {
 
         IpAddressTO pubIP = cmd.getIpAddress();
         String dev = "eth" + pubIP.getNicDevId();
-        String args = " -A ";
+        String args = "-A";
         args += " -l ";
         args += pubIP.getPublicIp();
         args += " -c ";
@@ -826,7 +828,7 @@ public class VirtualRoutingResource {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String args = rule.revoked() ? " -D" : " -A";
+            String args = rule.revoked() ? "-D" : "-A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
             args += " -p " + rule.getStringSrcPortRange();
