@@ -29,26 +29,21 @@ import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
-import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -337,11 +332,12 @@ public class VirtualRoutingResource {
     }
 
     private Answer execute(SetFirewallRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
+        int rulesCount = cmd.getRules().length;
+        String[] results = new String[rulesCount];
         String routerAccessIp = cmd.getRouterAccessIp();
 
         if (routerAccessIp == null) {
-            return new SetFirewallRulesAnswer(cmd, false, results);
+            return new GroupAnswer(cmd, false, rulesCount, results);
         }
 
         List<ConfigItem> cfg = generateConfig(cmd);
@@ -353,9 +349,9 @@ public class VirtualRoutingResource {
             for (int i = 0; i < results.length; i++) {
                 results[i] = "Failed: " + result.getDetails();
             }
-            return new SetFirewallRulesAnswer(cmd, false, results);
+            return new GroupAnswer(cmd, false, rulesCount, results);
         }
-        return new SetFirewallRulesAnswer(cmd, true, results);
+        return new GroupAnswer(cmd, true, rulesCount, results);
 
     }
 
@@ -377,7 +373,8 @@ public class VirtualRoutingResource {
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
+        int rulesCount = cmd.getRules().length;
+        String[] results = new String[rulesCount];
         int i = 0;
         boolean endResult = true;
         List<ConfigItem> cfg = generateConfig(cmd);
@@ -393,7 +390,7 @@ public class VirtualRoutingResource {
             }
         }
 
-        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+        return new GroupAnswer(cmd, endResult, rulesCount, results);
     }
 
     private List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
@@ -427,7 +424,7 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
+    private GroupAnswer execute(SetStaticNatRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         boolean endResult = true;
@@ -444,7 +441,7 @@ public class VirtualRoutingResource {
             }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+        return new GroupAnswer(cmd, endResult, cmd.getRules().length, results);
     }
 
     private List<ConfigItem> generateConfig(LoadBalancerConfigCommand cmd) {
@@ -859,8 +856,9 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
+    private GroupAnswer execute(SetNetworkACLCommand cmd) {
+        int rulesCount = cmd.getRules().length;
+        String[] results = new String[rulesCount];
 
         List<ConfigItem> cfg = generateConfig(cmd);
         ConfigItem c = cfg.get(0);
@@ -870,10 +868,10 @@ public class VirtualRoutingResource {
             for (int i = 0; i < results.length; i++) {
                 results[i] = "Failed";
             }
-            return new SetNetworkACLAnswer(cmd, false, results);
+            return new GroupAnswer(cmd, false, rulesCount, results);
         }
 
-        return new SetNetworkACLAnswer(cmd, true, results);
+        return new GroupAnswer(cmd, true, rulesCount, results);
     }
 
     protected List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
@@ -913,7 +911,7 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+    private GroupAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
         String[] results = new String[cmd.getRules().length];
         int i = 0;
 
@@ -929,10 +927,11 @@ public class VirtualRoutingResource {
                 results[i++] = null;
             }
         }
-        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+        return new GroupAnswer(cmd, endResult, cmd.getRules().length, results);
     }
 
-    public IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+    public GroupAnswer execute(IpAssocVpcCommand cmd) {
+        boolean finalResult = true;
         String[] results = new String[cmd.getIpAddresses().length];
         for (int i = 0; i < cmd.getIpAddresses().length; i ++) {
             results[i] = "Failed";
@@ -944,12 +943,13 @@ public class VirtualRoutingResource {
             ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
             if (!result.isSuccess()) {
                 results[i++] = c.getInfo() + " failed: " + result.getDetails();
+                finalResult = false;
                 break;
             }
 
             results[i++] = c.getInfo() + " - success ";
         }
-        return new IpAssocAnswer(cmd, results);
+        return new GroupAnswer(cmd, finalResult, cmd.getIpAddresses().length, results);
     }
 
     protected List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
@@ -969,8 +969,9 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        String[] results = new String[cmd.getStaticRoutes().length];
+    private GroupAnswer execute(SetStaticRouteCommand cmd) {
+        int rulesCount = cmd.getStaticRoutes().length;
+        String[] results = new String[rulesCount];
 
         List<ConfigItem> cfg = generateConfig(cmd);
         ConfigItem c = cfg.get(0);
@@ -980,10 +981,10 @@ public class VirtualRoutingResource {
             for (int i = 0; i < results.length; i++) {
                 results[i] = "Failed";
             }
-            return new SetStaticRouteAnswer(cmd, false, results);
+            return new GroupAnswer(cmd, false, rulesCount, results);
         }
 
-        return new SetStaticRouteAnswer(cmd, true, results);
+        return new GroupAnswer(cmd, true, rulesCount, results);
     }
 
     protected List<ConfigItem> generateConfig(IpAssocCommand cmd) {
@@ -1066,9 +1067,10 @@ public class VirtualRoutingResource {
     }
 
     public Answer execute(IpAssocCommand cmd) {
+        boolean finalResult = true;
         String[] results = new String[cmd.getIpAddresses().length];
         for (int i = 0; i < results.length; i++) {
-            results[i] = IpAssocAnswer.errorResult;
+            results[i] = "Failed";
         }
 
         int i = 0;
@@ -1079,10 +1081,11 @@ public class VirtualRoutingResource {
                 results[i++] = c.getInfo() + " - success";
             } else {
                 results[i++] = c.getInfo() + " - failed:" + result.getDetails();
+                finalResult = false;
                 break;
             }
         }
-        return new IpAssocAnswer(cmd, results);
+        return new GroupAnswer(cmd, finalResult, cmd.getIpAddresses().length, results);
     }
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
