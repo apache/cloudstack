@@ -14,14 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.acl;
+package org.apache.cloudstack.api.command.iam;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.iam.AclApiService;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -30,10 +30,9 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
+import org.apache.cloudstack.api.response.iam.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.api.AclPolicy;
-import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -41,10 +40,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "addAclPermissionToAclPolicy", description = "Add Acl permission to an acl policy", responseObject = AclPolicyResponse.class)
-public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddAclPermissionToAclPolicyCmd.class.getName());
-    private static final String s_name = "addaclpermissiontoaclpolicyresponse";
+@APICommand(name = "removeAclPermissionFromAclPolicy", description = "Remove acl permission from an acl policy", responseObject = AclPolicyResponse.class)
+public class RemoveAclPermissionFromAclPolicyCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveAclPermissionFromAclPolicyCmd.class.getName());
+    private static final String s_name = "removeaclpermissionfromaclpolicyresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -105,7 +104,6 @@ public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -121,26 +119,24 @@ public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl policy Id: " + getId());
-        // Only explicit ALLOW is supported for this release, no explicit deny
-        AclPolicy result = _aclApiSrv.addAclPermissionToAclPolicy(id, entityType, PermissionScope.valueOf(scope),
-                scopeId, action, Permission.Allow, false);
+        AclPolicy result = _aclApiSrv.removeAclPermissionFromAclPolicy(id, entityType, PermissionScope.valueOf(scope), scopeId, action);
         if (result != null) {
             AclPolicyResponse response = _aclApiSrv.createAclPolicyResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to grant permission to acl policy " + getId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove permission from acl policy " + getId());
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_POLICY_GRANT;
+        return EventTypes.EVENT_ACL_POLICY_REVOKE;
     }
 
     @Override
     public String getEventDescription() {
-        return "granting permission to acl policy";
+        return "removing permission from acl policy";
     }
 
     @Override

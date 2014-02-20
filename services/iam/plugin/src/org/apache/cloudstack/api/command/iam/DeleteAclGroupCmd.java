@@ -14,15 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.acl;
-
-import java.util.List;
+package org.apache.cloudstack.api.command.iam;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.iam.AclApiService;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -31,21 +29,16 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.acl.AclGroupResponse;
-import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.iam.api.AclGroup;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.iam.AclGroupResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-
-@APICommand(name = "attachAclPolicyToAclGroup", description = "attach acl policy to an acl group", responseObject = AclGroupResponse.class)
-public class AttachAclPolicyToAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AttachAclPolicyToAclGroupCmd.class.getName());
-    private static final String s_name = "attachaclpolicytoaclgroupresponse";
+@APICommand(name = "deleteAclGroup", description = "Deletes acl group", responseObject = SuccessResponse.class)
+public class DeleteAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteAclGroupCmd.class.getName());
+    private static final String s_name = "deleteaclgroupresponse";
 
     @Inject
     public AclApiService _aclApiSrv;
@@ -54,74 +47,56 @@ public class AttachAclPolicyToAclGroupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
-            required = true, description = "The ID of the acl group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "The ID of the acl group.", required = true, entityType = AclGroupResponse.class)
     private Long id;
-
-    @ACL
-    @Parameter(name = ApiConstants.ACL_POLICIES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclPolicyResponse.class, description = "comma separated list of acl policy id that are going to be applied to the acl group.")
-    private List<Long> policyIdList;
 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getId() {
         return id;
-    }
-
-
-    public List<Long> getPolicyIdList() {
-        return policyIdList;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getCommandName() {
         return s_name;
     }
 
-
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException,
-            InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclApiSrv.attachAclPoliciesToGroup(policyIdList, id);
-        if (result != null){
-            AclGroupResponse response = _aclApiSrv.createAclGroupResponse(result);
-            response.setResponseName(getCommandName());
+    public void execute(){
+        boolean result = _aclApiSrv.deleteAclGroup(id);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add roles to acl group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete acl group");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_GROUP_UPDATE;
+        return EventTypes.EVENT_ACL_GROUP_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return "adding acl roles to acl group";
+        return "Deleting Acl group";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.AclGroup;
     }
-
 }

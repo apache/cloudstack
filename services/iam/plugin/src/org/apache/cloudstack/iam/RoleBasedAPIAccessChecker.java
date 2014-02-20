@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.iam;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +28,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -129,9 +133,9 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
-            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), AclEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
-            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), AclEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
         }
 
@@ -214,7 +218,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
 
         AccessType accessType = null;
-        AclEntityType[] entityTypes = null;
+        IAMEntityType[] entityTypes = null;
         if (cmdClass != null) {
             BaseCmd cmdObj;
             try {
@@ -258,7 +262,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
         } else {
-            for (AclEntityType entityType : entityTypes) {
+            for (IAMEntityType entityType : entityTypes) {
                 _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
             }

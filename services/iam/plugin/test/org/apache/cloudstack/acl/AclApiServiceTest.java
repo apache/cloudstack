@@ -35,13 +35,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.api.AclApiServiceImpl;
+import org.apache.cloudstack.iam.AclApiService;
+import org.apache.cloudstack.iam.AclApiServiceImpl;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.acl.AclGroupResponse;
-import org.apache.cloudstack.api.response.acl.AclPermissionResponse;
-import org.apache.cloudstack.api.response.acl.AclPolicyResponse;
+import org.apache.cloudstack.api.response.iam.AclGroupResponse;
+import org.apache.cloudstack.api.response.iam.AclPermissionResponse;
+import org.apache.cloudstack.api.response.iam.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.iam.api.AclGroup;
@@ -273,12 +273,12 @@ public class AclApiServiceTest {
         Class clz = ListVMsCmd.class;
         when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(clz);
         when(
-                _iamSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
+                _iamSrv.addAclPermissionToAclPolicy(policyId, IAMEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
                         AccessType.UseEntry.toString(), Permission.Allow, false)).thenReturn(policy);
-        _aclSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false);
+        _aclSrv.addAclPermissionToAclPolicy(policyId, IAMEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false);
         Pair<List<AclPolicy>, Integer> policyList = new Pair<List<AclPolicy>, Integer>(policies, 1);
         List<AclPolicyPermission> policyPerms = new ArrayList<AclPolicyPermission>();
-        AclPolicyPermission perm = new AclPolicyPermissionVO(policyId, "listVirtualMachines", AclEntityType.VirtualMachine.toString(), AccessType.UseEntry.toString(),
+        AclPolicyPermission perm = new AclPolicyPermissionVO(policyId, "listVirtualMachines", IAMEntityType.VirtualMachine.toString(), AccessType.UseEntry.toString(),
                 PermissionScope.RESOURCE.toString(),
                 resId, Permission.Allow, false);
         policyPerms.add(perm);
@@ -294,7 +294,7 @@ public class AclApiServiceTest {
 
         //remove permission from policy
         policyPerms.remove(perm);
-        _aclSrv.removeAclPermissionFromAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines");
+        _aclSrv.removeAclPermissionFromAclPolicy(policyId, IAMEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE, resId, "listVirtualMachines");
         policyResp = _aclSrv.listAclPolicies(null, "policy1", callerDomainId, 0L, 20L);
         assertTrue("No. of response items should be one", policyResp.getCount() == 1);
         resp = policyResp.getResponses().get(0);

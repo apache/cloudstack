@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response.acl;
+package org.apache.cloudstack.api.response.iam;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -25,44 +25,49 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclGroup;
 
 import com.cloud.serializer.Param;
 
 @SuppressWarnings("unused")
-@EntityReference(value = AclPolicy.class)
-public class AclPolicyResponse extends BaseResponse implements ControlledViewEntityResponse {
+@EntityReference(value = AclGroup.class)
+public class AclGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the acl policy")
+    @Param(description = "the ID of the acl group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the acl policy")
+    @Param(description = "the name of the acl group")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the acl policy")
+    @Param(description = "the description of the acl group")
     private String description;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the acl policy")
+    @Param(description = "the domain ID of the acl group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the acl policy")
+    @Param(description = "the domain name of the acl role")
     private String domainName;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account owning the policy")
     private String accountName;
 
-    @SerializedName(ApiConstants.ACL_PERMISSIONS)
-    @Param(description = "set of permissions for the acl policy")
-    private Set<AclPermissionResponse> permissionList;
+    @SerializedName(ApiConstants.ACL_MEMBER_ACCOUNTS)
+    @Param(description = "account names assigned to this acl group ")
+    private Set<String> accountNameList;
 
-    public AclPolicyResponse() {
-        permissionList = new LinkedHashSet<AclPermissionResponse>();
+    @SerializedName(ApiConstants.ACL_POLICIES)
+    @Param(description = "acl policies attached to this acl group ")
+    private Set<String> policyNameList;
+
+    public AclGroupResponse() {
+        accountNameList = new LinkedHashSet<String>();
+        policyNameList = new LinkedHashSet<String>();
     }
 
     @Override
@@ -98,21 +103,10 @@ public class AclPolicyResponse extends BaseResponse implements ControlledViewEnt
         this.domainName = domainName;
     }
 
-    public Set<AclPermissionResponse> getPermissionList() {
-        return permissionList;
-    }
-
-    public void setPermissionList(Set<AclPermissionResponse> perms) {
-        permissionList = perms;
-    }
-
-    public void addPermission(AclPermissionResponse perm) {
-        permissionList.add(perm);
-    }
-
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+
     }
 
     @Override
@@ -147,6 +141,30 @@ public class AclPolicyResponse extends BaseResponse implements ControlledViewEnt
         return accountName;
     }
 
+    public Set<String> getAccountNameList() {
+        return accountNameList;
+    }
+
+    public void setMemberAccounts(Set<String> accts) {
+        accountNameList = accts;
+    }
+
+    public void addMemberAccount(String acct) {
+        accountNameList.add(acct);
+    }
+
+    public void setPolicyList(Set<String> policies) {
+        policyNameList = policies;
+    }
+
+    public void addPolicy(String policy) {
+        policyNameList.add(policy);
+    }
+
+    public Set<String> getPolicyList() {
+        return policyNameList;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -163,7 +181,7 @@ public class AclPolicyResponse extends BaseResponse implements ControlledViewEnt
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AclPolicyResponse other = (AclPolicyResponse) obj;
+        AclGroupResponse other = (AclGroupResponse)obj;
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -171,7 +189,5 @@ public class AclPolicyResponse extends BaseResponse implements ControlledViewEnt
             return false;
         return true;
     }
-
-
 
 }

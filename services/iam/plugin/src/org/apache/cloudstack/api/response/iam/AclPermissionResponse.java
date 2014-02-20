@@ -14,11 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response.acl;
+package org.apache.cloudstack.api.response.iam;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -34,7 +34,7 @@ public class AclPermissionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ENTITY_TYPE)
     @Param(description = "the entity type of this permission")
-    private AclEntityType entityType;
+    private IAMEntityType entityType;
 
     @SerializedName(ApiConstants.ACL_SCOPE)
     @Param(description = "scope of this permission")
@@ -48,11 +48,11 @@ public class AclPermissionResponse extends BaseResponse {
     @Param(description = "allow or deny of this permission")
     private AclPolicyPermission.Permission permission;
 
-    public AclEntityType getEntityType() {
+    public IAMEntityType getEntityType() {
         return entityType;
     }
 
-    public void setEntityType(AclEntityType entityType) {
+    public void setEntityType(IAMEntityType entityType) {
         this.entityType = entityType;
     }
 
