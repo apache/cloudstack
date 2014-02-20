@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
-import java.util.List;
-
 import com.cloud.agent.api.routing.NetworkElementCommand;
+
+import java.util.List;
 
 public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
     List<String> vpnIps;
@@ -35,5 +35,10 @@ public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
 
     public List<String> getVpnIps() {
         return vpnIps;
+    }
+
+    @Override
+    public boolean isQuery() {
+        return true;
     }
 }

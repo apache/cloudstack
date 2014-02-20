@@ -133,59 +133,58 @@ public class VirtualRoutingResource {
                 return new Answer(cmd, false, rc.getDetails());
             }
 
+            if (cmd.isQuery()) {
+                return executeQueryCommand(cmd);
+            }
+
+            List<ConfigItem> cfg;
             if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-                return execute((SetPortForwardingRulesVpcCommand)cmd);
+                cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                return execute((SetPortForwardingRulesCommand)cmd);
+                cfg = generateConfig((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof SetStaticRouteCommand) {
-                return execute((SetStaticRouteCommand)cmd);
+                cfg = generateConfig((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return execute((SetStaticNatRulesCommand)cmd);
+                cfg = generateConfig((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                return execute((LoadBalancerConfigCommand)cmd);
+                cfg = generateConfig((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof SavePasswordCommand) {
-                return execute((SavePasswordCommand)cmd);
+                cfg = generateConfig((SavePasswordCommand)cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                return execute((DhcpEntryCommand)cmd);
+                cfg = generateConfig((DhcpEntryCommand)cmd);
             } else if (cmd instanceof CreateIpAliasCommand) {
-                return execute((CreateIpAliasCommand)cmd);
+                cfg = generateConfig((CreateIpAliasCommand)cmd);
             } else if (cmd instanceof DnsMasqConfigCommand) {
-                return execute((DnsMasqConfigCommand)cmd);
+                cfg = generateConfig((DnsMasqConfigCommand)cmd);
             } else if (cmd instanceof DeleteIpAliasCommand) {
-                return execute((DeleteIpAliasCommand)cmd);
+                cfg = generateConfig((DeleteIpAliasCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-                return execute((VmDataCommand)cmd);
-            } else if (cmd instanceof CheckRouterCommand) {
-                return execute((CheckRouterCommand)cmd);
+                cfg = generateConfig((VmDataCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-                return execute((SetFirewallRulesCommand)cmd);
+                cfg = generateConfig((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
-                return execute((BumpUpPriorityCommand)cmd);
+                cfg = generateConfig((BumpUpPriorityCommand)cmd);
             } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-                return execute((RemoteAccessVpnCfgCommand)cmd);
+                cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
             } else if (cmd instanceof VpnUsersCfgCommand) {
-                return execute((VpnUsersCfgCommand)cmd);
-            } else if (cmd instanceof GetDomRVersionCmd) {
-                return execute((GetDomRVersionCmd)cmd);
+                cfg = generateConfig((VpnUsersCfgCommand)cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-                return execute((Site2SiteVpnCfgCommand)cmd);
-            } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-                return execute((CheckS2SVpnConnectionsCommand)cmd);
+                cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof SetMonitorServiceCommand) {
-                return execute((SetMonitorServiceCommand)cmd);
+                cfg = generateConfig((SetMonitorServiceCommand)cmd);
             } else if (cmd instanceof SetupGuestNetworkCommand) {
-                return execute((SetupGuestNetworkCommand)cmd);
+                cfg = generateConfig((SetupGuestNetworkCommand)cmd);
             } else if (cmd instanceof SetNetworkACLCommand) {
-                return execute((SetNetworkACLCommand)cmd);
+                cfg = generateConfig((SetNetworkACLCommand)cmd);
             } else if (cmd instanceof SetSourceNatCommand) {
-                return execute((SetSourceNatCommand)cmd);
-            } else if (cmd instanceof IpAssocVpcCommand) {
-                return execute((IpAssocVpcCommand)cmd);
+                cfg = generateConfig((SetSourceNatCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                return execute((IpAssocCommand)cmd);
+                cfg = generateConfig((IpAssocCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
+
+            return applyConfig(cmd, cfg);
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
@@ -200,10 +199,22 @@ public class VirtualRoutingResource {
         private String script;
         private String args;
         private String info;
+        private String filePath;
+        private String fileName;
+        private String fileContents;
+        private boolean isFile;
 
         public ConfigItem(String script, String args) {
             this.script = script;
             this.args = args;
+            this.isFile = false;
+        }
+
+        public ConfigItem(String filePath, String fileName, String fileContents) {
+            this.filePath = filePath;
+            this.fileName = fileName;
+            this.fileContents = fileContents;
+            this.isFile = true;
         }
 
         public String getScript() {
@@ -229,15 +240,69 @@ public class VirtualRoutingResource {
         public void setInfo(String info) {
             this.info = info;
         }
+
+        public String getFilePath() {
+            return filePath;
+        }
+
+        public void setFilePath(String filePath) {
+            this.filePath = filePath;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String getFileContents() {
+            return fileContents;
+        }
+
+        public void setFileContents(String fileContents) {
+            this.fileContents = fileContents;
+        }
+
+        public boolean isFile() {
+            return isFile;
+        }
+    }
+
+    private Answer executeQueryCommand(NetworkElementCommand cmd) {
+        if (cmd instanceof CheckRouterCommand) {
+            return execute((CheckRouterCommand)cmd);
+        } else if (cmd instanceof GetDomRVersionCmd) {
+            return execute((GetDomRVersionCmd)cmd);
+        } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
+            return execute((CheckS2SVpnConnectionsCommand)cmd);
+        } else {
+            s_logger.error("Unknown query command in VirtualRoutingResource!");
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+
+    private ExecutionResult applyConfigToVR(NetworkElementCommand cmd, ConfigItem c) {
+        if (c.isFile()) {
+            return _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), c.getFilePath(), c.getFileName(), c.getFileContents());
+        } else {
+            return _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
+        }
     }
 
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
         int answersCount = cmd.getAnswersCount();
-        assert (cfg.size() <= answersCount) : "Why there are more commands than answers?";
 
-        if (cfg.size() == 1 && answersCount == 1) {
-            ConfigItem c = cfg.get(0);
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
+        // Use the last answer as final answer
+        if (answersCount == 1) {
+            ExecutionResult result = new ExecutionResult(false, "Not executed");
+            for (ConfigItem c : cfg) {
+                result = applyConfigToVR(cmd, c);
+                if (!result.isSuccess()) {
+                    break;
+                }
+            }
             return new Answer(cmd, result.isSuccess(), result.getDetails());
         }
 
@@ -246,7 +311,7 @@ public class VirtualRoutingResource {
         boolean finalResult = true;
         int i = 0, j;
         for (ConfigItem c : cfg) {
-            results[i] = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
+            results[i] = applyConfigToVR(cmd, c);
             if (c.getInfo() != null) {
                 if (results[i].isSuccess()) {
                     results[i].setDetails(c.getInfo() + " - success: " + results[i].getDetails());
@@ -287,11 +352,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(VpnUsersCfgCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
         String args = "";
@@ -314,11 +374,6 @@ public class VirtualRoutingResource {
         args += " -i " + cmd.getPublicInterface();
         cfg.add(new ConfigItem(VRScripts.VPN_L2TP, args));
         return cfg;
-    }
-
-    private Answer execute(RemoteAccessVpnCfgCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
@@ -361,11 +416,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(SetFirewallRulesCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(SetPortForwardingRulesCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -381,11 +431,6 @@ public class VirtualRoutingResource {
         }
 
         return cfg;
-    }
-
-    private Answer execute(SetPortForwardingRulesCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
@@ -419,16 +464,23 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(SetStaticNatRulesCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(LoadBalancerConfigCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+
+        String[] config = cfgtr.generateConfiguration(cmd);
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        String tmpCfgFilePath = "/etc/haproxy/";
+        String tmpCfgFileName = "haproxy.cfg.new";
+        cfg.add(new ConfigItem(tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents));
+
         String[][] rules = cfgtr.generateFwRules(cmd);
 
         String[] addRules = rules[LoadBalancerConfigurator.ADD];
@@ -473,37 +525,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(LoadBalancerConfigCommand cmd) {
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        if (routerIp == null) {
-            return new Answer(cmd);
-        }
-
-        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
-        String[] config = cfgtr.generateConfiguration(cmd);
-        String tmpCfgFileContents = "";
-        for (int i = 0; i < config.length; i++) {
-            tmpCfgFileContents += config[i];
-            tmpCfgFileContents += "\n";
-        }
-
-        String tmpCfgFilePath = "/etc/haproxy/";
-        String tmpCfgFileName = "haproxy.cfg.new";
-        ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents);
-
-        if (!result.isSuccess()) {
-            return new Answer(cmd, false, "Fail to copy LB config file to VR");
-        }
-
-        List<ConfigItem> cfg = generateConfig(cmd);
-        ConfigItem c = cfg.get(0);
-        result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
-
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
-    }
-
-
     private List<ConfigItem> generateConfig(VmDataCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
@@ -520,11 +541,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    protected Answer execute(VmDataCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -536,11 +552,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.PASSWORD, args));
         return cfg;
-    }
-
-    protected Answer execute(final SavePasswordCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
@@ -577,11 +588,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    protected Answer execute(final DhcpEntryCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -593,11 +599,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.IPALIAS_CREATE, args));
         return cfg;
-    }
-
-    protected Answer execute(final CreateIpAliasCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     private List<ConfigItem> generateConfig(DeleteIpAliasCommand cmd) {
@@ -619,11 +620,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    protected Answer execute(final DeleteIpAliasCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     private List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -635,11 +631,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.DNSMASQ_CONFIG, args));
         return cfg;
-    }
-
-    protected Answer execute(final DnsMasqConfigCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
@@ -664,11 +655,6 @@ public class VirtualRoutingResource {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
         cfg.add(new ConfigItem(VRScripts.RVR_BUMPUP_PRI, null));
         return cfg;
-    }
-
-    protected Answer execute(BumpUpPriorityCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
@@ -732,11 +718,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     protected List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -750,11 +731,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.MONITOR_SERVICE, args));
         return cfg;
-    }
-
-    protected Answer execute(SetMonitorServiceCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
@@ -797,11 +773,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    protected Answer execute(SetupGuestNetworkCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     protected List<ConfigItem> generateConfig(SetNetworkACLCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -836,11 +807,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(SetNetworkACLCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     protected List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -854,11 +820,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.VPC_SOURCE_NAT, args));
         return cfg;
-    }
-
-    protected Answer execute(SetSourceNatCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(SetPortForwardingRulesVpcCommand cmd) {
@@ -878,16 +839,6 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(SetPortForwardingRulesVpcCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
-    public Answer execute(IpAssocVpcCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
-    }
-
     protected List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
         LinkedList<ConfigItem> cfg = new LinkedList<>();
 
@@ -903,11 +854,6 @@ public class VirtualRoutingResource {
 
         cfg.add(new ConfigItem(VRScripts.VPC_STATIC_ROUTE, args));
         return cfg;
-    }
-
-    private Answer execute(SetStaticRouteCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     protected List<ConfigItem> generateConfig(IpAssocCommand cmd) {
@@ -987,11 +933,6 @@ public class VirtualRoutingResource {
             }
         }
         return cfg;
-    }
-
-    public Answer execute(IpAssocCommand cmd) {
-        List<ConfigItem> cfg = generateConfig(cmd);
-        return applyConfig(cmd, cfg);
     }
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
