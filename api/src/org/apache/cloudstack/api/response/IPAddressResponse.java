@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -146,7 +147,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Boolean isPortable;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is public ip for display to the regular user", since = "4.4")
+    @Param(description = "is public ip for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     /*

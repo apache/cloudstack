@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -248,7 +249,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<AffinityGroupResponse> affinityGroupList;
 
     @SerializedName(ApiConstants.DISPLAY_VM)
-    @Param(description = "an optional field whether to the display the vm to the end user or not.")
+    @Param(description = "an optional field whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)

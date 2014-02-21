@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
@@ -34,11 +35,14 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
+import com.cloud.serializer.Param;
+import com.cloud.user.Account;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
@@ -189,9 +193,29 @@ public class ApiResponseSerializer {
                 continue; // skip transient fields
             }
 
+
             SerializedName serializedName = field.getAnnotation(SerializedName.class);
             if (serializedName == null) {
                 continue; // skip fields w/o serialized name
+            }
+
+            Param param = field.getAnnotation(Param.class);
+            if (param != null) {
+                RoleType[] allowedRoles = param.authorized();
+                if (allowedRoles.length > 0) {
+                    boolean permittedParameter = false;
+                    Account caller = CallContext.current().getCallingAccount();
+                    for (RoleType allowedRole : allowedRoles) {
+                        if (allowedRole.getValue() == caller.getType()) {
+                            permittedParameter = true;
+                            break;
+                        }
+                    }
+                    if (!permittedParameter) {
+                        s_logger.trace("Ignoring paremeter " + param.name() + " as the caller is not authorized to see it");
+                        continue;
+                    }
+                }
             }
 
             field.setAccessible(true);

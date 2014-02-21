@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -188,7 +189,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
-    @Param(description = "an optional field whether to the display the volume to the end user or not.")
+    @Param(description = "an optional field whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
