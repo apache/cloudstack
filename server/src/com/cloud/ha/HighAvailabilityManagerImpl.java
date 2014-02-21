@@ -63,6 +63,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -71,6 +73,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -100,8 +103,10 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
  *         before retrying the stop | seconds | 120 || * }
  **/
-@Local(value = {HighAvailabilityManager.class})
-public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
+@Local(value = { HighAvailabilityManager.class })
+public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener,
+        StateListener<State, VirtualMachine.Event, VirtualMachine> {
+
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
     boolean _stopped;
@@ -118,6 +123,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     HostPodDao _podDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
+
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
+
     long _serverId;
 
     @Inject
@@ -317,7 +326,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
-            return;
         }
 
         if (vm.getHypervisorType() == HypervisorType.VMware || vm.getHypervisorType() == HypervisorType.Hyperv) {
@@ -786,6 +794,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         _stopped = true;
 
         _executor = Executors.newScheduledThreadPool(count, new NamedThreadFactory("HA"));
+        VirtualMachine.State.getStateMachine().registerListener(this);
 
         return true;
     }
@@ -933,5 +942,27 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Override
     public DeploymentPlanner getHAPlanner() {
         return _haPlanners.get(0);
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
+            long serviceOfferingId = vo.getServiceOfferingId();
+
+            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(serviceOfferingId);
+            if (serviceOffering != null && serviceOffering.getOfferHA()) {
+
+                VMInstanceVO vm = _instanceDao.findById(vo.getId());
+
+                s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
+                scheduleRestart(vm, true);
+            }
+        }
+        return true;
     }
 }
