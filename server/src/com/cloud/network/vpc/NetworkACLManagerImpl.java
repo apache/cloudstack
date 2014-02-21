@@ -84,8 +84,11 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     VpcService _vpcSvc;
 
     @Override
-    public NetworkACL createNetworkACL(String name, String description, long vpcId) {
+    public NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay) {
         NetworkACLVO acl = new NetworkACLVO(name, description, vpcId);
+        if (forDisplay != null) {
+            acl.setDisplay(forDisplay);
+        }
         return _networkACLDao.persist(acl);
     }
 
@@ -215,8 +218,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
-    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList,
-        final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number) {
+    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList, final Integer icmpCode,
+            final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number, final Boolean forDisplay) {
         // If number is null, set it to currentMax + 1 (for backward compatibility)
         if (number == null) {
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
@@ -233,6 +236,11 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
                 NetworkACLItemVO newRule =
                     new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
+
+                if (forDisplay != null) {
+                    newRule.setDisplay(forDisplay);
+                }
+
                 newRule = _networkACLItemDao.persist(newRule);
 
                 if (!_networkACLItemDao.setStateToAdd(newRule)) {
@@ -398,7 +406,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId, Boolean forDisplay) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         aclItem.setState(State.Add);
 
@@ -444,6 +452,10 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         if (customId != null) {
             aclItem.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            aclItem.setDisplay(forDisplay);
         }
 
         if (_networkACLItemDao.update(id, aclItem)) {

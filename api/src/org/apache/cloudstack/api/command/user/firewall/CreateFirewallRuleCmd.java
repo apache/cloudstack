@@ -90,6 +90,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+
     public Long getIpAddressId() {
         return ipAddressId;
     }

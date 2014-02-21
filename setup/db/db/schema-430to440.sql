@@ -534,6 +534,8 @@ ALTER TABLE `cloud`.`vpc` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' C
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the rule can be displayed to the end user';
 ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`network_acl` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 
 
 

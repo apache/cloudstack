@@ -747,6 +747,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
         lbResponse.setLbProtocol(loadBalancer.getLbProtocol());
+        lbResponse.setForDisplay(loadBalancer.isDisplay());
         FirewallRule.State state = loadBalancer.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
@@ -2289,6 +2290,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setNumber(aclItem.getNumber());
         response.setAction(aclItem.getAction().toString());
+        response.setForDisplay(aclItem.isDisplay());
 
         NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
         if (acl != null) {
@@ -3483,6 +3485,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setName(lb.getName());
         lbResponse.setDescription(lb.getDescription());
         lbResponse.setAlgorithm(lb.getAlgorithm());
+        lbResponse.setForDisplay(lb.isDisplay());
         Network nw = ApiDBUtils.findNetworkById(lb.getNetworkId());
         lbResponse.setNetworkId(nw.getUuid());
         populateOwner(lbResponse, lb);
@@ -3668,6 +3671,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(networkACL.getUuid());
         response.setName(networkACL.getName());
         response.setDescription(networkACL.getDescription());
+        response.setForDisplay(networkACL.isDisplay());
         Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());

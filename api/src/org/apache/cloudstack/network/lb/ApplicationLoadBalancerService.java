@@ -30,7 +30,7 @@ import com.cloud.utils.Pair;
 public interface ApplicationLoadBalancerService {
 
     ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp, int sourcePort,
-        int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
+        int instancePort, String algorithm, long networkId, long lbOwnerId, Boolean forDisplay) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
         InsufficientVirtualNetworkCapcityException;
 
     boolean deleteApplicationLoadBalancer(long id);
@@ -39,6 +39,6 @@ public interface ApplicationLoadBalancerService {
 
     ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId);
 
-    ApplicationLoadBalancerRule deleteApplicationLoadBalancer(Long id, String customId);
+    ApplicationLoadBalancerRule updateApplicationLoadBalancer(Long id, String customId, Boolean forDisplay);
 
 }

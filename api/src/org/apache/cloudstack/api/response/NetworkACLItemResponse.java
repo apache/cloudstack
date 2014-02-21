@@ -18,14 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = NetworkACLItem.class)
 public class NetworkACLItemResponse extends BaseResponse {
@@ -81,6 +81,10 @@ public class NetworkACLItemResponse extends BaseResponse {
     @Param(description = "Action of ACL Item. Allow/Deny")
     private String action;
 
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -131,5 +135,9 @@ public class NetworkACLItemResponse extends BaseResponse {
 
     public void setAction(String action) {
         this.action = action;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

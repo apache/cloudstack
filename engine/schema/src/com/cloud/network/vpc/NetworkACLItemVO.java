@@ -84,6 +84,9 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     Action action;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public NetworkACLItemVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -244,5 +247,14 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

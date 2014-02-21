@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.network;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -80,9 +81,15 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
     private String action;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+    public Boolean getDisplay() {
+        return display;
+    }
 
     public Long getId() {
         return id;
@@ -164,7 +171,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
         CallContext.current().setEventDetails("Rule Id: " + getId());
         NetworkACLItem aclItem =
             _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(), getSourcePortStart(),
-                getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId());
+                getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId(), this.getDisplay());
         if (aclItem == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL Item");
         }

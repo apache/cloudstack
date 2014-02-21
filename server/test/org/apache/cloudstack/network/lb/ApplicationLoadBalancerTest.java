@@ -244,7 +244,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public
         void createValidLoadBalancer() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp, 22, 22, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
     }
 
     @Test(expected = UnsupportedServiceException.class)
@@ -252,7 +252,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public
         void createPublicLoadBalancer() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Public, validGuestNetworkId, validRequestedIp, 22, 22, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -260,7 +260,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public
         void createWithInvalidSourcePort() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp, 65536, 22, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -268,7 +268,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public
         void createWithInvalidInstandePort() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp, 22, 65536, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
 
     }
 
@@ -278,7 +278,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         void createWithInvalidAlgorithm() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         String expectedExcText = null;
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp, 22, 22, "invalidalgorithm",
-            validGuestNetworkId, validAccountId);
+            validGuestNetworkId, validAccountId, true);
 
     }
 
@@ -287,7 +287,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public
         void createWithInvalidSourceIpNtwk() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validPublicNetworkId, validRequestedIp, 22, 22, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
 
     }
 
@@ -297,7 +297,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         void createWithInvalidRequestedIp() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
 
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, "10.2.1.1", 22, 22, "roundrobin", validGuestNetworkId,
-            validAccountId);
+            validAccountId, true);
     }
 
     private static NetworkVO setId(NetworkVO vo, long id) {

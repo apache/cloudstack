@@ -342,7 +342,7 @@ public class LoadBalanceRuleHandler {
             lb.setSourceIpAddressId(ipId);
 
             result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourcePortStart(), lb.getDefaultPortStart(), ipId.longValue(),
-                    lb.getProtocol(), lb.getAlgorithm(), false, CallContext.current(), lb.getLbProtocol());
+                    lb.getProtocol(), lb.getAlgorithm(), false, CallContext.current(), lb.getLbProtocol(), true);
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
             if (newIp) {

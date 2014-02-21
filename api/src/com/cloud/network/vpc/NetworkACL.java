@@ -33,4 +33,6 @@ public interface NetworkACL extends InternalIdentity {
     long getId();
 
     String getName();
+
+    boolean isDisplay();
 }
