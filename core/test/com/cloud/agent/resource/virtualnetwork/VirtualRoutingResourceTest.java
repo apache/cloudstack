@@ -64,7 +64,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import javax.naming.ConfigurationException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -121,6 +123,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     @Before
     public void setup() {
         _resource = new VirtualRoutingResource(this);
+        try {
+            _resource.configure("VRResource", new HashMap<String, Object>());
+        } catch (ConfigurationException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void verifyCommand(NetworkElementCommand cmd, String script, String args) {
@@ -699,17 +706,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
         List<LoadBalancerTO> lbs = new ArrayList<>();
         List<LbDestination> dests = new ArrayList<>();
-        dests.add(new LbDestination(22, 80, "10.1.10.2", false));
-        dests.add(new LbDestination(22, 80, "10.1.10.2", true));
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", true));
         lbs.add(new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests));
         LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
         lbs.toArray(arrayLbs);
         NicTO nic = new NicTO();
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", true);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
 
-        cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", true);
+        cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
         answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
     }
@@ -739,13 +746,15 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                         "\toption  dontlognull\n" +
                         "\tretries 3\n" +
                         "\toption redispatch\n" +
-                        "\t#no option set here :<\n" +
-                        "\tno option forceclose\n" +
+                        "\toption forwardfor\n" +
+                        "\toption forceclose\n" +
                         "\ttimeout connect    5000\n" +
                         "\ttimeout client     50000\n" +
                         "\ttimeout server     50000\n" +
                         "\n" +
                         "listen stats_on_guest 10.1.10.2:8081\n" +
+                        "\tmode http\n" +
+                        "\toption httpclose\n" +
                         "\tstats enable\n" +
                         "\tstats uri     /admin?stats\n" +
                         "\tstats realm   Haproxy\\ Statistics\n" +
@@ -754,7 +763,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                         "\t \n" +
                         "listen 64_10_1_10-80 64.10.1.10:80\n" +
                         "\tbalance algo\n" +
-                        "\tserver 64_10_1_10-80_0 10.1.10.2:22 check\n" +
+                        "\tserver 64_10_1_10-80_0 10.1.10.2:80 check\n" +
+                        "\tmode http\n" +
+                        "\toption httpclose\n" +
                         "\t \n" +
                         "\t \n");
                 break;
