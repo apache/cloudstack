@@ -201,7 +201,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
-    public PortForwardingRule createPortForwardingRule(final PortForwardingRule rule, final Long vmId, Ip vmIp, final boolean openFirewall)
+    public PortForwardingRule createPortForwardingRule(final PortForwardingRule rule, final Long vmId, Ip vmIp, final boolean openFirewall, final Boolean forDisplay)
         throws NetworkRuleConflictException {
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
@@ -316,6 +316,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                     PortForwardingRuleVO newRule =
                         new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIpFinal,
                             rule.getDestinationPortStart(), rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+
+                    if (forDisplay != null) {
+                        newRule.setDisplay(forDisplay);
+                    }
                     newRule = _portForwardingDao.persist(newRule);
 
                     // create firewallRule for 0.0.0.0/0 cidr
@@ -1486,7 +1490,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, String customId) {
+    public PortForwardingRule updatePortForwardingRule(long id, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
@@ -1497,6 +1501,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         if (customId != null) {
             rule.setUuid(customId);
         }
+
+        if (forDisplay != null) {
+            rule.setDisplay(forDisplay);
+        }
+
         _portForwardingDao.update(id, rule);
         return _portForwardingDao.findById(id);
     }

@@ -50,6 +50,6 @@ public interface FirewallService {
 
     boolean revokeRelatedFirewallRule(long ruleId, boolean apply);
 
-    FirewallRule updateFirewallRule(long ruleId, String customId);
+    FirewallRule updateFirewallRule(long ruleId, String customId, Boolean forDisplay);
 
 }

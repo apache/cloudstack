@@ -31,6 +31,7 @@ public class StaticNatRuleImpl implements StaticNatRule {
     long networkId;
     long sourceIpAddressId;
     String destIpAddress;
+    boolean forDisplay;
 
     public StaticNatRuleImpl(FirewallRuleVO rule, String dstIp) {
         this.id = rule.getId();
@@ -45,6 +46,7 @@ public class StaticNatRuleImpl implements StaticNatRule {
         this.networkId = rule.getNetworkId();
         this.sourceIpAddressId = rule.getSourceIpAddressId();
         this.destIpAddress = dstIp;
+        this.forDisplay = rule.isDisplay();
     }
 
     @Override
@@ -142,4 +144,8 @@ public class StaticNatRuleImpl implements StaticNatRule {
         return null;
     }
 
+    @Override
+    public boolean isDisplay() {
+        return forDisplay;
+    }
 }

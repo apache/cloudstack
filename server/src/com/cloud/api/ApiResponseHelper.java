@@ -1017,6 +1017,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
 
+
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
         response.setPublicIpAddressId(ip.getUuid());
         response.setPublicIpAddress(ip.getAddress().addr());
@@ -1051,6 +1052,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
 
         response.setState(stateToSet);
+        response.setForDisplay(fwRule.isDisplay());
         response.setObjectName("portforwardingrule");
         return response;
     }
@@ -2241,6 +2243,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
+        response.setForDisplay(fwRule.isDisplay());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());

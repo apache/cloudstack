@@ -101,6 +101,9 @@ public class FirewallRuleVO implements FirewallRule {
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call firewallrules dao to load it.
@@ -267,5 +270,14 @@ public class FirewallRuleVO implements FirewallRule {
     @Override
     public TrafficType getTrafficType() {
         return trafficType;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }
