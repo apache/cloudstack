@@ -3623,3 +3623,131 @@ class Resources:
         cmd = updateResourceCount.updateResourceCountCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateResourceCount(cmd))
+    
+class AclGroup:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, iam_grp, account=None, domainid=None):
+        cmd = createAclGroup.createAclGroupCmd()
+        cmd.name = iam_grp['name']
+        cmd.description = iam_grp['description']
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return AclGroup(apiclient.createAclGroup(cmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteAclGroup.deleteAclGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteAclGroup(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listAclGroups.listAclGroupsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listAclGroupsCmd(cmd)  
+    
+    def addAccount(self, apiclient, accts):
+        """Add accounts to acl group"""
+        cmd = addAccountToAclGroup.addAccountToAclGroupCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.addAccountToAclGroup(cmd)
+        return  
+
+    def removeAccount(self, apiclient, accts):
+        """ Remove accounts from acl group"""
+        cmd = removeAccountFromAclGroup.removeAccountFromAclGroupCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.removeAccountFromAclGroup(cmd)
+        return  
+    
+    def attachPolicy(self, apiclient, policies):
+        """Add policies to acl group"""
+        cmd = attachAclPolicyToAclGroup.attachAclPolicyToAclGroupCmd()
+        cmd.id = self.id
+        cmd.policies = [str(policy.id) for policy in policies]
+        apiclient.attachAclPolicyToAclGroup(cmd)
+        return   
+    
+    def detachPolicy(self, apiclient, policies):
+        """Remove policies from acl group"""
+        cmd = removeAclPolicyFromAclGroup.removeAclPolicyFromAclGroupCmd()
+        cmd.id = self.id
+        cmd.policies = [str(policy.id) for policy in policies]
+        apiclient.removeAclPolicyFromAclGroup(cmd)
+        return         
+    
+class AclPolicy:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, iam_policy, account=None, domainid=None):
+        cmd = createAclPolicy.createAclPolicyCmd()
+        cmd.name = iam_policy['name']
+        cmd.description = iam_policy['description']
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return AclGroup(apiclient.createAclPolicy(cmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteAclPolicy.deleteAclPolicyCmd()
+        cmd.id = self.id
+        return apiclient.deleteAclPolicy(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listAclPolicies.listAclPoliciesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listAclPoliciesCmd(cmd)  
+
+    def addPermission(self, apiclient, permission):
+        """Add permission to acl policy"""
+        cmd = addAclPermissionToAclPolicy.addAclPermissionToAclPolicyCmd()
+        cmd.id = self.id
+        cmd.action = permission['action']
+        cmd.entitytype = permission['entitytype']
+        cmd.scope = permission['scope']
+        cmd.scopeid = permission['scopeid']
+        apiclient.addAclPermissionToAclPolicy(cmd)
+        return       
+
+    def removePermission(self, apiclient, permission):
+        """Remove permission from acl policy"""
+        cmd = removeAclPermissionFromAclPolicy.removeAclPermissionFromAclPolicyCmd()
+        cmd.id = self.id
+        cmd.action = permission['action']
+        cmd.entitytype = permission['entitytype']
+        cmd.scope = permission['scope']
+        cmd.scopeid = permission['scopeid']
+        apiclient.addAclPermissionToAclPolicy(cmd)
+        return  
+    
+    def attachAccount(self, apiclient, accts):
+        """Attach policy to accounts"""
+        cmd = attachAclPolicyToAccount.attachAclPolicyToAccountCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.attachAclPolicyToAccount(cmd)
+        return  
+    
+    def detachAccount(self, apiclient, accts):
+        """Detach policy from accounts"""
+        cmd = removeAclPolicyFromAccount.removeAclPolicyFromAccountCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.removeAclPolicyFromAccount(cmd)
+        return           
