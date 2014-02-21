@@ -44,13 +44,12 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
-
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -156,14 +155,6 @@ public class NetUtils {
         }
 
         return cidrList.toArray(new String[0]);
-    }
-
-    private static boolean isWindows() {
-        String os = System.getProperty("os.name");
-        if (os != null && os.startsWith("Windows"))
-            return true;
-
-        return false;
     }
 
     public static String getDefaultHostIp() {
