@@ -1150,13 +1150,13 @@ namespace HypervResource
 
                 bool result = false;
                 string details = null;
-
+                object newData = null;
                 try
                 {
                     VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
                     PrimaryDataStoreTO primary = volume.primaryDataStore;
                     ulong volumeSize = volume.size;
-                    string volumeName = volume.name + ".vhd";
+                    string volumeName = volume.uuid + ".vhd";
                     string volumePath = null;
 
                     if (primary.isLocal)
@@ -1169,11 +1169,13 @@ namespace HypervResource
                         volumePath = Utils.NormalizePath(volumePath);
                         Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
                     }
-
+                    volume.path = volumePath;
                     wmiCallsV2.CreateDynamicVirtualHardDisk(volumeSize, volumePath);
                     if (File.Exists(volumePath))
                     {
                         result = true;
+                        JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, volume);
+                        newData = ansObj;
                     }
                     else
                     {
@@ -1191,7 +1193,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    data = cmd.data,
+                    data = newData,
                     contextMap = contextMap
                 };
 
