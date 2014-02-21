@@ -2969,6 +2969,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMaxMembers(vmGroup.getMaxMembers());
         response.setState(vmGroup.getState());
         response.setInterval(vmGroup.getInterval());
+        response.setForDisplay(vmGroup.isDisplay());
         AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(vmGroup.getProfileId());
         if (profile != null) {
             response.setProfileId(profile.getUuid());

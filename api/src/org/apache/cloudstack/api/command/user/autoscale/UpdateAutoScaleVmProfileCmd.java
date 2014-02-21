@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -75,6 +76,9 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
                description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -114,6 +118,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     public Integer getDestroyVmGraceperiod() {
         return destroyVmGraceperiod;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     @Override

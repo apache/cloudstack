@@ -370,6 +370,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         AutoScaleVmProfileVO profileVO =
             new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
+
+        if (cmd.getDisplay() != null) {
+            profileVO.setDisplay(cmd.getDisplay());
+        }
+
         profileVO = checkValidityAndPersist(profileVO);
         s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
@@ -408,6 +413,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (cmd.getCustomId() != null) {
             vmProfile.setUuid(cmd.getCustomId());
+        }
+
+        if (cmd.getDisplay() != null) {
+            vmProfile.setDisplay(cmd.getDisplay());
         }
 
         List<AutoScaleVmGroupVO> vmGroupList = _autoScaleVmGroupDao.listByAll(null, profileId);
@@ -739,6 +748,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         int minMembers = cmd.getMinMembers();
         int maxMembers = cmd.getMaxMembers();
         Integer interval = cmd.getInterval();
+        Boolean forDisplay = cmd.getDisplay();
 
         if (interval == null) {
             interval = NetUtils.DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME;
@@ -759,6 +769,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
             loadBalancer.getDefaultPortStart(), interval, null, cmd.getProfileId(), AutoScaleVmGroup.State_New);
+
+        if (forDisplay != null) {
+            vmGroupVO.setDisplay(forDisplay);
+        }
 
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
         s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
@@ -970,6 +984,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Integer minMembers = cmd.getMinMembers();
         Integer maxMembers = cmd.getMaxMembers();
         Integer interval = cmd.getInterval();
+        Boolean forDisplay = cmd.getDisplay();
 
         List<Long> scaleUpPolicyIds = cmd.getScaleUpPolicyIds();
         List<Long> scaleDownPolicyIds = cmd.getScaleDownPolicyIds();
@@ -996,6 +1011,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (cmd.getCustomId() != null) {
             vmGroupVO.setUuid(cmd.getCustomId());
+        }
+
+        if (forDisplay != null) {
+            vmGroupVO.setDisplay(forDisplay);
         }
 
         vmGroupVO = checkValidityAndPersist(vmGroupVO, scaleUpPolicyIds, scaleDownPolicyIds);

@@ -86,6 +86,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public AutoScaleVmProfileVO() {
     }
 
@@ -219,5 +222,14 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

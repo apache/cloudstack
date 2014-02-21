@@ -76,7 +76,7 @@ public class FirewallResponse extends BaseResponse {
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is vpc for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setId(String id) {

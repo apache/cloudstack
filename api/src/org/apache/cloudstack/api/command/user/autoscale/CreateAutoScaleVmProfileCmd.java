@@ -19,8 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,6 +33,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -97,6 +97,9 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
                description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     private Map<String, String> otherDeployParamMap;
 
     // ///////////////////////////////////////////////////
@@ -123,6 +126,10 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     public Map getCounterParamList() {
