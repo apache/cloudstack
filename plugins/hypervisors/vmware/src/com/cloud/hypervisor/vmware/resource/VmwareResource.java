@@ -4671,6 +4671,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (newStates == null) {
             return null;
         }
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        try {
+            if (!hyperHost.isHyperHostConnected()) {
+                return null;
+            }
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception", e);
+            return null;
+        }
         return new PingRoutingCommand(getType(), id, newStates, syncHostVmStates());
     }
 
