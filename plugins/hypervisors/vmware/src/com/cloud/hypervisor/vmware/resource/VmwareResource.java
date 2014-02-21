@@ -4097,18 +4097,47 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource PingTestCommand: " + _gson.toJson(cmd));
         }
+
         String controlIp = cmd.getRouterIp();
-        String args = " -c 1 -n -q " + cmd.getPrivateIp();
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/bin/ping" + args);
-            if (result.first())
-                return new Answer(cmd);
-        } catch (Exception e) {
-            s_logger.error(
-                    "Unable to execute ping command on DomR (" + controlIp + "), domR may not be ready yet. failure due to " + VmwareHelper.getExceptionMessage(e), e);
+        if (controlIp != null) {
+            String args = " -c 1 -n -q " + cmd.getPrivateIp();
+            try {
+                VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/bin/ping" + args);
+                if (result.first())
+                    return new Answer(cmd);
+            } catch (Exception e) {
+                s_logger.error("Unable to execute ping command on DomR (" + controlIp + "), domR may not be ready yet. failure due to "
+                        + VmwareHelper.getExceptionMessage(e), e);
+            }
+            return new Answer(cmd, false, "PingTestCommand failed");
+        } else {
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            try {
+                HostMO hostMo = (HostMO)hyperHost;
+                ClusterMO clusterMo = new ClusterMO(context, hostMo.getHyperHostCluster());
+                VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+                List<Pair<ManagedObjectReference, String>> hosts = clusterMo.getClusterHosts();
+                for (Pair<ManagedObjectReference, String> entry : hosts) {
+                    HostMO hostInCluster = new HostMO(context, entry.first());
+                    String hostIp = hostInCluster.getHostManagementIp(mgr.getManagementPortGroupName());
+                    if (hostIp != null && hostIp.equals(cmd.getComputingHostIp())) {
+                        if (hostInCluster.isHyperHostConnected())
+                            return new Answer(cmd);
+                        else
+                            new Answer(cmd, false, "PingTestCommand failed");
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.error("Unable to execute ping command on host (" + cmd.getComputingHostIp() + "). failure due to "
+                        + VmwareHelper.getExceptionMessage(e), e);
+            }
+
+            return new Answer(cmd, false, "PingTestCommand failed");
         }
-        return new Answer(cmd, false, "PingTestCommand failed");
     }
 
     protected Answer execute(CheckOnHostCommand cmd) {
