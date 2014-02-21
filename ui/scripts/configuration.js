@@ -522,6 +522,9 @@
                                     memory: {
                                         label: 'label.memory.mb',
                                         converter: function(args) {
+                                    	    if (args == undefined)
+                                    	    	return '';
+                                    	    else                                     	
                                             return cloudStack.converters.convertBytes(args * 1024 * 1024);
                                         }
                                     },
@@ -1038,6 +1041,9 @@
                                     memory: {
                                         label: 'label.memory.mb',
                                         converter: function(args) {
+                                    	    if (args == undefined)
+                                	    	    return '';
+                                	        else 
                                             return cloudStack.converters.convertBytes(args * 1024 * 1024);
                                         }
                                     },
