@@ -64,7 +64,8 @@ from marvin.integration.lib.base import (Configurations,
                                          PhysicalNetwork,
                                          Host,
                                          PublicIPAddress,
-                                         NetworkOffering)
+                                         NetworkOffering,
+                                         Network)
 from marvin.integration.lib.utils import (get_process_status,
                                           xsplit,
                                           validateList)
@@ -969,3 +970,13 @@ def shouldTestBeSkipped(networkType, zoneType):
             and (zoneType.lower() == BASIC_ZONE)):
         skipIt = True
     return skipIt
+
+def verifyNetworkState(apiclient, networkid, state):
+    """List networks and check if the network state matches the given state"""
+    try:
+        networks = Network.list(apiclient, id=networkid)
+    except Exception as e:
+        raise Exception("Failed while fetching network list with error: %s" % e)
+    assert validateList(networks)[0] == PASS, "Networks list validation failed, list is %s" % networks
+    assert str(networks[0].state).lower() == state, "network state should be %s, it is %s" % (state, networks[0].state)
+    return

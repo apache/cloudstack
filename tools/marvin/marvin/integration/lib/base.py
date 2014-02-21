@@ -131,6 +131,13 @@ class Account:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listAccounts(cmd))
 
+    def disable(self, apiclient, lock=False):
+        """Disable an account"""
+        cmd = disableAccount.disableAccountCmd()
+        cmd.id = self.id
+        cmd.lock = lock
+        apiclient.disableAccount(cmd)
+
 
 class User:
     """ User Life Cycle """
