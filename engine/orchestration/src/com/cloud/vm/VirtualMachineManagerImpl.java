@@ -2129,10 +2129,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (work.getType() == State.Starting) {
                                     _haMgr.scheduleRestart(vm, true);
                                     work.setManagementServerId(_nodeId);
+                                    work.setStep(Step.Done);
                                     _workDao.update(work.getId(), work);
                                 } else if (work.getType() == State.Stopping) {
                                     _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.CheckStop);
                                     work.setManagementServerId(_nodeId);
+                                    work.setStep(Step.Done);
                                     _workDao.update(work.getId(), work);
                                 } else if (work.getType() == State.Migrating) {
                                     _haMgr.scheduleMigration(vm);
