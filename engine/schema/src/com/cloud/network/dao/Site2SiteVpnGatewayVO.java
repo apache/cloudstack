@@ -55,6 +55,9 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public Site2SiteVpnGatewayVO() {
     }
 
@@ -115,5 +118,14 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

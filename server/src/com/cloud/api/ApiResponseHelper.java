@@ -1263,11 +1263,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         vpnResponse.setIpRange(vpn.getIpRange());
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
-
         populateOwner(vpnResponse, vpn);
-
         vpnResponse.setState(vpn.getState().toString());
         vpnResponse.setId(vpn.getUuid());
+        vpnResponse.setForDisplay(vpn.isDisplay());
         vpnResponse.setObjectName("remoteaccessvpn");
 
         return vpnResponse;
@@ -3045,6 +3044,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVpcId(vpc.getUuid());
         }
         response.setRemoved(result.getRemoved());
+        response.setForDisplay(result.isDisplay());
         response.setObjectName("vpngateway");
 
         populateAccount(response, result.getAccountId());
@@ -3114,6 +3114,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
+        response.setForDisplay(result.isDisplay());
         response.setObjectName("vpnconnection");
         return response;
     }

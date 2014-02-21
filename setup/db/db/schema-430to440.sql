@@ -536,6 +536,8 @@ ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `display` tinyint(1) NOT NUL
 ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`network_acl` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
-
+ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`s2s_vpn_connection` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 
 

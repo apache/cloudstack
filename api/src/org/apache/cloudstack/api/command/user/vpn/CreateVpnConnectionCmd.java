@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -62,6 +62,9 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.PASSIVE, type = CommandType.BOOLEAN, required = false, description = "connection is passive or not")
     private Boolean passive;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,6 +82,10 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
             return false;
         }
         return passive;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////

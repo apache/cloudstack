@@ -69,6 +69,9 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     @Column(name = "passive")
     private boolean passive;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public Site2SiteVpnConnectionVO() {
     }
 
@@ -158,5 +161,14 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

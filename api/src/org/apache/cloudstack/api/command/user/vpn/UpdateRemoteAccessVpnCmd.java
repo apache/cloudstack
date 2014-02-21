@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
@@ -45,6 +46,9 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -56,6 +60,10 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     @Override
@@ -86,7 +94,7 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        RemoteAccessVpn result = _ravService.updateRemoteAccessVpn(id, this.getCustomId());
+        RemoteAccessVpn result = _ravService.updateRemoteAccessVpn(id, this.getCustomId(), getDisplay());
         RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

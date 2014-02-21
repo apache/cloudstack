@@ -136,7 +136,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     @DB
-    public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall, final Boolean forDisplay) throws NetworkRuleConflictException {
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
 
@@ -246,6 +246,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 RemoteAccessVpnVO vpnVO =
                     new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(), publicIpId, vpcId, range[0], newIpRange,
                         sharedSecret);
+
+                if (forDisplay != null) {
+                    vpnVO.setDisplay(forDisplay);
+                }
                 return _remoteAccessVpnDao.persist(vpnVO);
             }
         });
@@ -730,7 +734,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_REMOTE_ACCESS_VPN_UPDATE, eventDescription = "updating remote access vpn", async = true)
-    public RemoteAccessVpn updateRemoteAccessVpn(long id, String customId) {
+    public RemoteAccessVpn updateRemoteAccessVpn(long id, String customId, Boolean forDisplay) {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(id);
         if (vpn == null) {
             throw new InvalidParameterValueException("Can't find remote access vpn by id " + id);
@@ -739,6 +743,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vpn);
         if (customId != null) {
             vpn.setUuid(customId);
+        }
+        if (forDisplay != null) {
+            vpn.setDisplay(forDisplay);
         }
 
         _remoteAccessVpnDao.update(vpn.getId(), vpn);

@@ -142,6 +142,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(owner.getAccountId(), owner.getDomainId(), ips.get(0).getId(), vpcId);
+
+        if (cmd.getDisplay() != null) {
+            gw.setDisplay(cmd.getDisplay());
+        }
+
         _vpnGatewayDao.persist(gw);
         return gw;
     }
@@ -299,6 +304,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId, cmd.isPassive());
         conn.setState(State.Pending);
+        if (cmd.getDisplay() != null) {
+            conn.setDisplay(cmd.getDisplay());
+        }
+
         _vpnConnectionDao.persist(conn);
         return conn;
     }
@@ -785,7 +794,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_UPDATE, eventDescription = "creating s2s vpn gateway", async = true)
-    public Site2SiteVpnConnection updateVpnConnection(long id, String customId) {
+    public Site2SiteVpnConnection updateVpnConnection(long id, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
         if (conn == null) {
@@ -797,13 +806,17 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             conn.setUuid(customId);
         }
 
+        if (forDisplay != null) {
+            conn.setDisplay(forDisplay);
+        }
+
         _vpnConnectionDao.update(id, conn);
         return _vpnConnectionDao.findById(id);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_UPDATE, eventDescription = "updating s2s vpn gateway", async = true)
-    public Site2SiteVpnGateway updateVpnGateway(Long id, String customId) {
+    public Site2SiteVpnGateway updateVpnGateway(Long id, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
 
         Site2SiteVpnGatewayVO vpnGateway = _vpnGatewayDao.findById(id);
@@ -815,6 +828,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (customId != null) {
             vpnGateway.setUuid(customId);
         }
+
+        if (forDisplay != null) {
+            vpnGateway.setDisplay(forDisplay);
+        }
+
         _vpnGatewayDao.update(id, vpnGateway);
         return _vpnGatewayDao.findById(id);
 

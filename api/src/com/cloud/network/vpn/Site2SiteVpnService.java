@@ -64,7 +64,7 @@ public interface Site2SiteVpnService {
 
     Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd updateVpnCustomerGatewayCmd);
 
-    Site2SiteVpnConnection updateVpnConnection(long id, String customId);
+    Site2SiteVpnConnection updateVpnConnection(long id, String customId, Boolean forDisplay);
 
-    Site2SiteVpnGateway updateVpnGateway(Long id, String customId);
+    Site2SiteVpnGateway updateVpnGateway(Long id, String customId, Boolean forDisplay);
 }
