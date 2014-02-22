@@ -480,7 +480,7 @@ public class VirtualRoutingResource {
         }
 
         String tmpCfgFilePath = "/etc/haproxy/";
-        String tmpCfgFileName = "haproxy.cfg.new";
+        String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
         cfg.add(new ConfigItem(tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents));
 
         String[][] rules = cfgtr.generateFwRules(cmd);
@@ -489,7 +489,7 @@ public class VirtualRoutingResource {
         String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
         String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-        String args = "";
+        String args = " -f " + tmpCfgFilePath + tmpCfgFileName;
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
             for (int i = 0; i < addRules.length; i++) {

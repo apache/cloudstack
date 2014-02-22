@@ -80,6 +80,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     VirtualRoutingResource _resource;
     NetworkElementCommand _currentCmd;
     int _count;
+    String _file;
 
     String ROUTERIP = "10.2.3.4";
 
@@ -703,6 +704,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     @Test
     public void testLoadBalancerConfigCommand() {
         _count = 0;
+        _file = "";
 
         List<LoadBalancerTO> lbs = new ArrayList<>();
         List<LbDestination> dests = new ArrayList<>();
@@ -713,9 +715,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         lbs.toArray(arrayLbs);
         NicTO nic = new NicTO();
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
 
+        nic.setIp("10.1.10.2");
         cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
         answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
@@ -729,8 +733,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         switch (_count) {
             case 1:
             case 3:
+                _file = path + filename;
                 assertEquals(path, "/etc/haproxy/");
-                assertEquals(filename, "haproxy.cfg.new");
+                assertTrue(filename.startsWith("haproxy.cfg.new"));
                 assertEquals(content, "global\n" +
                         "\tlog 127.0.0.1:3914   local0 warning\n" +
                         "\tmaxconn 1000\n" +
@@ -779,11 +784,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         switch (_count) {
             case 2:
                 assertEquals(script, VRScripts.LB);
-                assertEquals(args, " -i null -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
+                assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
                 break;
             case 4:
                 assertEquals(script, VRScripts.VPC_LB);
-                assertEquals(args, " -i null -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
+                assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
                 break;
             default:
                 fail();
