@@ -99,11 +99,6 @@
     </dependency>
     <!-- Test dependency in mysql for db tests -->
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <scope>provided</scope>

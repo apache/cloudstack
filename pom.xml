@@ -185,7 +185,7 @@
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>${cs.mysql.version}</version>
-        <scope>provided,test</scope>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>

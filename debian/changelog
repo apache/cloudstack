@@ -1,8 +1,8 @@
 cloudstack (4.3.0) unstable; urgency=low
 
- * Update the version to 4.3.0 
+  * Update the version to 4.3.0 
 
- -- David Nalley <david@gnsa.us> Sat 2o2 Feb 2014 00:00:00 -0400
+ -- David Nalley <david@gnsa.us>  Sat, 22 Feb 2014 00:00:00 -0400
 
 cloudstack (4.3.0-snapshot) unstable; urgency=low
   * Update the version to 4.3.0.snapshot
