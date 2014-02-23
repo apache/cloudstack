@@ -530,10 +530,10 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
-            diskProtocol protocol) {
+            diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
-            _diskFmtType = diskFmtType.RAW;
+            _diskFmtType = diskFmtType;
             _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
@@ -546,10 +546,10 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
-            diskProtocol protocol) {
+            diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
-            _diskFmtType = diskFmtType.RAW;
+            _diskFmtType = diskFmtType;
             _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
