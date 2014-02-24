@@ -244,6 +244,7 @@ class CSConnection(object):
             cmd_name = ''
             payload = {}
             required = []
+            isAsync = "false"
             for attribute in dir(cmd):
                 if not attribute.startswith('__'):
                     if attribute == "isAsync":
@@ -274,7 +275,6 @@ class CSConnection(object):
                                 for k, v in val.iteritems():
                                     payload["%s[%d].%s" % (param, i, k)] = v
                                 i += 1
-
             return cmd_name.strip(), isAsync, payload
         except Exception, e:
             self.logger.\

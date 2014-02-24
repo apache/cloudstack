@@ -30,6 +30,7 @@ from marvin.cloudstackException import GetDetailExceptionInfo
 
 
 class MarvinPlugin(Plugin):
+
     """
     Custom plugin for the cloudstackTestCases to be run using nose
     """
@@ -53,7 +54,7 @@ class MarvinPlugin(Plugin):
         '''
         self.__deployDcFlag = None
         self.conf = None
-        self.__debugStream = stdout
+        self.__resultStream = stdout
         self.__testRunner = None
         self.__testResult = SUCCESS
         self.__startTime = None
@@ -128,7 +129,7 @@ class MarvinPlugin(Plugin):
                     os.system("python " + filename)
                     return True
             return False
-        except ImportError, e:
+        except ImportError as e:
             print "FileName :%s : Error : %s" % \
                   (filename, GetDetailExceptionInfo(e))
             return False
@@ -161,15 +162,28 @@ class MarvinPlugin(Plugin):
                                      str(self.__testName) + " :::::::::::")
         self.__startTime = time.time()
 
+    def printMsg(self, status, tname, err):
+        if self.__tcRunLogger:
+            self.__tcRunLogger.\
+                fatal("%s: %s: %s" % (status,
+                                      tname,
+                                      GetDetailExceptionInfo(err)))
+        write_str = "=== TestName: %s | Status : %s ===\n" % (tname, status)
+        self.__resultStream.write(write_str)
+        print write_str
+
+    def addSuccess(test):
+        '''
+        Adds the Success Messages to logs
+        '''
+        printMsg(SUCCESS, self.__testName, "Test Case Passed")
+        self.__testresult = SUCCESS
+
     def handleError(self, test, err):
         '''
         Adds Exception throwing test cases and information to log.
         '''
-        if self.__tcRunLogger:
-            self.__tcRunLogger.\
-                fatal("%s: %s: %s" % (EXCEPTION,
-                                      self.__testName,
-                                      GetDetailExceptionInfo(err)))
+        self.printMsg(EXCEPTION, self.__testName, GetDetailExceptionInfo(err))
         self.__testResult = EXCEPTION
 
     def prepareTestRunner(self, runner):
@@ -180,10 +194,7 @@ class MarvinPlugin(Plugin):
         '''
         Adds Failing test cases and information to log.
         '''
-        if self.__tcRunLogger:
-            self.__tcRunLogger.\
-                fatal("%s: %s: %s" %
-                      (FAILED, self.__testName, GetDetailExceptionInfo(err)))
+        self.printMsg(FAILED, self.__testName, GetDetailExceptionInfo(err))
         self.__testResult = FAILED
 
     def __getModName(self, inp, type='file'):
@@ -202,7 +213,7 @@ class MarvinPlugin(Plugin):
     def __runSuite(self, test_suite=None):
         try:
             if test_suite:
-                if self.wantFile(test_suite) is True:
+                if self.wantFile(test_suite):
                     test_mod_name = self.__getModName(test_suite)
                     temp_obj = MarvinInit(self.__configFile,
                                           None, test_mod_name,
@@ -213,14 +224,14 @@ class MarvinPlugin(Plugin):
                         self.__testClient = temp_obj.getTestClient()
                         self.__tcRunLogger = temp_obj.getLogger()
                         self.__parsedConfig = temp_obj.getParsedConfig()
-                        self.__debugStream = temp_obj.getResultFile()
+                        self.__resultStream = temp_obj.getResultFile()
                         self.__testRunner = nose.core.\
-                            TextTestRunner(stream=self.__debugStream,
+                            TextTestRunner(stream=self.__resultStream,
                                            descriptions=True,
                                            verbosity=2)
                         return SUCCESS
             return FAILED
-        except Exception, e:
+        except Exception as e:
             print "\n Exception Occurred when running suite :%s Error : %s" \
                 % (test_suite, GetDetailExceptionInfo(e))
             return FAILED
@@ -259,7 +270,7 @@ class MarvinPlugin(Plugin):
                 if os.path.isfile(suites):
                     self.__runSuite(suites)
             return SUCCESS
-        except Exception, e:
+        except Exception as e:
             print "Exception Occurred under startMarvin: %s" % \
                   GetDetailExceptionInfo(e)
             return FAILED

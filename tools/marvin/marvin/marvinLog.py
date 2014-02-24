@@ -143,13 +143,12 @@ class MarvinLog:
             else:
                 temp_path = str(test_module_name) + "__" + str(temp_ts)
 
+            temp_dir = "MarvinLogs"
             if ((log_cfg is not None) and
                     ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
                 temp_dir = \
                     log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
-            else:
-                temp_dir = "MarvinLogs"
 
             self.__logFolderDir = temp_dir + "//" + temp_path
             print "\n*********Log Folder Path: %s. " \

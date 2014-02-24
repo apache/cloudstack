@@ -99,7 +99,7 @@ class CSTestClient(object):
             if self.__parsedTestDataConfig:
                 ret = self.__parsedTestDataConfig.get("zone")
                 if ret != "NA":
-                    self.__zone = ret 
+                    self.__zone = ret
         return self.__zone
 
     def __setHypervisorToClient(self):
