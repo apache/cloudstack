@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePublicIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class)
+@APICommand(name = "updatePublicIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPAddrCmd.class.getName());
     private static final String s_name = "updateipaddressresponse";

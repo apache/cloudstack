@@ -42,7 +42,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class)
+@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateFirewallRuleCmd.class.getName());
 

@@ -31,7 +31,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "updateLoadBalancer", description = "Updates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0")
+@APICommand(name = "updateLoadBalancer", description = "Updates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateApplicationLoadBalancerCmd.class.getName());
 

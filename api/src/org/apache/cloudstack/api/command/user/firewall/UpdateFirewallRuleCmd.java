@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 
-@APICommand(name = "updateFirewallRule", description = "Updates firewall rule ", responseObject = FirewallResponse.class, since = "4.4")
+@APICommand(name = "updateFirewallRule", description = "Updates firewall rule ", responseObject = FirewallResponse.class, since = "4.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateFirewallRuleCmd.class.getName());
 

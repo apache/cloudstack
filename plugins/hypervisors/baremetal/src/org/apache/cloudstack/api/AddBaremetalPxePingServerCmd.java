@@ -20,7 +20,8 @@ package org.apache.cloudstack.api;
 
 import com.cloud.baremetal.networkservice.BaremetalPxePingResponse;
 
-@APICommand(name = "addBaremetalPxePingServer", description = "add a baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class)
+@APICommand(name = "addBaremetalPxePingServer", description = "add a baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddBaremetalPxePingServerCmd extends AddBaremetalPxeCmd {
 
     @Parameter(name = ApiConstants.PING_STORAGE_SERVER_IP, type = CommandType.STRING, required = true, description = "PING storage server ip")

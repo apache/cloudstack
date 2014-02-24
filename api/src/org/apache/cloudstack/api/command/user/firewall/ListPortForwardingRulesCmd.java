@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPortForwardingRules", description = "Lists all port forwarding rules for an IP address.", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "listPortForwardingRules", description = "Lists all port forwarding rules for an IP address.", responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 

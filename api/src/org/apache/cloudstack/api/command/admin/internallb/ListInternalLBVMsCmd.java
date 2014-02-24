@@ -34,7 +34,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLBVMsCmd.class.getName());
 

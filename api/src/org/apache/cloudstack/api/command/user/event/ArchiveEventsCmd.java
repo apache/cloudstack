@@ -34,7 +34,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ArchiveEventsCmd.class.getName());

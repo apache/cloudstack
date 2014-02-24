@@ -35,7 +35,8 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAccount", description = "Updates account information for the authenticated user", responseObject = AccountResponse.class)
+@APICommand(name = "updateAccount", description = "Updates account information for the authenticated user", responseObject = AccountResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";

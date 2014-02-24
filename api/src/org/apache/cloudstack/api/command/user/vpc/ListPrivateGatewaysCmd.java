@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class)
+@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 

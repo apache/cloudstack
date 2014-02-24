@@ -40,7 +40,8 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedPods", description = "Lists dedicated pods.", responseObject = DedicatePodResponse.class)
+@APICommand(name = "listDedicatedPods", description = "Lists dedicated pods.", responseObject = DedicatePodResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedPodsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedPodsCmd.class.getName());
 

@@ -33,7 +33,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetVpnConnection", description = "Reset site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class)
+@APICommand(name = "resetVpnConnection", description = "Reset site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVpnConnectionCmd.class.getName());
 

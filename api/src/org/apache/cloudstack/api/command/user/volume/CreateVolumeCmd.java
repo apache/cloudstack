@@ -42,7 +42,8 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "createVolume",
             responseObject = VolumeResponse.class,
-            description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
+            description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.",
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";

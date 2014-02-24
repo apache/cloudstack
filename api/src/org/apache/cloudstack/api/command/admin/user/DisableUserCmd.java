@@ -36,7 +36,8 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "disableUser", description = "Disables a user account", responseObject = UserResponse.class)
+@APICommand(name = "disableUser", description = "Disables a user account", responseObject = UserResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DisableUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";

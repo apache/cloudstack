@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopSystemVm", description = "Stops a system VM.", responseObject = SystemVmResponse.class)
+@APICommand(name = "stopSystemVm", description = "Stops a system VM.", responseObject = SystemVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 

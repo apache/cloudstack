@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 
-@APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 

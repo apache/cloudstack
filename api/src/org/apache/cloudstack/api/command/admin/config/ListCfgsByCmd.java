@@ -35,7 +35,8 @@ import org.apache.cloudstack.config.Configuration;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
+@APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 

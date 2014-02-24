@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePod", description = "Deletes a Pod.", responseObject = SuccessResponse.class)
+@APICommand(name = "deletePod", description = "Deletes a Pod.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 

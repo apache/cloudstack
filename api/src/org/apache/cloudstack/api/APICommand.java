@@ -39,5 +39,9 @@ public @interface APICommand {
 
     String since() default "";
 
+    boolean requestHasSensitiveInfo() default true;
+
+    boolean responseHasSensitiveInfo() default true;
+
     RoleType[] authorized() default {};
 }

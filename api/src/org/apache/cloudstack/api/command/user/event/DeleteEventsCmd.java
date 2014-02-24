@@ -34,7 +34,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());

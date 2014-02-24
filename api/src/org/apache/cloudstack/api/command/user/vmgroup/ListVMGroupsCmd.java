@@ -25,7 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class)
+@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 

@@ -40,7 +40,8 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class)
+@APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedZonesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
 

@@ -30,7 +30,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "recoverVirtualMachine", description = "Recovers a virtual machine.", responseObject = UserVmResponse.class)
+@APICommand(name = "recoverVirtualMachine", description = "Recovers a virtual machine.", responseObject = UserVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 

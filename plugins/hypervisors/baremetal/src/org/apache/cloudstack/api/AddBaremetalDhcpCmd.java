@@ -35,7 +35,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "addBaremetalDhcp", description = "adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
+@APICommand(name = "addBaremetalDhcp", description = "adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetaldhcpresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);

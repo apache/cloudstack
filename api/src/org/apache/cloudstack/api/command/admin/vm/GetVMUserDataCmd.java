@@ -29,7 +29,8 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "getVirtualMachineUserData", description = "Returns user data associated with the VM", responseObject = VMUserDataResponse.class, since = "4.4")
+@APICommand(name = "getVirtualMachineUserData", description = "Returns user data associated with the VM", responseObject = VMUserDataResponse.class, since = "4.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetVMUserDataCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMUserDataCmd.class);
     private static final String s_name = "getvirtualmachineuserdataresponse";

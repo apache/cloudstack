@@ -37,7 +37,8 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "expungeVirtualMachine", description = "Expunge a virtual machine. Once expunged, it cannot be recoverd.", responseObject = SuccessResponse.class)
+@APICommand(name = "expungeVirtualMachine", description = "Expunge a virtual machine. Once expunged, it cannot be recoverd.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExpungeVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExpungeVMCmd.class.getName());
 

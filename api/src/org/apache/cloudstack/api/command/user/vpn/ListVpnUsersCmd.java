@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import com.cloud.network.VpnUser;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVpnUsers", description = "Lists vpn users", responseObject = VpnUsersResponse.class)
+@APICommand(name = "listVpnUsers", description = "Lists vpn users", responseObject = VpnUsersResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVpnUsersCmd.class.getName());
 

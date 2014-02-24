@@ -32,7 +32,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.network.as.AutoScaleVmProfile;
 
-@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class)
+@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmProfilesCmd.class.getName());
 

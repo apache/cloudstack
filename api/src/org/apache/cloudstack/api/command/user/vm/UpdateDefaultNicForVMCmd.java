@@ -36,7 +36,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class)
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";

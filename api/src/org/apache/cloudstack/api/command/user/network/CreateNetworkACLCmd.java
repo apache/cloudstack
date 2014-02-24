@@ -42,7 +42,9 @@ import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createNetworkACL",
             description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
-            responseObject = NetworkACLItemResponse.class)
+            responseObject = NetworkACLItemResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 

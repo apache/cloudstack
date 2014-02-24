@@ -55,7 +55,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
-@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class)
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";

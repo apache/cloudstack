@@ -36,7 +36,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class)
+@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AddNicToVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmd.class);
     private static final String s_name = "addnictovirtualmachineresponse";

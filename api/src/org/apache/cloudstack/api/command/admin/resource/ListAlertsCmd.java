@@ -30,7 +30,8 @@ import org.apache.log4j.Logger;
 import com.cloud.alert.Alert;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listAlerts", description = "Lists all alerts.", responseObject = AlertResponse.class)
+@APICommand(name = "listAlerts", description = "Lists all alerts.", responseObject = AlertResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());

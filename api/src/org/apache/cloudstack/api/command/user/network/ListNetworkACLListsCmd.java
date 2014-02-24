@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkACLLists", description = "Lists all network ACLs", responseObject = NetworkACLResponse.class)
+@APICommand(name = "listNetworkACLLists", description = "Lists all network ACLs", responseObject = NetworkACLResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 

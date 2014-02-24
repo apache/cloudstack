@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 
-@APICommand(name = "createZone", description = "Creates a Zone.", responseObject = ZoneResponse.class)
+@APICommand(name = "createZone", description = "Creates a Zone.", responseObject = ZoneResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 

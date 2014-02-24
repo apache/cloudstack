@@ -38,7 +38,8 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 
-@APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class)
+@APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 

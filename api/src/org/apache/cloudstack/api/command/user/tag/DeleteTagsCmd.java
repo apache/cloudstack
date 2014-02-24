@@ -36,7 +36,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
-@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0")
+@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 

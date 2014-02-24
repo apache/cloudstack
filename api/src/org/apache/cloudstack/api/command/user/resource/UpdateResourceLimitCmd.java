@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.ResourceLimit;
 
-@APICommand(name = "updateResourceLimit", description = "Updates resource limits for an account or domain.", responseObject = ResourceLimitResponse.class)
+@APICommand(name = "updateResourceLimit", description = "Updates resource limits for an account or domain.", responseObject = ResourceLimitResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceLimitCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 

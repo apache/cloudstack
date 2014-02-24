@@ -34,7 +34,8 @@ import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "searchLdap", responseObject = LdapUserResponse.class, description = "Searches LDAP based on the username attribute", since = "4.2.0")
+@APICommand(name = "searchLdap", responseObject = LdapUserResponse.class, description = "Searches LDAP based on the username attribute", since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapUserSearchCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(LdapUserSearchCmd.class.getName());

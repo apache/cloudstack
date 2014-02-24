@@ -33,7 +33,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAutoScalePolicyCmd.class.getName());
     private static final String s_name = "deleteautoscalepolicyresponse";

@@ -36,7 +36,8 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
- description = "Updates a port forwarding rule")
+ description = "Updates a port forwarding rule",
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";

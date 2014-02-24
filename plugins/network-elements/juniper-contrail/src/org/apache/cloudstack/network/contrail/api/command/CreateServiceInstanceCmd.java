@@ -51,7 +51,9 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createServiceInstance",
             description = "Creates a system virtual-machine that implements network services",
-            responseObject = ServiceInstanceResponse.class)
+            responseObject = ServiceInstanceResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createserviceinstanceresponse";
 

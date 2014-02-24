@@ -29,7 +29,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class)
+@APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class CreateSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "createsshkeypairresponse";

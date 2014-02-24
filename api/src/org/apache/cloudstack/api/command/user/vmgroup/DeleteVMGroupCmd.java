@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "deleteInstanceGroup", description = "Deletes a vm group", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteInstanceGroup", description = "Deletes a vm group", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVMGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
     private static final String s_name = "deleteinstancegroupresponse";

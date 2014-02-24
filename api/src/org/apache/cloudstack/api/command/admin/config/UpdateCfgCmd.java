@@ -33,7 +33,8 @@ import org.apache.cloudstack.config.Configuration;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class)
+@APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";

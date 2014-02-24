@@ -32,7 +32,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "removeVpnUser", description = "Removes vpn user", responseObject = SuccessResponse.class)
+@APICommand(name = "removeVpnUser", description = "Removes vpn user", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 

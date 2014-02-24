@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM")
+@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetVMPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMPasswordCmd.class.getName());
     private static final String s_name = "getvmpasswordresponse";

@@ -44,7 +44,9 @@ import com.cloud.utils.StringUtils;
 
 @APICommand(name = "authorizeSecurityGroupIngress",
             responseObject = SecurityGroupRuleResponse.class,
-            description = "Authorizes a particular ingress rule for this security group")
+            description = "Authorizes a particular ingress rule for this security group",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());

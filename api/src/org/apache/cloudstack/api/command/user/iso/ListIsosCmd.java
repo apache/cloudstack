@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class)
+@APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

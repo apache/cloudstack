@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class)
+@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 

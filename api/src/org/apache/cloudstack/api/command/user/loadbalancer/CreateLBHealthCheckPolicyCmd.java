@@ -39,7 +39,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createLBHealthCheckPolicy",
             description = "Creates a Load Balancer healthcheck policy ",
             responseObject = LBHealthCheckResponse.class,
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLBHealthCheckPolicyCmd.class.getName());

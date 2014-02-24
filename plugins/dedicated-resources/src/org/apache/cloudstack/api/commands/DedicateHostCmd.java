@@ -39,7 +39,8 @@ import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicateHost", description = "Dedicates a host.", responseObject = DedicateHostResponse.class)
+@APICommand(name = "dedicateHost", description = "Dedicates a host.", responseObject = DedicateHostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicateHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateHostCmd.class.getName());
     private static final String s_name = "dedicatehostresponse";

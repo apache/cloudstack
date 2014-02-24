@@ -27,7 +27,9 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "listTemplatePermissions",
             description = "List template visibility and all accounts that have permissions to view this template.",
-            responseObject = TemplatePermissionsResponse.class)
+            responseObject = TemplatePermissionsResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listtemplatepermissionsresponse";

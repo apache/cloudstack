@@ -33,7 +33,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class)
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";

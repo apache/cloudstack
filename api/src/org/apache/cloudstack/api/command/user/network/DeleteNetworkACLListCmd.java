@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteNetworkACLList", description = "Deletes a Network ACL", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteNetworkACLList", description = "Deletes a Network ACL", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLListCmd.class.getName());
     private static final String s_name = "deletenetworkacllistresponse";

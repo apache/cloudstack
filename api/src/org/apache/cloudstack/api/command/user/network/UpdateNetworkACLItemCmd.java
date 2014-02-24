@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkACLItem", description = "Updates ACL Item with specified Id", responseObject = NetworkACLItemResponse.class)
+@APICommand(name = "updateNetworkACLItem", description = "Updates ACL Item with specified Id", responseObject = NetworkACLItemResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkACLItemCmd.class.getName());
 

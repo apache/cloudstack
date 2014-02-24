@@ -30,7 +30,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2")
+@APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd {
     private static final String s_name = "listresourcedetailsresponse";
 

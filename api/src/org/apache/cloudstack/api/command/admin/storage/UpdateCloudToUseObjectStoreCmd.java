@@ -35,7 +35,8 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateCloudToUseObjectStore", description = "Migrate current NFS secondary storages to use object store.", responseObject = ImageStoreResponse.class, since = "4.3.0")
+@APICommand(name = "updateCloudToUseObjectStore", description = "Migrate current NFS secondary storages to use object store.", responseObject = ImageStoreResponse.class, since = "4.3.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateCloudToUseObjectStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCloudToUseObjectStoreCmd.class.getName());
     private static final String s_name = "updatecloudtouseobjectstoreresponse";

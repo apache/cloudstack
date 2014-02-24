@@ -37,7 +37,8 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0")
+@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevertToVMSnapshotCmd.class.getName());
     private static final String s_name = "reverttovmsnapshotresponse";

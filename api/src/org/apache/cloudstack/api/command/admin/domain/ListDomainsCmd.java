@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.domain.Domain;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class)
+@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDomainsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 

@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 
-@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0")
+@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLBHealthCheckPoliciesCmd.class.getName());
 

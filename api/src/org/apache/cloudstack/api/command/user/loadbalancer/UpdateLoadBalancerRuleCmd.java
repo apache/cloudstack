@@ -35,7 +35,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateLoadBalancerRule", description = "Updates load balancer", responseObject = LoadBalancerResponse.class)
+@APICommand(name = "updateLoadBalancerRule", description = "Updates load balancer", responseObject = LoadBalancerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "updateloadbalancerruleresponse";

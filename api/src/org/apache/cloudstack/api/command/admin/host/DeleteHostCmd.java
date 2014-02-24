@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteHost", description = "Deletes a host.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteHost", description = "Deletes a host.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 

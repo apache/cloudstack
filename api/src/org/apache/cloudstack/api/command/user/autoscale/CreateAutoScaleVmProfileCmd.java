@@ -44,7 +44,9 @@ import com.cloud.user.User;
 
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
-            responseObject = AutoScaleVmProfileResponse.class)
+            responseObject = AutoScaleVmProfileResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());

@@ -31,7 +31,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class)
+@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
 

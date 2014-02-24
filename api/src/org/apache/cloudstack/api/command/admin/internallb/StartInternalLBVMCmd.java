@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "startInternalLoadBalancerVM", responseObject = DomainRouterResponse.class, description = "Starts an existing internal lb vm.")
+@APICommand(name = "startInternalLoadBalancerVM", responseObject = DomainRouterResponse.class, description = "Starts an existing internal lb vm.",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartInternalLBVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartInternalLBVMCmd.class.getName());
     private static final String s_name = "startinternallbvmresponse";

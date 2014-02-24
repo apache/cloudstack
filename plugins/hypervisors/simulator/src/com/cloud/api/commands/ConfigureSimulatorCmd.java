@@ -35,7 +35,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class)
+@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureSimulatorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
     private static final String s_name = "configuresimulatorresponse";

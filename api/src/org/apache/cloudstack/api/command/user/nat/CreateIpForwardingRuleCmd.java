@@ -41,7 +41,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "createIpForwardingRule", description = "Creates an ip forwarding rule", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "createIpForwardingRule", description = "Creates an ip forwarding rule", responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 

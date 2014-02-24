@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAffinityGroupCmd.class.getName());
     private static final String s_name = "deleteaffinitygroupresponse";

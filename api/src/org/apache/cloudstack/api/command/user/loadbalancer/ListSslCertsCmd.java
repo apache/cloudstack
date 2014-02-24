@@ -35,7 +35,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.network.lb.CertService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listSslCerts", description = "Lists SSL certificates", responseObject = SslCertResponse.class)
+@APICommand(name = "listSslCerts", description = "Lists SSL certificates", responseObject = SslCertResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSslCertsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSslCertCmd.class.getName());
 

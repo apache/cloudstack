@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "archiveAlerts", description = "Archive one or more alerts.", responseObject = SuccessResponse.class)
+@APICommand(name = "archiveAlerts", description = "Archive one or more alerts.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveAlertsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ArchiveAlertsCmd.class.getName());

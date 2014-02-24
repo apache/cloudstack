@@ -36,7 +36,8 @@ import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class)
+@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 

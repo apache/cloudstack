@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-@APICommand(name = "listSecurityGroups", description = "Lists security groups", responseObject = SecurityGroupResponse.class)
+@APICommand(name = "listSecurityGroups", description = "Lists security groups", responseObject = SecurityGroupResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 

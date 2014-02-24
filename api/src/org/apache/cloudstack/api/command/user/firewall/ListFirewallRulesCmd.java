@@ -34,7 +34,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class)
+@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
     private static final String s_name = "listfirewallrulesresponse";

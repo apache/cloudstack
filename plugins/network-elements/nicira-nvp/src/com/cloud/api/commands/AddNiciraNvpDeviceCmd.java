@@ -41,7 +41,8 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addNiciraNvpDevice", responseObject = NiciraNvpDeviceResponse.class, description = "Adds a Nicira NVP device")
+@APICommand(name = "addNiciraNvpDevice", responseObject = NiciraNvpDeviceResponse.class, description = "Adds a Nicira NVP device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "addniciranvpdeviceresponse";
     @Inject

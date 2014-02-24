@@ -42,7 +42,8 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class)
+@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 

@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkOffering", description = "Updates a network offering.", responseObject = NetworkOfferingResponse.class)
+@APICommand(name = "updateNetworkOffering", description = "Updates a network offering.", responseObject = NetworkOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
     private static final String Name = "updatenetworkofferingresponse";

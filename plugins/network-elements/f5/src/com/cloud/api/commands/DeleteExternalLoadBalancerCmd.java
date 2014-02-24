@@ -34,7 +34,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteExternalLoadBalancer", description = "Deletes a F5 external load balancer appliance added in a zone.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteExternalLoadBalancer", description = "Deletes a F5 external load balancer appliance added in a zone.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 @Deprecated
 // API supported for backward compatibility.
 public class DeleteExternalLoadBalancerCmd extends BaseCmd {

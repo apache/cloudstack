@@ -33,7 +33,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 
-@APICommand(name = "deleteNetwork", description = "Deletes a network", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteNetwork", description = "Deletes a network", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
     private static final String s_name = "deletenetworkresponse";

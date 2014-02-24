@@ -37,7 +37,8 @@ import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addBigSwitchVnsDevice", responseObject = BigSwitchVnsDeviceResponse.class, description = "Adds a BigSwitch VNS device", since = "4.1.0")
+@APICommand(name = "addBigSwitchVnsDevice", responseObject = BigSwitchVnsDeviceResponse.class, description = "Adds a BigSwitch VNS device", since = "4.1.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "addbigswitchvnsdeviceresponse";
     @Inject

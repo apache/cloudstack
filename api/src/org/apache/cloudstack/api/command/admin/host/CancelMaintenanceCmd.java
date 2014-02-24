@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "cancelHostMaintenance", description = "Cancels host maintenance.", responseObject = HostResponse.class)
+@APICommand(name = "cancelHostMaintenance", description = "Cancels host maintenance.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CancelMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 

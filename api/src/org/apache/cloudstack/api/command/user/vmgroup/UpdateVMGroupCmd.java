@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class)
+@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVMGroupCmd extends BaseCmd {
 
     private static final String s_name = "updateinstancegroupresponse";

@@ -39,7 +39,9 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "restoreVirtualMachine",
             description = "Restore a VM to original template/ISO or new template/ISO",
             responseObject = UserVmResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
 public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";

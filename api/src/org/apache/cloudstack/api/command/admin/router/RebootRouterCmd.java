@@ -35,7 +35,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "rebootRouter", description = "Starts a router.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "rebootRouter", description = "Starts a router.", responseObject = DomainRouterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RebootRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";

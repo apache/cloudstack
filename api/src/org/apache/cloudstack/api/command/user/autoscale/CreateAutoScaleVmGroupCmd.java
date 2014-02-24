@@ -40,7 +40,9 @@ import com.cloud.network.rules.LoadBalancer;
 
 @APICommand(name = "createAutoScaleVmGroup",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
-            responseObject = AutoScaleVmGroupResponse.class)
+            responseObject = AutoScaleVmGroupResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 

@@ -27,7 +27,9 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "listIsoPermissions",
             description = "List iso visibility and all accounts that have permissions to view this iso.",
-            responseObject = TemplatePermissionsResponse.class)
+            responseObject = TemplatePermissionsResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListIsoPermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listisopermissionsresponse";

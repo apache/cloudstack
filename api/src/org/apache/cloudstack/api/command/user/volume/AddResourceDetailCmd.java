@@ -31,7 +31,8 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class)
+@APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddResourceDetailCmd.class.getName());
     private static final String s_name = "addresourcedetailresponse";

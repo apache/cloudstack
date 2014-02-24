@@ -38,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a Load Balancer Rule", responseObject = SuccessResponse.class)
+@APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a Load Balancer Rule", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AssignCertToLoadBalancerCmd.class.getName());

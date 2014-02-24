@@ -43,7 +43,9 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachine",
             description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
-            responseObject = UserVmResponse.class)
+            responseObject = UserVmResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
 public class MigrateVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 

@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteConditionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteConditionCmd.class.getName());
     private static final String s_name = "deleteconditionresponse";

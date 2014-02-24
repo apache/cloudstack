@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-@APICommand(name = "listSecondaryStagingStores", description = "Lists secondary staging stores.", responseObject = ImageStoreResponse.class, since = "4.2.0")
+@APICommand(name = "listSecondaryStagingStores", description = "Lists secondary staging stores.", responseObject = ImageStoreResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSecondaryStagingStoresCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSecondaryStagingStoresCmd.class.getName());
 

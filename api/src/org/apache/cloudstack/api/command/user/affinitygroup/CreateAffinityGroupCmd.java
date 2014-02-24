@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group")
+@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 

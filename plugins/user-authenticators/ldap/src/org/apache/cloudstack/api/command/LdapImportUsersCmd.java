@@ -51,7 +51,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 
-@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0")
+@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapImportUsersCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(LdapImportUsersCmd.class.getName());

@@ -34,7 +34,9 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listLoadBalancerRuleInstances",
             description = "List all virtual machine instances that are assigned to a load balancer rule.",
-            responseObject = UserVmResponse.class)
+            responseObject = UserVmResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRuleInstancesCmd.class.getName());
 

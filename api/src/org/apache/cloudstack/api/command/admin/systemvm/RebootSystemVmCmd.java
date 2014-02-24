@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "rebootSystemVm", description = "Reboots a system VM.", responseObject = SystemVmResponse.class)
+@APICommand(name = "rebootSystemVm", description = "Reboots a system VM.", responseObject = SystemVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 

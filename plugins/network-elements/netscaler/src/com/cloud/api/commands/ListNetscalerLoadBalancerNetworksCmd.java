@@ -42,7 +42,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listNetscalerLoadBalancerNetworks",
             responseObject = NetworkResponse.class,
-            description = "lists network that are using a netscaler load balancer device")
+            description = "lists network that are using a netscaler load balancer device",
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());

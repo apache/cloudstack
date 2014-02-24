@@ -35,7 +35,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
 
-@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class)
+@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
     private static final String s_name = "conditionresponse";

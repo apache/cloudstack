@@ -28,7 +28,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVpnGateway", description = "Updates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, since = "4.4")
+@APICommand(name = "updateVpnGateway", description = "Updates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, since = "4.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVpnGatewayCmd.class.getName());
 

@@ -40,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 
-@APICommand(name = "listVirtualRouterElements", description = "Lists all available virtual router elements.", responseObject = VirtualRouterProviderResponse.class)
+@APICommand(name = "listVirtualRouterElements", description = "Lists all available virtual router elements.", responseObject = VirtualRouterProviderResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String Name = "listvirtualrouterelementsresponse";

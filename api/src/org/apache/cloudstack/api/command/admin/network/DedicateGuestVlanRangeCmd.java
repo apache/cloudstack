@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.GuestVlan;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicateGuestVlanRange", description = "Dedicates a guest vlan range to an account", responseObject = GuestVlanRangeResponse.class)
+@APICommand(name = "dedicateGuestVlanRange", description = "Dedicates a guest vlan range to an account", responseObject = GuestVlanRangeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicateGuestVlanRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateGuestVlanRangeCmd.class.getName());
 

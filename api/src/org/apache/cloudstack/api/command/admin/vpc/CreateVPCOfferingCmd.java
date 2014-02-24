@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class)
+@APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
     private static final String Name = "createvpcofferingresponse";

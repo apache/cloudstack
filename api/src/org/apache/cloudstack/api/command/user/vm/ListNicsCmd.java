@@ -40,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 
-@APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class)
+@APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNicsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNicsCmd.class.getName());
     private static final String s_name = "listnicsresponse";

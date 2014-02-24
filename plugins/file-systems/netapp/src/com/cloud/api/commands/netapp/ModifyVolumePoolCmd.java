@@ -33,7 +33,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
 
-@APICommand(name = "modifyPool", description = "Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
+@APICommand(name = "modifyPool", description = "Modify pool", responseObject = ModifyVolumePoolCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ModifyVolumePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
     private static final String s_name = "modifypoolresponse";

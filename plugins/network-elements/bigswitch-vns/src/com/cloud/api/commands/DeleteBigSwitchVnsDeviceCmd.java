@@ -35,7 +35,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteBigSwitchVnsDevice", responseObject = SuccessResponse.class, description = " delete a bigswitch vns device", since = "4.1.0")
+@APICommand(name = "deleteBigSwitchVnsDevice", responseObject = SuccessResponse.class, description = " delete a bigswitch vns device", since = "4.1.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "deletebigswitchvnsdeviceresponse";
     @Inject

@@ -36,7 +36,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listSystemVms", description = "List system virtual machines.", responseObject = SystemVmResponse.class)
+@APICommand(name = "listSystemVms", description = "List system virtual machines.", responseObject = SystemVmResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 

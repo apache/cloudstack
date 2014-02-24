@@ -43,7 +43,8 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class)
+@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddIpToVmNicCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";

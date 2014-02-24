@@ -31,7 +31,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class)
+@APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String Name = "updatevpcresponse";

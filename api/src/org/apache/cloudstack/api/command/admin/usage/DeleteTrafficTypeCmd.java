@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteTrafficType", description = "Deletes traffic type of a physical network", responseObject = SuccessResponse.class, since = "3.0.0")
+@APICommand(name = "deleteTrafficType", description = "Deletes traffic type of a physical network", responseObject = SuccessResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTrafficTypeCmd.class.getName());
 

@@ -33,7 +33,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVPC", description = "Deletes a VPC", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteVPC", description = "Deletes a VPC", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
     private static final String s_name = "deletevpcresponse";

@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startSystemVm", responseObject = SystemVmResponse.class, description = "Starts a system virtual machine.")
+@APICommand(name = "startSystemVm", responseObject = SystemVmResponse.class, description = "Starts a system virtual machine.",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 

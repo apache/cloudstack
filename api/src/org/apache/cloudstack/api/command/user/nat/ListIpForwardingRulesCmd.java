@@ -35,7 +35,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listIpForwardingRules", description = "List the ip forwarding rules", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "listIpForwardingRules", description = "List the ip forwarding rules", responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIpForwardingRulesCmd.class.getName());
 

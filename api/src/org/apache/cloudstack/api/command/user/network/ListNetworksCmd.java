@@ -33,7 +33,8 @@ import org.apache.log4j.Logger;
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class)
+@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String Name = "listnetworksresponse";

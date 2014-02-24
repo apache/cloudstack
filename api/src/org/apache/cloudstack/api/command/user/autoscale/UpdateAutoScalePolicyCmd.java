@@ -36,7 +36,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class)
+@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScalePolicyCmd.class.getName());
 

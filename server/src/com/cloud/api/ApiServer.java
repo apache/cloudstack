@@ -365,6 +365,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
 
                 Class<?> cmdClass = getCmdClass(command[0]);
+
+                APICommand annotation = cmdClass.getAnnotation(APICommand.class);
+
                 if (cmdClass != null) {
                     BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
                     cmdObj = ComponentContext.inject(cmdObj);
@@ -375,7 +378,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
-                    buildAuditTrail(auditTrailSb, command[0], response);
+                    if (annotation.responseHasSensitiveInfo())
+                    {
+                        buildAuditTrail(auditTrailSb, command[0],
+                                StringUtils.cleanString(response));
+                    }
+                    else
+                        buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
                     if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
                         String errorString = "Unknown API command: " + command[0];

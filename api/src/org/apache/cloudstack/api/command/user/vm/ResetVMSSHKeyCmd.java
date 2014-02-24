@@ -38,7 +38,8 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. "
-    + "The virtual machine must be in a \"Stopped\" state. [async]")
+    + "The virtual machine must be in a \"Stopped\" state. [async]",
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmd.class.getName());

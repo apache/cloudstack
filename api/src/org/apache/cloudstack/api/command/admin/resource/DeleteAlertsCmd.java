@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAlerts", description = "Delete one or more alerts.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAlerts", description = "Delete one or more alerts.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAlertsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteAlertsCmd.class.getName());

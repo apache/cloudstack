@@ -42,7 +42,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0")
+@APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapCreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LdapCreateAccountCmd.class.getName());
     private static final String s_name = "createaccountresponse";

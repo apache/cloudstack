@@ -37,7 +37,8 @@ import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 import com.cloud.configuration.Config;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetApiLimit", responseObject = ApiLimitResponse.class, description = "Reset api count")
+@APICommand(name = "resetApiLimit", responseObject = ApiLimitResponse.class, description = "Reset api count",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 

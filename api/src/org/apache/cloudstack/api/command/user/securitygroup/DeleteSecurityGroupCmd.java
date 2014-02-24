@@ -33,7 +33,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 
-@APICommand(name = "deleteSecurityGroup", description = "Deletes security group", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteSecurityGroup", description = "Deletes security group", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
     private static final String s_name = "deletesecuritygroupresponse";

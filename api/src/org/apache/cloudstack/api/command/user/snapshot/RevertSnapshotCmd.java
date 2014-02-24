@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class)
+@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     private static final String s_name = "revertsnapshotresponse";
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class, required = true, description = "The ID of the snapshot")
