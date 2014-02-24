@@ -281,11 +281,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>antlr-runtime</artifactId>
       <version>3.4</version>
