@@ -1783,15 +1783,21 @@ public class VirtualMachineMO extends BaseMO {
         VirtualDevice[] devices = getAllDiskDevice();
         for(VirtualDevice device : devices) {
             if(device instanceof VirtualDisk) {
-                VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
-                if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
-                    VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
-                    DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
-                    vmdkFileBaseNames.add(dsBackingFile.getFileBaseName());
-                }
+                vmdkFileBaseNames.add(getVmdkFileBaseName((VirtualDisk)device));
             }
         }
         return vmdkFileBaseNames;
+    }
+
+    public String getVmdkFileBaseName(VirtualDisk disk) throws Exception {
+        String vmdkFileBaseName = null;
+        VirtualDeviceBackingInfo backingInfo = disk.getBacking();
+        if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+            VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+            DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+            vmdkFileBaseName = dsBackingFile.getFileBaseName();
+        }
+        return vmdkFileBaseName;
     }
 
 	// this method relies on un-offical VMware API
