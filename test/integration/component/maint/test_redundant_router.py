@@ -685,6 +685,7 @@ class TestRVRInternals(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
                                      self.apiclient,
@@ -846,7 +847,7 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug(master_router.linklocalip)
 
         # Check eth2 port for master router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -854,7 +855,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 master_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             result = get_process_status(
@@ -882,7 +883,7 @@ class TestRVRInternals(cloudstackTestCase):
                          )
 
         # Check eth2 port for backup router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -890,7 +891,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connction.passwd,
                                 backup_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
             result = get_process_status(

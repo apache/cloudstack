@@ -1122,6 +1122,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
         return
 
@@ -1267,7 +1268,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
 
         # For DNS and DHCP check 'dnsmasq' process status
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
                result = get_process_status(
                                self.apiclient.connection.mgtSvr,
                                22,
@@ -1275,7 +1276,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                self.apiclient.connection.passwd,
                                router.linklocalip,
                                'iptables -t nat -L',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                )
         else:
             try:

@@ -317,7 +317,7 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET'):
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -880,7 +880,7 @@ class Template:
 
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
-                                                account=None, domainid=None):
+                                                account=None, domainid=None, hypervisor=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -888,7 +888,7 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor 
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
@@ -1731,11 +1731,11 @@ class Cluster:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, zoneid=None, podid=None):
+    def create(cls, apiclient, services, zoneid=None, podid=None, hypervisor=None):
         """Create Cluster"""
         cmd = addCluster.addClusterCmd()
         cmd.clustertype = services["clustertype"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
 
         if zoneid:
             cmd.zoneid = zoneid
@@ -1781,11 +1781,11 @@ class Host:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, cluster, services, zoneid=None, podid=None):
+    def create(cls, apiclient, cluster, services, zoneid=None, podid=None, hypervisor=None):
         """Create Host in cluster"""
 
         cmd = addHost.addHostCmd()
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
         cmd.url = services["url"]
         cmd.clusterid = cluster.id
 

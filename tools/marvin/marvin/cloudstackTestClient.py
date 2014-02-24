@@ -65,6 +65,7 @@ class CSTestClient(object):
         self.__userApiClient = None
         self.__asyncJobMgr = None
         self.__id = None
+        self.__hypervisor = None 
         self.__testDataFilePath = test_data_filepath
         self.__parsedTestDataConfig = None
         self.__zone = zone
@@ -101,6 +102,19 @@ class CSTestClient(object):
                 if ret != "NA":
                     self.__zone = ret
         return self.__zone
+
+    def getHypervisorInfo(self):
+        '''
+        @Name : getHypervisorInfo
+        @Desc : Provides the hypervisor Information to test users
+        '''
+        if not self.__hypervisor: 
+            if self.__mgmtDetails.hypervisor:
+                self.__hypervisor = self.__mgmtDetails.hypervisor
+            else:
+                self.__hypervisor = XEN_SERVER
+        return self.__hypervisor
+            
 
     def __setHypervisorToClient(self):
         '''

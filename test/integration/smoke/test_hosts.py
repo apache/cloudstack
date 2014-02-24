@@ -33,8 +33,8 @@ _multiprocess_shared_ = True
 class TestHosts(cloudstackTestCase):
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
@@ -69,7 +69,8 @@ class TestHosts(cloudstackTestCase):
                                      self.apiclient,
                                      v,
                                      zoneid=self.zone.id,
-                                     podid=self.pod.id
+                                     podid=self.pod.id,
+                                     hypervisor=self.hypervisor
                                      )
             self.debug(
                 "Created Cluster for hypervisor type %s & ID: %s" %(
@@ -100,7 +101,8 @@ class TestHosts(cloudstackTestCase):
                                cluster,
                                self.services["hosts"][hypervisor_type],
                                zoneid=self.zone.id,
-                               podid=self.pod.id
+                               podid=self.pod.id,
+                               hypervisor=self.hypervisor
                                )
                 self.debug(
                     "Created host (ID: %s) in cluster ID %s" %(

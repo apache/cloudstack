@@ -729,6 +729,9 @@ class TestTemplateHierarchy(cloudstackTestCase):
         cls.api_client = super(
                                TestTemplateHierarchy,
                                cls).getClsTestClient().getApiClient()
+        cls.hypervisor = super(
+                               TestTemplateHierarchy,
+                               cls).getClsTestClient().getHypervisorInfo()
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -772,7 +775,8 @@ class TestTemplateHierarchy(cloudstackTestCase):
                                         cls.services["template"],
                                         zoneid=cls.zone.id,
                                         account=cls.account_1.name,
-                                        domainid=cls.domain_1.id
+                                        domainid=cls.domain_1.id,
+                                        hypervisor=cls.hypervisor
                                         )
 
         # Wait for template to download
