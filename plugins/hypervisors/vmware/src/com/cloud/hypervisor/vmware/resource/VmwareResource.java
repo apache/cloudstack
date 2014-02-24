@@ -3163,10 +3163,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(new DatastoreMO(srcHyperHost.getContext(), morDs), vmName, volumePath + ".vmdk");
+            DatastoreMO targetDsMo = new DatastoreMO(srcHyperHost.getContext(), morDs);
+            String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + ".vmdk");
+            int diskId = getVirtualDiskInfo(vmMo, volumePath + ".vmdk");
             diskLocator = new VirtualMachineRelocateSpecDiskLocator();
             diskLocator.setDatastore(morDs);
-            diskLocator.setDiskId(getVirtualDiskInfo(vmMo, volumePath + ".vmdk"));
+            diskLocator.setDiskId(diskId);
 
             diskLocators.add(diskLocator);
             relocateSpec.getDisk().add(diskLocator);
@@ -3176,6 +3178,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Change datastore operation failed during volume migration");
             } else {
                 s_logger.debug("Successfully migrated volume " + volumePath + " to target datastore " + tgtDsName);
+            }
+
+            // Update and return volume path because that could have changed after migration
+            if (!targetDsMo.fileExists(fullVolumePath)) {
+                VirtualDisk[] disks = vmMo.getAllDiskDevice();
+                for (VirtualDisk disk : disks)
+                    if (disk.getKey() == diskId) {
+                        volumePath = vmMo.getVmdkFileBaseName(disk);
+                    }
             }
 
             return new MigrateVolumeAnswer(cmd, true, null, volumePath);
