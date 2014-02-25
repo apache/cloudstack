@@ -66,6 +66,9 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
 
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Process VM state report. host: " + hostId + ", number of records in report: " + translatedInfo.size());
+
         for (Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
 
             if (s_logger.isDebugEnabled())
@@ -105,6 +108,9 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 }
             }
         }
+
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Done with process of VM state report. host: " + hostId);
     }
 
     @Override

@@ -207,7 +207,7 @@ public class AsyncJobExecutionContext  {
     public static String getOriginJobId() {
         AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (context != null && context.getJob() != null)
-            return "Job-" + context.getJob().getId();
+            return "" + context.getJob().getId();
 
         return "";
     }

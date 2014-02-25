@@ -3048,7 +3048,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 if(VmJobEnabled.value()) {
-                    if (ping.getHostVmStateReport() != null && ping.getHostVmStateReport().size() > 0) {
+                    if (ping.getHostVmStateReport() != null) {
                         _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport());
                     }
                 }

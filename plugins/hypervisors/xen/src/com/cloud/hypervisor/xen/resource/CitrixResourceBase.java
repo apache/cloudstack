@@ -324,9 +324,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     static {
         s_powerStatesTable = new HashMap<Types.VmPowerState, PowerState>();
         s_powerStatesTable.put(Types.VmPowerState.HALTED, PowerState.PowerOff);
-        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOff);
         s_powerStatesTable.put(Types.VmPowerState.RUNNING, PowerState.PowerOn);
-        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOff);
         s_powerStatesTable.put(Types.VmPowerState.UNRECOGNIZED, PowerState.PowerUnknown);
     }
 
@@ -2524,7 +2524,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (vm_map == null) {
-            return null;
+            return vmStates;
         }
         for (VM.Record record : vm_map.values()) {
             if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
@@ -4927,7 +4927,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (srr.shared) {
                 Host host = Host.getByUuid(conn, _host.uuid);
-
                 boolean found = false;
                 for (PBD pbd : pbds) {
                     PBD.Record pbdr = pbd.getRecord(conn);

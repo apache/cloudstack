@@ -252,6 +252,8 @@ public class CallContext {
 
         if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
+        } else {
+            s_currentContext.set(null);
         }
 
         return context;
