@@ -229,7 +229,7 @@ public class CallContext {
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
         while ((sessionIdOnStack = NDC.pop()) != null) {
-            if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+            if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
             if (s_logger.isTraceEnabled()) {
