@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 #!/usr/bin/python
 # coding: latin-1
 
@@ -29,7 +46,7 @@ def try_except_decor(func):
             print repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
 
     return try_except
-            
+
 class Shared(object):
 
     @staticmethod
@@ -58,8 +75,8 @@ class Shared(object):
 
         if len(wait_element_type) > 0 and len(wait_element_name) > 0:
             Shared.wait_for_element(browser, wait_element_type, wait_element_name)
-        return ret   
-        
+        return ret
+
     @staticmethod
     @try_except_decor
     def flash_message(browser):
@@ -107,28 +124,28 @@ class Shared(object):
             wait.until(EC.presence_of_element_located((By.XPATH, name)))
         elif element_type.lower() == 'link_text':
             wait.until(EC.presence_of_element_located((By.LINK_TEXT, name)))
-            
+
         #feed the string through directly
         else:
             wait.until(EC.presence_of_element_located(element_type, name))
-            
+
         time.sleep(1)
-        
+
     def playing_around(self):
         from threading import Timer
         t = Timer(20,self.wait_for_invisible)
         t.start()
-            
+ 
     @staticmethod
-    #wait until something disappears            
+    #wait until something disappears
     def wait_for_invisible(browser, element_type, name, waittime=30):
         wait = WebDriverWait(browser, waittime)
-        
+
         # the code base uses underscores, but the real string doesn't have em.
         final_type = re.sub('_',' ',element_type)
-        
+
         wait.until(EC.invisibility_of_element_located((final_type, name)))
-        
+
         #this method isn't as slick as I hoped :(
         time.sleep(1)
-        
+
