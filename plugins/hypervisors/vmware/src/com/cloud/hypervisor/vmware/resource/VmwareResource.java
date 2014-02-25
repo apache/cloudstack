@@ -4338,6 +4338,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VolumeTO volume;
         StorageFilerTO filerTo;
         Set<String> mountedDatastoresAtSource = new HashSet<String>();
+        List<VolumeObjectTO> volumeToList =  new ArrayList<VolumeObjectTO>();
+        Map<Long, Integer> volumeDeviceKey = new HashMap<Long, Integer>();
 
         Map<VolumeTO, StorageFilerTO> volToFiler = cmd.getVolumeToFiler();
         String tgtHost = cmd.getTargetHost();
@@ -4402,9 +4404,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         volume.getPath() + ".vmdk");
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
-                diskLocator.setDiskId(getVirtualDiskInfo(vmMo, volume.getPath() + ".vmdk"));
+                int diskId = getVirtualDiskInfo(vmMo, volume.getPath() + ".vmdk");
+                diskLocator.setDiskId(diskId);
 
                 diskLocators.add(diskLocator);
+                volumeDeviceKey.put(volume.getId(), diskId);
 
             }
             relocateSpec.getDisk().addAll(diskLocators);
@@ -4436,6 +4440,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
             }
 
+            // Update and return volume path for every disk because that could have changed after migration
+            for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
+                volume = entry.getKey();
+                long volumeId = volume.getId();
+                VirtualDisk[] disks = vmMo.getAllDiskDevice();
+                for (VirtualDisk disk : disks) {
+                    if (volumeDeviceKey.get(volumeId) == disk.getKey()) {
+                        VolumeObjectTO newVol = new VolumeObjectTO();
+                        newVol.setId(volumeId);
+                        newVol.setPath(vmMo.getVmdkFileBaseName(disk));
+                        volumeToList.add(newVol);
+                        break;
+                    }
+                }
+            }
+
             // Change host
             ManagedObjectReference morPool = tgtHyperHost.getHyperHostOwnerResourcePool();
             if (!vmMo.migrate(morPool, tgtHyperHost.getMor())) {
@@ -4445,7 +4465,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             state = State.Stopping;
-            List<VolumeObjectTO> volumeToList = null;
             return new MigrateWithStorageAnswer(cmd, volumeToList);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -4552,7 +4571,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private int getVirtualDiskInfo(VirtualMachineMO vmMo, String srcDiskName) throws Exception {
-        Pair<VirtualDisk, String> deviceInfo = vmMo.getDiskDevice(srcDiskName, false);
+        Pair<VirtualDisk, String> deviceInfo = vmMo.getDiskDevice(srcDiskName, true);
         if(deviceInfo == null) {
             throw new Exception("No such disk device: " + srcDiskName);
         }
