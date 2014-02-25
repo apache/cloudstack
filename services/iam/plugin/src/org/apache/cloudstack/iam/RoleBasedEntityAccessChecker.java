@@ -28,9 +28,9 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.iam.api.AclGroup;
-import org.apache.cloudstack.iam.api.AclPolicy;
-import org.apache.cloudstack.iam.api.AclPolicyPermission;
+import org.apache.cloudstack.iam.api.IAMGroup;
+import org.apache.cloudstack.iam.api.IAMPolicy;
+import org.apache.cloudstack.iam.api.IAMPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.acl.DomainChecker;
@@ -64,7 +64,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
         if (entity == null && action != null) {
             // check if caller can do this action
-            List<AclPolicy> policies = _iamSrv.listAclPolicies(caller.getAccountId());
+            List<IAMPolicy> policies = _iamSrv.listAclPolicies(caller.getAccountId());
 
             boolean isAllowed = _iamSrv.isActionAllowedForPolicies(action, policies);
             if (!isAllowed) {
@@ -80,11 +80,11 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         }
 
         // get all Policies of this caller w.r.t the entity
-        List<AclPolicy> policies = getEffectivePolicies(caller, entity);
-        HashMap<AclPolicy, Boolean> policyPermissionMap = new HashMap<AclPolicy, Boolean>();
+        List<IAMPolicy> policies = getEffectivePolicies(caller, entity);
+        HashMap<IAMPolicy, Boolean> policyPermissionMap = new HashMap<IAMPolicy, Boolean>();
 
-        for (AclPolicy policy : policies) {
-            List<AclPolicyPermission> permissions = new ArrayList<AclPolicyPermission>();
+        for (IAMPolicy policy : policies) {
+            List<IAMPolicyPermission> permissions = new ArrayList<IAMPolicyPermission>();
 
             if (action != null) {
                 permissions = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action, entityType);
@@ -100,7 +100,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                             accessType.toString(), entityType));
                 }
             }
-            for (AclPolicyPermission permission : permissions) {
+            for (IAMPolicyPermission permission : permissions) {
                 if (checkPermissionScope(caller, permission.getScope(), permission.getScopeId(), entity)) {
                     if (permission.getEntityType().equals(entityType)) {
                         policyPermissionMap.put(policy, permission.getPermission().isGranted());
@@ -129,7 +129,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
     private boolean checkPermissionScope(Account caller, String scope, Long scopeId, ControlledEntity entity) {
 
-        if(scopeId != null && !scopeId.equals(new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))){
+        if(scopeId != null && !scopeId.equals(new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))){
             //scopeId is set
             if (scope.equals(PermissionScope.ACCOUNT.name())) {
                 if(scopeId == entity.getAccountId()){
@@ -147,7 +147,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                     }
                 }
             }
-        } else if (scopeId == null || scopeId.equals(new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))) {
+        } else if (scopeId == null || scopeId.equals(new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER))) {
             if (scope.equals(PermissionScope.ACCOUNT.name())) {
                 if(caller.getAccountId() == entity.getAccountId()){
                     return true;
@@ -161,10 +161,10 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         return false;
     }
 
-    private List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
+    private List<IAMPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
 
         // Get the static Policies of the Caller
-        List<AclPolicy> policies = _iamSrv.listAclPolicies(caller.getId());
+        List<IAMPolicy> policies = _iamSrv.listAclPolicies(caller.getId());
 
         // add any dynamic policies w.r.t the entity
         if (caller.getId() == entity.getAccountId()) {
@@ -172,11 +172,11 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             policies.add(_iamSrv.getResourceOwnerPolicy());
         }
 
-        List<AclGroup> groups = _iamSrv.listAclGroups(caller.getId());
-        for (AclGroup group : groups) {
+        List<IAMGroup> groups = _iamSrv.listAclGroups(caller.getId());
+        for (IAMGroup group : groups) {
             // for each group find the grand parent groups.
-            List<AclGroup> parentGroups = _iamSrv.listParentAclGroups(group.getId());
-            for (AclGroup parentGroup : parentGroups) {
+            List<IAMGroup> parentGroups = _iamSrv.listParentAclGroups(group.getId());
+            for (IAMGroup parentGroup : parentGroups) {
                 policies.addAll(_iamSrv.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
             }
         }

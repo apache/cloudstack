@@ -14,42 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package org.apache.cloudstack.iam.server.dao;
 
-public enum ApiCommandJobType {
-    None,
-    VirtualMachine,
-    DomainRouter,
-    Volume,
-    ConsoleProxy,
-    Snapshot,
-    Template,
-    Iso,
-    SystemVm,
-    Host,
-    StoragePool,
-    ImageStore,
-    IpAddress,
-    PortableIpAddress,
-    SecurityGroup,
-    PhysicalNetwork,
-    TrafficType,
-    PhysicalNetworkServiceProvider,
-    FirewallRule,
-    Account,
-    User,
-    PrivateGateway,
-    StaticRoute,
-    Counter,
-    Condition,
-    AutoScalePolicy,
-    AutoScaleVmProfile,
-    AutoScaleVmGroup,
-    GlobalLoadBalancerRule,
-    LoadBalancerRule,
-    AffinityGroup,
-    InternalLbVm,
-    DedicatedGuestVlanRange,
-    IAMPolicy,
-    IAMGroup
+import org.apache.cloudstack.iam.api.IAMGroup;
+import org.apache.cloudstack.iam.server.IAMGroupVO;
+
+import com.cloud.utils.db.GenericDao;
+
+public interface IAMGroupDao extends GenericDao<IAMGroupVO, Long> {
+
+    IAMGroup findByName(String path, String groupName);
+
 }

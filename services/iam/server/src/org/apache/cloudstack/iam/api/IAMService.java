@@ -18,75 +18,75 @@ package org.apache.cloudstack.iam.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
+import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 
 import com.cloud.utils.Pair;
 
 public interface IAMService {
 
     /* ACL group related interfaces */
-    AclGroup createAclGroup(String aclGroupName, String description, String path);
+    IAMGroup createAclGroup(String aclGroupName, String description, String path);
 
     boolean deleteAclGroup(Long aclGroupId);
 
-    List<AclGroup> listAclGroups(long accountId);
+    List<IAMGroup> listAclGroups(long accountId);
 
-    AclGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
+    IAMGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
 
-    AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
+    IAMGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
 
     List<Long> listAccountsByGroup(long groupId);
 
-    Pair<List<AclGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize);
+    Pair<List<IAMGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize);
 
     /* ACL Policy related interfaces */
-    AclPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId, String path);
+    IAMPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId, String path);
 
     boolean deleteAclPolicy(long aclPolicyId);
 
-    List<AclPolicy> listAclPolicies(long accountId);
+    List<IAMPolicy> listAclPolicies(long accountId);
 
-    List<AclPolicy> listAclPoliciesByGroup(long groupId);
+    List<IAMPolicy> listAclPoliciesByGroup(long groupId);
 
-    Pair<List<AclPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize);
+    Pair<List<IAMPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize);
 
-    AclGroup attachAclPoliciesToGroup(List<Long> policyIds, Long groupId);
+    IAMGroup attachAclPoliciesToGroup(List<Long> policyIds, Long groupId);
 
-    AclGroup removeAclPoliciesFromGroup(List<Long> policyIds, Long groupId);
+    IAMGroup removeAclPoliciesFromGroup(List<Long> policyIds, Long groupId);
 
     void attachAclPolicyToAccounts(Long policyId, List<Long> acctIds);
 
     void removeAclPolicyFromAccounts(Long policyId, List<Long> acctIds);
 
-    AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    IAMPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action, String accessType, Permission perm, Boolean recursive);
 
-    AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    IAMPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action);
 
     void removeAclPermissionForEntity(final String entityType, final Long entityId);
 
-    AclPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action);
+    IAMPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action);
 
-    AclPolicy getResourceOwnerPolicy();
+    IAMPolicy getResourceOwnerPolicy();
 
-    List<AclPolicyPermission> listPolicyPermissions(long policyId);
+    List<IAMPolicyPermission> listPolicyPermissions(long policyId);
 
-    List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
+    List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
 
-    List<AclPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action, String entityType);
+    List<IAMPolicyPermission> listPolicyPermissionByActionAndEntity(long policyId, String action, String entityType);
 
-    boolean isActionAllowedForPolicies(String action, List<AclPolicy> policies);
+    boolean isActionAllowedForPolicies(String action, List<IAMPolicy> policies);
 
     List<Long> getGrantedEntities(long accountId, String action, String scope);
 
-    AclPolicy resetAclPolicy(long aclPolicyId);
+    IAMPolicy resetAclPolicy(long aclPolicyId);
 
-    List<AclPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
+    List<IAMPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
             String entityType);
 
-    List<AclGroup> listParentAclGroups(long groupId);
+    List<IAMGroup> listParentAclGroups(long groupId);
 
-    List<AclPolicy> listRecursiveAclPoliciesByGroup(long groupId);
+    List<IAMPolicy> listRecursiveAclPoliciesByGroup(long groupId);
 
 }

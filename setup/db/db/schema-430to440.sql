@@ -447,7 +447,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 -- ACL DB schema        
-CREATE TABLE `cloud`.`acl_group` (
+CREATE TABLE `cloud`.`iam_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,
@@ -458,23 +458,23 @@ CREATE TABLE `cloud`.`acl_group` (
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
   PRIMARY KEY  (`id`),
-  INDEX `i_acl_group__removed`(`removed`),
-  CONSTRAINT `uc_acl_group__uuid` UNIQUE (`uuid`)  
+  INDEX `i_iam_group__removed`(`removed`),
+  CONSTRAINT `uc_iam_group__uuid` UNIQUE (`uuid`)  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`acl_group_account_map` (
+CREATE TABLE `cloud`.`iam_group_account_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `removed` datetime COMMENT 'date the account was removed from the group',
   `created` datetime COMMENT 'date the account was assigned to the group',  
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_group_vm_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_iam_group_vm_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `iam_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 
-CREATE TABLE `cloud`.`acl_policy` (
+CREATE TABLE `cloud`.`iam_policy` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
@@ -486,37 +486,37 @@ CREATE TABLE `cloud`.`acl_policy` (
   `policy_type` varchar(64) DEFAULT 'Static' COMMENT 'Static or Dynamic',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
-  UNIQUE KEY `uc_acl_policy__uuid` (`uuid`),
-  KEY `i_acl_policy__removed` (`removed`)
+  UNIQUE KEY `uc_iam_policy__uuid` (`uuid`),
+  KEY `i_iam_policy__removed` (`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`acl_group_policy_map` (
+CREATE TABLE `cloud`.`iam_group_policy_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
   `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the group',
   `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the group',
   PRIMARY KEY (`id`),
-  KEY `fk_acl_group_policy_map__group_id` (`group_id`),
-  KEY `fk_acl_group_policy_map__policy_id` (`policy_id`),
-  CONSTRAINT `fk_acl_group_policy_map__group_id` FOREIGN KEY (`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
+  KEY `fk_iam_group_policy_map__group_id` (`group_id`),
+  KEY `fk_iam_group_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_group_policy_map__group_id` FOREIGN KEY (`group_id`) REFERENCES `iam_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`acl_account_policy_map` (
+CREATE TABLE `cloud`.`iam_account_policy_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
   `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the account',
   `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the account',
   PRIMARY KEY (`id`),
-  KEY `fk_acl_account_policy_map__account_id` (`account_id`),
-  KEY `fk_acl_account_policy_map__policy_id` (`policy_id`),
-  CONSTRAINT `fk_acl_account_policy_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_account_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
+  KEY `fk_iam_account_policy_map__account_id` (`account_id`),
+  KEY `fk_iam_account_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_account_policy_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_account_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`acl_policy_permission` (
+CREATE TABLE `cloud`.`iam_policy_permission` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `policy_id` bigint(20) unsigned NOT NULL,
   `action` varchar(100) NOT NULL,
@@ -530,30 +530,30 @@ CREATE TABLE `cloud`.`acl_policy_permission` (
   `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
-  KEY `fk_acl_policy_permission__policy_id` (`policy_id`),
-  CONSTRAINT `fk_acl_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
+  KEY `fk_iam_policy_permission__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), '/', 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), '/', 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), '/', 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), '/', 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), '/', 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), '/', 1, Now(), 'Dynamic');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), '/', 1, Now(), 'Dynamic');
 
 
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), '/', 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), '/', 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), '/', 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), '/', 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), '/', 1, Now());
 
-INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(1, 1, Now());
-INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(2, 2, Now());
-INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(3, 3, Now());
-INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
-INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(1, 1, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(2, 2, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(3, 3, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'vm.network.nic.max.secondary.ipaddresses', NULL, 'Specify the number of secondary ip addresses per nic per vm', '256') ON DUPLICATE KEY UPDATE category='NetworkManager';
 

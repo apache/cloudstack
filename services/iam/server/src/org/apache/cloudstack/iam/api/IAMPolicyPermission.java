@@ -14,42 +14,40 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package org.apache.cloudstack.iam.api;
 
-public enum ApiCommandJobType {
-    None,
-    VirtualMachine,
-    DomainRouter,
-    Volume,
-    ConsoleProxy,
-    Snapshot,
-    Template,
-    Iso,
-    SystemVm,
-    Host,
-    StoragePool,
-    ImageStore,
-    IpAddress,
-    PortableIpAddress,
-    SecurityGroup,
-    PhysicalNetwork,
-    TrafficType,
-    PhysicalNetworkServiceProvider,
-    FirewallRule,
-    Account,
-    User,
-    PrivateGateway,
-    StaticRoute,
-    Counter,
-    Condition,
-    AutoScalePolicy,
-    AutoScaleVmProfile,
-    AutoScaleVmGroup,
-    GlobalLoadBalancerRule,
-    LoadBalancerRule,
-    AffinityGroup,
-    InternalLbVm,
-    DedicatedGuestVlanRange,
-    IAMPolicy,
-    IAMGroup
+
+public interface IAMPolicyPermission {
+
+    String getAction();
+
+    long getAclPolicyId();
+
+    String getEntityType();
+
+    String getAccessType();
+
+    String getScope();
+
+    Long getScopeId();
+
+    Permission getPermission();
+
+    public enum Permission {
+        Allow(true), Deny(false);
+
+        boolean result;
+
+        Permission(boolean result) {
+            this.result = result;
+        }
+
+        public boolean isGranted() {
+            return result;
+        }
+    }
+
+    long getId();
+
+    public static final long PERMISSION_SCOPE_ID_CURRENT_CALLER = -1;
 }

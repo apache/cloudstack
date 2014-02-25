@@ -239,7 +239,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "true if account is default, false otherwise", since = "4.2.0")
     private Boolean isDefault;
 
-    @SerializedName(ApiConstants.ACL_GROUPS)
+    @SerializedName(ApiConstants.IAM_GROUPS)
     @Param(description = "the list of acl groups that account belongs to")
     private List<String> groups;
 

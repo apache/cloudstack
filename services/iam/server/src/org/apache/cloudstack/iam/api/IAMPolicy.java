@@ -14,42 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package org.apache.cloudstack.iam.api;
 
-public enum ApiCommandJobType {
-    None,
-    VirtualMachine,
-    DomainRouter,
-    Volume,
-    ConsoleProxy,
-    Snapshot,
-    Template,
-    Iso,
-    SystemVm,
-    Host,
-    StoragePool,
-    ImageStore,
-    IpAddress,
-    PortableIpAddress,
-    SecurityGroup,
-    PhysicalNetwork,
-    TrafficType,
-    PhysicalNetworkServiceProvider,
-    FirewallRule,
-    Account,
-    User,
-    PrivateGateway,
-    StaticRoute,
-    Counter,
-    Condition,
-    AutoScalePolicy,
-    AutoScaleVmProfile,
-    AutoScaleVmGroup,
-    GlobalLoadBalancerRule,
-    LoadBalancerRule,
-    AffinityGroup,
-    InternalLbVm,
-    DedicatedGuestVlanRange,
-    IAMPolicy,
-    IAMGroup
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface IAMPolicy extends InternalIdentity, Identity {
+
+    String getName();
+
+    String getDescription();
+
+    public enum PolicyType {
+        Static, Dynamic
+    }
+
+    @Override
+    long getId();
+
+    @Override
+    String getUuid();
+
+    String getPath();
+
+    long getAccountId();
 }

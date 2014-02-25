@@ -37,9 +37,9 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.iam.api.AclPolicy;
-import org.apache.cloudstack.iam.api.AclPolicyPermission;
-import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
+import org.apache.cloudstack.iam.api.IAMPolicy;
+import org.apache.cloudstack.iam.api.IAMPolicyPermission;
+import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.api.ApiServerService;
@@ -90,7 +90,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
                     + "is null");
         }
 
-        List<AclPolicy> policies = _iamSrv.listAclPolicies(account.getAccountId());
+        List<IAMPolicy> policies = _iamSrv.listAclPolicies(account.getAccountId());
 
         boolean isAllowed = _iamSrv.isActionAllowedForPolicies(commandName, policies);
         if (!isAllowed) {
@@ -259,11 +259,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
 
         if (entityTypes == null || entityTypes.length == 0) {
-            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
+            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
         } else {
             for (IAMEntityType entityType : entityTypes) {
-                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(AclPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
+                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
             }
          }

@@ -45,18 +45,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import org.apache.cloudstack.iam.api.AclGroup;
-import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.IAMGroup;
+import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMService;
-import org.apache.cloudstack.iam.server.AclGroupVO;
-import org.apache.cloudstack.iam.server.AclPolicyVO;
+import org.apache.cloudstack.iam.server.IAMGroupVO;
+import org.apache.cloudstack.iam.server.IAMPolicyVO;
 import org.apache.cloudstack.iam.server.IAMServiceImpl;
-import org.apache.cloudstack.iam.server.dao.AclAccountPolicyMapDao;
-import org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDao;
-import org.apache.cloudstack.iam.server.dao.AclGroupDao;
-import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
-import org.apache.cloudstack.iam.server.dao.AclPolicyDao;
-import org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDao;
+import org.apache.cloudstack.iam.server.dao.IAMAccountPolicyMapDao;
+import org.apache.cloudstack.iam.server.dao.IAMGroupAccountMapDao;
+import org.apache.cloudstack.iam.server.dao.IAMGroupDao;
+import org.apache.cloudstack.iam.server.dao.IAMGroupPolicyMapDao;
+import org.apache.cloudstack.iam.server.dao.IAMPolicyDao;
+import org.apache.cloudstack.iam.server.dao.IAMPolicyPermissionDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -72,22 +72,22 @@ public class IAMServiceUnitTest {
     IAMService _iamService;
 
     @Inject
-    AclPolicyDao _aclPolicyDao;
+    IAMPolicyDao _aclPolicyDao;
 
     @Inject
-    AclGroupDao _aclGroupDao;
+    IAMGroupDao _aclGroupDao;
 
     @Inject
     EntityManager _entityMgr;
 
     @Inject
-    AclGroupPolicyMapDao _aclGroupPolicyMapDao;
+    IAMGroupPolicyMapDao _aclGroupPolicyMapDao;
 
     @Inject
-    AclGroupAccountMapDao _aclGroupAccountMapDao;
+    IAMGroupAccountMapDao _aclGroupAccountMapDao;
 
     @Inject
-    AclPolicyPermissionDao _policyPermissionDao;
+    IAMPolicyPermissionDao _policyPermissionDao;
 
     @BeforeClass
     public static void setUpClass() throws ConfigurationException {
@@ -96,15 +96,15 @@ public class IAMServiceUnitTest {
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        AclGroupVO group = new AclGroupVO("group1", "my first group");
-        Mockito.when(_aclGroupDao.persist(Mockito.any(AclGroupVO.class))).thenReturn(group);
-        List<AclGroupVO> groups = new ArrayList<AclGroupVO>();
+        IAMGroupVO group = new IAMGroupVO("group1", "my first group");
+        Mockito.when(_aclGroupDao.persist(Mockito.any(IAMGroupVO.class))).thenReturn(group);
+        List<IAMGroupVO> groups = new ArrayList<IAMGroupVO>();
         groups.add(group);
         when(_aclGroupDao.search(Mockito.any(SearchCriteria.class), Mockito.any(com.cloud.utils.db.Filter.class)))
                 .thenReturn(groups);
 
-        AclPolicyVO policy = new AclPolicyVO("policy1", "my first policy");
-        Mockito.when(_aclPolicyDao.persist(Mockito.any(AclPolicyVO.class))).thenReturn(policy);
+        IAMPolicyVO policy = new IAMPolicyVO("policy1", "my first policy");
+        Mockito.when(_aclPolicyDao.persist(Mockito.any(IAMPolicyVO.class))).thenReturn(policy);
 
     }
 
@@ -114,13 +114,13 @@ public class IAMServiceUnitTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void createAclGroupTest() {
-        AclGroup group = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
+        IAMGroup group = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
         assertNotNull("Acl group 'group1' failed to create ", group);
 
-        AclGroupVO group2 = new AclGroupVO("group1", "my second group");
+        IAMGroupVO group2 = new IAMGroupVO("group1", "my second group");
         when(_aclGroupDao.findByName(eq("/root/mydomain"), eq("group1"))).thenReturn(group2);
 
-        AclGroup group3 = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
+        IAMGroup group3 = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -132,7 +132,7 @@ public class IAMServiceUnitTest {
     @Test
     public void accountGroupMaptest() {
         // create group
-        AclGroupVO group = new AclGroupVO("group1", "my first group");
+        IAMGroupVO group = new IAMGroupVO("group1", "my first group");
 
         // add account to group
         List<Long> accountIds = new ArrayList<Long>();
@@ -145,10 +145,10 @@ public class IAMServiceUnitTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void createAclPolicyTest() {
-        AclPolicy policy = _iamService.createAclPolicy("policy1", "my first policy", null, "/root/mydomain");
+        IAMPolicy policy = _iamService.createAclPolicy("policy1", "my first policy", null, "/root/mydomain");
         assertNotNull("Acl policy 'policy1' failed to create ", policy);
 
-        AclPolicyVO rvo = new AclPolicyVO("policy2", "second policy");
+        IAMPolicyVO rvo = new IAMPolicyVO("policy2", "second policy");
         when(_aclPolicyDao.findByName(eq("policy2"))).thenReturn(rvo);
 
         _iamService.createAclPolicy("policy2", "second policy", null, "/root/mydomain");
@@ -165,13 +165,13 @@ public class IAMServiceUnitTest {
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
-        public AclPolicyDao aclPolicyDao() {
-            return Mockito.mock(AclPolicyDao.class);
+        public IAMPolicyDao aclPolicyDao() {
+            return Mockito.mock(IAMPolicyDao.class);
         }
 
         @Bean
-        public AclGroupDao aclGroupDao() {
-            return Mockito.mock(AclGroupDao.class);
+        public IAMGroupDao aclGroupDao() {
+            return Mockito.mock(IAMGroupDao.class);
         }
 
         @Bean
@@ -180,23 +180,23 @@ public class IAMServiceUnitTest {
         }
 
         @Bean
-        public AclGroupPolicyMapDao aclGroupPolicyMapDao() {
-            return Mockito.mock(AclGroupPolicyMapDao.class);
+        public IAMGroupPolicyMapDao aclGroupPolicyMapDao() {
+            return Mockito.mock(IAMGroupPolicyMapDao.class);
         }
 
         @Bean
-        public AclGroupAccountMapDao aclGroupAccountMapDao() {
-            return Mockito.mock(AclGroupAccountMapDao.class);
+        public IAMGroupAccountMapDao aclGroupAccountMapDao() {
+            return Mockito.mock(IAMGroupAccountMapDao.class);
         }
 
         @Bean
-        public AclAccountPolicyMapDao aclAccountPolicyMapDao() {
-            return Mockito.mock(AclAccountPolicyMapDao.class);
+        public IAMAccountPolicyMapDao aclAccountPolicyMapDao() {
+            return Mockito.mock(IAMAccountPolicyMapDao.class);
         }
 
         @Bean
-        public AclPolicyPermissionDao aclPolicyPermissionDao() {
-            return Mockito.mock(AclPolicyPermissionDao.class);
+        public IAMPolicyPermissionDao aclPolicyPermissionDao() {
+            return Mockito.mock(IAMPolicyPermissionDao.class);
         }
 
         public static class Library implements TypeFilter {
