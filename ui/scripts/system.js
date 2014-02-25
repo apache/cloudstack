@@ -199,6 +199,16 @@
         return allowedActions;
     };
     
+    function ovsProviderActionFilter(args) {
+        var allowedActions = [];
+        var jsonObj = args.context.item; //args.context.item == nspMap["virtualRouter"]
+        if (jsonObj.state == "Enabled")
+            allowedActions.push("disable");
+        else if (jsonObj.state == "Disabled")
+            allowedActions.push("enable");
+        return allowedActions;
+    };
+    
     cloudStack.sections.system = {
         title: 'label.menu.infrastructure',
         id: 'system',
@@ -3908,6 +3918,120 @@
                         }
                     },
                     
+                    OVS: {
+                        id: "OVS",
+                        label: "OVS",
+                        isMaximized: true,
+                        type: 'detailView',
+                        fields: {
+                            name: {
+                                label: 'label.name'
+                            },                          
+                            state: {
+                                label: 'label.status',
+                                indicator: {
+                                    'Enabled': 'on'
+                                }
+                            }
+                        },
+                        tabs: {
+                            network: {
+                                title: 'label.network',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {                                    
+                                    state: {
+                                        label: 'label.state'
+                                    },                                                                      
+                                    supportedServices: {
+                                        label: 'label.supported.services'
+                                    },
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    physicalnetworkid: {
+                                        label: 'label.physical.network.ID'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    refreshNspData("OVS");
+                                    args.response.success({
+                                        actionFilter: ovsProviderActionFilter,
+                                        data: $.extend(nspMap["OVS"], {
+                                            supportedServices: nspMap["OVS"] == undefined? "": nspMap["OVS"].servicelist.join(', ')
+                                        })
+                                    });
+                                }
+                            },
+                        },
+                        actions: {
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["OVS"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["OVS"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },                    
+                   
                     // NetScaler provider detail view
                     netscaler: {
                         type: 'detailView',
@@ -19002,6 +19126,9 @@
                             case "VpcVirtualRouter":
                             nspMap[ "vpcVirtualRouter"] = items[i];
                             break;
+                            case "OVS":
+                                nspMap["OVS"] = items[i];
+                                break;      
                             case "Netscaler":
                             nspMap[ "netscaler"] = items[i];
                             break;
@@ -19131,6 +19258,12 @@
                 state: nspMap.pa ? nspMap.pa.state: 'Disabled'
             });
         }
+        
+        nspHardcodingArray.push({
+            id: 'OVS',
+            name: 'OVS',
+            state: nspMap.OVS ? nspMap.OVS.state : 'Disabled'
+        });        
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {
