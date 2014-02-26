@@ -182,6 +182,12 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
             <version>1.2.1</version>
             <executions>
               <execution>
@@ -194,6 +200,7 @@
             </executions>
             <configuration>
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <includePluginDependencies>true</includePluginDependencies>
               <arguments>
                 <!-- db properties file -->
                 <argument>${basedir}/../utils/conf/db.properties</argument>
