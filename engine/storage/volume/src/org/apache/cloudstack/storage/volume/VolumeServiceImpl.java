@@ -886,6 +886,7 @@ public class VolumeServiceImpl implements VolumeService {
             }
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+            _volumeDao.updateUuid(srcVolume.getId(), destVolume.getId());
             destroyVolume(srcVolume.getId());
             srcVolume = volFactory.getVolume(srcVolume.getId());
             AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);

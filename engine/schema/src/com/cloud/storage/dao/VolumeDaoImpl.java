@@ -555,6 +555,26 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    @DB
+    public boolean updateUuid(long srcVolId, long destVolId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        try {
+            VolumeVO srcVol = findById(srcVolId);
+            VolumeVO destVol = findById(destVolId);
+            String uuid = srcVol.getUuid();
+            srcVol.setUuid(null);
+            destVol.setUuid(uuid);
+            update(srcVolId, srcVol);
+            update(destVolId, destVol);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to persist the sequence number for this host");
+        }
+        txn.commit();
+        return true;
+    }
+
+    @Override
     public ScopeType getVolumeStoragePoolScope(long volumeId) {
         // finding the storage scope where the volume is present
         TransactionLegacy txn = TransactionLegacy.currentTxn();
