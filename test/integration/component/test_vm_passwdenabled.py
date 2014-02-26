@@ -92,15 +92,13 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-            TestVMPasswordEnabled,
-            cls
-        ).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestVMPasswordEnabled, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = zone.networktype
         template = get_template(
             cls.api_client,

@@ -94,13 +94,13 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestInstanceNameFlagTrue,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInstanceNameFlagTrue, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, default template
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -108,12 +108,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-
+        # Create account
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
@@ -561,13 +556,13 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestInstanceNameFlagFalse,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestInstanceNameFlagFalse, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, default template
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
                             cls.api_client,
@@ -575,12 +570,7 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-
+        # Create account
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],

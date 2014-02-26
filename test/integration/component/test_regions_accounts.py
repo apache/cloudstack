@@ -57,7 +57,7 @@ class TestRegionsAccounts(cloudstackTestCase):
     def setUpClass(cls):
         cls.api_client = super(TestRegionsAccounts, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
         cls.cleanup = []
         return
 

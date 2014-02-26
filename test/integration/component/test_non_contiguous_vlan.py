@@ -89,12 +89,14 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestNonContiguousVLANRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNonContiguousVLANRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, pod, domain
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
+        cls.domain = get_domain(cls.api_client)
 
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,

@@ -25,11 +25,10 @@
 """
 
 #Import Local Modules
-import marvin
 from marvin.codes import (PASS,
                           RECURRING)
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 
 from marvin.lib.base import (ServiceOffering,
                                          Account,
@@ -51,7 +50,6 @@ from marvin.lib.utils import (validateList,
                                           cleanup_resources)
 
 import time
-from datetime import datetime, timedelta
 
 class Services:
     """Test Base Image Updation
@@ -150,14 +148,14 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestBaseImageUpdate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestBaseImageUpdate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

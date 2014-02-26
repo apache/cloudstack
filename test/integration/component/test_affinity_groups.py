@@ -15,12 +15,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import deleteAffinityGroup
+from marvin.lib.utils import (cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             AffinityGroup,
+                             Domain)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_virtual_machines,
+                               wait_for_cleanup)
 from nose.plugins.attrib import attr
 
 class Services:
@@ -89,12 +97,12 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-
-        cls.api_client = super(TestCreateAffinityGroup, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateAffinityGroup, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -283,12 +291,14 @@ class TestListAffinityGroups(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.testClient = super(TestListAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        cls.api_client = super(TestListAffinityGroups, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -530,11 +540,14 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestDeleteAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -800,11 +813,14 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestUpdateVMAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUpdateVMAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -1084,11 +1100,14 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestDeployVMAffinityGroups, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeployVMAffinityGroups, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -1432,11 +1451,13 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(TestAffinityGroupsAdminUser, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAffinityGroupsAdminUser, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,

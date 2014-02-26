@@ -132,12 +132,13 @@ class TestEgressFWRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(TestEgressFWRules,
-                               cls).getClsTestClient().getApiClient()
-        cls.services  = Services().services
-        # Get Zone  Domain and create Domains and sub Domains.
-        cls.domain           = get_domain(cls.api_client, cls.services)
-        cls.zone             = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestEgressFWRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Get and set template id for VM creation.
         cls.template = get_template(cls.api_client,

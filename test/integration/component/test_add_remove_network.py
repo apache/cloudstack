@@ -60,6 +60,7 @@ from marvin.cloudstackAPI import (addNicToVirtualMachine,
 
 from marvin.codes import PASS
 import random
+import time
 
 class Services:
     """Test Add Remove Network Services
@@ -173,7 +174,10 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAddNetworkToVirtualMachine, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAddNetworkToVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
@@ -181,8 +185,8 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         # Set Zones and disk offerings
@@ -689,16 +693,18 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRemoveNetworkFromVirtualMachine, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRemoveNetworkFromVirtualMachine, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -869,16 +875,18 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestUpdateVirtualMachineNIC, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUpdateVirtualMachineNIC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -1083,16 +1091,18 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosAddNetworkToVM, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosAddNetworkToVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1315,16 +1325,18 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosRemoveNicFromVM, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosRemoveNicFromVM, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
         # Set Zones and disk offerings
@@ -1493,16 +1505,18 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestFailureScenariosUpdateVirtualMachineNIC, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestFailureScenariosUpdateVirtualMachineNIC, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
 
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["xenserver","kvm"]:
             raise unittest.SkipTest("This feature is supported only on XenServer and KVM")
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         # Set Zones and disk offerings

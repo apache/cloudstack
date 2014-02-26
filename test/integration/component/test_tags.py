@@ -174,16 +174,13 @@ class TestResourceTags(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestResourceTags,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestResourceTags, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.account = Account.create(
                             cls.api_client,

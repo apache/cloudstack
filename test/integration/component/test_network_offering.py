@@ -160,14 +160,13 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNOVirtualRouter,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNOVirtualRouter, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -733,14 +732,13 @@ class TestNetworkUpgrade(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestNetworkUpgrade,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNetworkUpgrade, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
@@ -1181,14 +1179,13 @@ class TestNetworkUpgrade(cloudstackTestCase):
 class TestNOWithOnlySourceNAT(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(
-            TestNOWithOnlySourceNAT,
-            cls
-        ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNOWithOnlySourceNAT, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
             cls.apiclient,

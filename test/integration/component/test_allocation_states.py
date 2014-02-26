@@ -15,16 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from nose.plugins.attrib import attr
-import datetime
-
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Host,
+                             Pod,
+                             Zone,
+                             Cluster,
+                             StoragePool)
+from marvin.lib.common import get_zone
 
 class Services:
     """Test Resource Limits Services
