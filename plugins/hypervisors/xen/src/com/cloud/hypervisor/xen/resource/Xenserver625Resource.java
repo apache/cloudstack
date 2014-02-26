@@ -25,8 +25,11 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 import org.apache.log4j.Logger;
+
+import com.xensource.xenapi.Connection;
+
+import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
@@ -34,11 +37,10 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
 
 @Local(value=ServerResource.class)
 public class Xenserver625Resource extends XenServerResourceNewBase {
-    private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);
+    private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);
 
     public Xenserver625Resource() {
         super();
@@ -53,7 +55,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer620GuestOsType(stdType, bootFromCD);
+        return CitrixHelper.getXenServer625GuestOsType(stdType, bootFromCD);
     }
 
     @Override
@@ -71,7 +73,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
 
     @Override
     public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
-        long recommendedValue = CitrixHelper.getXenServer620StaticMax(os, b);
+        long recommendedValue = CitrixHelper.getXenServer625StaticMax(os, b);
         if(recommendedValue == 0){
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
@@ -86,7 +88,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
 
     @Override
     public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
-        long recommendedValue = CitrixHelper.getXenServer620StaticMin(os, b);
+        long recommendedValue = CitrixHelper.getXenServer625StaticMin(os, b);
         if(recommendedValue == 0){
             s_logger.warn("No recommended value found for dynamic min");
             return dynamicMinRam;
@@ -108,5 +110,4 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     protected void umountSnapshotDir(Connection conn, Long dcId) {
 
     }
-
 }

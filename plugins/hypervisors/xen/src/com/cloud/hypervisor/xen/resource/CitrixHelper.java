@@ -11,15 +11,15 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import org.apache.log4j.Logger;
 
 /**
  * Reduce bloat inside CitrixResourceBase
@@ -31,12 +31,14 @@ public class CitrixHelper {
     private static final HashMap<String, String> _xcp160GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServerGuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServer56FP1GuestOsMap = new HashMap<String, String>(70);
+    private static final HashMap<String, String> _xenServer602GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServer56FP2GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServer600GuestOsMap = new HashMap<String, String>(70);
-    private static final HashMap<String, String> _xenServer602GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServer610GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, String> _xenServer620GuestOsMap = new HashMap<String, String>(70);
+    private static final HashMap<String, String> _xenServer625GuestOsMap = new HashMap<String, String>(70);
     private static final HashMap<String, MemoryValues> _xenServer620GuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
+    private static final HashMap<String, MemoryValues> _xenServer625GuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
     private static final HashMap<String, MemoryValues> _xenServer610GuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
     private static final HashMap<String, MemoryValues> _xenServer602GuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
     private static final HashMap<String, MemoryValues> _xenServer600GuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
@@ -1532,6 +1534,168 @@ public class CitrixHelper {
         _xenServer620GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
 
+    static {
+        _xenServer625GuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 4.7 (32-bit)", "CentOS 4.7 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 4.8 (32-bit)", "CentOS 4.8 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.0 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.0 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.1 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.1 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.5 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.5 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.6 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.6 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.7 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.7 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.8 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.8 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.9 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 5.9 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.0 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.0 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.1 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.1 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.2 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.2 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.3 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.3 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.4 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer625GuestOsMap.put("CentOS 6.4 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Debian GNU/Linux 6(32-bit)", "Debian Squeeze 6.0 (32-bit)");
+        _xenServer625GuestOsMap.put("Debian GNU/Linux 6(64-bit)", "Debian Squeeze 6.0 (64-bit)");
+        _xenServer625GuestOsMap.put("Debian GNU/Linux 7(32-bit)", "Debian Wheezy 7.0 (32-bit)");
+        _xenServer625GuestOsMap.put("Debian GNU/Linux 7(64-bit)", "Debian Wheezy 7.0 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.5 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.5 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.6 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.6 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.7 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.7 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.8 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.8 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.9 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 5.9 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.0 (32-bit)", "Oracle Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.0 (64-bit)", "Oracle Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.1 (32-bit)", "Oracle Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.1 (64-bit)", "Oracle Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.2 (32-bit)", "Oracle Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.2 (64-bit)", "Oracle Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.3 (32-bit)", "Oracle Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.3 (64-bit)", "Oracle Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.4 (32-bit)", "Oracle Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Oracle Enterprise Linux 6.4 (64-bit)", "Oracle Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.6 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.6 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.7 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.7 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.8 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.8 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.9 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 5.9 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.1 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.3 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.3 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.4 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer625GuestOsMap.put("Red Hat Enterprise Linux 6.4 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (32-bit)", "SUSE Linux Enterprise Server 10 SP3 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "SUSE Linux Enterprise Server 10 SP3 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP4 (32-bit)", "SUSE Linux Enterprise Server 10 SP4 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 10 SP4 (64-bit)", "SUSE Linux Enterprise Server 10 SP4 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", "SUSE Linux Enterprise Server 11 SP1 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", "SUSE Linux Enterprise Server 11 SP1 (64-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 SP2 (32-bit)", "SUSE Linux Enterprise Server 11 SP2 (32-bit)");
+        _xenServer625GuestOsMap.put("SUSE Linux Enterprise Server 11 SP2 (64-bit)", "SUSE Linux Enterprise Server 11 SP2 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows 7 (32-bit)", "Windows 7 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows 7 SP1 (32-bit)", "Windows 7 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows 7 SP1 (64-bit)", "Windows 7 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows 8 (32-bit)", "Windows 8 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows 8 (64-bit)", "Windows 8 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 SP2 (32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 SP2 (64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 PAE (32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 Enterprise Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 Enterprise Edition(64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 DataCenter Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 DataCenter Edition(64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 Standard Edition(32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2003 Standard Edition(64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2008 SP2 (32-bit)", "Windows Server 2008 (34-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2008 SP2 (64-bit)", "Windows Server 2008 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2008 R2 SP1 (64-bit)", "Windows Server 2008 R2 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2012 (64-bit)", "Windows Server 2012 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Server 2012 R2 (64-bit)", "Windows Server 2012 (64-bit)");
+        _xenServer625GuestOsMap.put("Windows Vista SP2 (32-bit)", "Windows Vista (32-bit)");
+        _xenServer625GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
+        _xenServer625GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit)");
+        _xenServer625GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit)");
+        _xenServer625GuestOsMap.put("Ubuntu 10.10 (32-bit)", "Ubuntu Maverick Meerkat 10.10 (32-bit) (experimental)");
+        _xenServer625GuestOsMap.put("Ubuntu 10.10 (64-bit)", "Ubuntu Maverick Meerkat 10.10 (64-bit) (experimental)");
+        _xenServer625GuestOsMap.put("Ubuntu 12.04 (32-bit)", "Ubuntu Precise Pangolin 12.04 (32-bit)");
+        _xenServer625GuestOsMap.put("Ubuntu 12.04 (64-bit)", "Ubuntu Precise Pangolin 12.04 (64-bit)");
+        _xenServer625GuestOsMap.put("Ubuntu 11.04 (32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Ubuntu 11.04 (64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other Linux (32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other Linux (64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other (32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other (64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other CentOS (32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other CentOS (64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other Ubuntu (32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other Ubuntu (64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other SUSE Linux(32-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other SUSE Linux(64-bit)", "Other install media");
+        _xenServer625GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer625GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
+    }
+
     public static class MemoryValues {
         long max;
         long min;
@@ -1823,6 +1987,147 @@ public class CitrixHelper {
         _xenServer620GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
     }
 
+    static {
+        _xenServer625GuestOsMemoryMap.put("CentOS 4.5 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 4.6 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 4.7 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 4.8 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.0 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.0 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.1 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.1 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.2 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.3 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.4 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.5 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.5 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.6 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.6 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.7 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.7 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.8 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.8 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.9 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 5.9 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.0 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.0 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.1 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.1 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.3 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("CentOS 6.4 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Debian GNU/Linux 6(32-bit)", new MemoryValues(128l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Debian GNU/Linux 6(64-bit)", new MemoryValues(128l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Debian GNU/Linux 7(32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Debian GNU/Linux 7(64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.0 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.0 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.1 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.1 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.2 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.3 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.3 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.4 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.4 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.5 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.5 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.6 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.6 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.7 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.7 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.8 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.8 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.9 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 5.9 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.0 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.0 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.1 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.3 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Oracle Enterprise Linux 6.4 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", new MemoryValues(256l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.6 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.6 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.7 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.7 (64-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.8 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.8 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.9 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 5.9 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (32-bit)", new MemoryValues(512l, 8 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.3 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.4 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP3 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP4 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP4 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP2 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+
+        _xenServer625GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(1024l, 4 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(2 * 1024l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows 7 SP1 (32-bit)", new MemoryValues(1024l, 4 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows 7 SP1 (64-bit)", new MemoryValues(2 * 1024l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(1024l, 4 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(2 * 1024l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2003 SP2 (32-bit)", new MemoryValues(256l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2003 SP2 (64-bit)", new MemoryValues(256l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2008 SP2 (32-bit)", new MemoryValues(512l, 64 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2008 SP2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2008 R2 SP1 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Server 2012 R2 (64-bit)", new MemoryValues(512l, 128 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows Vista SP2 (32-bit)", new MemoryValues(1024l, 4 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(256l, 4 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
+        _xenServer625GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32 * 1024l));
+        //_xenServer620GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer620GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        _xenServer625GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32 * 1024l));
+        _xenServer625GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128 * 1024l));
+    }
 
     public static String getXcpGuestOsType(String stdType) {
         String guestOS =  _xcp100GuestOsMap.get(stdType);
@@ -1857,7 +2162,7 @@ public class CitrixHelper {
         return guestOS;
     }
     
-    public static String getXenServer56FP1GuestOsType(String stdType, boolean bootFromCD) {       
+    public static String getXenServer56FP1GuestOsType(String stdType, boolean bootFromCD) {
         String guestOS =  _xenServer56FP1GuestOsMap.get(stdType);
         if (guestOS == null) {
             if ( !bootFromCD ) {
@@ -2023,6 +2328,20 @@ public class CitrixHelper {
         return guestOS;
     }
 
+    public static String getXenServer625GuestOsType(String stdType, boolean bootFromCD) {
+        String guestOS = _xenServer625GuestOsMap.get(stdType);
+        if (guestOS == null) {
+            if (!bootFromCD) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.2.5 guestOS type, start it as HVM guest");
+                guestOS = "Other install media";
+            } else {
+                String msg = "XenServer 6.2.5 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
+        }
+        return guestOS;
+    }
+
     public static long getXenServer620StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer620GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
@@ -2033,6 +2352,22 @@ public class CitrixHelper {
 
     public static long getXenServer620StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer620GuestOsMemoryMap.get(stdType);
+        if (recommendedMaxMinMemory == null) {
+            return 0l;
+        }
+        return recommendedMaxMinMemory.getMin();
+    }
+
+    public static long getXenServer625StaticMax(String stdType, boolean bootFromCD) {
+        MemoryValues recommendedMaxMinMemory = _xenServer625GuestOsMemoryMap.get(stdType);
+        if (recommendedMaxMinMemory == null) {
+            return 0l;
+        }
+        return recommendedMaxMinMemory.getMax();
+    }
+
+    public static long getXenServer625StaticMin(String stdType, boolean bootFromCD) {
+        MemoryValues recommendedMaxMinMemory = _xenServer625GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
             return 0l;
         }
