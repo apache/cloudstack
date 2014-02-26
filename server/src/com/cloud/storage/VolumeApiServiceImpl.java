@@ -825,7 +825,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Volume vol = null;
                 try {
-                    vol = outcome.get();
+                    outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (java.util.concurrent.ExecutionException e) {
@@ -838,6 +838,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw (ConcurrentOperationException)jobResult;
                     else if (jobResult instanceof Throwable)
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                    else if (jobResult instanceof Long) {
+                        vol = _volumeDao.findById((Long)jobResult);
+                    }
                 }
                 return volume;
             }
@@ -1025,7 +1028,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             Volume vol = null;
             try {
-                vol = outcome.get();
+                outcome.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
@@ -1038,6 +1041,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                else if (jobResult instanceof Long) {
+                    vol = _volumeDao.findById((Long)jobResult);
+                }
             }
             return vol;
         }
@@ -1340,7 +1346,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             Volume vol = null;
             try {
-                vol = outcome.get();
+                outcome.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
@@ -1353,6 +1359,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                else if (jobResult instanceof Long) {
+                    vol = _volumeDao.findById((Long)jobResult);
+                }
             }
             return vol;
         }
@@ -2365,19 +2374,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
-        orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
+
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkDetachVolume work) throws Exception {
-        orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        Volume vol = orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
-        orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
+        Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
                 work.getNewServiceOfferingId(), work.isShrinkOk());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateMigrateVolume(VmWorkMigrateVolume work) throws Exception {
