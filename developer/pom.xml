@@ -191,6 +191,7 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${cs.mysql.version}</version>
               </dependency>
+	    </dependencies>
             <version>1.2.1</version>
             <executions>
               <execution>
