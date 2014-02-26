@@ -114,19 +114,19 @@ public class IAMServiceUnitTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void createAclGroupTest() {
-        IAMGroup group = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
+        IAMGroup group = _iamService.createIAMGroup("group1", "my first group", "/root/mydomain");
         assertNotNull("Acl group 'group1' failed to create ", group);
 
         IAMGroupVO group2 = new IAMGroupVO("group1", "my second group");
         when(_aclGroupDao.findByName(eq("/root/mydomain"), eq("group1"))).thenReturn(group2);
 
-        IAMGroup group3 = _iamService.createAclGroup("group1", "my first group", "/root/mydomain");
+        IAMGroup group3 = _iamService.createIAMGroup("group1", "my first group", "/root/mydomain");
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAclGroupInvalidIdTest() {
         when(_aclGroupDao.findById(20L)).thenReturn(null);
-        _iamService.deleteAclGroup(20L);
+        _iamService.deleteIAMGroup(20L);
     }
 
     @Test
@@ -145,19 +145,19 @@ public class IAMServiceUnitTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void createAclPolicyTest() {
-        IAMPolicy policy = _iamService.createAclPolicy("policy1", "my first policy", null, "/root/mydomain");
+        IAMPolicy policy = _iamService.createIAMPolicy("policy1", "my first policy", null, "/root/mydomain");
         assertNotNull("Acl policy 'policy1' failed to create ", policy);
 
         IAMPolicyVO rvo = new IAMPolicyVO("policy2", "second policy");
         when(_aclPolicyDao.findByName(eq("policy2"))).thenReturn(rvo);
 
-        _iamService.createAclPolicy("policy2", "second policy", null, "/root/mydomain");
+        _iamService.createIAMPolicy("policy2", "second policy", null, "/root/mydomain");
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAclPolicyInvalidIdTest() {
         when(_aclPolicyDao.findById(34L)).thenReturn(null);
-        _iamService.deleteAclPolicy(34L);
+        _iamService.deleteIAMPolicy(34L);
     }
 
     @Configuration

@@ -149,7 +149,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                 if (domainId != null) {
                     s_logger.debug("MessageBus message: new Domain created: " + domainId + ", creating a new group");
                     Domain domain = _domainDao.findById(domainId);
-                    _iamSrv.createAclGroup("DomainGrp-" + domain.getUuid(), "Domain group", domain.getPath());
+                    _iamSrv.createIAMGroup("DomainGrp-" + domain.getUuid(), "Domain group", domain.getPath());
                 }
             }
         });
@@ -163,7 +163,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                     Domain domain = _domainDao.findById(domainId);
                     List<IAMGroup> groups = listDomainGroup(domain);
                     for (IAMGroup group : groups) {
-                        _iamSrv.deleteAclGroup(group.getId());
+                        _iamSrv.deleteIAMGroup(group.getId());
                     }
                 }
             }
@@ -175,9 +175,9 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                 Long templateId = (Long)obj;
                 if (templateId != null) {
                     s_logger.debug("MessageBus message: new public template registered: " + templateId + ", grant permission to domain admin and normal user policies");
-                    _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+                    _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
-                    _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+                    _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
                 }
             }
@@ -202,7 +202,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                     String entityType = entity.first().toString();
                     Long entityId = entity.second();
                     s_logger.debug("MessageBus message: delete an entity: (" + entityType + "," + entityId + "), remove its related permission");
-                    _iamSrv.removeAclPermissionForEntity(entityType, entityId);
+                    _iamSrv.removeIAMPermissionForEntity(entityType, entityId);
                 }
             }
         });
@@ -275,8 +275,8 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
        Domain domain = _domainDao.findById(domainId);
        if (domain != null) {
-            IAMPolicy policy = _iamSrv.createAclPolicy(policyName, description, null, domain.getPath());
-            _iamSrv.addAclPermissionToAclPolicy(policy.getId(), entityType, PermissionScope.RESOURCE.toString(),
+            IAMPolicy policy = _iamSrv.createIAMPolicy(policyName, description, null, domain.getPath());
+            _iamSrv.addIAMPermissionToIAMPolicy(policy.getId(), entityType, PermissionScope.RESOURCE.toString(),
                     entityId, action, accessType.toString(), Permission.Allow, recursive);
             List<Long> policyList = new ArrayList<Long>();
             policyList.add(new Long(policy.getId()));
@@ -284,7 +284,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
            List<IAMGroup> domainGroups = listDomainGroup(domain);
            if (domainGroups != null) {
                for (IAMGroup group : domainGroups) {
-                   _iamSrv.attachAclPoliciesToGroup(policyList, group.getId());
+                   _iamSrv.attachIAMPoliciesToGroup(policyList, group.getId());
                }
            }
        }
@@ -299,19 +299,19 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (callerDomain == null) {
             throw new InvalidParameterValueException("Caller does not have a domain");
         }
-        return _iamSrv.createAclGroup(iamGroupName, description, callerDomain.getPath());
+        return _iamSrv.createIAMGroup(iamGroupName, description, callerDomain.getPath());
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_GROUP_DELETE, eventDescription = "Deleting Acl Group")
     public boolean deleteIAMGroup(final Long iamGroupId) {
-        return _iamSrv.deleteAclGroup(iamGroupId);
+        return _iamSrv.deleteIAMGroup(iamGroupId);
     }
 
     @Override
     public List<IAMGroup> listIAMGroups(long accountId) {
-        return _iamSrv.listAclGroups(accountId);
+        return _iamSrv.listIAMGroups(accountId);
     }
 
 
@@ -356,34 +356,34 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (callerDomain == null) {
             throw new InvalidParameterValueException("Caller does not have a domain");
         }
-        return _iamSrv.createAclPolicy(iamPolicyName, description, parentPolicyId, callerDomain.getPath());
+        return _iamSrv.createIAMPolicy(iamPolicyName, description, parentPolicyId, callerDomain.getPath());
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_POLICY_DELETE, eventDescription = "Deleting IAM Policy")
     public boolean deleteIAMPolicy(final long iamPolicyId) {
-        return _iamSrv.deleteAclPolicy(iamPolicyId);
+        return _iamSrv.deleteIAMPolicy(iamPolicyId);
     }
 
 
     @Override
     public List<IAMPolicy> listIAMPolicies(long accountId) {
-        return _iamSrv.listAclPolicies(accountId);
+        return _iamSrv.listIAMPolicies(accountId);
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_GROUP_UPDATE, eventDescription = "Attaching policy to acl group")
     public IAMGroup attachIAMPoliciesToGroup(final List<Long> policyIds, final Long groupId) {
-        return _iamSrv.attachAclPoliciesToGroup(policyIds, groupId);
+        return _iamSrv.attachIAMPoliciesToGroup(policyIds, groupId);
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_GROUP_UPDATE, eventDescription = "Removing policies from acl group")
     public IAMGroup removeIAMPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
-        return _iamSrv.removeAclPoliciesFromGroup(policyIds, groupId);
+        return _iamSrv.removeIAMPoliciesFromGroup(policyIds, groupId);
     }
 
 
@@ -391,14 +391,14 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_ACCOUNT_POLICY_UPDATE, eventDescription = "Attaching policy to accounts")
     public void attachIAMPolicyToAccounts(final Long policyId, final List<Long> accountIds) {
-        _iamSrv.attachAclPolicyToAccounts(policyId, accountIds);
+        _iamSrv.attachIAMPolicyToAccounts(policyId, accountIds);
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_ACCOUNT_POLICY_UPDATE, eventDescription = "Removing policy from accounts")
     public void removeIAMPolicyFromAccounts(final Long policyId, final List<Long> accountIds) {
-        _iamSrv.removeAclPolicyFromAccounts(policyId, accountIds);
+        _iamSrv.removeIAMPolicyFromAccounts(policyId, accountIds);
     }
 
     @DB
@@ -411,7 +411,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
             accessType = AccessType.UseEntry;
         }
-        return _iamSrv.addAclPermissionToAclPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action,
+        return _iamSrv.addIAMPermissionToIAMPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action,
                 accessType.toString(), perm, recursive);
     }
 
@@ -419,12 +419,12 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_POLICY_REVOKE, eventDescription = "Revoking acl permission from IAM Policy")
     public IAMPolicy removeIAMPermissionFromIAMPolicy(long iamPolicyId, String entityType, PermissionScope scope, Long scopeId, String action) {
-        return _iamSrv.removeAclPermissionFromAclPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action);
+        return _iamSrv.removeIAMPermissionFromIAMPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action);
     }
 
     @Override
     public IAMPolicyPermission getIAMPolicyPermission(long accountId, String entityType, String action) {
-        List<IAMPolicy> policies = _iamSrv.listAclPolicies(accountId);
+        List<IAMPolicy> policies = _iamSrv.listIAMPolicies(accountId);
         IAMPolicyPermission curPerm = null;
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> perms = _iamSrv.listPolicyPermissionByActionAndEntity(policy.getId(), action,
@@ -515,7 +515,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         }
 
         // find all the policies attached to this group
-        List<IAMPolicy> policies = _iamSrv.listAclPoliciesByGroup(group.getId());
+        List<IAMPolicy> policies = _iamSrv.listIAMPoliciesByGroup(group.getId());
         if (policies != null && policies.size() > 0) {
             for (IAMPolicy policy : policies) {
                 response.addPolicy(policy.getName());
@@ -532,7 +532,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (domain != null) {
             String domainPath = domain.getPath();
             // search for groups
-            Pair<List<IAMGroup>, Integer> result = _iamSrv.listAclGroups(null, "DomainGrp-" + domain.getUuid(),
+            Pair<List<IAMGroup>, Integer> result = _iamSrv.listIAMGroups(null, "DomainGrp-" + domain.getUuid(),
                     domainPath, null, null);
             return result.first();
         }
@@ -558,7 +558,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         }
         String domainPath = domain.getPath();
         // search for groups
-        Pair<List<IAMGroup>, Integer> result = _iamSrv.listAclGroups(iamGroupId, iamGroupName, domainPath, startIndex, pageSize);
+        Pair<List<IAMGroup>, Integer> result = _iamSrv.listIAMGroups(iamGroupId, iamGroupName, domainPath, startIndex, pageSize);
         // generate group response
         ListResponse<IAMGroupResponse> response = new ListResponse<IAMGroupResponse>();
         List<IAMGroupResponse> groupResponses = new ArrayList<IAMGroupResponse>();
@@ -589,7 +589,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         }
         String domainPath = domain.getPath();
         // search for policies
-        Pair<List<IAMPolicy>, Integer> result = _iamSrv.listAclPolicies(iamPolicyId, iamPolicyName, domainPath, startIndex, pageSize);
+        Pair<List<IAMPolicy>, Integer> result = _iamSrv.listIAMPolicies(iamPolicyId, iamPolicyName, domainPath, startIndex, pageSize);
         // generate policy response
         ListResponse<IAMPolicyResponse> response = new ListResponse<IAMPolicyResponse>();
         List<IAMPolicyResponse> policyResponses = new ArrayList<IAMPolicyResponse>();
@@ -653,9 +653,9 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     private void resetTemplatePermission(Long templateId){
         // reset template will change template to private, so we need to remove its permission for domain admin and normal user group
-        _iamSrv.removeAclPermissionFromAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+        _iamSrv.removeIAMPermissionFromIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                 PermissionScope.RESOURCE.toString(), templateId, "listTemplates");
-        _iamSrv.removeAclPermissionFromAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+        _iamSrv.removeIAMPermissionFromIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                 PermissionScope.RESOURCE.toString(), templateId, "listTemplates");
         // check if there is a policy with only UseEntry permission for this template added
         IAMPolicy policy = _iamSrv.getResourceGrantPolicy(IAMEntityType.VirtualMachineTemplate.toString(), templateId, AccessType.UseEntry.toString(), "listTemplates");
@@ -664,7 +664,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             return;
         }
         // delete the policy, which should detach it from groups and accounts
-        _iamSrv.deleteAclPolicy(policy.getId());
+        _iamSrv.deleteIAMPolicy(policy.getId());
 
     }
 

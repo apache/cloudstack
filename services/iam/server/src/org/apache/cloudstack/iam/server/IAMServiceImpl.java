@@ -84,15 +84,15 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMGroup createAclGroup(String aclGroupName, String description, String path) {
+    public IAMGroup createIAMGroup(String iamGroupName, String description, String path) {
         // check if the group is already existing
-        IAMGroup grp = _aclGroupDao.findByName(path, aclGroupName);
+        IAMGroup grp = _aclGroupDao.findByName(path, iamGroupName);
         if (grp != null) {
             throw new InvalidParameterValueException(
-                    "Unable to create acl group with name " + aclGroupName
+                    "Unable to create acl group with name " + iamGroupName
                     + " already exisits for path " + path);
         }
-        IAMGroupVO rvo = new IAMGroupVO(aclGroupName, description);
+        IAMGroupVO rvo = new IAMGroupVO(iamGroupName, description);
         rvo.setPath(path);
 
         return _aclGroupDao.persist(rvo);
@@ -100,11 +100,11 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public boolean deleteAclGroup(final Long aclGroupId) {
+    public boolean deleteIAMGroup(final Long iamGroupId) {
         // get the Acl Group entity
-        final IAMGroup grp = _aclGroupDao.findById(aclGroupId);
+        final IAMGroup grp = _aclGroupDao.findById(iamGroupId);
         if (grp == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
+            throw new InvalidParameterValueException("Unable to find acl group: " + iamGroupId
                     + "; failed to delete acl group.");
         }
 
@@ -128,7 +128,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
 
                 // remove this group from acl_group table
-                _aclGroupDao.remove(aclGroupId);
+                _aclGroupDao.remove(iamGroupId);
             }
         });
 
@@ -137,7 +137,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMGroup> listAclGroups(long accountId) {
+    public List<IAMGroup> listIAMGroups(long accountId) {
 
         GenericSearchBuilder<IAMGroupAccountMapVO, Long> groupSB = _aclGroupAccountMapDao.createSearchBuilder(Long.class);
         groupSB.selectFields(groupSB.entity().getAclGroupId());
@@ -225,11 +225,11 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public Pair<List<IAMGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize) {
-        if (aclGroupId != null) {
-            IAMGroup group = _aclGroupDao.findById(aclGroupId);
+    public Pair<List<IAMGroup>, Integer> listIAMGroups(Long iamGroupId, String iamGroupName, String path, Long startIndex, Long pageSize) {
+        if (iamGroupId != null) {
+            IAMGroup group = _aclGroupDao.findById(iamGroupId);
             if (group == null) {
-                throw new InvalidParameterValueException("Unable to find acl group by id " + aclGroupId);
+                throw new InvalidParameterValueException("Unable to find acl group by id " + iamGroupId);
             }
         }
 
@@ -242,12 +242,12 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
         SearchCriteria<IAMGroupVO> sc = sb.create();
 
-        if (aclGroupName != null) {
-            sc.setParameters("name", aclGroupName);
+        if (iamGroupName != null) {
+            sc.setParameters("name", iamGroupName);
         }
 
-        if (aclGroupId != null) {
-            sc.setParameters("id", aclGroupId);
+        if (iamGroupId != null) {
+            sc.setParameters("id", iamGroupId);
         }
 
         sc.setParameters("path", path + "%");
@@ -257,7 +257,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public List<IAMGroup> listParentAclGroups(long groupId) {
+    public List<IAMGroup> listParentIAMGroups(long groupId) {
         IAMGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
             throw new InvalidParameterValueException("Unable to find acl group by id " + groupId);
@@ -294,20 +294,20 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMPolicy createAclPolicy(final String aclPolicyName, final String description, final Long parentPolicyId, final String path) {
+    public IAMPolicy createIAMPolicy(final String iamPolicyName, final String description, final Long parentPolicyId, final String path) {
 
         // check if the policy is already existing
-        IAMPolicy ro = _aclPolicyDao.findByName(aclPolicyName);
+        IAMPolicy ro = _aclPolicyDao.findByName(iamPolicyName);
         if (ro != null) {
             throw new InvalidParameterValueException(
-                    "Unable to create acl policy with name " + aclPolicyName
+                    "Unable to create acl policy with name " + iamPolicyName
                     + " already exisits");
         }
 
         IAMPolicy role = Transaction.execute(new TransactionCallback<IAMPolicy>() {
             @Override
             public IAMPolicy doInTransaction(TransactionStatus status) {
-                IAMPolicyVO rvo = new IAMPolicyVO(aclPolicyName, description);
+                IAMPolicyVO rvo = new IAMPolicyVO(iamPolicyName, description);
                 rvo.setPath(path);
 
                 IAMPolicy role = _aclPolicyDao.persist(rvo);
@@ -331,11 +331,11 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public boolean deleteAclPolicy(final long aclPolicyId) {
+    public boolean deleteIAMPolicy(final long iamPolicyId) {
         // get the Acl Policy entity
-        final IAMPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        final IAMPolicy policy = _aclPolicyDao.findById(iamPolicyId);
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+            throw new InvalidParameterValueException("Unable to find acl policy: " + iamPolicyId
                     + "; failed to delete acl policy.");
         }
 
@@ -367,7 +367,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 }
 
                 // remove this role from acl_role table
-                _aclPolicyDao.remove(aclPolicyId);
+                _aclPolicyDao.remove(iamPolicyId);
             }
         });
 
@@ -377,7 +377,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicy> listAclPolicies(long accountId) {
+    public List<IAMPolicy> listIAMPolicies(long accountId) {
 
         // static policies of the account
         SearchBuilder<IAMGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
@@ -395,7 +395,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         // add policies directly attached to the account
         List<IAMAccountPolicyMapVO> acctPolicies = _aclAccountPolicyMapDao.listByAccountId(accountId);
         for (IAMAccountPolicyMapVO p : acctPolicies) {
-            policyIds.add(p.getAclPolicyId());
+            policyIds.add(p.getIAMPolicyId());
         }
         if (policyIds.size() == 0) {
             return new ArrayList<IAMPolicy>();
@@ -413,7 +413,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicy> listAclPoliciesByGroup(long groupId) {
+    public List<IAMPolicy> listIAMPoliciesByGroup(long groupId) {
         List<IAMGroupPolicyMapVO> policyGrpMap = _aclGroupPolicyMapDao.listByGroupId(groupId);
         if (policyGrpMap == null || policyGrpMap.size() == 0) {
             return new ArrayList<IAMPolicy>();
@@ -436,7 +436,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicy> listRecursiveAclPoliciesByGroup(long groupId) {
+    public List<IAMPolicy> listRecursiveIAMPoliciesByGroup(long groupId) {
         List<IAMGroupPolicyMapVO> policyGrpMap = _aclGroupPolicyMapDao.listByGroupId(groupId);
         if (policyGrpMap == null || policyGrpMap.size() == 0) {
             return new ArrayList<IAMPolicy>();
@@ -468,12 +468,12 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Pair<List<IAMPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize) {
+    public Pair<List<IAMPolicy>, Integer> listIAMPolicies(Long iamPolicyId, String iamPolicyName, String path, Long startIndex, Long pageSize) {
 
-        if (aclPolicyId != null) {
-            IAMPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        if (iamPolicyId != null) {
+            IAMPolicy policy = _aclPolicyDao.findById(iamPolicyId);
             if (policy == null) {
-                throw new InvalidParameterValueException("Unable to find acl policy by id " + aclPolicyId);
+                throw new InvalidParameterValueException("Unable to find acl policy by id " + iamPolicyId);
             }
         }
 
@@ -486,12 +486,12 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
         SearchCriteria<IAMPolicyVO> sc = sb.create();
 
-        if (aclPolicyName != null) {
-            sc.setParameters("name", aclPolicyName);
+        if (iamPolicyName != null) {
+            sc.setParameters("name", iamPolicyName);
         }
 
-        if (aclPolicyId != null) {
-            sc.setParameters("id", aclPolicyId);
+        if (iamPolicyId != null) {
+            sc.setParameters("id", iamPolicyId);
         }
 
         sc.setParameters("path", path + "%");
@@ -504,7 +504,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMGroup attachAclPoliciesToGroup(final List<Long> policyIds, final Long groupId) {
+    public IAMGroup attachIAMPoliciesToGroup(final List<Long> policyIds, final Long groupId) {
         // get the Acl Group entity
         IAMGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -538,7 +538,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMGroup removeAclPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
+    public IAMGroup removeIAMPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
         // get the Acl Group entity
         IAMGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -570,7 +570,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
 
     @Override
-    public void attachAclPolicyToAccounts(final Long policyId, final List<Long> acctIds) {
+    public void attachIAMPolicyToAccounts(final Long policyId, final List<Long> acctIds) {
         IAMPolicy policy = _aclPolicyDao.findById(policyId);
         if (policy == null) {
             throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
@@ -594,7 +594,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public void removeAclPolicyFromAccounts(final Long policyId, final List<Long> acctIds) {
+    public void removeIAMPolicyFromAccounts(final Long policyId, final List<Long> acctIds) {
         IAMPolicy policy = _aclPolicyDao.findById(policyId);
         if (policy == null) {
             throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
@@ -619,20 +619,20 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    public IAMPolicy addIAMPermissionToIAMPolicy(long iamPolicyId, String entityType, String scope, Long scopeId,
             String action, String accessType, Permission perm, Boolean recursive) {
         // get the Acl Policy entity
-        IAMPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        IAMPolicy policy = _aclPolicyDao.findById(iamPolicyId);
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+            throw new InvalidParameterValueException("Unable to find acl policy: " + iamPolicyId
                     + "; failed to add permission to policy.");
         }
 
         // add entry in acl_policy_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, perm);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, perm);
         if (permit == null) {
             // not there already
-            permit = new IAMPolicyPermissionVO(aclPolicyId, action, entityType, accessType, scope, scopeId, perm,
+            permit = new IAMPolicyPermissionVO(iamPolicyId, action, entityType, accessType, scope, scopeId, perm,
                     recursive);
             _policyPermissionDao.persist(permit);
         }
@@ -642,16 +642,16 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    public IAMPolicy removeIAMPermissionFromIAMPolicy(long iamPolicyId, String entityType, String scope, Long scopeId,
             String action) {
         // get the Acl Policy entity
-        IAMPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        IAMPolicy policy = _aclPolicyDao.findById(iamPolicyId);
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+            throw new InvalidParameterValueException("Unable to find acl policy: " + iamPolicyId
                     + "; failed to revoke permission from policy.");
         }
         // remove entry from acl_entity_permission table
-        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, Permission.Allow);
+        IAMPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(iamPolicyId, entityType, scope, scopeId, action, Permission.Allow);
         if (permit != null) {
             // not removed yet
             _policyPermissionDao.remove(permit.getId());
@@ -661,7 +661,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public void removeAclPermissionForEntity(final String entityType, final Long entityId) {
+    public void removeIAMPermissionForEntity(final String entityType, final Long entityId) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -673,7 +673,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
                     // remove the policy if there are no other permissions
                     if ((_policyPermissionDao.listByPolicy(policyId)).isEmpty()) {
-                        deleteAclPolicy(policyId);
+                        deleteIAMPolicy(policyId);
                     }
                 }
             }
@@ -682,11 +682,11 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    public IAMPolicy resetAclPolicy(long aclPolicyId) {
+    public IAMPolicy resetIAMPolicy(long iamPolicyId) {
         // get the Acl Policy entity
-        IAMPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        IAMPolicy policy = _aclPolicyDao.findById(iamPolicyId);
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+            throw new InvalidParameterValueException("Unable to find acl policy: " + iamPolicyId
                     + "; failed to reset the policy.");
         }
 
@@ -695,7 +695,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<IAMPolicyPermissionVO> permissionSC = sb.create();
-        permissionSC.setParameters("policyId", aclPolicyId);
+        permissionSC.setParameters("policyId", iamPolicyId);
         _policyPermissionDao.expunge(permissionSC);
 
         return policy;
@@ -736,7 +736,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Override
     public List<Long> getGrantedEntities(long accountId, String action, String scope) {
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = listAclPolicies(accountId);
+        List<IAMPolicy> policies = listIAMPolicies(accountId);
         // for each policy, find granted permission within the given scope
         List<Long> entityIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {

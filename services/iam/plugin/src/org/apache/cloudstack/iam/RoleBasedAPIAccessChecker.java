@@ -90,7 +90,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
                     + "is null");
         }
 
-        List<IAMPolicy> policies = _iamSrv.listAclPolicies(account.getAccountId());
+        List<IAMPolicy> policies = _iamSrv.listIAMPolicies(account.getAccountId());
 
         boolean isAllowed = _iamSrv.isActionAllowedForPolicies(commandName, policies);
         if (!isAllowed) {
@@ -117,25 +117,25 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         for (RoleType role : RoleType.values()) {
             Long policyId = getDefaultPolicyId(role);
             if (policyId != null) {
-                _iamSrv.resetAclPolicy(policyId);
+                _iamSrv.resetIAMPolicy(policyId);
             }
          }
 
         // add the system-domain capability
 
-        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), null, null, null,
+        _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), null, null, null,
                 "SystemCapability", null, Permission.Allow, false);
-        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), null, null, null,
+        _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), null, null, null,
                 "DomainCapability", null, Permission.Allow, false);
-        _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1), null, null, null,
+        _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN + 1), null, null, null,
                 "DomainResourceCapability", null, Permission.Allow, false);
 
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
-            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
-            _iamSrv.addAclPermissionToAclPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
         }
 
@@ -259,11 +259,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
 
         if (entityTypes == null || entityTypes.length == 0) {
-            _iamSrv.addAclPermissionToAclPolicy(policyId, null, permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
+            _iamSrv.addIAMPermissionToIAMPolicy(policyId, null, permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
         } else {
             for (IAMEntityType entityType : entityTypes) {
-                _iamSrv.addAclPermissionToAclPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
+                _iamSrv.addIAMPermissionToIAMPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
             }
          }

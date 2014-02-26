@@ -44,7 +44,7 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     public List<Long> getAuthorizedDomains(Account caller, String action) {
         long accountId = caller.getAccountId();
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = _iamService.listAclPolicies(accountId);
+        List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Domain scope
         List<Long> domainIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
@@ -68,7 +68,7 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     public List<Long> getAuthorizedAccounts(Account caller, String action) {
         long accountId = caller.getAccountId();
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = _iamService.listAclPolicies(accountId);
+        List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Account scope
         List<Long> accountIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
@@ -92,15 +92,15 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     public List<Long> getAuthorizedResources(Account caller, String action) {
         long accountId = caller.getAccountId();
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = _iamService.listAclPolicies(accountId);
+        List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
 
         // add the policies that grant recursive access
-        List<IAMGroup> groups = _iamService.listAclGroups(caller.getId());
+        List<IAMGroup> groups = _iamService.listIAMGroups(caller.getId());
         for (IAMGroup group : groups) {
             // for each group find the grand parent groups.
-            List<IAMGroup> parentGroups = _iamService.listParentAclGroups(group.getId());
+            List<IAMGroup> parentGroups = _iamService.listParentIAMGroups(group.getId());
             for (IAMGroup parentGroup : parentGroups) {
-                policies.addAll(_iamService.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
+                policies.addAll(_iamService.listRecursiveIAMPoliciesByGroup(parentGroup.getId()));
             }
         }
 
@@ -123,7 +123,7 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     public boolean isGrantedAll(Account caller, String action) {
         long accountId = caller.getAccountId();
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = _iamService.listAclPolicies(accountId);
+        List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with ALL scope
         for (IAMPolicy policy : policies) {
             List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString());
@@ -136,7 +136,7 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
 
     @Override
     public List<String> listAclGroupsByAccount(long accountId) {
-        List<IAMGroup> groups = _iamService.listAclGroups(accountId);
+        List<IAMGroup> groups = _iamService.listIAMGroups(accountId);
         List<String> groupNames = new ArrayList<String>();
         for (IAMGroup grp : groups) {
             groupNames.add(grp.getName());

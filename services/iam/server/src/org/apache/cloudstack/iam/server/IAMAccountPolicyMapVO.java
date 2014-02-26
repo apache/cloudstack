@@ -39,7 +39,7 @@ public class IAMAccountPolicyMapVO {
     private long accountId;
 
     @Column(name = "policy_id")
-    private long aclPolicyId;
+    private long iamPolicyId;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -50,9 +50,9 @@ public class IAMAccountPolicyMapVO {
     public IAMAccountPolicyMapVO() {
     }
 
-    public IAMAccountPolicyMapVO(long accountId, long aclPolicyId) {
+    public IAMAccountPolicyMapVO(long accountId, long iamPolicyId) {
         this.accountId = accountId;
-        this.aclPolicyId = aclPolicyId;
+        this.iamPolicyId = iamPolicyId;
     }
 
     public long getId() {
@@ -63,8 +63,8 @@ public class IAMAccountPolicyMapVO {
         return accountId;
     }
 
-    public long getAclPolicyId() {
-        return aclPolicyId;
+    public long getIAMPolicyId() {
+        return iamPolicyId;
     }
 
     public Date getRemoved() {

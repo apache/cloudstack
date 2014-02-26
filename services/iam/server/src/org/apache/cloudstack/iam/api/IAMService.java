@@ -24,12 +24,12 @@ import com.cloud.utils.Pair;
 
 public interface IAMService {
 
-    /* ACL group related interfaces */
-    IAMGroup createAclGroup(String aclGroupName, String description, String path);
+    /* IAM group related interfaces */
+    IAMGroup createIAMGroup(String iamGroupName, String description, String path);
 
-    boolean deleteAclGroup(Long aclGroupId);
+    boolean deleteIAMGroup(Long iamGroupId);
 
-    List<IAMGroup> listAclGroups(long accountId);
+    List<IAMGroup> listIAMGroups(long accountId);
 
     IAMGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
 
@@ -37,34 +37,34 @@ public interface IAMService {
 
     List<Long> listAccountsByGroup(long groupId);
 
-    Pair<List<IAMGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize);
+    Pair<List<IAMGroup>, Integer> listIAMGroups(Long iamGroupId, String iamGroupName, String path, Long startIndex, Long pageSize);
 
-    /* ACL Policy related interfaces */
-    IAMPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId, String path);
+    /* IAM Policy related interfaces */
+    IAMPolicy createIAMPolicy(String iamPolicyName, String description, Long parentPolicyId, String path);
 
-    boolean deleteAclPolicy(long aclPolicyId);
+    boolean deleteIAMPolicy(long iamPolicyId);
 
-    List<IAMPolicy> listAclPolicies(long accountId);
+    List<IAMPolicy> listIAMPolicies(long accountId);
 
-    List<IAMPolicy> listAclPoliciesByGroup(long groupId);
+    List<IAMPolicy> listIAMPoliciesByGroup(long groupId);
 
-    Pair<List<IAMPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize);
+    Pair<List<IAMPolicy>, Integer> listIAMPolicies(Long iamPolicyId, String iamPolicyName, String path, Long startIndex, Long pageSize);
 
-    IAMGroup attachAclPoliciesToGroup(List<Long> policyIds, Long groupId);
+    IAMGroup attachIAMPoliciesToGroup(List<Long> policyIds, Long groupId);
 
-    IAMGroup removeAclPoliciesFromGroup(List<Long> policyIds, Long groupId);
+    IAMGroup removeIAMPoliciesFromGroup(List<Long> policyIds, Long groupId);
 
-    void attachAclPolicyToAccounts(Long policyId, List<Long> acctIds);
+    void attachIAMPolicyToAccounts(Long policyId, List<Long> acctIds);
 
-    void removeAclPolicyFromAccounts(Long policyId, List<Long> acctIds);
+    void removeIAMPolicyFromAccounts(Long policyId, List<Long> acctIds);
 
-    IAMPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    IAMPolicy addIAMPermissionToIAMPolicy(long iamPolicyId, String entityType, String scope, Long scopeId,
             String action, String accessType, Permission perm, Boolean recursive);
 
-    IAMPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
+    IAMPolicy removeIAMPermissionFromIAMPolicy(long iamPolicyId, String entityType, String scope, Long scopeId,
             String action);
 
-    void removeAclPermissionForEntity(final String entityType, final Long entityId);
+    void removeIAMPermissionForEntity(final String entityType, final Long entityId);
 
     IAMPolicy getResourceGrantPolicy(String entityType, Long entityId, String accessType, String action);
 
@@ -80,13 +80,13 @@ public interface IAMService {
 
     List<Long> getGrantedEntities(long accountId, String action, String scope);
 
-    IAMPolicy resetAclPolicy(long aclPolicyId);
+    IAMPolicy resetIAMPolicy(long iamPolicyId);
 
     List<IAMPolicyPermission> listPolicyPermissionByAccessAndEntity(long policyId, String accessType,
             String entityType);
 
-    List<IAMGroup> listParentAclGroups(long groupId);
+    List<IAMGroup> listParentIAMGroups(long groupId);
 
-    List<IAMPolicy> listRecursiveAclPoliciesByGroup(long groupId);
+    List<IAMPolicy> listRecursiveIAMPoliciesByGroup(long groupId);
 
 }

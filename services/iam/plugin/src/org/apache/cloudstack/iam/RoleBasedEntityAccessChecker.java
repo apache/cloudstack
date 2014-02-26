@@ -64,7 +64,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
         if (entity == null && action != null) {
             // check if caller can do this action
-            List<IAMPolicy> policies = _iamSrv.listAclPolicies(caller.getAccountId());
+            List<IAMPolicy> policies = _iamSrv.listIAMPolicies(caller.getAccountId());
 
             boolean isAllowed = _iamSrv.isActionAllowedForPolicies(action, policies);
             if (!isAllowed) {
@@ -164,7 +164,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     private List<IAMPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
 
         // Get the static Policies of the Caller
-        List<IAMPolicy> policies = _iamSrv.listAclPolicies(caller.getId());
+        List<IAMPolicy> policies = _iamSrv.listIAMPolicies(caller.getId());
 
         // add any dynamic policies w.r.t the entity
         if (caller.getId() == entity.getAccountId()) {
@@ -172,12 +172,12 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             policies.add(_iamSrv.getResourceOwnerPolicy());
         }
 
-        List<IAMGroup> groups = _iamSrv.listAclGroups(caller.getId());
+        List<IAMGroup> groups = _iamSrv.listIAMGroups(caller.getId());
         for (IAMGroup group : groups) {
             // for each group find the grand parent groups.
-            List<IAMGroup> parentGroups = _iamSrv.listParentAclGroups(group.getId());
+            List<IAMGroup> parentGroups = _iamSrv.listParentIAMGroups(group.getId());
             for (IAMGroup parentGroup : parentGroups) {
-                policies.addAll(_iamSrv.listRecursiveAclPoliciesByGroup(parentGroup.getId()));
+                policies.addAll(_iamSrv.listRecursiveIAMPoliciesByGroup(parentGroup.getId()));
             }
         }
 
