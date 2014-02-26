@@ -76,7 +76,7 @@ class LoginPage(object):
     @try_except_decor
     def logout(self, directly_logout = False):
 
-        self.browser.set_window_size(1200,980)
+#       self.browser.set_window_size(1200,980)
         Shared.wait_for_element(self.browser, 'id', 'user')
 
         # must click this icon options first

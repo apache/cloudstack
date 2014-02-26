@@ -58,74 +58,130 @@ class TestCSLoginLogout(unittest.TestCase):
         self.loginpage.logout(directly_logout = True)
         shared.Shared.wait_for_element(self.browser.browser, 'class_name', 'login', waittime = 300)
 
-    def xtest_failure_1(self):
+    def test_failure_1(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['badusername'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_2(self):
+    def test_failure_2(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['username'])
         self.loginpage.set_password(smokecfg['badpassword'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_3(self):
+    def test_failure_3(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['badusername'])
         self.loginpage.set_password(smokecfg['badpassword'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_4(self):
+    def test_failure_4(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['sqlinjection_1'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_5(self):
+    def test_failure_5(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['sqlinjection_2'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_6(self):
+    def test_failure_6(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['sqlinjection_3'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_7(self):
+    def test_failure_7(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['sqlinjection_4'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
 
-    def xtest_failure_8(self):
+    def test_failure_8(self):
         self.browser.set_url(smokecfg['cssite'])
         self.loginpage = loginpage.LoginPage(self.browser.get_browser())
+
+        # wait for at most 5 minutes, in case we have an anoyingly slow server
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'select-language', waittime = 300)
+
         # language selection must be done before username and password
         self.loginpage.set_language(smokecfg['language'])
+
+        shared.Shared.wait_for_element(self.browser.get_browser(), 'class_name', 'fields', waittime = 300)
+
         self.loginpage.set_username(smokecfg['sqlinjection_5'])
         self.loginpage.set_password(smokecfg['password'])
         self.loginpage.login(expect_fail = True)
