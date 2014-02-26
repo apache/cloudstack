@@ -30,6 +30,6 @@
     <bean id="RoleBasedAPIAccessChecker" class="org.apache.cloudstack.iam.RoleBasedAPIAccessChecker" />
     <bean id="RoleBasedEntityAccessChecker" class="org.apache.cloudstack.iam.RoleBasedEntityAccessChecker" />
     <bean id="RoleBasedEntityQuerySelector" class="org.apache.cloudstack.iam.RoleBasedEntityQuerySelector" />
-    <bean id="AclApiServiceImpl" class="org.apache.cloudstack.iam.AclApiServiceImpl" />
+    <bean id="IAMApiServiceImpl" class="org.apache.cloudstack.iam.IAMApiServiceImpl" />
 
 </beans>
