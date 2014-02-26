@@ -27,12 +27,12 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >                     
 
-    <bean id="AclGroupDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclGroupDaoImpl" />
-    <bean id="AclPolicyDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclPolicyDaoImpl" />    
-    <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDaoImpl" />
-    <bean id="AclGroupPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDaoImpl" />    
-    <bean id="AclPolicyPermissionDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDaoImpl" />
-    <bean id="AclAccountPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.AclAccountPolicyMapDaoImpl" />    
+    <bean id="IAMGroupDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMGroupDaoImpl" />
+    <bean id="IAMPolicyDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMPolicyDaoImpl" />    
+    <bean id="IAMGroupAccountMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMGroupAccountMapDaoImpl" />
+    <bean id="IAMGroupPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMGroupPolicyMapDaoImpl" />    
+    <bean id="IAMPolicyPermissionDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMPolicyPermissionDaoImpl" />
+    <bean id="IAMAccountPolicyMapDaoImpl" class="org.apache.cloudstack.iam.server.dao.IAMAccountPolicyMapDaoImpl" />    
 
         
     <bean id="IAMServiceImpl" class="org.apache.cloudstack.iam.server.IAMServiceImpl" />
