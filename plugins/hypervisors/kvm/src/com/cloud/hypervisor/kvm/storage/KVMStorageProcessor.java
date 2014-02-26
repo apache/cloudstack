@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.S3Utils.putFile;
 
 import java.io.BufferedOutputStream;
@@ -547,11 +548,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    protected String copyToS3(File srcFile, S3TO destStore, String destPath) {
+    protected String copyToS3(File srcFile, S3TO destStore, String destPath) throws InterruptedException {
         final String bucket = destStore.getBucketName();
 
+        long srcSize = srcFile.length();
         String key = destPath + S3Utils.SEPARATOR + srcFile.getName();
-        putFile(destStore, srcFile, bucket, key);
+        if (!destStore.getSingleUpload(srcSize)) {
+            mputFile(destStore, srcFile, bucket, key);
+        } else {
+            putFile(destStore, srcFile, bucket, key);
+        }
         return key;
     }
 
@@ -584,6 +590,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(destPath);
             return new CopyCmdAnswer(newSnapshot);
+        } catch (Exception e) {
+            s_logger.error("failed to upload" + srcPath, e);
+            return new CopyCmdAnswer("failed to upload" + srcPath + e.toString());
         } finally {
             try {
                 if (srcFile != null) {
