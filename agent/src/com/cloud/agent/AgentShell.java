@@ -17,10 +17,8 @@
 package com.cloud.agent;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -174,16 +171,12 @@ public class AgentShell implements IAgentShell, Daemon {
 
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
 
-        InputStream propertiesStream = null;
         try {
-            propertiesStream = new FileInputStream(file);
-            _properties.load(propertiesStream);
+            PropertiesUtil.loadFromFile(_properties, file);
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
-        } finally {
-            IOUtils.closeQuietly(propertiesStream);
         }
     }
 
