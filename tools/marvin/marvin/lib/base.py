@@ -22,6 +22,9 @@
 import marvin
 from utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
+from marvin.codes import FAILED, PASS
+from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.lib.utils import validateList
 # Import System modules
 import time
 import hashlib
@@ -1782,35 +1785,58 @@ class Host:
 
     @classmethod
     def create(cls, apiclient, cluster, services, zoneid=None, podid=None, hypervisor=None):
-        """Create Host in cluster"""
+        """
+        1. Creates the host based upon the information provided.
+        2. Verifies the output of the adding host and its state post addition
+           Returns FAILED in case of an issue, else an instance of Host
+        """
+        try:
+            cmd = addHost.addHostCmd()
+            cmd.hypervisor = hypervisor
+            cmd.url = services["url"]
+            cmd.clusterid = cluster.id
 
-        cmd = addHost.addHostCmd()
-        cmd.hypervisor = hypervisor
-        cmd.url = services["url"]
-        cmd.clusterid = cluster.id
+            if zoneid:
+                cmd.zoneid = zoneid
+            else:
+                cmd.zoneid = services["zoneid"]
 
-        if zoneid:
-            cmd.zoneid = zoneid
-        else:
-            cmd.zoneid = services["zoneid"]
+            if podid:
+                cmd.podid = podid
+            else:
+                cmd.podid = services["podid"]
 
-        if podid:
-            cmd.podid = podid
-        else:
-            cmd.podid = services["podid"]
+            if "clustertype" in services:
+                cmd.clustertype = services["clustertype"]
+            if "username" in services:
+                cmd.username = services["username"]
+            if "password" in services:
+                cmd.password = services["password"]
 
-        if "clustertype" in services:
-            cmd.clustertype = services["clustertype"]
-        if "username" in services:
-            cmd.username = services["username"]
-        if "password" in services:
-            cmd.password = services["password"]
-
-        # Add host
-        host = apiclient.addHost(cmd)
-
-        if isinstance(host, list):
-            return Host(host[0].__dict__)
+            '''
+            Adds a Host,
+            If response is valid and host is up return
+            an instance of Host.
+            If response is invalid, returns FAILED.
+            If host state is not up, verify through listHosts call
+            till host status is up and return accordingly. Max 3 retries
+            '''
+            host = apiclient.addHost(cmd)
+            ret = validateList(host)
+            if ret[0] == PASS:
+                if str(host[0].state).lower() == 'up':
+                    return Host(host[0].__dict__)
+                retries = 3
+                while retries:
+                    lh_resp = apiclient.listHosts(host[0].id)
+                    ret = validateList(lh_resp)
+                    if (ret[0] == PASS) and (str(ret[1].state).lower() == 'up'):
+                        return Host(host[0].__dict__)
+                    retries += -1
+            return FAILED
+        except Exception, e:
+            print "Exception Occurred Under Host.create : %s" % GetDetailExceptionInfo(e)
+            return FAILED
 
     def delete(self, apiclient):
         """Delete Host"""

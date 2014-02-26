@@ -104,6 +104,8 @@ class TestHosts(cloudstackTestCase):
                                podid=self.pod.id,
                                hypervisor=self.hypervisor
                                )
+                if host == FAILED:
+                    self.fail("Host Creation Failed")
                 self.debug(
                     "Created host (ID: %s) in cluster ID %s" %(
                                                                 host.id,
