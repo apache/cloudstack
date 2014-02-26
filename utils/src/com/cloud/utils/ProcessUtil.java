@@ -45,8 +45,7 @@ public class ProcessUtil {
             if (propsFile == null) {
                 s_logger.debug("environment.properties could not be opened");
             } else {
-                final Properties props = new Properties();
-                PropertiesUtil.loadFromFile(props, propsFile);
+                final Properties props = PropertiesUtil.loadFromFile(propsFile);
                 dir = props.getProperty("paths.pid");
                 if (dir == null) {
                     dir = pidDir == null ? "/var/run" : pidDir;

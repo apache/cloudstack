@@ -414,10 +414,7 @@ public class Script implements Callable<String> {
                     if (propsFile == null) {
                         s_logger.debug("environment.properties could not be opened");
                     } else {
-                        final FileInputStream finputstream = new FileInputStream(propsFile);
-                        final Properties props = new Properties();
-                        props.load(finputstream);
-                        finputstream.close();
+                        final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {

@@ -175,4 +175,17 @@ public class PropertiesUtil {
         }
     }
 
+    /**
+     * Load the file and return the contents as a Properties object.
+     * @param file  the file to load
+     * @return      A Properties object populated
+     * @throws IOException
+     */
+    public static Properties loadFromFile(final File file)
+            throws IOException {
+        final Properties properties = new Properties();
+        loadFromFile(properties, file);
+        return properties;
+    }
+    
 }

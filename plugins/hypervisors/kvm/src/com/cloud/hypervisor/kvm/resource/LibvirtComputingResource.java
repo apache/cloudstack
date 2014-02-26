@@ -509,9 +509,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         s_logger.info("developer.properties found at " + file.getAbsolutePath());
-        Properties properties = new Properties();
         try {
-            PropertiesUtil.loadFromFile(properties, file);
+            Properties properties = PropertiesUtil.loadFromFile(file);
 
             String startMac = (String)properties.get("private.macaddr.start");
             if (startMac == null) {

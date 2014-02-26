@@ -18,7 +18,6 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -234,6 +233,7 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -4705,8 +4705,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
                 for (File file : files) {
                     String path = file.getParentFile().getAbsolutePath() + "/";
-                    Properties props = new Properties();
-                    props.load(new FileInputStream(file));
+                    Properties props = PropertiesUtil.loadFromFile(file);
 
                     for (Map.Entry<Object, Object> entry : props.entrySet()) {
                         String k = (String)entry.getKey();
