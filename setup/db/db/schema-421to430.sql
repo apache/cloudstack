@@ -1099,3 +1099,7 @@ UPDATE `cloud`.`service_offering_details` set `display`=1 where id> 0;
 
 ALTER TABLE `cloud`.`disk_offering_details` CHANGE `display_detail` `display_detail` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 UPDATE `cloud`.`disk_offering_details` set `display_detail`=1 where id> 0;
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 2012 R2 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows Server 2012 R2 (64-bit)', 168);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows Server 2012 R2 (64-bit)', 168);
