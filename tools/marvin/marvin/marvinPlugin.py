@@ -99,7 +99,7 @@ class MarvinPlugin(Plugin):
                           dest="deployDc",
                           help="Deploys the DC with Given Configuration."
                                "Requires only when DC needs to be deployed")
-        parser.add_option("--zone", action="store_true",
+        parser.add_option("--zone", action="store",
                           default=None,
                           dest="zone",
                           help="Runs all tests against this specified zone")
@@ -260,11 +260,18 @@ class MarvinPlugin(Plugin):
                                             self.__zoneForTests)
                 if not obj_marvininit or obj_marvininit.init() != SUCCESS:
                     return FAILED
-            print "\n*******Now Start Running Test Suites***"
+            print "\n====Now Start Running Test Suites===="
             if len(self.conf.testNames) == 0:
-                print "\n*** No Test Suites are provided, please check**"
-                return FAILED
-            for suites in self.conf.testNames:
+                if self.conf.workingDir == '':
+                    print "\n==== " \
+                          "No Test Suites are provided, please check ===="
+                    return FAILED
+            else:
+                if self.conf.workingDir != '':
+                    test_names = self.conf.workingDir
+                else:
+                    test_names = self.conf.testNames
+            for suites in test_names:
                 if os.path.isdir(suites):
                     self.__runSuites(suites)
                 if os.path.isfile(suites):
