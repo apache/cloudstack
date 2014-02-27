@@ -45,7 +45,7 @@ public class VMSnapshotDetailsVO implements ResourceDetail {
     String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public VMSnapshotDetailsVO() {
     }

@@ -43,7 +43,7 @@ public class StoragePoolDetailVO implements ResourceDetail {
     String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public StoragePoolDetailVO(long poolId, String name, String value, boolean display) {
         this.resourceId = poolId;

@@ -43,7 +43,7 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    boolean display;
+    private boolean display = true;
 
     protected ServiceOfferingDetailsVO() {
     }

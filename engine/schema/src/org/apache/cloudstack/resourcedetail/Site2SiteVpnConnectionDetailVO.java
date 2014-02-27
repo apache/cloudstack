@@ -43,7 +43,7 @@ public class Site2SiteVpnConnectionDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public Site2SiteVpnConnectionDetailVO() {
     }
