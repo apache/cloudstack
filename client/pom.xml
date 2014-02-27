@@ -742,7 +742,7 @@
       <dependencies>
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-database-myqslha</artifactId>
+          <artifactId>cloud-plugin-database-mysqlha</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>
