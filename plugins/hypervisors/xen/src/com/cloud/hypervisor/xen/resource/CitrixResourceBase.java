@@ -2383,7 +2383,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 
     protected void assignPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add, boolean firstIP,
-            boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, TrafficType trafficType, String name) throws InternalErrorException {
+            boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, TrafficType trafficType, String name,
+            int numOfips) throws InternalErrorException {
 
         try {
             VM router = getVM(conn, vmName);
@@ -2472,6 +2473,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
+            }
+
+            //there is only only ip in public subnet and it is deleted so unplug the vif
+            if (numOfips == 1 && !add) {
+                removeVif = true;
             }
 
             if (removeVif) {
@@ -2575,14 +2581,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
+        int numOfIps = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             IpAddressTO[] ips = cmd.getIpAddresses();
+            if (ips != null) {
+                numOfIps = ips.length;
+            }
+
             for (IpAddressTO ip : ips) {
 
                 assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(),
-                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkName());
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkName(), numOfIps);
                 results[i++] = ip.getPublicIp() + " - success";
             }
         } catch (InternalErrorException e) {
