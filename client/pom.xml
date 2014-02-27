@@ -733,6 +733,21 @@
       </dependencies>
     </profile>
     <profile>
+      <id>mysqlha</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-database-myqslha</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>quickcloud</id>
       <activation>
         <property>
