@@ -3868,9 +3868,9 @@
                         }
                     },
 
-                    OVS: {
-                        id: "OVS",
-                        label: "OVS",
+                    Ovs: {
+                        id: "Ovs",
+                        label: "Ovs",
                         isMaximized: true,
                         type: 'detailView',
                         fields: {
@@ -3906,11 +3906,11 @@
                                     }
                                 }],
                                 dataProvider: function(args) {
-                                    refreshNspData("OVS");
+                                    refreshNspData("Ovs");
                                     args.response.success({
                                         actionFilter: ovsProviderActionFilter,
-                                        data: $.extend(nspMap["OVS"], {
-                                            supportedServices: nspMap["OVS"] == undefined? "": nspMap["OVS"].servicelist.join(', ')
+                                        data: $.extend(nspMap["Ovs"], {
+                                            supportedServices: nspMap["Ovs"] == undefined? "": nspMap["Ovs"].servicelist.join(', ')
                                         })
                                     });
                                 }
@@ -3921,7 +3921,7 @@
                                 label: 'label.enable.provider',
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["OVS"].id + "&state=Enabled"),
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["Ovs"].id + "&state=Enabled"),
                                         dataType: "json",
                                         success: function(json) {
                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
@@ -3952,7 +3952,7 @@
                                 label: 'label.disable.provider',
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["OVS"].id + "&state=Disabled"),
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["Ovs"].id + "&state=Disabled"),
                                         dataType: "json",
                                         success: function(json) {
                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
@@ -18123,8 +18123,8 @@
                             case "VpcVirtualRouter":
                                 nspMap["vpcVirtualRouter"] = items[i];
                                 break;
-                            case "OVS":
-                                nspMap["OVS"] = items[i];
+                            case "Ovs":
+                                nspMap["Ovs"] = items[i];
                                 break;      
                             case "Netscaler":
                                 nspMap["netscaler"] = items[i];
@@ -18236,9 +18236,9 @@
         }
         
         nspHardcodingArray.push({
-            id: 'OVS',
-            name: 'OVS',
-            state: nspMap.OVS ? nspMap.OVS.state : 'Disabled'
+            id: "Ovs",
+            name: "Ovs",
+            state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
         });        
     };
 
