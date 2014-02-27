@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -31,6 +30,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -72,6 +72,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
                authorized = {RoleType.Admin})
     private Long storageId;
 
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "list volumes by disk offering")
+    private Long diskOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,6 +93,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getPodId() {
         return podId;
+    }
+
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
     }
 
     public String getType() {

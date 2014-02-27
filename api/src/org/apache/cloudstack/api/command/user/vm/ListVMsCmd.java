@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -35,11 +33,13 @@ import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -112,6 +112,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
     private Long affinityGroupId;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list by the service offering", since = "4.4")
+    private Long serviceOffId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -138,6 +141,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public String getState() {
         return state;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOffId;
     }
 
     public Long getZoneId() {
