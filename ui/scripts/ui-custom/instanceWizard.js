@@ -788,7 +788,7 @@
                                     $step.find('.my-networks .select-container .select, .select.new-network .select').each(function () {
                                         var $select = $(this);
                                         var $advancedLink = $('<div>').addClass('advanced-options hide-if-unselected');
-                                        var $specifyIpField = $('<div>').addClass('specify-ip').append(
+                                        var $specifyIpField = $('<div>').addClass('specify-ip hide-if-unselected').append(
                                             $('<label>').html(_l('label.ip.address')),
                                             $('<input>').attr({ type: 'text' })
                                         );

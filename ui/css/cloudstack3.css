@@ -6170,6 +6170,7 @@ label.error {
 
 .multi-wizard.instance-wizard .select-network .select.advanced .specify-ip input {
   margin: 0px 0 0 15px;
+  width: 138px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select input {
@@ -6217,6 +6218,10 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select.new-network .select.advanced {
   height: 106px;
   position: relative;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network.unselected .select.advanced {
+  height: auto;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network .select.advanced .specify-ip {
