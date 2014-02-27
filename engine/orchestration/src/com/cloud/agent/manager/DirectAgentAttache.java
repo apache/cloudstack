@@ -182,7 +182,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (Command cmd : cmds) {
-                    Answer answer = new Answer(cmd, false, "Bailed out as maximum oustanding task limit reached");
+                    Answer answer = new Answer(cmd, false, "Bailed out as maximum outstanding task limit reached");
                     answers.add(answer);
                 }
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));

@@ -63,7 +63,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -952,13 +951,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Override
     public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
         if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
-            long serviceOfferingId = vo.getServiceOfferingId();
-
-            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(serviceOfferingId);
-            if (serviceOffering != null && serviceOffering.getOfferHA()) {
-
-                VMInstanceVO vm = _instanceDao.findById(vo.getId());
-
+            VMInstanceVO vm = _instanceDao.findById(vo.getId());
+            if (vm.isHaEnabled()) {
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
                 scheduleRestart(vm, true);
             }
