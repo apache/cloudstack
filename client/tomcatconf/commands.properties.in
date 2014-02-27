@@ -719,21 +719,21 @@ listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
 
-### Acl commands
-createAclPolicy=1
-deleteAclPolicy=1
-listAclPolicies=1
-addAclPermissionToAclPolicy=1
-removeAclPermissionFromAclPolicy=1
-createAclGroup=1
-deleteAclGroup=1
-listAclGroups=1
-addAccountToAclGroup=1
-removeAccountFromAclGroup=1
-attachAclPolicyToAclGroup=1
-removeAclPolicyFromAclGroup=1
-attachAclPolicyToAccount=1
-removeAclPolicyFromAccount=1
+### IAM commands
+createIAMPolicy=1
+deleteIAMPolicy=1
+listIAMPolicies=1
+addIAMPermissionToIAMPolicy=1
+removeIAMPermissionFromIAMPolicy=1
+createIAMGroup=1
+deleteIAMGroup=1
+listIAMGroups=1
+addAccountToIAMGroup=1
+removeAccountFromIAMGroup=1
+attachIAMPolicyToIAMGroup=1
+removeIAMPolicyFromIAMGroup=1
+attachIAMPolicyToAccount=1
+removeIAMPolicyFromAccount=1
 
 #### juniper-contrail commands
 createServiceInstance=1

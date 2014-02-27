@@ -226,12 +226,12 @@ class TestVMIam(cloudstackTestCase):
             templateid=self.template.id
         )   
         
-        self.srv_desk_grp = AclGroup.create(
+        self.srv_desk_grp = IAMGroup.create(
             self.apiclient, 
             self.services["service_desk_iam_grp"]
         )                             
  
-        self.vm_read_policy = AclPolicy.create(
+        self.vm_read_policy = IAMPolicy.create(
             self.apiclient, 
             self.services["vm_readonly_iam_policy"]
         )
@@ -239,7 +239,7 @@ class TestVMIam(cloudstackTestCase):
         vm_grant_policy_params = {}
         vm_grant_policy_params['name'] = "policyGrantVirtualMachine" + self.virtual_machine_1A.id
         vm_grant_policy_params['description'] = "Policy to grant permission to VirtualMachine " + self.virtual_machine_1A.id
-        self.vm_grant_policy = AclPolicy.create(
+        self.vm_grant_policy = IAMPolicy.create(
             self.apiclient, 
             vm_grant_policy_params
         )   

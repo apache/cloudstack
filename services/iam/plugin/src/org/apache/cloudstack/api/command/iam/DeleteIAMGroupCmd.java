@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -31,11 +30,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.iam.IAMGroupResponse;
+import org.apache.cloudstack.iam.IAMApiService;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAclGroup", description = "Deletes acl group", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteIAMGroup", description = "Deletes acl group", responseObject = SuccessResponse.class)
 public class DeleteIAMGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIAMGroupCmd.class.getName());
     private static final String s_name = "deleteaclgroupresponse";
