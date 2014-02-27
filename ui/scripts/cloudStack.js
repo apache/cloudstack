@@ -102,6 +102,10 @@
                         $('#user-options a').eq(0).trigger('click');
                     };
 
+                    if ($('.notification-box:visible').size()) {
+                        $('.notification-box, div.overlay:first').remove();
+                    }
+
                     cloudStack.dialog.notice({
                         message: _l('label.session.expired'),
                         clickAction: clickAction
