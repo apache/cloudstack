@@ -2503,9 +2503,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
 
                     // Add OVS provider as default network service provider
-                    if (pNetwork.getIsolationMethods().contains("GRE")) {
-                        addDefaultOvsToPhysicalNetwork(pNetwork.getId());
-                    }
+                    addDefaultOvsToPhysicalNetwork(pNetwork.getId());
+
 
                     return pNetwork;
                 }
