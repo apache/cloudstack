@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalDhcpVO;
@@ -64,6 +66,8 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     
     @Inject NicDao _nicDao;
     @Inject BaremetalDhcpManager _dhcpMgr;
+    @Inject
+    PhysicalNetworkDao phyNwDao;
     
     static {
         Capability cap = new Capability(BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_CAPABITLITY);
@@ -87,8 +91,12 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
         Pod pod = dest.getPod();
         if (pod != null && dest.getDataCenter().getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest) {
+            QueryBuilder<PhysicalNetworkVO> phyq = QueryBuilder.create(PhysicalNetworkVO.class);
+            phyq.and(phyq.entity().getDataCenterId(), Op.EQ, dest.getDataCenter().getId());
+            PhysicalNetworkVO phynw = phyq.find();
+
             QueryBuilder<BaremetalDhcpVO> sc = QueryBuilder.create(BaremetalDhcpVO.class);
-            sc.and(sc.entity().getPodId(), Op.EQ,pod.getId());
+            sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, phynw.getId());
             return sc.find() != null;
         }
         
