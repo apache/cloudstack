@@ -133,14 +133,13 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
     public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile,
             DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
         Long zoneId = profile.getVirtualMachine().getDataCenterId();
-        Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.BaremetalDhcp, null, podId, zoneId);
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.BaremetalDhcp, null, null, zoneId);
         if (hosts.size() == 0) {
-            throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
+            throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId);
         }
 
         if (hosts.size() > 1) {
-            throw new CloudRuntimeException("Something wrong, more than 1 external Dhcp found in zone " + zoneId + " pod " + podId);
+            throw new CloudRuntimeException("Something wrong, more than 1 external Dhcp found in zone " + zoneId);
         }
 
         HostVO h = hosts.get(0);
