@@ -1,0 +1,17 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th ng-repeat="field in fields">{{ field.label }}</th>
+      <th class="actions">Actions</th>
+    </tr>
+  </thead>
+  <tbody class="table-striped">
+    <tr ng-repeat="item in data" ng-class="{active: item.pending == true}">
+      <td ng-class="field.id" ng-repeat="field in fields">{{ item[field.id] }}</td>
+      <td class="actions">
+        <button ng-repeat="action in actions"
+                ng-click="action.action($parent.$index, item)">{{ action.label }}</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
