@@ -1789,6 +1789,23 @@ ServerResource {
     	return new Answer(cmd, true, result);
     }
 
+    private void vifHotUnPlug (Connect conn, String vmName, String macAddr) throws InternalErrorException, LibvirtException {
+
+        Domain vm = null;
+        vm = getDomain(conn, vmName);
+        List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
+        for (InterfaceDef pluggedNic : pluggedNics) {
+            if (pluggedNic.getMacAddress().equalsIgnoreCase(macAddr)) {
+                vm.detachDevice(pluggedNic.toString());
+                // We don't know which "traffic type" is associated with
+                // each interface at this point, so inform all vif drivers
+                for (VifDriver vifDriver : getAllVifDrivers()) {
+                    vifDriver.unplug(pluggedNic);
+                }
+            }
+        }
+    }
+
     private void VifHotPlug(Connect conn, String vmName, String broadcastUri,
             String macAddr) throws InternalErrorException, LibvirtException {
         NicTO nicTO = new NicTO();
@@ -2103,6 +2120,12 @@ ServerResource {
             String result = null;
             int nicNum = 0;
             boolean newNic = false;
+            int numOfIps = 0;
+
+            if (ips != null) {
+                numOfIps = ips.length;
+            }
+
             for (IpAddressTO ip : ips) {
                 if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
                     /* plug a vif into router */
@@ -2121,6 +2144,14 @@ ServerResource {
                 if (result == null) {
                     results[i++] = ip.getPublicIp() + " - success";
                 }
+
+                //there is only only ip in public subnet and it is deleted so unplug the vif
+                if (numOfIps == 1 && !ip.isAdd()) {
+                    // There are no ips on the vm so delete the vif
+                    networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                    vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
+                }
+
             }
             return new IpAssocAnswer(cmd, results);
         } catch (LibvirtException e) {
