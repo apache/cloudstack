@@ -58,6 +58,11 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
+    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCmdAnswer answer = null;
         DataTO data = null;

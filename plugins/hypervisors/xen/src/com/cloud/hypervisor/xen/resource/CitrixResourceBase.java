@@ -1869,18 +1869,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return prepareManagedStorage(conn, details, null, vdiNameLabel);
     }
 
-    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+    protected SR prepareManagedSr(Connection conn, Map<String, String> details) {
         String iScsiName = details.get(DiskTO.IQN);
         String storageHost = details.get(DiskTO.STORAGE_HOST);
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
-        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
 
-        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+        return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+    }
+
+    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+        SR sr = prepareManagedSr(conn, details);
 
         VDI vdi = getVDIbyUuid(conn, path, false);
 
         if (vdi == null) {
+            Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+
             vdi = createVdi(sr, vdiNameLabel, volumeSize);
         }
 
