@@ -59,20 +59,20 @@ public class Upgrade430to440 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        populateACLGroupAccountMap(conn);
+        populateIAMGroupAccountMap(conn);
         secondaryIpsAccountAndDomainIdsUpdate(conn);
     }
 
-    // populate acl_group_account_map table for existing accounts
-    private void populateACLGroupAccountMap(Connection conn) {
+    // populate iam_group_account_map table for existing accounts
+    private void populateIAMGroupAccountMap(Connection conn) {
         PreparedStatement acctInsert = null;
         PreparedStatement acctQuery = null;
         ResultSet rs = null;
 
-        s_logger.debug("Populating acl_group_account_map table for existing accounts...");
+        s_logger.debug("Populating iam_group_account_map table for existing accounts...");
         try {
             acctInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`acl_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
+                    .prepareStatement("INSERT INTO `cloud`.`iam_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
             acctQuery = conn
                     .prepareStatement("select id, type from `cloud`.`account` where removed is null");
             rs = acctQuery.executeQuery();
@@ -81,13 +81,13 @@ public class Upgrade430to440 implements DbUpgrade {
                 Long acct_id = rs.getLong("id");
                 short type = rs.getShort("type");
 
-                // insert entry in acl_group_account_map table
+                // insert entry in iam_group_account_map table
                 acctInsert.setLong(1, type + 1);
                 acctInsert.setLong(2, acct_id);
                 acctInsert.executeUpdate();
             }
         } catch (SQLException e) {
-            String msg = "Unable to populate acl_group_account_map for existing accounts." + e.getMessage();
+            String msg = "Unable to populate iam_group_account_map for existing accounts." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         } finally {
@@ -105,7 +105,7 @@ public class Upgrade430to440 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
-        s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
+        s_logger.debug("Completed populate iam_group_account_map for existing accounts.");
     }
 
 
