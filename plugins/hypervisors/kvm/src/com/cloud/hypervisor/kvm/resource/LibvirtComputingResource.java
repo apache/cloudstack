@@ -372,6 +372,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
+        if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
+        }
         return new ExecutionResult(true, null);
     }
 
@@ -1938,6 +1941,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV (32-bit)").toString());
     }
 
+
+    private void vifHotUnPlug (Connect conn, String vmName, String macAddr) throws InternalErrorException, LibvirtException {
+
+        Domain vm = null;
+        vm = getDomain(conn, vmName);
+        List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
+        for (InterfaceDef pluggedNic : pluggedNics) {
+            if (pluggedNic.getMacAddress().equalsIgnoreCase(macAddr)) {
+                vm.detachDevice(pluggedNic.toString());
+                // We don't know which "traffic type" is associated with
+                // each interface at this point, so inform all vif drivers
+                for (VifDriver vifDriver : getAllVifDrivers()) {
+                    vifDriver.unplug(pluggedNic);
+                }
+            }
+        }
+    }
+
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
@@ -2162,6 +2183,65 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.error("ipassoccmd failed", e);
             return new ExecutionResult(false, e.getMessage());
         }
+    }
+
+    protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
+
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        Connect conn;
+
+
+        try{
+            conn = LibvirtConnection.getConnectionByVmName(routerName);
+            List<InterfaceDef> nics = getInterfaces(conn, routerName);
+            Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
+
+            Integer nicPos = 0;
+            for (InterfaceDef nic : nics) {
+                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
+                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
+                } else {
+                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
+                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
+                    } else {
+                        String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
+                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
+                    }
+                }
+                nicPos++;
+            }
+
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            int numOfIps = ips.length;
+            int nicNum = 0;
+            for (IpAddressTO ip : ips) {
+
+                boolean newNic = false;
+                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                    /* plug a vif into router */
+                    VifHotPlug(conn, routerName, ip.getBroadcastUri(), ip.getVifMacAddress());
+                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    newNic = true;
+                }
+                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
+
+                if (numOfIps == 1 && !ip.isAdd()) {
+                    vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
+                    networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                }
+            }
+
+        } catch (LibvirtException e) {
+            s_logger.error("ipassoccmd failed", e);
+            return new ExecutionResult(false, e.getMessage());
+        } catch (InternalErrorException e) {
+            s_logger.error("ipassoccmd failed", e);
+            return new ExecutionResult(false, e.getMessage());
+        }
+
+        return new ExecutionResult(true, null);
     }
 
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {

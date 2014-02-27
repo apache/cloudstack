@@ -2032,6 +2032,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             IpAddressTO[] ips = cmd.getIpAddresses();
+            int ipsCount = ips.length;
             for (IpAddressTO ip : ips) {
 
                 VM router = getVM(conn, routerName);
@@ -2059,6 +2060,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // If we are disassociating the last IP address in the VLAN, we need
                 // to remove a VIF
                 boolean removeVif = false;
+
+                //there is only one ip in this public vlan and removing it, so remove the nic
+                if (ipsCount == 1 && !ip.isAdd()) {
+                    removeVif = true;
+                }
 
                 if (correctVif == null) {
                     throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
