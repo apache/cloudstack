@@ -6206,6 +6206,24 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select.new-network {
 }
 
+.multi-wizard.instance-wizard .select-network .select.new-network .advanced-options {
+  /*+placement:shift 379px 15px;*/
+  position: relative;
+  left: 379px;
+  top: 15px;
+  position: absolute;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select.advanced {
+  height: 106px;
+  position: relative;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select.advanced .specify-ip {
+  top: 74px;
+  left: 29px;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network .hide-if-selected {
   display: none;
 }

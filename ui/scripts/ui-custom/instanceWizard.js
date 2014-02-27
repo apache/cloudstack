@@ -57,6 +57,7 @@
                                 $input.val() : null
                         );
                     });
+                    data['new-network-ip'] = $form.find('.new-network .select.advanced .specify-ip input[type=text]').val();
 
                     args.action({
                         // Populate data
@@ -784,13 +785,18 @@
                                     );
 
                                     // Add IP/advanced option fields
-                                    $step.find('.my-networks .select-container .select').each(function () {
+                                    $step.find('.my-networks .select-container .select, .select.new-network .select').each(function () {
                                         var $select = $(this);
-                                        var $advancedLink = $('<div>').addClass('advanced-options');
+                                        var $advancedLink = $('<div>').addClass('advanced-options hide-if-unselected');
                                         var $specifyIpField = $('<div>').addClass('specify-ip').append(
                                             $('<label>').html(_l('label.ip.address')),
                                             $('<input>').attr({ type: 'text' })
                                         );
+
+                                        // Cleanup
+                                        if ($select.closest('.new-network').size()) {
+                                            $select.find('.advanced-options, .specify-ip').remove();
+                                        }
 
                                         $select.append($advancedLink, $specifyIpField);
                                         $advancedLink.click(function() {
