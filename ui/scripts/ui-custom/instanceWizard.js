@@ -45,6 +45,19 @@
                     var data = cloudStack.serializeForm($form);
                     var $wizardLoading = $('<div>').addClass('loading-overlay').appendTo($wizard).css('z-index', '10000');
 
+                    // Pass network IPs
+                    data['my-network-ips'] = [];
+                    $form.find('.my-networks .select .specify-ip input[type=text]').each(function() {
+                        var $input = $(this);
+
+                        if (!$input.closest('.select').find('input[type=checkbox]').is(':checked')) return true;
+
+                        data['my-network-ips'].push(
+                            $input.closest('.select').hasClass('advanced') ?
+                                $input.val() : null
+                        );
+                    });
+
                     args.action({
                         // Populate data
                         context: context,
@@ -769,6 +782,21 @@
                                             }
                                         })
                                     );
+
+                                    // Add IP/advanced option fields
+                                    $step.find('.my-networks .select-container .select').each(function () {
+                                        var $select = $(this);
+                                        var $advancedLink = $('<div>').addClass('advanced-options');
+                                        var $specifyIpField = $('<div>').addClass('specify-ip').append(
+                                            $('<label>').html(_l('label.ip.address')),
+                                            $('<input>').attr({ type: 'text' })
+                                        );
+
+                                        $select.append($advancedLink, $specifyIpField);
+                                        $advancedLink.click(function() {
+                                            $select.toggleClass('advanced');
+                                        });
+                                    });
 
                                     // Show non-VPC networks by default
                                     filterNetworkList(-1);

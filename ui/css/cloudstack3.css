@@ -6109,6 +6109,10 @@ label.error {
   color: #000000;
 }
 
+.multi-wizard.instance-wizard .select-network .select.advanced .secondary-input {
+  height: 73px;
+}
+
 .multi-wizard.instance-wizard .select-network .select .secondary-input input {
   margin: 0 !important;
   padding: 0 !important;
@@ -6130,10 +6134,54 @@ label.error {
   width: 100%;
   float: left;
   padding: 0;
+  position: relative;
+}
+
+.multi-wizard.instance-wizard .select-network .select-container .select.advanced {
+  height: 74px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .advanced-options {
+  background: url(../images/sprites.png) -7px -795px;
+  width: 20px;
+  height: 20px;
+  float: right;
+  cursor: pointer;
+  margin-top: 15px;
+  margin-right: 13px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .advanced-options:hover,
+.multi-wizard.instance-wizard .select-network .select.advanced .advanced-options {
+  background: url(../images/sprites.png) -32px -795px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .specify-ip {
+  display: none;
+  position: absolute;
+  top: 45px;
+  left: 0px;
+  width: 100%;
+}
+
+.multi-wizard.instance-wizard .select-network .select.advanced .specify-ip {
+  display: block;
+}
+
+.multi-wizard.instance-wizard .select-network .select.advanced .specify-ip input {
+  margin: 0px 0 0 15px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select input {
   margin: 21px 15px 0px;
+  float: left;
+}
+
+.multi-wizard.instance-wizard .select-network .select-container .select label {
+  float: left;
+  font-size: 11px;
+  margin: 4px 0 0 42px;
+  color: #4E6B82;
 }
 
 .multi-wizard.instance-wizard .select-network .select-vpc {
