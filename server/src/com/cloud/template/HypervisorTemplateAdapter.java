@@ -19,7 +19,9 @@ package com.cloud.template;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.ejb.Local;
@@ -187,7 +189,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
         }
 
-        Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+        Set<Long> zoneSet = new HashSet<Long>();
+        Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();
@@ -203,6 +206,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
                     continue;
                 }
+
+                // We want to download private template to one of the image store in a zone
+                if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
+                    continue;
+                }else {
+                    zoneSet.add(zoneId);
+                }
+
             }
 
             TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
@@ -211,13 +222,19 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
             imageService.createTemplateAsync(tmpl, imageStore, caller);
-            if( !(profile.getIsPublic() || profile.getFeatured()) ){  // If private template then break
-                break;
-            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
         return template;
+    }
+
+    private boolean isPrivateTemplate(VMTemplateVO template){
+
+        // if public OR featured OR system template
+        if(template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM)
+            return false;
+        else
+            return true;
     }
 
     private class CreateTemplateContext<T> extends AsyncRpcContext<T> {
