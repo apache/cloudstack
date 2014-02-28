@@ -1127,7 +1127,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter) {
             // SystemVm vm = (SystemVm) systemVM;
             vmResponse.setId(vm.getUuid());
             // vmResponse.setObjectId(vm.getId());
