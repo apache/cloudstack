@@ -665,6 +665,7 @@
             //step 6: select network
             if (step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
                 var array2 = [];
+                var array3 = [];                
                 var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
 
                 var checkedNetworkIdArray;
@@ -710,23 +711,62 @@
                 }
                 //create new network ends here
 
-                //add default network first
-                if (defaultNetworkId != null && defaultNetworkId.length > 0) {
-                    array2.push(defaultNetworkId);
-                }
 
-                //then, add other checked networks
+                if (defaultNetworkId == null) {
+                	cloudStack.dialog.notice({
+                        message: "Please select a default network in Network step."
+                    });    
+                	return;
+                }    
+                  
                 if (checkedNetworkIdArray.length > 0) {
                     for (var i = 0; i < checkedNetworkIdArray.length; i++) {
-                        if (checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+                    	if (checkedNetworkIdArray[i] == defaultNetworkId) { 
+                    		array2.unshift(defaultNetworkId); 
+                    		
+                    		var ipToNetwork = {
+                    			networkid: defaultNetworkId
+                    		};                    		                 		         
+                    		if (args.data["new-network"] == "create-new-network") {
+                    			if (args.data['new-network-ip'] != null && args.data['new-network-ip'].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data['new-network-ip']
+                    				});                    				
+                    			}
+                    		} else {
+                    			if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data["my-network-ips"][i]
+                    				});       
+                    			}
+                    		}
+                    		array3.unshift(ipToNetwork);    
+                    			
+                    	} else {                         
                             array2.push(checkedNetworkIdArray[i]);
+                            
+                            var ipToNetwork = {
+                        		networkid: checkedNetworkIdArray[i]
+                        	};                          	
+                        	if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                        		$.extend(ipToNetwork, {
+                					ip: args.data["my-network-ips"][i]
+                				});      
+                        	}
+                        	array3.push(ipToNetwork);    
+                        }                    	
                     }
                 }
                 
-                $.extend(deployVmData, {
-                	networkids : array2.join(",")
-                });                
-                
+                //deployVmData.push("&networkIds=" + array2.join(","));  //ipToNetworkMap can't be specified along with networkIds or ipAddress
+                                            
+                for (var k = 0; k < array3.length; k++) {                	
+                	deployVmData["iptonetworklist[" + k + "].networkid"] = array3[k].networkid;                	
+                	if (array3[k].ip != undefined && array3[k].ip.length > 0) {                	    
+                		deployVmData["iptonetworklist[" + k + "].ip"] = array3[k].ip;                	   
+                	}
+                }                        
+               
             } else if (step6ContainerType == 'select-security-group') {
                 var checkedSecurityGroupIdArray;
                 if (typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
