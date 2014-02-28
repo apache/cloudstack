@@ -41,6 +41,7 @@ window.cloudStack = {
                     $.ajax({
                         url: createURL('listVirtualMachines'),
                         dataType: 'json',
+                        async: false,
                         success: function(json) {
                             args.response.success({
                                 data: json.listvirtualmachinesresponse.virtualmachine
