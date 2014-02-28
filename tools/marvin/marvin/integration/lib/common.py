@@ -985,3 +985,17 @@ def verifyNetworkState(apiclient, networkid, state):
     assert validateList(networks)[0] == PASS, "Networks list validation failed, list is %s" % networks
     assert str(networks[0].state).lower() == state, "network state should be %s, it is %s" % (state, networks[0].state)
     return
+
+def verifyComputeOfferingCreation(apiclient, computeofferingid):
+    """List Compute offerings by ID and verify that the offering exists"""
+
+    cmd = listServiceOfferings.listServiceOfferingsCmd()
+    cmd.id = computeofferingid
+    serviceOfferings = None
+    try:
+        serviceOfferings = apiclient.listServiceOfferings(cmd)
+    except Exception as e:
+       return FAIL
+    if not (isinstance(serviceOfferings, list) and len(serviceOfferings) > 0):
+       return FAIL
+    return PASS
