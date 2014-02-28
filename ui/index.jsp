@@ -516,10 +516,10 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th style="width:40px">Select</th>
-                                            <th style="width:110px">Realname</th>
-                                            <th style="width:70px">Username</th>
-                                            <th>Email</th>
+                                            <th><fmt:message key="label.select"/></th>
+                                            <th><fmt:message key="label.name"/></th>
+                                            <th><fmt:message key="label.username"/></th>
+                                            <th><fmt:message key="label.email"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>

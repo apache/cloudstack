@@ -12450,8 +12450,35 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   display: inline-block;
 }
 
+.accounts-wizard .content td {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.accounts-wizard .content td.select,
+.accounts-wizard .content th.select {
+  background: none;
+  border-right: 1px solid #BFBFBF;
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+}
+
+.accounts-wizard .content .select input {
+  padding: 0;
+  width: auto;
+  height: auto;
+  margin: 18px 0 0 24px;
+}
+
 .accounts-wizard .content:last-child {
   margin-left: 14px;
+}
+
+.accounts-wizard table thead th:first-child {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
 }
 
 .accounts-wizard .input-area {
