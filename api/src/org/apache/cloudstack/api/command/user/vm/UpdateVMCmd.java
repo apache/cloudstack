@@ -77,6 +77,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
                description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", since = "4.4")
+    private String name;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -107,6 +110,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
+    }
+
+    public String getHostName() {
+        return name;
     }
 
     /////////////////////////////////////////////////////

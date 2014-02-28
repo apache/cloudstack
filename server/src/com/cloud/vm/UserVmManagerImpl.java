@@ -1831,7 +1831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
-        Account caller = CallContext.current().getCallingAccount();
+        String hostName = cmd.getHostName();
 
         // Input validation and permission checks
         UserVmVO vmInstance = _vmDao.findById(id.longValue());
@@ -1849,12 +1849,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.memory, isDisplayVm, new Long(offering.getRamSize()));
         }
 
-        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId());
+        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId(), hostName);
     }
 
     @Override
     public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId) throws ResourceUnavailableException, InsufficientCapacityException {
+            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName) throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);
@@ -1909,7 +1909,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             isDynamicallyScalable = vm.isDynamicallyScalable();
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId);
+        if (hostName != null) {
+            // Check is hostName is RFC compliant
+            checkNameForRFCCompliance(hostName);
+
+            if (vm.getHostName().equalsIgnoreCase(hostName)) {
+                s_logger.debug("Vm " + vm + " is already set with the hostName specified: " + hostName);
+                hostName = null;
+            }
+
+            // Verify that vm's hostName is unique
+            List<NetworkVO> vmNtwks = new ArrayList<NetworkVO>();
+            List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
+            for (Nic nic : nics) {
+                vmNtwks.add(_networkDao.findById(nic.getNetworkId()));
+            }
+            checkIfHostNameUniqueInNtwkDomain(hostName, vmNtwks);
+        }
+
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName);
 
         if (updateUserdata) {
             boolean result = updateUserDataInternal(_vmDao.findById(id));
@@ -2728,32 +2746,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
         }
 
-        // Check that hostName is unique in the network domain
-        Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
-        for (NetworkVO network : networkList) {
-            String ntwkDomain = network.getNetworkDomain();
-            if (!ntwkDomains.containsKey(ntwkDomain)) {
-                List<Long> ntwkIds = new ArrayList<Long>();
-                ntwkIds.add(network.getId());
-                ntwkDomains.put(ntwkDomain, ntwkIds);
-            } else {
-                List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
-                ntwkIds.add(network.getId());
-                ntwkDomains.put(ntwkDomain, ntwkIds);
-            }
-        }
-
-        for (Entry<String, List<Long>> ntwkDomain : ntwkDomains.entrySet()) {
-            for (Long ntwkId : ntwkDomain.getValue()) {
-                // * get all vms hostNames in the network
-                List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
-                // * verify that there are no duplicates
-                if (hostNames.contains(hostName)) {
-                    throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
-                            + _networkModel.getNetwork(ntwkId));
-                }
-            }
-        }
+        checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
 
         HypervisorType hypervisorType = null;
         if (template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
@@ -2784,6 +2777,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    private void checkIfHostNameUniqueInNtwkDomain(String hostName, List<? extends Network> networkList) {
+        // Check that hostName is unique in the network domain
+        Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
+        for (Network network : networkList) {
+            String ntwkDomain = network.getNetworkDomain();
+            if (!ntwkDomains.containsKey(ntwkDomain)) {
+                List<Long> ntwkIds = new ArrayList<Long>();
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            } else {
+                List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            }
+        }
+
+        for (Entry<String, List<Long>> ntwkDomain : ntwkDomains.entrySet()) {
+            for (Long ntwkId : ntwkDomain.getValue()) {
+                // * get all vms hostNames in the network
+                List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
+                // * verify that there are no duplicates
+                if (hostNames.contains(hostName)) {
+                    throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
+                            + _networkModel.getNetwork(ntwkId));
+                }
+            }
+        }
     }
 
     private String generateHostName(String uuidName) {

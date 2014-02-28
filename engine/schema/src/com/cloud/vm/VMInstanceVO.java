@@ -53,7 +53,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "id", updatable = false, nullable = false)
     protected long id;
 
-    @Column(name = "name", updatable = false, nullable = false, length = 255)
+    @Column(name = "name", nullable = false, length = 255)
     protected String hostName = null;
 
     @Encrypt
@@ -270,6 +270,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public String getHostName() {
         return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     @Override
