@@ -85,7 +85,7 @@ class Services:
                     "memory": 128,
                 },
             },
-            "ostype": 'CentOS 5.3 (64-bit)',
+            "ostype": 'CentOS 5.6 (64-bit)',
             # iam group and policy information
             "service_desk_iam_grp" : {
                 "name" : "Service Desk",
@@ -106,7 +106,7 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient = super(TestVMIam, self).getClsTestClient().getApiClient()
         self.services = Services().services
         
-        # backup default apikey and secretkey
+         # backup default apikey and secretkey
         self.default_apikey = self.apiclient.connection.apiKey
         self.default_secretkey = self.apiclient.connection.securityKey
 
@@ -230,7 +230,7 @@ class TestVMIam(cloudstackTestCase):
             self.apiclient, 
             self.services["service_desk_iam_grp"]
         )                             
- 
+
         self.vm_read_policy = IAMPolicy.create(
             self.apiclient, 
             self.services["vm_readonly_iam_policy"]
@@ -255,7 +255,7 @@ class TestVMIam(cloudstackTestCase):
                         self.srv_desk_grp,
                         self.vm_grant_policy
                         ]
-
+ 
     @classmethod
     def tearDownClass(self):
         self.apiclient = super(TestVMIAM, self).getClsTestClient().getApiClient()
@@ -270,7 +270,7 @@ class TestVMIam(cloudstackTestCase):
     def tearDown(self):
         # restore back default apikey and secretkey
         self.apiclient.connection.apiKey = self.default_apikey
-        self.apiclient.connection.secretKey = self.default_secretkey
+        self.apiclient.connection.securityKey = self.default_secretkey
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
@@ -282,7 +282,7 @@ class TestVMIam(cloudstackTestCase):
         self.debug("Listing VM for account: %s" % self.account_1A.name)
 
         self.apiclient.connection.apiKey = self.user_1A_apikey
-        self.apiclient.connection.secretKey = self.user_1A_secretkey
+        self.apiclient.connection.securityKey = self.user_1A_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -303,9 +303,9 @@ class TestVMIam(cloudstackTestCase):
             "Virtual Machine names do not match"
         )
 
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -326,10 +326,10 @@ class TestVMIam(cloudstackTestCase):
             "Virtual Machine names do not match"
         )
         
-        self.debug("Listing VM for account: %s" % self.account_2A.id)
+        self.debug("Listing VM for account: %s" % self.account_2A.name)
 
         self.apiclient.connection.apiKey = self.user_2A_apikey
-        self.apiclient.connection.secretKey = self.user_2A_secretkey
+        self.apiclient.connection.securityKey = self.user_2A_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -362,7 +362,7 @@ class TestVMIam(cloudstackTestCase):
 
         self.debug("Granting Domain %s VM read only access to account: %s" % (self.domain_2.name, self.account_1B.name))
         
-        self.srv_desk_grp.addAccount(self.apiclient, [self.account_1B.id])
+        self.srv_desk_grp.addAccount(self.apiclient, [self.account_1B])
         domain_permission = {}
         domain_permission['action'] = "listVirtualMachines"
         domain_permission['entitytype'] = "VirtualMachine"
@@ -370,9 +370,9 @@ class TestVMIam(cloudstackTestCase):
         domain_permission['scopeid'] = self.domain_2.id
         self.vm_read_policy.addPermission(self.apiclient, domain_permission)
         
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -418,9 +418,9 @@ class TestVMIam(cloudstackTestCase):
         account_permission['scopeid'] = self.account_1A.id
         self.vm_read_policy.addPermission(self.apiclient, account_permission)
         
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -471,9 +471,9 @@ class TestVMIam(cloudstackTestCase):
         account_permission['scopeid'] = self.account_1A.id
         self.vm_read_policy.removePermission(self.apiclient, account_permission)
         
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -514,9 +514,9 @@ class TestVMIam(cloudstackTestCase):
         domain_permission['scopeid'] = self.domain_2.id
         self.vm_read_policy.removePermission(self.apiclient, domain_permission)
         
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -555,9 +555,9 @@ class TestVMIam(cloudstackTestCase):
         res_permission['scopeid'] = self.virtual_machine_1A.id
         self.vm_read_policy.addPermission(self.apiclient, res_permission)
         
-        self.debug("Listing VM for account: %s" % self.account_1B.id)
+        self.debug("Listing VM for account: %s" % self.account_1B.name)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -604,7 +604,7 @@ class TestVMIam(cloudstackTestCase):
         
         self.debug("Listing VM for account: %s" % self.account_1B.id)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -643,11 +643,11 @@ class TestVMIam(cloudstackTestCase):
         res_permission['scope'] = "RESOURCE"
         res_permission['scopeid'] = self.virtual_machine_1A.id
         self.vm_grant_policy.addPermission(self.apiclient, res_permission)
-        self.vm_grant_policy.attachAccount(self.apiclient, [self.account_1B.id])
+        self.vm_grant_policy.attachAccount(self.apiclient, [self.account_1B])
         
         self.debug("Listing VM for account: %s" % self.account_1B.id)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )
@@ -685,11 +685,11 @@ class TestVMIam(cloudstackTestCase):
 
         self.debug("Revoking VM %s read only access from account: %s by attaching policy to account" % (self.virtual_machine_1A.name, self.account_1B.name))
         
-        self.vm_grant_policy.detachAccount(self.apiclient, [self.account_1B.id])
+        self.vm_grant_policy.detachAccount(self.apiclient, [self.account_1B])
         
         self.debug("Listing VM for account: %s" % self.account_1B.id)
         self.apiclient.connection.apiKey = self.user_1B_apikey
-        self.apiclient.connection.secretKey = self.user_1B_secretkey
+        self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
                                             self.apiclient
                                             )

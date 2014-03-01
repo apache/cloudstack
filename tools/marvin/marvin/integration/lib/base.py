@@ -3698,7 +3698,7 @@ class IAMPolicy:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
-        return AclGroup(apiclient.createIAMPolicy(cmd).__dict__)
+        return IAMPolicy(apiclient.createIAMPolicy(cmd).__dict__)
 
     def update(self, apiclient):
         pass
