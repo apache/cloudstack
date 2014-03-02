@@ -31,8 +31,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.iam.AddAccountToIAMGroupCmd;
 import org.apache.cloudstack.api.command.iam.AddIAMPermissionToIAMPolicyCmd;
 import org.apache.cloudstack.api.command.iam.AttachIAMPolicyToAccountCmd;
@@ -52,6 +54,7 @@ import org.apache.cloudstack.api.response.iam.IAMGroupResponse;
 import org.apache.cloudstack.api.response.iam.IAMPermissionResponse;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.iam.api.IAMGroup;
@@ -59,6 +62,9 @@ import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 import org.apache.cloudstack.iam.api.IAMService;
+import org.apache.cloudstack.iam.server.IAMGroupVO;
+import org.apache.cloudstack.iam.server.IAMPolicyVO;
+import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO;
 
 import com.cloud.api.ApiServerService;
 import com.cloud.domain.Domain;
@@ -66,18 +72,50 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.UserIpv6AddressVO;
+import com.cloud.network.VpnUserVO;
+import com.cloud.network.as.AutoScalePolicyVO;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
+import com.cloud.network.as.ConditionVO;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.MonitoringServiceVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.dao.SslCertVO;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.projects.ProjectInvitationVO;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.tags.ResourceTagVO;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.NicSecondaryIpVO;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 
 @Local(value = {IAMApiService.class})
 public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Manager {
@@ -102,6 +140,53 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     @Inject
     MessageBus _messageBus;
+
+    @Inject
+    EntityManager _entityMgr;
+
+    private static final Map<IAMEntityType, Class<?>> s_typeMap = new HashMap<IAMEntityType, Class<?>>();
+    static {
+        s_typeMap.put(IAMEntityType.VirtualMachine, UserVmVO.class);
+        s_typeMap.put(IAMEntityType.Volume, VolumeVO.class);
+        s_typeMap.put(IAMEntityType.ResourceTag, ResourceTagVO.class);
+        s_typeMap.put(IAMEntityType.Account, AccountVO.class);
+        s_typeMap.put(IAMEntityType.AffinityGroup, AffinityGroupVO.class);
+        s_typeMap.put(IAMEntityType.AutoScalePolicy, AutoScalePolicyVO.class);
+        s_typeMap.put(IAMEntityType.AutoScaleVmProfile, AutoScaleVmProfileVO.class);
+        s_typeMap.put(IAMEntityType.AutoScaleVmGroup, AutoScaleVmGroupVO.class);
+        s_typeMap.put(IAMEntityType.Condition, ConditionVO.class);
+        s_typeMap.put(IAMEntityType.Vpc, VpcVO.class);
+        s_typeMap.put(IAMEntityType.VpcGateway, VpcGatewayVO.class);
+        s_typeMap.put(IAMEntityType.PrivateGateway, RemoteAccessVpnVO.class);
+        s_typeMap.put(IAMEntityType.VpnUser, VpnUserVO.class);
+        s_typeMap.put(IAMEntityType.VMSnapshot, VMSnapshotVO.class);
+        s_typeMap.put(IAMEntityType.VirtualMachineTemplate, VMTemplateVO.class);
+        s_typeMap.put(IAMEntityType.UserIpv6Address, UserIpv6AddressVO.class);
+        s_typeMap.put(IAMEntityType.StaticRoute, StaticRouteVO.class);
+        s_typeMap.put(IAMEntityType.SSHKeyPair, SSHKeyPairVO.class);
+        s_typeMap.put(IAMEntityType.Snapshot, SnapshotVO.class);
+        s_typeMap.put(IAMEntityType.Site2SiteVpnGateway, Site2SiteVpnGatewayVO.class);
+        s_typeMap.put(IAMEntityType.Site2SiteCustomerGateway, Site2SiteCustomerGatewayVO.class);
+        s_typeMap.put(IAMEntityType.Site2SiteVpnConnection, Site2SiteVpnConnectionVO.class);
+        s_typeMap.put(IAMEntityType.SecurityGroup, SecurityGroupVO.class);
+        s_typeMap.put(IAMEntityType.RemoteAccessVpn, RemoteAccessVpnVO.class);
+        s_typeMap.put(IAMEntityType.PublicIpAddress, IPAddressVO.class);
+        s_typeMap.put(IAMEntityType.ProjectInvitation, ProjectInvitationVO.class);
+        s_typeMap.put(IAMEntityType.NicSecondaryIp, NicSecondaryIpVO.class);
+        s_typeMap.put(IAMEntityType.NicIpAlias, NicIpAliasVO.class);
+        s_typeMap.put(IAMEntityType.Network, NetworkVO.class);
+        s_typeMap.put(IAMEntityType.IpAddress, IPAddressVO.class);
+        s_typeMap.put(IAMEntityType.InstanceGroup, InstanceGroupVO.class);
+        s_typeMap.put(IAMEntityType.GlobalLoadBalancerRule, GlobalLoadBalancerRuleVO.class);
+        s_typeMap.put(IAMEntityType.FirewallRule, FirewallRuleVO.class);
+        s_typeMap.put(IAMEntityType.PortForwardingRule, PortForwardingRuleVO.class);
+        s_typeMap.put(IAMEntityType.Event, EventVO.class);
+        s_typeMap.put(IAMEntityType.AsyncJob, AsyncJobVO.class);
+        s_typeMap.put(IAMEntityType.AclGroup, IAMGroupVO.class);
+        s_typeMap.put(IAMEntityType.AclPolicy, IAMPolicyVO.class);
+        s_typeMap.put(IAMEntityType.MonitorService, MonitoringServiceVO.class);
+        s_typeMap.put(IAMEntityType.SSLCert, SslCertVO.class);
+    }
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -666,6 +751,31 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         // delete the policy, which should detach it from groups and accounts
         _iamSrv.deleteIAMPolicy(policy.getId());
 
+    }
+
+    @Override
+    public Long getPermissionScopeId(String scope, String entityType, String scopeId) {
+        if (scopeId.equals("-1")) {
+            return -1L;
+        }
+        PermissionScope permScope = PermissionScope.valueOf(scope);
+        InternalIdentity entity = null;
+        switch (permScope) {
+        case DOMAIN:
+            entity = _domainDao.findByUuid(scopeId);
+            break;
+        case ACCOUNT:
+            entity = _accountDao.findByUuid(scopeId);
+            break;
+        case RESOURCE:
+            Class<?> clazz = s_typeMap.get(entityType);
+            entity = (InternalIdentity)_entityMgr.findByUuid(clazz, scopeId);
+        }
+
+        if (entity != null) {
+            return entity.getId();
+        }
+        throw new InvalidParameterValueException("Unable to find scopeId " + scopeId + " with scope " + scope + " and type " + entityType);
     }
 
     @Override

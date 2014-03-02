@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -32,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 
 import com.cloud.event.EventTypes;
@@ -68,8 +68,8 @@ public class RemoveIAMPermissionFromIAMPolicyCmd extends BaseAsyncCmd {
             required = false, description = "iam permission scope")
     private String scope;
 
-    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.UUID, required = false, description = "The ID of the permission scope id")
-    private Long scopeId;
+    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.STRING, required = false, description = "The ID of the permission scope id")
+    private String scopeId;
 
 
     /////////////////////////////////////////////////////
@@ -95,7 +95,8 @@ public class RemoveIAMPermissionFromIAMPolicyCmd extends BaseAsyncCmd {
     }
 
     public Long getScopeId() {
-        return scopeId;
+        // here we will convert the passed String UUID to Long ID since internally we store it as entity internal ID.
+        return _iamApiSrv.getPermissionScopeId(scope, entityType, scopeId);
     }
 
 
@@ -119,7 +120,7 @@ public class RemoveIAMPermissionFromIAMPolicyCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("IAM policy Id: " + getId());
-        IAMPolicy result = _iamApiSrv.removeIAMPermissionFromIAMPolicy(id, entityType, PermissionScope.valueOf(scope), scopeId, action);
+        IAMPolicy result = _iamApiSrv.removeIAMPermissionFromIAMPolicy(id, entityType, PermissionScope.valueOf(scope), getScopeId(), action);
         if (result != null) {
             IAMPolicyResponse response = _iamApiSrv.createIAMPolicyResponse(result);
             response.setResponseName(getCommandName());

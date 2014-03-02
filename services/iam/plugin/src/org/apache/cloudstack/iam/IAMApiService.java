@@ -81,4 +81,7 @@ public interface IAMApiService extends PluggableService {
 
     ListResponse<IAMPolicyResponse> listIAMPolicies(Long iamPolicyId, String iamPolicyName,
             Long domainId, Long startIndex, Long pageSize);
+
+    // Convert passed scope uuid to internal scope long id
+    Long getPermissionScopeId(String scope, String entityType, String scopeId);
 }

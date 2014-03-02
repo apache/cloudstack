@@ -37,8 +37,6 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.iam.IAMApiServiceImpl;
-import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.iam.IAMGroupResponse;
@@ -46,6 +44,8 @@ import org.apache.cloudstack.api.response.iam.IAMPermissionResponse;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.iam.IAMApiService;
+import org.apache.cloudstack.iam.IAMApiServiceImpl;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
@@ -67,6 +67,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -344,6 +345,11 @@ public class IAMApiServiceTest {
         @Bean
         public MessageBus messageBus() {
             return Mockito.mock(MessageBus.class);
+        }
+
+        @Bean
+        public EntityManager entityMgr() {
+            return Mockito.mock(EntityManager.class);
         }
 
         @Bean

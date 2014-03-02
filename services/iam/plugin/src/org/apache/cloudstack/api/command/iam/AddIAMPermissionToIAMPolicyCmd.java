@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -32,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission.Permission;
 
@@ -39,6 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.db.EntityManager;
 
 
 @APICommand(name = "addIAMPermissionToIAMPolicy", description = "Add IAM permission to an iam policy", responseObject = IAMPolicyResponse.class)
@@ -48,6 +49,8 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
 
     @Inject
     public IAMApiService _iamApiSrv;
+    @Inject
+    public EntityManager _entityMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -69,8 +72,8 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
  required = false, description = "iam permission scope")
     private String scope;
 
-    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.UUID, required = false, description = "The ID of the permission scope id")
-    private Long scopeId;
+    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.UUID, required = false, description = "The UUID of the permission scope id")
+    private String scopeId;
 
 
     /////////////////////////////////////////////////////
@@ -96,9 +99,9 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
     }
 
     public Long getScopeId() {
-        return scopeId;
+        // here we will convert the passed String UUID to Long ID since internally we store it as entity internal ID.
+        return _iamApiSrv.getPermissionScopeId(scope, entityType, scopeId);
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -123,7 +126,7 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("IAM policy Id: " + getId());
         // Only explicit ALLOW is supported for this release, no explicit deny
         IAMPolicy result = _iamApiSrv.addIAMPermissionToIAMPolicy(id, entityType, PermissionScope.valueOf(scope),
-                scopeId, action, Permission.Allow, false);
+                getScopeId(), action, Permission.Allow, false);
         if (result != null) {
             IAMPolicyResponse response = _iamApiSrv.createIAMPolicyResponse(result);
             response.setResponseName(getCommandName());
