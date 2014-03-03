@@ -2338,6 +2338,11 @@ div.detail-group.actions td {
   position: relative;
   top: 5px;
   left: 7px;
+  /*+text-shadow:0px -1px 1px #464646;*/
+  -moz-text-shadow: 0px -1px 1px #464646;
+  -webkit-text-shadow: 0px -1px 1px #464646;
+  -o-text-shadow: 0px -1px 1px #464646;
+  text-shadow: 0px -1px 1px #464646;
 }
 
 #header div.notifications:hover {
@@ -2594,10 +2599,9 @@ div.detail-group.actions td {
   position: relative;
   left: 14px;
   top: 13px;
-  font-size: 11px;
+  font-size: 12px;
   color: #515151;
   padding-left: 19px;
-  font-weight: bold;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;
@@ -3375,7 +3379,7 @@ div.toolbar div.filters select {
 #breadcrumbs .home {
   height: 21px;
   float: left;
-  font-size: 11px;
+  font-size: 13px;
   color: #FFFFFF;
   padding: 9px 5px 0px 8px;
   cursor: pointer;
@@ -3440,6 +3444,7 @@ div.toolbar div.filters select {
   top: 0px;
   margin-left: -10px;
   text-indent: 13px;
+  font-size: 13px;
 }
 
 #breadcrumbs div.active-project {
@@ -9267,8 +9272,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .project-switcher label {
   top: 29px;
   color: #FFFFFF;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
   float: left;
   margin-right: 7px;
   margin-top: 5px;
@@ -9277,7 +9281,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .project-switcher select {
   width: 70%;
   float: left;
-  margin-top: -1px;
+  margin-top: 0px;
   border: 1px solid #393939;
   /*+text-shadow:0px -1px 1px #373737;*/
   -moz-text-shadow: 0px -1px 1px #373737;
@@ -9285,7 +9289,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   -o-text-shadow: 0px -1px 1px #373737;
   text-shadow: 0px -1px 1px #373737;
   background: #515151;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 100;
   color: #FFFFFF;
 }
@@ -11919,10 +11923,10 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .region-switcher .title {
   display: inline-block;
   float: right;
-  padding: 10px 9px 0 34px;
+  padding: 9px 9px 0 34px;
   color: #FFFFFF;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 100;
   max-width: 285px;
   overflow: hidden;
   white-space: nowrap;
