@@ -3682,6 +3682,13 @@ Dialogs*/
   margin: 18px 0 0;
 }
 
+.ui-dialog .ui-widget-content .nothing-to-select .specify-ip {
+  margin-top: 28px;
+  padding-top: 21px;
+  font-size: 12px;
+  border-top: 1px solid #DFDFDF;
+}
+
 .ui-dialog-buttonset {
   width: 285px;
   margin: 0;

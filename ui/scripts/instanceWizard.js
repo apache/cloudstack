@@ -381,7 +381,7 @@
                         step6ContainerType = 'nothing-to-select';
                         $networkStep.find("#from_instance_page_1").hide();
                         $networkStep.find("#from_instance_page_2").hide();
-                        $networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);
+                        $networkStep.find("#from_vpc_tier").prepend("tier " + _s(args.context.networks[0].name));
                         $networkStep.find("#from_vpc_tier").show();
                     } else { //from Instance page
                         if (selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
