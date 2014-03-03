@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,7 +45,6 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @ACL(accessType = AccessType.OperateEntry, pointerToEntity = "securityGroupId")
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the egress rule", entityType=SecurityGroupRuleResponse.class)
     private Long id;
 
