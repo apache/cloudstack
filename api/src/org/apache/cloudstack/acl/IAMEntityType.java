@@ -38,8 +38,8 @@ public enum IAMEntityType {
     PortForwardingRule,
     Event,
     AsyncJob,
-    AclPolicy,
-    AclGroup,
+    IAMPolicy,
+    IAMGroup,
     MonitorService,
     SSLCert
 }

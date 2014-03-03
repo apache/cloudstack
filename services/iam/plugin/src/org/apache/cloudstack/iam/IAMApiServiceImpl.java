@@ -182,8 +182,8 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         s_typeMap.put(IAMEntityType.PortForwardingRule, PortForwardingRuleVO.class);
         s_typeMap.put(IAMEntityType.Event, EventVO.class);
         s_typeMap.put(IAMEntityType.AsyncJob, AsyncJobVO.class);
-        s_typeMap.put(IAMEntityType.AclGroup, IAMGroupVO.class);
-        s_typeMap.put(IAMEntityType.AclPolicy, IAMPolicyVO.class);
+        s_typeMap.put(IAMEntityType.IAMGroup, IAMGroupVO.class);
+        s_typeMap.put(IAMEntityType.IAMPolicy, IAMPolicyVO.class);
         s_typeMap.put(IAMEntityType.MonitorService, MonitoringServiceVO.class);
         s_typeMap.put(IAMEntityType.SSLCert, SslCertVO.class);
     }
