@@ -164,6 +164,7 @@ KEY_UP = 6;
 KEYBOARD_TYPE_COOKED = "us";
 KEYBOARD_TYPE_JP = "jp";
 KEYBOARD_TYPE_UK = "uk";
+KEYBOARD_TYPE_FR = "fr";
 
 //JP keyboard type
 
@@ -340,4 +341,326 @@ var	keyboardTables = [
                           }
                           ]
            }
-           }]
+           },
+	{tindex: 3, keyboardType: KEYBOARD_TYPE_FR, mappingTable:{
+		X11: [
+			// '*' doesn't work
+			{keycode: 220, browser: "Chrome", entry: 0x5c},
+			{keycode: 170, browser: "Firefox", entry: 0x5c},
+//ROW 1 AltGr
+			//[50 = ~]
+			{keycode: 50, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x32, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x32, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[51 = #]
+			{keycode: 51, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x33, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x33, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[52 = {]
+			{keycode: 52, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x34, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x34, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[53 = []
+			{keycode: 53, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x35, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x35, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[54 = |]
+			{keycode: 54, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x36, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x36, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[55 = `]
+			{keycode: 55, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x37, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x37, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[56 = \]
+			{keycode: 56, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x38, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x38, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[57 = ^]
+			{keycode: 57, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x39, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x39, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[48 = @]
+			{keycode: 48, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x30, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x30, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[219 = ]]
+			{keycode: 219, browser: "Chrome", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x2d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x2d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[169 = ]]
+			{keycode: 169, browser: "Firefox", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x2d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x2d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[187 = }]
+			{keycode: 187, browser: "Chrome", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x3d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x3d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[61 = }]
+			{keycode: 61, browser: "Firefox", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x3d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x3d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+//ROW 2 AltGr
+			//[69 = €]
+			{keycode: 69, entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x65, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x65, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[186 = ¤]
+			{keycode: 186, browser: "Chrome", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x5d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x5d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]},
+			//[164 = ¤]
+			{keycode: 164, browser: "Firefox", entry: [
+				{type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+				{type: KEY_DOWN, code: 0x5d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0x5d, modifiers: 0, altgr: true},
+				{type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+			]}
+		],
+		keyPress: [
+//ROW 1
+			//[178 = ²]
+			{keycode: 178, entry: [
+				{type: KEY_DOWN, code: 0x60, modifiers: 0},
+				{type: KEY_UP, code: 0x60, modifiers: 0}
+			]},
+			//[38 = &]
+			{keycode: 38, entry: [
+				{type: KEY_DOWN, code: 0x31, modifiers: 0},
+				{type: KEY_UP, code: 0x31, modifiers: 0}
+			]},
+			//[233 = é]
+			{keycode: 233, entry: [
+				{type: KEY_DOWN, code: 0x32, modifiers: 0},
+				{type: KEY_UP, code: 0x32, modifiers: 0}
+			]},
+			//[34 = "]
+			{keycode: 34, entry: [
+				{type: KEY_DOWN, code: 0x33, modifiers: 0},
+				{type: KEY_UP, code: 0x33, modifiers: 0}
+			]},
+			//[39 = ']
+			{keycode: 39, entry: [
+				{type: KEY_DOWN, code: 0x34, modifiers: 0},
+				{type: KEY_UP, code: 0x34, modifiers: 0}
+			]},
+			//[40 = (]
+			{keycode: 40, entry: [
+				{type: KEY_DOWN, code: 0x35, modifiers: 0},
+				{type: KEY_UP, code: 0x35, modifiers: 0}
+			]},
+			//[45 = -]
+			{keycode: 45, entry: [
+				{type: KEY_DOWN, code: 0x36, modifiers: 0},
+				{type: KEY_UP, code: 0x36, modifiers: 0}
+			]},
+			//[232 = è]
+			{keycode: 232, entry: [
+				{type: KEY_DOWN, code: 0x37, modifiers: 0},
+				{type: KEY_UP, code: 0x37, modifiers: 0}
+			]},
+			//[95 = _]
+			{keycode: 95, entry: [
+				{type: KEY_DOWN, code: 0x38, modifiers: 0},
+				{type: KEY_UP, code: 0x38, modifiers: 0}
+			]},
+			//[231 = ç]
+			{keycode: 231, entry: [
+				{type: KEY_DOWN, code: 0x39, modifiers: 0},
+				{type: KEY_UP, code: 0x39, modifiers: 0}
+			]},
+			//[224 = à]
+			{keycode: 224, entry: [
+				{type: KEY_DOWN, code: 0x30, modifiers: 0},
+				{type: KEY_UP, code: 0x30, modifiers: 0}
+			]},
+			//[41 = )]
+			{keycode: 41, entry: [
+				{type: KEY_DOWN, code: 0x2d, modifiers: 0},
+				{type: KEY_UP, code: 0x2d, modifiers: 0}
+			]},
+			//[176 = =]
+			{keycode: 176, entry: [
+				{type: KEY_DOWN, code: 0x2d, modifiers: 64},
+				{type: KEY_UP, code: 0x2d, modifiers: 64}
+			]},
+			//[181 = µ]
+			{keycode: 181, entry: [
+				{type: KEY_DOWN, code: 0x5c, modifiers: 64},
+				{type: KEY_UP, code: 0x5c, modifiers: 64}
+			]},
+
+//ROW 2
+			//[97 = a]
+			{keycode: 97, entry: [
+				{type: KEY_DOWN, code: 0x71, modifiers: 0},
+				{type: KEY_UP, code: 0x71, modifiers: 0}
+			]},
+			//[65 = A]
+			{keycode: 65, entry: [
+				{type: KEY_DOWN, code: 0x51, modifiers: 64},
+				{type: KEY_UP, code: 0x51, modifiers: 64}
+			]},
+			//[122 = z]
+			{keycode: 122, entry: [
+				{type: KEY_DOWN, code: 0x77, modifiers: 0},
+				{type: KEY_UP, code: 0x77, modifiers: 0}
+			]},
+			//[90 = Z]
+			{keycode: 90, entry: [
+				{type: KEY_DOWN, code: 0x57, modifiers: 64},
+				{type: KEY_UP, code: 0x57, modifiers: 64}
+			]},
+			//[94 = ^]
+			{keycode: 94, entry: [
+				{type: KEY_DOWN, code: 0x5b, modifiers: 0},
+				{type: KEY_UP, code: 0x5b, modifiers: 0}
+			]},
+			//[168 = ¨]
+			{keycode: 168, entry: [
+				{type: KEY_DOWN, code: 0x5b, modifiers: 64},
+				{type: KEY_UP, code: 0x5b, modifiers: 64}
+			]},
+			//[36 = $]
+			{keycode: 36, entry: [
+				{type: KEY_DOWN, code: 0x5d, modifiers: 0},
+				{type: KEY_UP, code: 0x5d, modifiers: 0}
+			]},
+			//[163 = £]
+			{keycode: 163, entry: [
+				{type: KEY_DOWN, code: 0x5d, modifiers: 64},
+				{type: KEY_UP, code: 0x5d, modifiers: 64}
+			]},
+
+//ROW 3
+			//[113 = q]
+			{keycode: 113, entry: [
+				{type: KEY_DOWN, code: 0x61, modifiers: 0},
+				{type: KEY_UP, code: 0x61, modifiers: 0}
+			]},
+			//[81 = Q]
+			{keycode: 81, entry: [
+				{type: KEY_DOWN, code: 0x41, modifiers: 64},
+				{type: KEY_UP, code: 0x41, modifiers: 64}
+			]},
+			//[109 = m]
+			{keycode: 109, entry: [
+				{type: KEY_DOWN, code: 0x3b, modifiers: 0},
+				{type: KEY_UP, code: 0x3b, modifiers: 0}
+			]},
+			//[77 = M]
+			{keycode: 77, entry: [
+				{type: KEY_DOWN, code: 0x3b, modifiers: 64},
+				{type: KEY_UP, code: 0x3b, modifiers: 64}
+			]},
+			//[249 = ù]
+			{keycode: 249, entry: [
+				{type: KEY_DOWN, code: 0x27, modifiers: 0},
+				{type: KEY_UP, code: 0x27, modifiers: 0}
+			]},
+			//[37 = %]
+			{keycode: 37, entry: [
+				{type: KEY_DOWN, code: 0x27, modifiers: 64},
+				{type: KEY_UP, code: 0x27, modifiers: 64}
+			]},
+
+//ROW 4
+//need to add "<" ">" key
+			//[119 = w]
+			{keycode: 119, entry: [
+				{type: KEY_DOWN, code: 0x7a, modifiers: 0},
+				{type: KEY_UP, code: 0x7a, modifiers: 0}
+			]},
+			//[87 = W]
+			{keycode: 87, entry: [
+				{type: KEY_DOWN, code: 0x5a, modifiers: 64},
+				{type: KEY_UP, code: 0x5a, modifiers: 64}
+			]},
+			//[44 = ,]
+			{keycode: 44, entry: [
+				{type: KEY_DOWN, code: 0x6d, modifiers: 0},
+				{type: KEY_UP, code: 0x6d, modifiers: 0}
+			]},
+			//[63 = ?]
+			{keycode: 63, entry: [
+				{type: KEY_DOWN, code: 0x4d, modifiers: 64},
+				{type: KEY_UP, code: 0x4d, modifiers: 64}
+			]},
+			//[59 = ;]
+			{keycode: 59, entry: [
+				{type: KEY_DOWN, code: 0x2c, modifiers: 0},
+				{type: KEY_UP, code: 0x2c, modifiers: 0}
+			]},
+			//[46 = .]
+			{keycode: 46, entry: [
+				{type: KEY_DOWN, code: 0x2c, modifiers: 64},
+				{type: KEY_UP, code: 0x2c, modifiers: 64}
+			]},
+			//[58 = :]
+			{keycode: 58, entry: [
+				{type: KEY_DOWN, code: 0x2e, modifiers: 0},
+				{type: KEY_UP, code: 0x2e, modifiers: 0}
+			]},
+			//[47 = /]
+			{keycode: 47, entry: [
+				{type: KEY_DOWN, code: 0x2e, modifiers: 64},
+				{type: KEY_UP, code: 0x2e, modifiers: 64}
+			]},
+			//[33 = !]
+			{keycode: 33, entry: [
+				{type: KEY_DOWN, code: 0x2f, modifiers: 0},
+				{type: KEY_UP, code: 0x2f, modifiers: 0}
+			]},
+			//[167 = §]
+			{keycode: 167, entry: [
+				{type: KEY_DOWN, code: 0x2f, modifiers: 64},
+				{type: KEY_UP, code: 0x2f, modifiers: 64}
+			]},
+		]
+	}}
+]
