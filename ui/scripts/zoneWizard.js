@@ -1872,7 +1872,7 @@
             secondaryStorage: {
                 fields: {                    
                     provider: {
-                        label: 'Provider',
+                        label: 'label.provider',
                         select: function(args) {
                         	var storageproviders = [];  
                         	storageproviders.push({ id: '', description: ''});                         	
