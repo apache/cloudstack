@@ -19,8 +19,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -28,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.utils.Pair;
@@ -48,6 +48,9 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "id of vpc")
     private Long vpcId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,6 +61,14 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////

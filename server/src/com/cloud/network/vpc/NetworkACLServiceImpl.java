@@ -118,10 +118,13 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
         String keyword = cmd.getKeyword();
+        Boolean display = cmd.getDisplay();
+
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), Op.IN);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -138,6 +141,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if(id != null){
@@ -477,6 +484,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String action = cmd.getAction();
         Map<String, String> tags = cmd.getTags();
         Account caller = CallContext.current().getCallingAccount();
+        Boolean display = cmd.getDisplay();
 
         Filter filter = new Filter(NetworkACLItemVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkACLItemVO> sb = _networkACLItemDao.createSearchBuilder();
@@ -486,6 +494,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), Op.EQ);
         sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -507,6 +516,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         SearchCriteria<NetworkACLItemVO> sc = sb.create();
+
+        if (display != null) {
+            sc.setParameters("display", display);
+        }
 
         if (id != null) {
             sc.setParameters("id", id);

@@ -454,6 +454,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         String otherDeployParams = cmd.getOtherDeployParams();
         Long serviceOffId = cmd.getServiceOfferingId();
         Long zoneId = cmd.getZoneId();
+        Boolean display = cmd.getDisplay();
 
         SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(_autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmProfileVO> sb = searchWrapper.getSearchBuilder();
@@ -463,6 +464,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
         sb.and("otherDeployParams", sb.entity().getOtherDeployParams(), SearchCriteria.Op.LIKE);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
         SearchCriteria<AutoScaleVmProfileVO> sc = searchWrapper.buildSearchCriteria();
 
         if (id != null) {
@@ -481,6 +483,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         return searchWrapper.search();
@@ -864,6 +870,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long loadBalancerId = cmd.getLoadBalancerId();
         Long profileId = cmd.getProfileId();
         Long zoneId = cmd.getZoneId();
+        Boolean forDisplay = cmd.getDisplay();
 
         SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<AutoScaleVmGroupVO>(_autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
@@ -872,6 +879,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sb.and("loadBalancerId", sb.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
         sb.and("profileId", sb.entity().getProfileId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (policyId != null) {
             SearchBuilder<AutoScaleVmGroupPolicyMapVO> asVmGroupPolicySearch = _autoScaleVmGroupPolicyMapDao.createSearchBuilder();
@@ -894,6 +902,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
         if (policyId != null) {
             sc.setJoinParameters("asVmGroupPolicySearch", "policyId", policyId);
+        }
+        if (forDisplay != null) {
+            sc.setParameters("display", forDisplay);
         }
         return searchWrapper.search();
     }

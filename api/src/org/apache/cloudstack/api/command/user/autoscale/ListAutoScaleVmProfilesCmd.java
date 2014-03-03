@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -58,6 +59,9 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, since = "4.4", description = "availability zone for the auto deployed virtual machine")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -81,6 +85,15 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     public Long getZoneId() {
         return zoneId;
     }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

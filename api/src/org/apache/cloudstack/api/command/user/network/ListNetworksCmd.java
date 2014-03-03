@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -81,6 +82,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to vpc")
     private Boolean forVpc;
 
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -137,6 +141,13 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         return forVpc;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
