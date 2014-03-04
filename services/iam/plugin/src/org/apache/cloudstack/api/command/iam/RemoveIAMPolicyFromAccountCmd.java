@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -59,7 +60,7 @@ public class RemoveIAMPolicyFromAccountCmd extends BaseAsyncCmd {
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = IAMPolicyResponse.class, description = "comma separated list of iam policy id that are going to be applied to the iam group.")
+    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AccountResponse.class, description = "comma separated list of iam policy id that are going to be applied to the iam group.")
     private List<Long> accountIdList;
 
 

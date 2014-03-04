@@ -607,9 +607,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
                 // add entries in acl_group_policy_map table
                 for (Long acctId : acctIds) {
                     IAMAccountPolicyMapVO acctMap = _aclAccountPolicyMapDao.findByAccountAndPolicy(acctId, policyId);
-                    if (acctMap == null) {
-                        // not there already
-                        acctMap = new IAMAccountPolicyMapVO(acctId, policyId);
+                    if (acctMap != null) {
+                        // exists
                         _aclAccountPolicyMapDao.remove(acctMap.getId());
                     }
                 }
