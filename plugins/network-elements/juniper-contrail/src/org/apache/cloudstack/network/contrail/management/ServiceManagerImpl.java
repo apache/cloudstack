@@ -27,6 +27,14 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.types.ServiceInstance;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
+import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
+import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
+import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -36,22 +44,16 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
@@ -59,16 +61,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
-import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
-import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
-import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.types.ServiceInstance;
-import net.juniper.contrail.api.types.VirtualNetwork;
 
 @Local(value =  {ServiceManager.class})
 public class ServiceManagerImpl implements ServiceManager {
@@ -106,12 +98,12 @@ public class ServiceManagerImpl implements ServiceManager {
         
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
         
-        LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>();
+        LinkedHashMap<NetworkVO, List<? extends NicProfile>> networks = new LinkedHashMap<NetworkVO, List<? extends NicProfile>>();
         NetworkVO linklocal = (NetworkVO) _networkModel.getSystemNetworkByZoneAndTrafficType(zone.getId(),
                 TrafficType.Management);
-        networks.put(linklocal, null);
-        networks.put((NetworkVO) left, null);
-        networks.put((NetworkVO) right, null);
+        networks.put(linklocal, new ArrayList<NicProfile>());
+        networks.put((NetworkVO)left, new ArrayList<NicProfile>());
+        networks.put((NetworkVO)right, new ArrayList<NicProfile>());
         
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
         ServiceVirtualMachine svm = new ServiceVirtualMachine(id, instanceName, name, template.getId(),

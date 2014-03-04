@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.lb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,12 +27,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -77,7 +77,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -610,7 +609,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 return internalLbVms;
             }
 
-            LinkedHashMap<Network, NicProfile> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
+            LinkedHashMap<Network, List<? extends NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation
             DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(),
                 networks, false);
@@ -646,11 +645,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return internalLbProvider.getId();
     }
     
-    protected LinkedHashMap<Network, NicProfile> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
         //Form networks
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         
         //1) Guest network - default
         if (guestNetwork != null) {
@@ -669,7 +668,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             String gatewayCidr = guestNetwork.getCidr();
             guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             guestNic.setDefaultNic(true);
-            networks.put(guestNetwork, guestNic);
+            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
         }
 
         //2) Control network
@@ -677,7 +676,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         List<? extends NetworkOffering> offerings = _ntwkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
         Network controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
-        networks.put(controlConfig, null);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
 
         return networks;
     }
@@ -711,7 +710,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     
     protected DomainRouterVO deployInternalLbVm(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             long internalLbProviderId, long svcOffId, Long vpcId,
-        LinkedHashMap<Network, NicProfile> networks,
+        LinkedHashMap<Network, List<? extends NicProfile>> networks,
         boolean startVm) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {

@@ -19,6 +19,7 @@ package com.cloud.storage.secondary;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,8 +31,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -42,6 +41,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -553,14 +553,15 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-            networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic);
+            networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
+                    new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
             for (NetworkOffering offering : offerings) {
-                networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null);
+                networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<NicProfile>());
             }
         } catch (ConcurrentOperationException e) {
             s_logger.info("Unable to setup due to concurrent operation. " + e);

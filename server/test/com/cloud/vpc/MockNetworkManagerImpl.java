@@ -682,7 +682,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks)
+    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks)
             throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         

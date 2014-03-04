@@ -364,7 +364,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(String vmInstanceName, final VirtualMachineTemplate template, ServiceOffering serviceOffering, final Pair<? extends DiskOffering, Long> rootDiskOffering,
-        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, final LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
+        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException {
 
         VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
@@ -423,7 +423,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, LinkedHashMap<? extends Network, ? extends NicProfile> networks,
+    public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, LinkedHashMap<? extends Network,List<? extends NicProfile>> networks,
             DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException {
         allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOffering, Long>(serviceOffering, null), null, networks, plan, hyperType);
     }
