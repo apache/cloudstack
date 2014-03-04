@@ -4221,6 +4221,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Stopped:
         case Migrating:
             s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-off report while there is no pending jobs on it");
+            VirtualMachineGuru vmGuru = getVmGuru(vm);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+            sendStop(vmGuru, profile, true);
+
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
             } catch (NoTransitionException e) {
@@ -4233,9 +4237,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-off report from hypervisor");
 
-            VirtualMachineGuru vmGuru = getVmGuru(vm);
-            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            sendStop(vmGuru, profile, true);
             break;
 
         case Destroyed:
