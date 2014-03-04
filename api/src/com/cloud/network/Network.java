@@ -57,7 +57,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
-        public static final Service Connectivity = new Service("Connectivity");
+        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter);
 
         private final String name;
         private final Capability[] caps;
@@ -186,6 +186,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability SslTermination = new Capability("SslTermination");
         public static final Capability LbSchemes = new Capability("LbSchemes");
         public static final Capability DhcpAccrossMultipleSubnets = new Capability("DhcpAccrossMultipleSubnets");
+        public static final Capability DistributedRouter = new Capability("DistributedRouter");
 
         private final String name;
 

@@ -588,6 +588,7 @@ public class ApiConstants {
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
     public static final String REMAININGCAPACITY = "remainingcapacity";
+    public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
 
 
     public enum HostDetails {
