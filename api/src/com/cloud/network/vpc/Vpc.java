@@ -73,4 +73,10 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     boolean isRestartRequired();
 
     boolean isDisplay();
+
+    /**
+     *
+     * @return true if VPC is configured to use distributed router to provides one-hop forwarding and hypervisor based ACL
+     */
+    boolean usesDistributedRouter();
 }

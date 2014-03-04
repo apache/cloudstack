@@ -728,13 +728,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 networkDomain = "cs" + Long.toHexString(owner.getId()) + NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
             }
         }
-
-        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc);
+        boolean useDistributedRouter = vpcOff.supportsDistributedRouter();
+        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain, displayVpc, useDistributedRouter);
     }
 
     @DB
     protected Vpc createVpc(final long zoneId, final long vpcOffId, final Account vpcOwner, final String vpcName, final String displayText, final String cidr,
-            final String networkDomain, final Boolean displayVpc) {
+            final String networkDomain, final Boolean displayVpc, final boolean useDistributedRouter) {
 
         //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
@@ -756,7 +756,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(TransactionStatus status) {
-                VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, networkDomain);
+                VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId,
+                        cidr, networkDomain, useDistributedRouter);
                 if (displayVpc != null) {
                     vpc.setDisplay(displayVpc);
                 }
