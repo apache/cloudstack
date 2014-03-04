@@ -29,6 +29,7 @@ import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.FinishAggregationCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -46,6 +47,7 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.StartAggregationCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
@@ -72,6 +74,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -111,27 +116,34 @@ public class VirtualRoutingResource {
         protected static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
         protected static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
         protected static final String VPN_L2TP = "vpn_l2tp.sh";
+
+        protected static final String VR_CFG = "vr_cfg.sh";
     }
 
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
+    private Map <String, Queue> _vrAggregateCommandsSet;
 
     private String _name;
     private int _sleep;
     private int _retry;
     private int _port;
 
+    private String _cfgVersion = "1.0";
+
     public VirtualRoutingResource(VirtualRouterDeployer deployer) {
         this._vrDeployer = deployer;
     }
 
     public Answer executeRequest(final NetworkElementCommand cmd) {
+        boolean aggregated = false;
         try {
             ExecutionResult rc = _vrDeployer.prepareCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to prepare VR command due to " + rc.getDetails());
                 return new Answer(cmd, false, rc.getDetails());
             }
+            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
             assert cmd.getRouterAccessIp() != null : "Why there is no access IP for VR?";
 
@@ -139,50 +151,22 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
-            List<ConfigItem> cfg;
-            if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-                cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
-            } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                cfg = generateConfig((SetPortForwardingRulesCommand)cmd);
-            } else if (cmd instanceof SetStaticRouteCommand) {
-                cfg = generateConfig((SetStaticRouteCommand)cmd);
-            } else if (cmd instanceof SetStaticNatRulesCommand) {
-                cfg = generateConfig((SetStaticNatRulesCommand)cmd);
-            } else if (cmd instanceof LoadBalancerConfigCommand) {
-                cfg = generateConfig((LoadBalancerConfigCommand)cmd);
-            } else if (cmd instanceof SavePasswordCommand) {
-                cfg = generateConfig((SavePasswordCommand)cmd);
-            } else if (cmd instanceof DhcpEntryCommand) {
-                cfg = generateConfig((DhcpEntryCommand)cmd);
-            } else if (cmd instanceof CreateIpAliasCommand) {
-                cfg = generateConfig((CreateIpAliasCommand)cmd);
-            } else if (cmd instanceof DnsMasqConfigCommand) {
-                cfg = generateConfig((DnsMasqConfigCommand)cmd);
-            } else if (cmd instanceof DeleteIpAliasCommand) {
-                cfg = generateConfig((DeleteIpAliasCommand)cmd);
-            } else if (cmd instanceof VmDataCommand) {
-                cfg = generateConfig((VmDataCommand)cmd);
-            } else if (cmd instanceof SetFirewallRulesCommand) {
-                cfg = generateConfig((SetFirewallRulesCommand)cmd);
-            } else if (cmd instanceof BumpUpPriorityCommand) {
-                cfg = generateConfig((BumpUpPriorityCommand)cmd);
-            } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-                cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
-            } else if (cmd instanceof VpnUsersCfgCommand) {
-                cfg = generateConfig((VpnUsersCfgCommand)cmd);
-            } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-                cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
-            } else if (cmd instanceof SetMonitorServiceCommand) {
-                cfg = generateConfig((SetMonitorServiceCommand)cmd);
-            } else if (cmd instanceof SetupGuestNetworkCommand) {
-                cfg = generateConfig((SetupGuestNetworkCommand)cmd);
-            } else if (cmd instanceof SetNetworkACLCommand) {
-                cfg = generateConfig((SetNetworkACLCommand)cmd);
-            } else if (cmd instanceof SetSourceNatCommand) {
-                cfg = generateConfig((SetSourceNatCommand)cmd);
-            } else if (cmd instanceof IpAssocCommand) {
-                cfg = generateConfig((IpAssocCommand)cmd);
-            } else {
+            if (cmd instanceof StartAggregationCommand) {
+                return execute((StartAggregationCommand)cmd);
+            } else if (cmd instanceof FinishAggregationCommand) {
+                return execute((FinishAggregationCommand)cmd);
+            }
+
+            if (_vrAggregateCommandsSet.containsKey(routerName)) {
+                _vrAggregateCommandsSet.get(routerName).add(cmd);
+                aggregated = true;
+                // Clean up would be done after command has been executed
+                //TODO: Deal with group answer as well
+                return new Answer(cmd);
+            }
+
+            List<ConfigItem> cfg = generateCommandCfg(cmd);
+            if (cfg == null) {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
 
@@ -190,9 +174,11 @@ public class VirtualRoutingResource {
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
-            ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
-            if (!rc.isSuccess()) {
-                s_logger.error("Failed to cleanup VR command due to " + rc.getDetails());
+            if (!aggregated) {
+                ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
+                if (!rc.isSuccess()) {
+                    s_logger.error("Failed to cleanup VR command due to " + rc.getDetails());
+                }
             }
         }
     }
@@ -952,6 +938,8 @@ public class VirtualRoutingResource {
         if (_vrDeployer == null) {
             throw new ConfigurationException("Unable to find the resource for VirtualRouterDeployer!");
         }
+
+        _vrAggregateCommandsSet = new HashMap<>();
         return true;
     }
 
@@ -1030,4 +1018,110 @@ public class VirtualRoutingResource {
 
         return false;
     }
+
+    private Answer execute(StartAggregationCommand cmd) {
+        // Access IP would be used as ID for router
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        assert routerName != null;
+        Queue<NetworkElementCommand> queue = new LinkedBlockingQueue<>();
+        _vrAggregateCommandsSet.put(routerName, queue);
+        return new Answer(cmd);
+    }
+
+    private List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
+        List<ConfigItem> cfg;
+        if (cmd instanceof SetPortForwardingRulesVpcCommand) {
+            cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
+        } else if (cmd instanceof SetPortForwardingRulesCommand) {
+            cfg = generateConfig((SetPortForwardingRulesCommand)cmd);
+        } else if (cmd instanceof SetStaticRouteCommand) {
+            cfg = generateConfig((SetStaticRouteCommand)cmd);
+        } else if (cmd instanceof SetStaticNatRulesCommand) {
+            cfg = generateConfig((SetStaticNatRulesCommand)cmd);
+        } else if (cmd instanceof LoadBalancerConfigCommand) {
+            cfg = generateConfig((LoadBalancerConfigCommand)cmd);
+        } else if (cmd instanceof SavePasswordCommand) {
+            cfg = generateConfig((SavePasswordCommand)cmd);
+        } else if (cmd instanceof DhcpEntryCommand) {
+            cfg = generateConfig((DhcpEntryCommand)cmd);
+        } else if (cmd instanceof CreateIpAliasCommand) {
+            cfg = generateConfig((CreateIpAliasCommand)cmd);
+        } else if (cmd instanceof DnsMasqConfigCommand) {
+            cfg = generateConfig((DnsMasqConfigCommand)cmd);
+        } else if (cmd instanceof DeleteIpAliasCommand) {
+            cfg = generateConfig((DeleteIpAliasCommand)cmd);
+        } else if (cmd instanceof VmDataCommand) {
+            cfg = generateConfig((VmDataCommand)cmd);
+        } else if (cmd instanceof SetFirewallRulesCommand) {
+            cfg = generateConfig((SetFirewallRulesCommand)cmd);
+        } else if (cmd instanceof BumpUpPriorityCommand) {
+            cfg = generateConfig((BumpUpPriorityCommand)cmd);
+        } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
+            cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
+        } else if (cmd instanceof VpnUsersCfgCommand) {
+            cfg = generateConfig((VpnUsersCfgCommand)cmd);
+        } else if (cmd instanceof Site2SiteVpnCfgCommand) {
+            cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
+        } else if (cmd instanceof SetMonitorServiceCommand) {
+            cfg = generateConfig((SetMonitorServiceCommand)cmd);
+        } else if (cmd instanceof SetupGuestNetworkCommand) {
+            cfg = generateConfig((SetupGuestNetworkCommand)cmd);
+        } else if (cmd instanceof SetNetworkACLCommand) {
+            cfg = generateConfig((SetNetworkACLCommand)cmd);
+        } else if (cmd instanceof SetSourceNatCommand) {
+            cfg = generateConfig((SetSourceNatCommand)cmd);
+        } else if (cmd instanceof IpAssocCommand) {
+            cfg = generateConfig((IpAssocCommand)cmd);
+        } else {
+            return null;
+        }
+        return cfg;
+    }
+
+    private Answer execute(FinishAggregationCommand cmd) {
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        assert routerName != null;
+        assert cmd.getRouterAccessIp() != null;
+        Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append("#Apache CloudStack Virtual Router Config File\n");
+            sb.append("<version>\n" + _cfgVersion + "\n</version>\n");
+            for (NetworkElementCommand command : queue) {
+                List<ConfigItem> cfg = generateCommandCfg(command);
+                if (cfg == null) {
+                    s_logger.warn("Unknown commands for VirtualRoutingResource, but continue: " + cmd.toString());
+                }
+
+                for (ConfigItem c : cfg) {
+                    if (c.isFile()) {
+                        sb.append("<file>\n");
+                        sb.append(c.getFilePath() + c.getFileName() + "\n");
+                        sb.append(c.getFileContents() + "\n");
+                        sb.append("</file>\n");
+                    } else {
+                        sb.append("<script>\n");
+                        sb.append("/opt/cloud/bin/" + c.getScript() + " " + c.getArgs() + "\n");
+                        sb.append("</script>\n");
+                    }
+                }
+            }
+            String cfgFilePath = "/var/cache/cloud/";
+            String cfgFileName = "VR-"+ UUID.randomUUID().toString() + ".cfg";
+            ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), cfgFilePath, cfgFileName, sb.toString());
+            if (!result.isSuccess()) {
+                return new Answer(cmd, false, result.getDetails());
+            }
+
+            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_CFG, "-c " + cfgFilePath + cfgFileName);
+            if (!result.isSuccess()) {
+                return new Answer(cmd, false, result.getDetails());
+            }
+            return new Answer(cmd);
+        } finally {
+            queue.clear();
+            _vrAggregateCommandsSet.remove(routerName);
+        }
+    }
+
 }

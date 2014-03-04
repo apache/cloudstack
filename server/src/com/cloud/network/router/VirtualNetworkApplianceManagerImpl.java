@@ -2736,12 +2736,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             final Commands cmds = new Commands(Command.OnError.Stop);
             createApplyVpnCommands(true, vpn, router, cmds);
 
-            try {
-                _agentMgr.send(router.getHostId(), cmds);
-            } catch (final OperationTimedoutException e) {
-                s_logger.debug("Failed to start remote access VPN: ", e);
-                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+            if (!sendCommandsToRouter(router, cmds)) {
+                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId());
             }
+
             Answer answer = cmds.getAnswer("users");
             if (!answer.getResult()) {
                 s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " +
