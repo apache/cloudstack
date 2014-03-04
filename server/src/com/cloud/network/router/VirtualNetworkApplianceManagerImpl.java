@@ -17,13 +17,91 @@
 
 package com.cloud.network.router;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.NetworkUsageAnswer;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.routing.*;
-import com.cloud.agent.api.to.*;
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.DhcpTO;
+import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.MonitorServiceTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
@@ -35,8 +113,14 @@ import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
-import com.cloud.dc.*;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -47,23 +131,66 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.maint.Version;
-import com.cloud.network.*;
+import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.MonitoringService;
+import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.SshKeysDistriMonitor;
+import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.VpnUser;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.*;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.MonitoringServiceDao;
+import com.cloud.network.dao.MonitoringServiceVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
@@ -72,9 +199,15 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.rules.*;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatImpl;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
@@ -91,7 +224,12 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.*;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.User;
+import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserStatsLogVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
@@ -103,35 +241,43 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.*;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicIpAlias;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineGuru;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.dao.*;
-import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.*;
-import java.util.concurrent.*;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
@@ -1427,17 +1573,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 int count = routerCount - routers.size();
                 DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                    LinkedHashMap<Network, NicProfile> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
-                        new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                    LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(
+                            publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-                    DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId,
-                        null, networks, false, null);
+                    DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
 
                     if (router != null) {
                         _routerDao.addRouterToGuestNetwork(router, guestNetwork);
                         routers.add(router);
-                    }
                 }
+            }
             }
         } finally {
             if (lock != null) {
@@ -1478,7 +1623,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         VirtualRouterProvider vrProvider,
         long svcOffId,
         Long vpcId,
-        LinkedHashMap<Network, NicProfile> networks,
+        LinkedHashMap<Network, List<? extends NicProfile>> networks,
         boolean startRouter,
         List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
         InsufficientAddressCapacityException,
@@ -1626,7 +1771,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return hypervisors;
     }
 
-    protected LinkedHashMap<Network, NicProfile> createRouterNetworks(Account owner,
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(Account owner,
         boolean isRedundant,
             DeploymentPlan plan, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
@@ -1638,7 +1783,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         
         //Form networks
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         
         //1) Guest network
         boolean hasGuestNetwork = false;
@@ -1695,7 +1840,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 gatewayNic.setDefaultNic(true);
             }
             
-            networks.put(guestNetwork, gatewayNic);
+            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
             hasGuestNetwork = true;
         }
 
@@ -1704,7 +1849,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
         Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        networks.put(controlConfig, null);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
         
         
         //3) Public network
@@ -1741,7 +1886,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
-            networks.put(publicNetworks.get(0), defaultNic);
+            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
 
         return networks;

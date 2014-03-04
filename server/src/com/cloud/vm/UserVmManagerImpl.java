@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,9 +34,6 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -83,6 +81,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -4827,10 +4827,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
+            LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
             NicProfile profile = new NicProfile();
             profile.setDefaultNic(true);
-            networks.put(networkList.get(0), profile);
+            networks.put(networkList.get(0), new ArrayList<NicProfile>(Arrays.asList(profile)));
 
             VirtualMachine vmi = _itMgr.findById(vm.getId());
             VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
@@ -4952,7 +4952,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 // add the new nics
-                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
                 int toggle = 0;
                 for (NetworkVO appNet : applicableNetworks) {
                     NicProfile defaultNic = new NicProfile();
@@ -4960,7 +4960,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         defaultNic.setDefaultNic(true);
                         toggle++;
                     }
-                    networks.put(appNet, defaultNic);
+                    networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
                 }
                 VirtualMachine vmi = _itMgr.findById(vm.getId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);

@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -81,14 +82,14 @@ public interface VirtualMachineManager extends Manager {
         ServiceOffering serviceOffering,
         Pair<? extends DiskOffering, Long> rootDiskOffering,
         LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
-        LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks,
+        LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks,
         DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName,
         VirtualMachineTemplate template,
         ServiceOffering serviceOffering,
-        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles,
+        LinkedHashMap<? extends Network,List<? extends NicProfile>> networkProfiles,
         DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
