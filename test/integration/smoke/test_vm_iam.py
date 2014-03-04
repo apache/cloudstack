@@ -262,7 +262,7 @@ class TestVMIam(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.apiclient = super(TestVMIAM, self).getClsTestClient().getApiClient()
+        self.apiclient = super(TestVMIam, self).getClsTestClient().getApiClient()
         cleanup_resources(self.apiclient, self._cleanup)
         return
 
