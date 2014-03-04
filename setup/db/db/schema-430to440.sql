@@ -739,5 +739,5 @@ UPDATE `cloud`.`guest_os_hypervisor` SET `created` = now();
 ALTER TABLE `cloud`.`guest_os` ADD COLUMN `created` datetime COMMENT 'Time when Guest OS was created in system';
 ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when Guest OS was removed if deleted, else NULL';
 UPDATE `cloud`.`guest_os` SET `created` = now();
-
 ALTER TABLE `cloud`.`vm_reservation` ADD COLUMN `deployment_planner` varchar(40) DEFAULT NULL COMMENT 'Preferred deployment planner for the vm';
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_distributed_router boolean default false;

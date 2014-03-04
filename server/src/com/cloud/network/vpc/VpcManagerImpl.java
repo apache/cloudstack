@@ -18,8 +18,10 @@ package com.cloud.network.vpc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -231,7 +233,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     svcProviderMap.put(svc, defaultProviders);
                 }
             }
-                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null);
+                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null, false);
         }
 
         //configure default vpc offering with Netscaler as LB Provider
@@ -250,7 +252,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     svcProviderMap.put(svc, defaultProviders);
                 }
             }
-                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null);
+                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false);
         }
             }
         });
@@ -299,8 +301,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders,
-        Long serviceOfferingId) {
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
+                                         Map<String, List<String>> serviceProviders,
+                                         Map serviceCapabilitystList,
+                                         Long serviceOfferingId) {
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         defaultProviders.add(Provider.VPCVirtualRouter);
@@ -372,20 +376,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId);
+        boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
+
+        VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null,
+                serviceOfferingId,supportsDistributedRouter);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
 
         return offering;
     }
 
     @DB
-    protected VpcOffering createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
-        final boolean isDefault, final State state, final Long serviceOfferingId) {
+    protected VpcOffering createVpcOffering(final String name, final String displayText,
+                                            final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
+                                            final boolean isDefault, final State state, final Long serviceOfferingId,
+                                            final boolean supportsDistributedRouter) {
         return Transaction.execute(new TransactionCallback<VpcOffering>() {
             @Override
             public VpcOffering doInTransaction(TransactionStatus status) {
-        // create vpc offering object
-                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId);
+                // create vpc offering object
+                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter);
 
         if (state != null) {
             offering.setState(state);
@@ -411,6 +420,44 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return offering;
     }
         });
+    }
+
+    private boolean isVpcOfferingSupportsDistributedRouter(Map serviceCapabilitystList) {
+        boolean supportsDistributedRouter = false;
+        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
+            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
+            Iterator iter = serviceCapabilityCollection.iterator();
+            Map<Network.Capability, String> capabilityMap = null;
+
+            while (iter.hasNext()) {
+                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
+                Network.Capability capability = null;
+                String svc = svcCapabilityMap.get("service");
+                String capabilityName = svcCapabilityMap.get("capabilitytype");
+                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
+                if (capabilityName != null) {
+                    capability = Network.Capability.getCapability(capabilityName);
+                }
+
+                if ((capability == null) || (capabilityName == null) || (capabilityValue == null)) {
+                    throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
+                }
+
+                if (!svc.equalsIgnoreCase(Service.Connectivity.getName())) {
+                    throw new InvalidParameterValueException("Invalid Service:" + svc + " specified. Only for 'Connectivity' service capabilities can be specified");
+                }
+
+                if (!capabilityName.equalsIgnoreCase("DistributedRouter")) {
+                    throw new InvalidParameterValueException("Invalid Capability:" + capabilityName + " specified. Only 'DistributedRouter' capability can be specified.");
+                }
+
+                if (!capabilityValue.equalsIgnoreCase("true") && capabilityValue.equalsIgnoreCase("false")) {
+                    throw new InvalidParameterValueException("Invalid Capability value:" + capabilityValue + " specified.");
+                }
+                supportsDistributedRouter = capabilityValue.equalsIgnoreCase("true");
+            }
+        }
+        return supportsDistributedRouter;
     }
 
     @Override
