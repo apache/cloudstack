@@ -88,10 +88,9 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         }
 
         CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName);
-        Project project = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
-        if (project != null) {
-            ProjectResponse response = _responseGenerator.createProjectResponse(project);
-            response.setResponseName(getCommandName());
+        boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add account to the project");

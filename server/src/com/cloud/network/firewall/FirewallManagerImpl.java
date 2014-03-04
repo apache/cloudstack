@@ -259,6 +259,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
         FirewallRule.TrafficType trafficType = cmd.getTrafficType();
+        Boolean display = cmd.getDisplay();
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -287,6 +288,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -315,6 +317,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if (ipId != null) {

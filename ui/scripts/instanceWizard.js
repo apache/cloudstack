@@ -381,7 +381,7 @@
                         step6ContainerType = 'nothing-to-select';
                         $networkStep.find("#from_instance_page_1").hide();
                         $networkStep.find("#from_instance_page_2").hide();
-                        $networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);
+                        $networkStep.find("#from_vpc_tier").prepend("tier " + _s(args.context.networks[0].name));
                         $networkStep.find("#from_vpc_tier").show();
                     } else { //from Instance page
                         if (selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
@@ -817,10 +817,12 @@
                     });
                 }
             } else if (step6ContainerType == 'nothing-to-select') {
-                if (args.context.networks != null) { //from VPC tier                   
-                    $.extend(deployVmData, {
-                    	networkids : args.context.networks[0].id
-                    });                                        
+                if ("vpc" in args.context) { //from VPC tier    
+                    deployVmData["iptonetworklist[0].networkid"] = args.context.networks[0].id;            	
+                	if (args.data["vpc-specify-ip"] != undefined && args.data["vpc-specify-ip"].length > 0) {                	    
+                		deployVmData["iptonetworklist[0].ip"] = args.data["vpc-specify-ip"];              	   
+                	}
+                	
                     $.extend(deployVmData, {
                     	domainid : args.context.vpc[0].domainid
                     });

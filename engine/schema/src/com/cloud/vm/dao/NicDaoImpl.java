@@ -291,5 +291,4 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }
-
 }

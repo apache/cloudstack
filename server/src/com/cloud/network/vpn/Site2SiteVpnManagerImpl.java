@@ -611,6 +611,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public Pair<List<? extends Site2SiteVpnGateway>, Integer> searchForVpnGateways(ListVpnGatewaysCmd cmd) {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
+        Boolean display = cmd.getDisplay();
 
         Long domainId = cmd.getDomainId();
         boolean isRecursive = cmd.isRecursive();
@@ -635,12 +636,17 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         SearchCriteria<Site2SiteVpnGatewayVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if (vpcId != null) {
@@ -655,6 +661,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public Pair<List<? extends Site2SiteVpnConnection>, Integer> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
+        Boolean display = cmd.getDisplay();
 
         Long domainId = cmd.getDomainId();
         boolean isRecursive = cmd.isRecursive();
@@ -678,6 +685,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (vpcId != null) {
             SearchBuilder<Site2SiteVpnGatewayVO> gwSearch = _vpnGatewayDao.createSearchBuilder();
@@ -688,6 +696,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         SearchCriteria<Site2SiteVpnConnectionVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
+        if (display != null) {
+            sc.setParameters("display", display);
+        }
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }

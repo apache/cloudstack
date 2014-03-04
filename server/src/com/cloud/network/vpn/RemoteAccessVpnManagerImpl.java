@@ -618,6 +618,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Long vpnId = cmd.getId();
         Long networkId = cmd.getNetworkId();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        Boolean display = cmd.getDisplay();
 
         if (ipAddressId != null) {
             PublicIpAddress publicIp = _networkMgr.getPublicIpAddress(ipAddressId);
@@ -648,6 +649,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);

@@ -87,21 +87,21 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public Project addAccountToProject(long projectId, String accountName, String email) {
+    public boolean addAccountToProject(long projectId, String accountName, String email) {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
     @Override
-    public Project deleteAccountFromProject(long projectId, String accountName) {
+    public boolean deleteAccountFromProject(long projectId, String accountName) {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
     @Override
-    public Project updateInvitation(long projectId, String accountName, String token, boolean accept) {
+    public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
     @Override
@@ -165,9 +165,9 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public Project deleteAccountFromProject(long projectId, long accountId) {
+    public boolean deleteAccountFromProject(long projectId, long accountId) {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
     @Override
