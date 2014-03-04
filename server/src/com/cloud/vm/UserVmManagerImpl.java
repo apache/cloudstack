@@ -2839,7 +2839,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (NumbersUtil.parseLong(customParameters.get("rootdisksize"), -1) <= 0) {
                         throw new InvalidParameterValueException("rootdisk size should be a non zero number.");
                     }
-                    rootDiskSize = Long.parseLong(customParameters.get("rootDisksize"));
+                    // only KVM supports rootdisksize override
+                    if (hypervisor != HypervisorType.KVM) {
+                        throw new InvalidParameterValueException("Hypervisor " + hypervisor + " does not support rootdisksize override");
+                    }
+
+                    s_logger.debug("found root disk size of " + customParameters.get("rootdisksize"));
+                    rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
                     customParameters.remove("rootdisksize");
                 }
 

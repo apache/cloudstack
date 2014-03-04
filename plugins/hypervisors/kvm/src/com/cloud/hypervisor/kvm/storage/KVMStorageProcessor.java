@@ -182,11 +182,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                         break;
                     }
                 }
-                if (tmplVol == null) {
-                    return new PrimaryStorageDownloadAnswer("Failed to get template from pool: " + secondaryPool.getUuid());
-                }
             } else {
                 tmplVol = secondaryPool.getPhysicalDisk(tmpltname);
+            }
+
+            if (tmplVol == null) {
+                return new PrimaryStorageDownloadAnswer("Failed to get template from pool: " + secondaryPool.getUuid());
             }
 
             /* Copy volume to primary storage */
@@ -196,6 +197,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             KVMPhysicalDisk primaryVol = null;
             if (destData instanceof VolumeObjectTO) {
                 VolumeObjectTO volume = (VolumeObjectTO)destData;
+                // pass along volume's target size if it's bigger than template's size, for storage types that copy template rather than cloning on deploy
+                if (volume.getSize() != null && volume.getSize() > tmplVol.getVirtualSize()) {
+                    s_logger.debug("Using configured size of " + volume.getSize());
+                    tmplVol.setSize(volume.getSize());
+                    tmplVol.setVirtualSize(volume.getSize());
+                } else {
+                    s_logger.debug("Using template's size of " + tmplVol.getVirtualSize());
+                }
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
             } else if (destData instanceof TemplateObjectTO) {
                 TemplateObjectTO destTempl = (TemplateObjectTO)destData;
@@ -239,7 +248,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate. copies template direct to root disk
-    private KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool, String volUuid, int timeout) {
+    private KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool, String volUuid, Long size, int timeout) {
         int index = templateUrl.lastIndexOf("/");
         String mountpoint = templateUrl.substring(0, index);
         String templateName = null;
@@ -275,6 +284,14 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             /* Copy volume to primary storage */
 
+            if (size > templateVol.getSize()) {
+                s_logger.debug("Overriding provided template's size with new size " + size);
+                templateVol.setSize(size);
+                templateVol.setVirtualSize(size);
+            } else {
+                s_logger.debug("Using templates disk size of " + templateVol.getVirtualSize() + "since size passed was " + size);
+            }
+
             KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, timeout);
             return primaryVol;
         } catch (CloudRuntimeException e) {
@@ -306,14 +323,14 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             if (primaryPool.getType() == StoragePoolType.CLVM) {
                 templatePath = ((NfsTO)imageStore).getUrl() + File.separator + templatePath;
-                vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), cmd.getWaitInMillSeconds());
+                vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
             } else {
                 if (templatePath.contains("/mnt")) {
                     //upgrade issue, if the path contains path, need to extract the volume uuid from path
                     templatePath = templatePath.substring(templatePath.lastIndexOf(File.separator) + 1);
                 }
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
-                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), BaseVol.getPool(), cmd.getWaitInMillSeconds());
+                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), BaseVol.getPool(), volume.getSize(), cmd.getWaitInMillSeconds());
             }
             if (vol == null) {
                 return new CopyCmdAnswer(" Can't create storage volume on storage pool");
