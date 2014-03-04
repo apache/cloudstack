@@ -244,12 +244,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         LibvirtStoragePoolDef spd;
         StoragePool sp = null;
+        Secret s = null;
 
         String[] userInfoTemp = userInfo.split(":");
         if (userInfoTemp.length == 2) {
             LibvirtSecretDef sd = new LibvirtSecretDef(usage.CEPH, uuid);
-
-            Secret s = null;
 
             sd.setCephName(userInfoTemp[0] + "@" + host + ":" + port + "/" + path);
 
@@ -258,15 +257,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 s = conn.secretDefineXML(sd.toString());
                 s.setValue(Base64.decodeBase64(userInfoTemp[1]));
             } catch (LibvirtException e) {
-                s_logger.error(e.toString());
+                s_logger.error("Failed to define the libvirt secret: " + e.toString());
                 if (s != null) {
                     try {
                         s.undefine();
                         s.free();
                     } catch (LibvirtException l) {
-                        s_logger.debug("Failed to define secret with: " + l.toString());
+                        s_logger.debug("Failed to undefine the libvirt secret: " + l.toString());
                     }
                 }
+                return null;
             }
             spd = new LibvirtStoragePoolDef(poolType.RBD, uuid, uuid, host, port, path, userInfoTemp[0], authType.CEPH, uuid);
         } else {
@@ -278,7 +278,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug(e.toString());
+            s_logger.debug("Failed to create RBD storage pool: " + e.toString());
             if (sp != null) {
                 try {
                     if (sp.isPersistent() == 1) {
@@ -289,9 +289,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to define RBD storage pool with: " + l.toString());
+                    s_logger.debug("Failed to undefine RBD storage pool: " + l.toString());
                 }
             }
+
+            if (s != null) {
+                try {
+                    s_logger.debug("Failed to create the RBD storage pool, cleaning up the libvirt secret");
+                    s.undefine();
+                    s.free();
+                } catch (LibvirtException se) {
+                    s_logger.debug("Failed to remove the libvirt secret: " + se.toString());
+                }
+            }
+
             return null;
         }
     }
@@ -510,6 +521,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } else if (type == StoragePoolType.CLVM) {
                 sp = createCLVMStoragePool(conn, name, host, path);
             }
+        }
+
+        if (sp == null) {
+            throw new CloudRuntimeException("Failed to create storage pool: " + name);
         }
 
         try {
