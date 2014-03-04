@@ -62,7 +62,7 @@ do
         then
             log_it "VR config: executing failed: $line"
             # expose error info to mgmt server
-            echo "VR config: execution failed: \"$line\", check $log in VR for details "
+            echo "VR config: execution failed: \"$line\", check $log in VR for details " 1>&2
             exit 1
         fi
         #skip </script>

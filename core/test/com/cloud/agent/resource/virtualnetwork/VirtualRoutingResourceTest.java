@@ -23,6 +23,7 @@ import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.FinishAggregationCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -40,6 +41,7 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.StartAggregationCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
@@ -67,6 +69,7 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,26 +84,29 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     NetworkElementCommand _currentCmd;
     int _count;
     String _file;
+    boolean _aggregated = false;
 
-    String ROUTERIP = "10.2.3.4";
+    String ROUTER_IP = "169.254.3.4";
+    String ROUTER_GUEST_IP = "10.200.1.1";
+    String ROUTER_NAME = "r-4-VM";
 
     @Override
     public ExecutionResult executeInVR(String routerIp, String script, String args) {
-        assertEquals(routerIp, ROUTERIP);
+        assertEquals(routerIp, ROUTER_IP);
         verifyCommand(_currentCmd, script, args);
         return new ExecutionResult(true, null);
     }
 
     @Override
     public ExecutionResult createFileInVR(String routerIp, String path, String filename, String content) {
-        assertEquals(routerIp, ROUTERIP);
+        assertEquals(routerIp, ROUTER_IP);
         verifyFile(_currentCmd, path, filename, content);
         return new ExecutionResult(true, null);
     }
 
     @Override
     public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
-        cmd.setRouterAccessIp(ROUTERIP);
+        cmd.setRouterAccessIp(ROUTER_IP);
         _currentCmd = cmd;
         if (cmd instanceof IpAssocVpcCommand) {
             return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
@@ -128,6 +134,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             _resource.configure("VRResource", new HashMap<String, Object>());
         } catch (ConfigurationException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void verifyFile(NetworkElementCommand cmd, String path, String filename, String content) {
+        if (cmd instanceof FinishAggregationCommand) {
+            verifyFile((FinishAggregationCommand)cmd, path, filename, content);
+        } else if (cmd instanceof LoadBalancerConfigCommand) {
+            verifyFile((LoadBalancerConfigCommand)cmd, path, filename, content);
         }
     }
 
@@ -175,6 +189,12 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         } else if (cmd instanceof IpAssocCommand) {
             verifyArgs((IpAssocCommand)cmd, script, args);
         }
+
+        if (cmd instanceof StartAggregationCommand) {
+            return;
+        } else if (cmd instanceof FinishAggregationCommand) {
+            verifyArgs((FinishAggregationCommand)cmd, script, args);
+        }
     }
 
     private void verifyArgs(VpnUsersCfgCommand cmd, String script, String args) {
@@ -203,11 +223,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSetPortForwardingRulesVpcCommand() {
-        List<PortForwardingRuleTO> pfRules = new ArrayList<>();
-        pfRules.add(new PortForwardingRuleTO(1, "64.1.1.10", 22, 80, "10.10.1.10", 22, 80, "TCP", false, false));
-        pfRules.add(new PortForwardingRuleTO(2, "64.1.1.11", 8080, 8080, "10.10.1.11", 8080, 8080, "UDP", true, false));
-        SetPortForwardingRulesVpcCommand cmd = new SetPortForwardingRulesVpcCommand(pfRules);
-        assertEquals(cmd.getAnswersCount(), 2);
+        SetPortForwardingRulesVpcCommand cmd = generateSetPortForwardingRulesVpcCommand();
 
         // Reset rule check count
         _count = 0;
@@ -216,6 +232,16 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(answer instanceof GroupAnswer);
         assertEquals(((GroupAnswer) answer).getResults().length, 2);
         assertTrue(answer.getResult());
+    }
+
+    protected SetPortForwardingRulesVpcCommand generateSetPortForwardingRulesVpcCommand() {
+        List<PortForwardingRuleTO> pfRules = new ArrayList<>();
+        pfRules.add(new PortForwardingRuleTO(1, "64.1.1.10", 22, 80, "10.10.1.10", 22, 80, "TCP", false, false));
+        pfRules.add(new PortForwardingRuleTO(2, "64.1.1.11", 8080, 8080, "10.10.1.11", 8080, 8080, "UDP", true, false));
+        SetPortForwardingRulesVpcCommand cmd = new SetPortForwardingRulesVpcCommand(pfRules);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        assertEquals(cmd.getAnswersCount(), 2);
+        return cmd;
     }
 
     private void verifyArgs(SetPortForwardingRulesVpcCommand cmd, String script, String args) {
@@ -235,12 +261,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSetPortForwardingRulesCommand() {
-        List<PortForwardingRuleTO> pfRules = new ArrayList<>();
-        pfRules.add(new PortForwardingRuleTO(1, "64.1.1.10", 22, 80, "10.10.1.10", 22, 80, "TCP", false, false));
-        pfRules.add(new PortForwardingRuleTO(2, "64.1.1.11", 8080, 8080, "10.10.1.11", 8080, 8080, "UDP", true, false));
-        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfRules);
-        assertEquals(cmd.getAnswersCount(), 2);
-
+        SetPortForwardingRulesCommand cmd = generateSetPortForwardingRulesCommand();
         // Reset rule check count
         _count = 0;
 
@@ -248,6 +269,16 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(answer instanceof GroupAnswer);
         assertEquals(((GroupAnswer) answer).getResults().length, 2);
         assertTrue(answer.getResult());
+    }
+
+    protected SetPortForwardingRulesCommand generateSetPortForwardingRulesCommand() {
+        List<PortForwardingRuleTO> pfRules = new ArrayList<>();
+        pfRules.add(new PortForwardingRuleTO(1, "64.1.1.10", 22, 80, "10.10.1.10", 22, 80, "TCP", false, false));
+        pfRules.add(new PortForwardingRuleTO(2, "64.1.1.11", 8080, 8080, "10.10.1.11", 8080, 8080, "UDP", true, false));
+        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfRules);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        assertEquals(cmd.getAnswersCount(), 2);
+        return cmd;
     }
 
     private void verifyArgs(SetPortForwardingRulesCommand cmd, String script, String args) {
@@ -267,14 +298,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testIpAssocCommand() {
-        List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, false, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
-        IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
-        IpAssocCommand cmd = new IpAssocCommand(ipArray);
-        assertEquals(cmd.getAnswersCount(), 3);
-
+        IpAssocCommand cmd = generateIpAssocCommand();
         _count = 0;
 
         Answer answer = _resource.executeRequest(cmd);
@@ -292,16 +316,22 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         return new ExecutionResult(true, null);
     }
 
-    @Test
-    public void testIpAssocVpcCommand() {
-        List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
+    protected IpAssocCommand generateIpAssocCommand() {
+        List<IpAddressTO> ips = new ArrayList<>();
         ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, false, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
         ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
         IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
-        IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
-        assertEquals(cmd.getAnswersCount(), 6);
+        IpAssocCommand cmd = new IpAssocCommand(ipArray);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        assertEquals(cmd.getAnswersCount(), 3);
 
+        return cmd;
+    }
+
+    @Test
+    public void testIpAssocVpcCommand() {
+        IpAssocVpcCommand cmd = generateIpAssocVpcCommand();
         _count = 0;
 
         Answer answer = _resource.executeRequest(cmd);
@@ -317,6 +347,19 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             ip.setNicDevId(2);
         }
         return new ExecutionResult(true, null);
+    }
+
+    protected IpAssocVpcCommand generateIpAssocVpcCommand() {
+        List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
+        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
+        IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
+        IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        assertEquals(cmd.getAnswersCount(), 6);
+
+        return cmd;
     }
 
     private void verifyArgs(IpAssocCommand cmd, String script, String args) {
@@ -367,8 +410,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSourceNatCommand() {
-        IpAddressTO ip = new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
-        SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
+        SetSourceNatCommand cmd = generateSetSourceNatCommand();
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
     }
@@ -379,6 +421,13 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         return new ExecutionResult(true, null);
     }
 
+    protected SetSourceNatCommand generateSetSourceNatCommand() {
+        IpAddressTO ip = new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
+        SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
+    }
+
     private void verifyArgs(SetSourceNatCommand cmd, String script, String args) {
         assertEquals(script, VRScripts.VPC_SOURCE_NAT);
         assertEquals(args, "-A -l 64.1.1.10 -c eth1");
@@ -386,6 +435,18 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testNetworkACLCommand() {
+        SetNetworkACLCommand cmd = generateSetNetworkACLCommand();
+        _count = 0;
+
+        Answer answer = _resource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+
+        cmd.setAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY, String.valueOf(VpcGateway.Type.Private));
+        answer = _resource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    protected SetNetworkACLCommand generateSetNetworkACLCommand() {
         List<NetworkACLTO> acls = new ArrayList<>();
         List<String> cidrs = new ArrayList<>();
         cidrs.add("192.168.0.1/24");
@@ -397,16 +458,10 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         nic.setMac("01:23:45:67:89:AB");
         nic.setIp("192.168.1.1");
         nic.setNetmask("255.255.255.0");
-
-        _count = 0;
-
         SetNetworkACLCommand cmd = new SetNetworkACLCommand(acls, nic);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
 
-        cmd.setAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY, String.valueOf(VpcGateway.Type.Private));
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
     }
 
     private void verifyArgs(SetNetworkACLCommand cmd, String script, String args) {
@@ -435,6 +490,18 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSetupGuestNetworkCommand() {
+        SetupGuestNetworkCommand cmd = generateSetupGuestNetworkCommand();
+        Answer answer = _resource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    private ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
+        NicTO nic = cmd.getNic();
+        nic.setDeviceId(4);
+        return new ExecutionResult(true, null);
+    }
+
+    protected SetupGuestNetworkCommand generateSetupGuestNetworkCommand() {
         NicTO nic = new NicTO();
         nic.setMac("01:23:45:67:89:AB");
         nic.setIp("10.1.1.1");
@@ -443,16 +510,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         SetupGuestNetworkCommand cmd = new SetupGuestNetworkCommand("10.1.1.10-10.1.1.20", "cloud.test", false, 0, "8.8.8.8", "8.8.4.4", true, nic);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, "10.1.1.2");
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, "10.1.1.1");
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
 
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
-
-    }
-
-    private ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
-        NicTO nic = cmd.getNic();
-        nic.setDeviceId(4);
-        return new ExecutionResult(true, null);
+        return cmd;
     }
 
     private void verifyArgs(SetupGuestNetworkCommand cmd, String script, String args) {
@@ -462,13 +522,20 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSetMonitorServiceCommand() {
+        SetMonitorServiceCommand cmd = generateSetMonitorServiceCommand();
+        Answer answer = _resource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    protected SetMonitorServiceCommand generateSetMonitorServiceCommand() {
         List<MonitorServiceTO> services = new ArrayList<>();
         services.add(new MonitorServiceTO("service", "process", "name", "path", "file", true));
         services.add(new MonitorServiceTO("service_2", "process_2", "name_2", "path_2", "file_2", false));
 
         SetMonitorServiceCommand cmd = new SetMonitorServiceCommand(services);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+
+        return cmd;
     }
 
     private void verifyArgs(SetMonitorServiceCommand cmd, String script, String args) {
@@ -481,14 +548,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         _count = 0;
 
         Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(true, "64.10.1.10", "64.10.1.1", "192.168.1.1/16", "124.10.1.10", "192.168.100.1/24", "3des-sha1,aes128-sha1;modp1536", "3des-sha1,aes128-md5", "psk", Long.valueOf(1800), Long.valueOf(1800), true, false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
 
         cmd = new Site2SiteVpnCfgCommand(true, "64.10.1.10", "64.10.1.1", "192.168.1.1/16", "124.10.1.10", "192.168.100.1/24", "3des-sha1,aes128-sha1;modp1536", "3des-sha1,aes128-md5", "psk", Long.valueOf(1800), Long.valueOf(1800), false, true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
 
         cmd = new Site2SiteVpnCfgCommand(false, "64.10.1.10", "64.10.1.1", "192.168.1.1/16", "124.10.1.10", "192.168.100.1/24", "3des-sha1,aes128-sha1;modp1536", "3des-sha1,aes128-md5", "psk", Long.valueOf(1800), Long.valueOf(1800), false, true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
     }
@@ -516,20 +586,35 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     public void testRemoteAccessVpnCfgCommand() {
         _count = 0;
 
+        Answer answer = _resource.executeRequest(generateRemoteAccessVpnCfgCommand1());
+        assertTrue(answer.getResult());
+
+        answer = _resource.executeRequest(generateRemoteAccessVpnCfgCommand2());
+        assertTrue(answer.getResult());
+
+        answer = _resource.executeRequest(generateRemoteAccessVpnCfgCommand3());
+        assertTrue(answer.getResult());
+    }
+
+    protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand1() {
         RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         cmd.setLocalCidr("10.1.1.1/24");
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
+    }
 
-        cmd = new RemoteAccessVpnCfgCommand(false, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false);
+    protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand2() {
+        RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(false, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         cmd.setLocalCidr("10.1.1.1/24");
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
+    }
 
-        cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", true);
+    protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand3() {
+        RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         cmd.setLocalCidr("10.1.1.1/24");
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
     }
 
     private void verifyArgs(RemoteAccessVpnCfgCommand cmd, String script, String args) {
@@ -556,6 +641,15 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     public void testFirewallRulesCommand() {
         _count = 0;
 
+        Answer answer = _resource.executeRequest(generateSetFirewallRulesCommand());
+        assertTrue(answer.getResult());
+        assertTrue(answer instanceof GroupAnswer);
+        assertEquals(((GroupAnswer) answer).getResults().length, 3);
+
+        //TODO Didn't test egress rule because not able to generate FirewallRuleVO object
+    }
+
+    protected SetFirewallRulesCommand generateSetFirewallRulesCommand() {
         List<FirewallRuleTO> rules = new ArrayList<>();
         List<String> sourceCidrs = new ArrayList<>();
         sourceCidrs.add("10.10.1.1/24");
@@ -564,12 +658,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         rules.add(new FirewallRuleTO(2, "64.10.10.10", "ICMP", 0, 0, false, false, Purpose.Firewall, sourceCidrs, -1, -1));
         rules.add(new FirewallRuleTO(3, "64.10.10.10", "ICMP", 0, 0, true, true, Purpose.Firewall, sourceCidrs, -1, -1));
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
-        assertTrue(answer instanceof GroupAnswer);
-        assertEquals(((GroupAnswer) answer).getResults().length, 3);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
 
-        //TODO Didn't test egress rule because not able to generate FirewallRuleVO object
+        return cmd;
     }
 
     private void verifyArgs(SetFirewallRulesCommand cmd, String script, String args) {
@@ -579,6 +670,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testVmDataCommand() {
+        Answer answer = _resource.executeRequest(generateVmDataCommand());
+        assertTrue(answer.getResult());
+    }
+
+    protected VmDataCommand generateVmDataCommand() {
         VmDataCommand cmd = new VmDataCommand("10.1.10.4", "i-4-VM", true);
         cmd.addVmData("userdata", "user-data", "user-data");
         cmd.addVmData("metadata", "service-offering", "serviceOffering");
@@ -592,8 +688,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         cmd.addVmData("metadata", "public-keys", "publickey");
         cmd.addVmData("metadata", "cloud-identifier", "CloudStack-{test}");
 
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+
+        return cmd;
     }
 
     private void verifyArgs(VmDataCommand cmd, String script, String args) {
@@ -608,9 +705,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testSavePasswordCommand() {
-        SavePasswordCommand cmd = new SavePasswordCommand("123pass", "10.1.10.4", "i-4-VM", true);
-        Answer answer = _resource.executeRequest(cmd);
+        Answer answer = _resource.executeRequest(generateSavePasswordCommand());
         assertTrue(answer.getResult());
+    }
+
+    protected SavePasswordCommand generateSavePasswordCommand() {
+        SavePasswordCommand cmd = new SavePasswordCommand("123pass", "10.1.10.4", "i-4-VM", true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
     }
 
     private void verifyArgs(SavePasswordCommand cmd, String script, String args) {
@@ -621,19 +723,35 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     @Test
     public void testDhcpEntryCommand() {
         _count = 0;
+
+        Answer answer = _resource.executeRequest(generateDhcpEntryCommand1());
+        assertTrue(answer.getResult());
+
+        answer = _resource.executeRequest(generateDhcpEntryCommand2());
+        assertTrue(answer.getResult());
+
+        answer = _resource.executeRequest(generateDhcpEntryCommand3());
+        assertTrue(answer.getResult());
+    }
+
+    protected DhcpEntryCommand generateDhcpEntryCommand1() {
         DhcpEntryCommand cmd = new DhcpEntryCommand("12:34:56:78:90:AB", "10.1.10.2", "vm1", null, true);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
+    }
 
-        cmd = new DhcpEntryCommand("12:34:56:78:90:AB", null, "vm1", "2001:db8:0:0:0:ff00:42:8329", true);
+    protected DhcpEntryCommand generateDhcpEntryCommand2() {
+        DhcpEntryCommand cmd = new DhcpEntryCommand("12:34:56:78:90:AB", null, "vm1", "2001:db8:0:0:0:ff00:42:8329", true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         cmd.setDuid(NetUtils.getDuidLL(cmd.getVmMac()));
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
+    }
 
-        cmd = new DhcpEntryCommand("12:34:56:78:90:AB", "10.1.10.2", "vm1", "2001:db8:0:0:0:ff00:42:8329", true);
+    protected DhcpEntryCommand generateDhcpEntryCommand3() {
+        DhcpEntryCommand cmd = new DhcpEntryCommand("12:34:56:78:90:AB", "10.1.10.2", "vm1", "2001:db8:0:0:0:ff00:42:8329", true);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
         cmd.setDuid(NetUtils.getDuidLL(cmd.getVmMac()));
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        return cmd;
     }
 
     private void verifyArgs(DhcpEntryCommand cmd, String script, String args) {
@@ -656,13 +774,19 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testCreateIpAliasCommand() {
+        Answer answer = _resource.executeRequest(generateCreateIpAliasCommand());
+        assertTrue(answer.getResult());
+    }
+
+    protected CreateIpAliasCommand generateCreateIpAliasCommand() {
         List<IpAliasTO> aliases = new ArrayList<>();
         aliases.add(new IpAliasTO("169.254.3.10", "255.255.255.0", "1"));
         aliases.add(new IpAliasTO("169.254.3.11", "255.255.255.0", "2"));
         aliases.add(new IpAliasTO("169.254.3.12", "255.255.255.0", "3"));
         CreateIpAliasCommand cmd = new CreateIpAliasCommand("169.254.3.10", aliases);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+
+        return cmd;
     }
 
     private void verifyArgs(CreateIpAliasCommand cmd, String script, String args) {
@@ -672,13 +796,18 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testDeleteIpAliasCommand() {
+        Answer answer = _resource.executeRequest(generateDeleteIpAliasCommand());
+        assertTrue(answer.getResult());
+    }
+
+    protected DeleteIpAliasCommand generateDeleteIpAliasCommand() {
         List<IpAliasTO> aliases = new ArrayList<>();
         aliases.add(new IpAliasTO("169.254.3.10", "255.255.255.0", "1"));
         aliases.add(new IpAliasTO("169.254.3.11", "255.255.255.0", "2"));
         aliases.add(new IpAliasTO("169.254.3.12", "255.255.255.0", "3"));
         DeleteIpAliasCommand cmd = new DeleteIpAliasCommand("169.254.10.1", aliases, aliases);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
     }
 
     private void verifyArgs(DeleteIpAliasCommand cmd, String script, String args) {
@@ -688,12 +817,17 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Test
     public void testDnsMasqConfigCommand() {
-        List<DhcpTO> dhcps = new ArrayList<DhcpTO>();
+        Answer answer = _resource.executeRequest(generateDnsMasqConfigCommand());
+        assertTrue(answer.getResult());
+    }
+
+    protected DnsMasqConfigCommand generateDnsMasqConfigCommand() {
+        List<DhcpTO> dhcps = new ArrayList<>();
         dhcps.add(new DhcpTO("10.1.20.2", "10.1.20.1", "255.255.255.0", "10.1.20.5"));
         dhcps.add(new DhcpTO("10.1.21.2", "10.1.21.1", "255.255.255.0", "10.1.21.5"));
         DnsMasqConfigCommand cmd = new DnsMasqConfigCommand(dhcps);
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
     }
 
     private void verifyArgs(DnsMasqConfigCommand cmd, String script, String args) {
@@ -706,6 +840,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         _count = 0;
         _file = "";
 
+        Answer answer = _resource.executeRequest(generateLoadBalancerConfigCommand1());
+        assertTrue(answer.getResult());
+
+        answer = _resource.executeRequest(generateLoadBalancerConfigCommand2());
+        assertTrue(answer.getResult());
+    }
+
+    protected LoadBalancerConfigCommand generateLoadBalancerConfigCommand1() {
         List<LoadBalancerTO> lbs = new ArrayList<>();
         List<LbDestination> dests = new ArrayList<>();
         dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
@@ -716,19 +858,27 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         NicTO nic = new NicTO();
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
-        Answer answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
-
-        nic.setIp("10.1.10.2");
-        cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
-        answer = _resource.executeRequest(cmd);
-        assertTrue(answer.getResult());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
     }
 
-    private void verifyFile(NetworkElementCommand cmd, String path, String filename, String content) {
-        if (!(cmd instanceof LoadBalancerConfigCommand)) {
-            fail("Only LB command would call this!");
-        }
+    protected LoadBalancerConfigCommand generateLoadBalancerConfigCommand2() {
+        List<LoadBalancerTO> lbs = new ArrayList<>();
+        List<LbDestination> dests = new ArrayList<>();
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", true));
+        lbs.add(new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests));
+        LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
+        lbs.toArray(arrayLbs);
+        NicTO nic = new NicTO();
+        nic.setIp("10.1.10.2");
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTER_NAME);
+        return cmd;
+    }
+
+    protected void verifyFile(LoadBalancerConfigCommand cmd, String path, String filename, String content) {
         _count ++;
         switch (_count) {
             case 1:
@@ -793,6 +943,154 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             default:
                 fail();
         }
+    }
+
+    @Test
+    public void testAggregationCommands() {
+        List<NetworkElementCommand> cmds = new LinkedList<>();
+        StartAggregationCommand startCmd = new StartAggregationCommand(ROUTER_NAME, ROUTER_IP, ROUTER_GUEST_IP);
+        cmds.add(startCmd);
+        cmds.add(generateIpAssocCommand());
+        cmds.add(generateIpAssocVpcCommand());
+
+        cmds.add(generateSetFirewallRulesCommand());
+
+        cmds.add(generateSetPortForwardingRulesCommand());
+        cmds.add(generateSetPortForwardingRulesVpcCommand());
+
+        cmds.add(generateCreateIpAliasCommand());
+        cmds.add(generateDeleteIpAliasCommand());
+        cmds.add(generateDnsMasqConfigCommand());
+
+        cmds.add(generateRemoteAccessVpnCfgCommand1());
+        cmds.add(generateRemoteAccessVpnCfgCommand2());
+        cmds.add(generateRemoteAccessVpnCfgCommand3());
+
+        //cmds.add(generateLoadBalancerConfigCommand1());
+        //cmds.add(generateLoadBalancerConfigCommand2());
+
+        cmds.add(generateSetPortForwardingRulesCommand());
+        cmds.add(generateSetPortForwardingRulesVpcCommand());
+
+        cmds.add(generateDhcpEntryCommand1());
+        cmds.add(generateDhcpEntryCommand2());
+        cmds.add(generateDhcpEntryCommand3());
+
+        cmds.add(generateSavePasswordCommand());
+        cmds.add(generateVmDataCommand());
+
+        FinishAggregationCommand finishCmd = new FinishAggregationCommand(ROUTER_NAME, ROUTER_IP, ROUTER_GUEST_IP);
+        cmds.add(finishCmd);
+
+        for (NetworkElementCommand cmd : cmds) {
+            Answer answer = _resource.executeRequest(cmd);
+            if (!(cmd instanceof FinishAggregationCommand)) {
+                assertTrue(answer.getResult());
+            } else {
+
+            }
+        }
+    }
+
+    private void verifyArgs(FinishAggregationCommand cmd, String script, String args) {
+        assertEquals(script, VRScripts.VR_CFG);
+        assertTrue(args.startsWith("-c /var/cache/cloud/VR-"));
+        assertTrue(args.endsWith(".cfg"));
+    }
+
+    protected void verifyFile(FinishAggregationCommand cmd, String path, String filename, String content) {
+        assertEquals(path, "/var/cache/cloud/");
+        assertTrue(filename.startsWith("VR-"));
+        assertTrue(filename.endsWith(".cfg"));
+        assertEquals(content, "#Apache CloudStack Virtual Router Config File\n" +
+                "<version>\n" +
+                "1.0\n" +
+                "</version>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/ipassoc.sh -A -s -f -l 64.1.1.10/24 -c eth2 -g 64.1.1.1\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/ipassoc.sh -D -l 64.1.1.11/24 -c eth2 -g 64.1.1.1\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/ipassoc.sh -A -l 65.1.1.11/24 -c eth2 -g 65.1.1.1\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_ipassoc.sh  -A  -l 64.1.1.10 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_privateGateway.sh  -A  -l 64.1.1.10 -c eth2\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_ipassoc.sh  -D  -l 64.1.1.11 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_privateGateway.sh  -D  -l 64.1.1.11 -c eth2\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_ipassoc.sh  -A  -l 65.1.1.11 -c eth2 -g 65.1.1.1 -m 24 -n 65.1.1.0\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/firewall_ingress.sh  -F -a 64.10.10.10:ICMP:0:0:10.10.1.1/24-10.10.1.2/24:,64.10.10.10:TCP:22:80:10.10.1.1/24-10.10.1.2/24:,64.10.10.10:reverted:0:0:0:,\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/firewall_nat.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/firewall_nat.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_portforwarding.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_portforwarding.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/createipAlias.sh 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/deleteipAlias.sh 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-- 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/dnsmasq.sh 10.1.20.2:10.1.20.1:255.255.255.0:10.1.20.5-10.1.21.2:10.1.21.1:255.255.255.0:10.1.21.5-\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpn_l2tp.sh -r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth2\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpn_l2tp.sh -d  -s 124.10.10.10 -C 10.1.1.1/24 -i eth2\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpn_l2tp.sh -r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth1\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/firewall_nat.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/firewall_nat.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_portforwarding.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vpc_portforwarding.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/savepassword.sh -v 10.1.10.4 -p 123pass\n" +
+                "</script>\n" +
+                "<script>\n" +
+                "/opt/cloud/bin/vmdata.py -d eyIxMC4xLjEwLjQiOltbInVzZXJkYXRhIiwidXNlci1kYXRhIiwidXNlci1kYXRhIl0sWyJtZXRhZGF0YSIsInNlcnZpY2Utb2ZmZXJpbmciLCJzZXJ2aWNlT2ZmZXJpbmciXSxbIm1ldGFkYXRhIiwiYXZhaWxhYmlsaXR5LXpvbmUiLCJ6b25lTmFtZSJdLFsibWV0YWRhdGEiLCJsb2NhbC1pcHY0IiwiMTAuMS4xMC40Il0sWyJtZXRhZGF0YSIsImxvY2FsLWhvc3RuYW1lIiwidGVzdC12bSJdLFsibWV0YWRhdGEiLCJwdWJsaWMtaXB2NCIsIjExMC4xLjEwLjQiXSxbIm1ldGFkYXRhIiwicHVibGljLWhvc3RuYW1lIiwiaG9zdG5hbWUiXSxbIm1ldGFkYXRhIiwiaW5zdGFuY2UtaWQiLCJpLTQtVk0iXSxbIm1ldGFkYXRhIiwidm0taWQiLCI0Il0sWyJtZXRhZGF0YSIsInB1YmxpYy1rZXlzIiwicHVibGlja2V5Il0sWyJtZXRhZGF0YSIsImNsb3VkLWlkZW50aWZpZXIiLCJDbG91ZFN0YWNrLXt0ZXN0fSJdXX0=\n" +
+                "</script>" +
+                "\n");
     }
 
 }
