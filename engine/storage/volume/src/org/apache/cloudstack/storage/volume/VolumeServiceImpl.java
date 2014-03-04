@@ -75,6 +75,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -679,9 +680,16 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePool pool) {
         Long lastPoolId = volume.getPoolId();
+        String folder = pool.getPath();
+        // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
+        // part  here to make sure the credentials do not get stored in the db unencrypted.
+        if (pool.getPoolType() == StoragePoolType.SMB && folder != null && folder.contains("?")) {
+            folder = folder.substring(0, folder.indexOf("?"));
+        }
+
         VolumeVO newVol = new VolumeVO(volume);
         newVol.setPoolId(pool.getId());
-        newVol.setFolder(pool.getPath());
+        newVol.setFolder(folder);
         newVol.setPodId(pool.getPodId());
         newVol.setPoolId(pool.getId());
         newVol.setLastPoolId(lastPoolId);
