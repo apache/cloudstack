@@ -246,7 +246,10 @@ StaticNatServiceProvider, IpDeployer {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
         // L2 Support : SDN provisioning
-        capabilities.put(Service.Connectivity, null);
+        Map<Capability, String> connectivityCapabilities = new HashMap<Capability, String>();
+        connectivityCapabilities.put(Capability.DistributedRouter, null);
+        capabilities.put(Service.Connectivity, connectivityCapabilities);
+
 
         // L3 Support : Port Forwarding
         capabilities.put(Service.PortForwarding, null);
