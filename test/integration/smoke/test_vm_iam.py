@@ -106,7 +106,7 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient = super(TestVMIam, self).getClsTestClient().getApiClient()
         self.services = Services().services
         
-         # backup default apikey and secretkey
+        # backup default apikey and secretkey
         self.default_apikey = self.apiclient.connection.apiKey
         self.default_secretkey = self.apiclient.connection.securityKey
 
@@ -236,6 +236,10 @@ class TestVMIam(cloudstackTestCase):
             self.services["vm_readonly_iam_policy"]
         )
         
+        self.srv_desk_grp.attachPolicy(
+            self.apiclient, [self.vm_read_policy]
+        )
+        
         vm_grant_policy_params = {}
         vm_grant_policy_params['name'] = "policyGrantVirtualMachine" + self.virtual_machine_1A.id
         vm_grant_policy_params['description'] = "Policy to grant permission to VirtualMachine " + self.virtual_machine_1A.id
@@ -255,7 +259,7 @@ class TestVMIam(cloudstackTestCase):
                         self.srv_desk_grp,
                         self.vm_grant_policy
                         ]
- 
+
     @classmethod
     def tearDownClass(self):
         self.apiclient = super(TestVMIAM, self).getClsTestClient().getApiClient()
@@ -275,6 +279,7 @@ class TestVMIam(cloudstackTestCase):
         return
 
     
+
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_list_own_vm(self):
         #  listVM command should return owne's VM
@@ -291,9 +296,9 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
-                            0,
+                            1,
                             "Check VM available in List Virtual Machines"
                         )
 
@@ -314,9 +319,9 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
-                            0,
+                            1,
                             "Check VM available in List Virtual Machines"
                         )
 
@@ -338,9 +343,9 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
-                            0,
+                            1,
                             "Check VM available in List Virtual Machines"
                         )
 
@@ -351,7 +356,6 @@ class TestVMIam(cloudstackTestCase):
         )
                 
         return
-
         
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_grant_domain_vm(self):
@@ -381,7 +385,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             2,
                             "Check VM available in List Virtual Machines"
@@ -429,7 +433,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             3,
                             "Check VM available in List Virtual Machines"
@@ -482,7 +486,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             2,
                             "Check VM available in List Virtual Machines"
@@ -525,7 +529,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             1,
                             "Check VM available in List Virtual Machines"
@@ -533,7 +537,7 @@ class TestVMIam(cloudstackTestCase):
 
         self.assertEqual(
             list_vm_response[0].name,
-            self.virtual_machine_2A.name,
+            self.virtual_machine_1B.name,
             "Virtual Machine names do not match"
         )
          
@@ -566,7 +570,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             2,
                             "Check VM available in List Virtual Machines"
@@ -613,7 +617,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             1,
                             "Check VM available in List Virtual Machines"
@@ -621,7 +625,7 @@ class TestVMIam(cloudstackTestCase):
 
         self.assertEqual(
             list_vm_response[0].name,
-            self.virtual_machine_2A.name,
+            self.virtual_machine_1B.name,
             "Virtual Machine names do not match"
         )
         
@@ -656,7 +660,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             2,
                             "Check VM available in List Virtual Machines"
@@ -683,7 +687,7 @@ class TestVMIam(cloudstackTestCase):
         # 1. Revoking a particular vm access from account_1B by detaching policy from account
         # 2. listVM command should return account_1B VMs.
 
-        self.debug("Revoking VM %s read only access from account: %s by attaching policy to account" % (self.virtual_machine_1A.name, self.account_1B.name))
+        self.debug("Revoking VM %s read only access from account: %s by detaching policy from account" % (self.virtual_machine_1A.name, self.account_1B.name))
         
         self.vm_grant_policy.detachAccount(self.apiclient, [self.account_1B])
         
@@ -698,7 +702,7 @@ class TestVMIam(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        self.assertNotEqual(
+        self.assertEqual(
                             len(list_vm_response),
                             1,
                             "Check VM available in List Virtual Machines"
@@ -706,7 +710,7 @@ class TestVMIam(cloudstackTestCase):
 
         self.assertEqual(
             list_vm_response[0].name,
-            self.virtual_machine_2A.name,
+            self.virtual_machine_1B.name,
             "Virtual Machine names do not match"
         )
         

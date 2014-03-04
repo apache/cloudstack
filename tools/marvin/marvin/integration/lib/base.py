@@ -3733,7 +3733,7 @@ class IAMPolicy:
         cmd.entitytype = permission['entitytype']
         cmd.scope = permission['scope']
         cmd.scopeid = permission['scopeid']
-        apiclient.addIAMPermissionToIAMPolicy(cmd)
+        apiclient.removeIAMPermissionFromIAMPolicy(cmd)
         return  
     
     def attachAccount(self, apiclient, accts):
