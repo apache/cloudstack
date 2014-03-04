@@ -18,8 +18,10 @@
 package org.apache.cloudstack.network.contrail.management;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceRespon
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -101,13 +102,12 @@ public class ServiceManagerImpl implements ServiceManager {
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-
-        LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>();
-        NetworkVO linklocal = (NetworkVO)_networkModel.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Management);
-        networks.put(linklocal, null);
-        networks.put((NetworkVO)left, null);
-        networks.put((NetworkVO)right, null);
-
+        LinkedHashMap<NetworkVO, List<? extends NicProfile>> networks = new LinkedHashMap<NetworkVO, List<? extends NicProfile>>();
+        NetworkVO linklocal = (NetworkVO) _networkModel.getSystemNetworkByZoneAndTrafficType(zone.getId(),
+                TrafficType.Management);
+        networks.put(linklocal, new ArrayList<NicProfile>());
+        networks.put((NetworkVO)left, new ArrayList<NicProfile>());
+        networks.put((NetworkVO)right, new ArrayList<NicProfile>());
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
         ServiceVirtualMachine svm =
             new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
