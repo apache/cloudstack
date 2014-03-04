@@ -26,11 +26,11 @@ public class IAMAccountPolicyMapDaoImpl extends GenericDaoBase<IAMAccountPolicyM
         ListByAccountId.done();
 
         ListByPolicyId = createSearchBuilder();
-        ListByPolicyId.and("policyId", ListByPolicyId.entity().getIAMPolicyId(), SearchCriteria.Op.EQ);
+        ListByPolicyId.and("policyId", ListByPolicyId.entity().getIamPolicyId(), SearchCriteria.Op.EQ);
         ListByPolicyId.done();
 
         findByPolicyAccountId = createSearchBuilder();
-        findByPolicyAccountId.and("policyId", findByPolicyAccountId.entity().getIAMPolicyId(), SearchCriteria.Op.EQ);
+        findByPolicyAccountId.and("policyId", findByPolicyAccountId.entity().getIamPolicyId(), SearchCriteria.Op.EQ);
         findByPolicyAccountId.and("accountId", findByPolicyAccountId.entity().getAccountId(), SearchCriteria.Op.EQ);
         findByPolicyAccountId.done();
 

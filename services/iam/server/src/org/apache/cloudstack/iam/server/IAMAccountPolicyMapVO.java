@@ -63,7 +63,7 @@ public class IAMAccountPolicyMapVO {
         return accountId;
     }
 
-    public long getIAMPolicyId() {
+    public long getIamPolicyId() {
         return iamPolicyId;
     }
 

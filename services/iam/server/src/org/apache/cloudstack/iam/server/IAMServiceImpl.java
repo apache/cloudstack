@@ -395,7 +395,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         // add policies directly attached to the account
         List<IAMAccountPolicyMapVO> acctPolicies = _aclAccountPolicyMapDao.listByAccountId(accountId);
         for (IAMAccountPolicyMapVO p : acctPolicies) {
-            policyIds.add(p.getIAMPolicyId());
+            policyIds.add(p.getIamPolicyId());
         }
         if (policyIds.size() == 0) {
             return new ArrayList<IAMPolicy>();

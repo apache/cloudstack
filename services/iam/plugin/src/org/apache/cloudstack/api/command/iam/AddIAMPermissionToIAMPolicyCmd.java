@@ -72,7 +72,7 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
  required = false, description = "iam permission scope")
     private String scope;
 
-    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.UUID, required = false, description = "The UUID of the permission scope id")
+    @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.STRING, required = false, description = "The UUID of the permission scope id")
     private String scopeId;
 
 

@@ -112,7 +112,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -146,7 +146,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     private static final Map<IAMEntityType, Class<?>> s_typeMap = new HashMap<IAMEntityType, Class<?>>();
     static {
-        s_typeMap.put(IAMEntityType.VirtualMachine, UserVmVO.class);
+        s_typeMap.put(IAMEntityType.VirtualMachine, VMInstanceVO.class);
         s_typeMap.put(IAMEntityType.Volume, VolumeVO.class);
         s_typeMap.put(IAMEntityType.ResourceTag, ResourceTagVO.class);
         s_typeMap.put(IAMEntityType.Account, AccountVO.class);
@@ -768,7 +768,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             entity = _accountDao.findByUuid(scopeId);
             break;
         case RESOURCE:
-            Class<?> clazz = s_typeMap.get(entityType);
+            Class<?> clazz = s_typeMap.get(IAMEntityType.valueOf(entityType));
             entity = (InternalIdentity)_entityMgr.findByUuid(clazz, scopeId);
         }
 
