@@ -111,6 +111,11 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "is vpc for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+
+    @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
+    @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's")
+    private boolean usesDistributedRouter;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -198,5 +203,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setUsesDistributedRouter(Boolean usesDistributedRouter) {
+        this.usesDistributedRouter = usesDistributedRouter;
     }
 }

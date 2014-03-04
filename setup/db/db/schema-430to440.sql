@@ -741,3 +741,4 @@ ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when 
 UPDATE `cloud`.`guest_os` SET `created` = now();
 ALTER TABLE `cloud`.`vm_reservation` ADD COLUMN `deployment_planner` varchar(40) DEFAULT NULL COMMENT 'Preferred deployment planner for the vm';
 ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_distributed_router boolean default false;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN uses_distributed_router  boolean default false;
