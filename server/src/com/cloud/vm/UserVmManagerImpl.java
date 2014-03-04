@@ -2835,17 +2835,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.setIsoId(template.getId());
                 }
                 Long rootDiskSize = null;
+                // custom root disk size, resizes base template to larger size
                 if (customParameters.containsKey("rootdisksize")) {
                     if (NumbersUtil.parseLong(customParameters.get("rootdisksize"), -1) <= 0) {
                         throw new InvalidParameterValueException("rootdisk size should be a non zero number.");
                     }
+                    rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
+
                     // only KVM supports rootdisksize override
                     if (hypervisor != HypervisorType.KVM) {
                         throw new InvalidParameterValueException("Hypervisor " + hypervisor + " does not support rootdisksize override");
                     }
 
-                    s_logger.debug("found root disk size of " + customParameters.get("rootdisksize"));
-                    rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
+                    // rotdisksize must be larger than template
+                    VMTemplateVO templateVO = _templateDao.findById(template.getId());
+                    if (templateVO == null) {
+                        throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
+                    }
+
+                    if ((rootDiskSize << 30) < templateVO.getSize()) {
+                        throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize());
+                    }
+
+                    s_logger.debug("found root disk size of " + rootDiskSize);
                     customParameters.remove("rootdisksize");
                 }
 
