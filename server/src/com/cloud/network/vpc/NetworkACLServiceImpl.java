@@ -515,6 +515,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (networkId != null) {
             Network network = _networkDao.findById(networkId);
             aclId = network.getNetworkACLId();
+            if( aclId == null){
+                // No aclId associated with the network.
+                //Return empty list
+                return new Pair(new ArrayList<NetworkACLItem>(), 0);
+            }
         }
 
         if (trafficType != null) {
