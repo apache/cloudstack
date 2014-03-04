@@ -105,7 +105,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         if (startEvent == null) {
             startEvent = 0L;
         }
-        return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description, startEvent);
+        return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description,
+                isDisplayResourceEnabled(), startEvent);
     }
 
     protected long saveCompletedEvent(String level, String description) {
@@ -120,7 +121,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         if (startEvent == null) {
             startEvent = 0L;
         }
-        return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
+        return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description,
+                isDisplayResourceEnabled(), startEvent);
     }
 
 }

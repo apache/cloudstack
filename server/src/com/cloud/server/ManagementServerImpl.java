@@ -3301,13 +3301,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, startEventId);
+    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, boolean displayResourceEnabled, Long startEventId) {
+        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, displayResourceEnabled, startEventId);
     }
 
     @Override
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, description, startEventId);
+    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, boolean displayResourceEnabled, long startEventId) {
+        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, displayResourceEnabled, description, startEventId);
     }
 
     @Override

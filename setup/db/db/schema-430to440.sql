@@ -542,3 +542,47 @@ ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL D
 
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
+
+DROP VIEW IF EXISTS `cloud`.`event_view`;
+CREATE VIEW `cloud`.`event_view` AS
+    select
+        event.id,
+        event.uuid,
+        event.type,
+        event.state,
+        event.description,
+        event.created,
+        event.level,
+        event.parameters,
+        event.start_id,
+        eve.uuid start_uuid,
+        event.user_id,
+        event.archived,
+        event.display_event,
+        user.username user_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name
+    from
+        `cloud`.`event`
+            inner join
+        `cloud`.`account` ON event.account_id = account.id
+            inner join
+        `cloud`.`domain` ON event.domain_id = domain.id
+            inner join
+        `cloud`.`user` ON event.user_id = user.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = event.account_id
+            left join
+        `cloud`.`event` eve ON event.start_id = eve.id;
+
+
+

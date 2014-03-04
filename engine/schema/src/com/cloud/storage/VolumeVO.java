@@ -547,6 +547,7 @@ public class VolumeVO implements Volume {
         this._iScsiName = iScsiName;
     }
 
+    @Override
     public boolean isDisplayVolume() {
         return displayVolume;
     }

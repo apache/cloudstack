@@ -190,4 +190,6 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     Long getVmSnapshotChainSize();
 
     Integer getHypervisorSnapshotReserve();
+
+    boolean isDisplayVolume();
 }

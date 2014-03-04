@@ -479,6 +479,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         CallContext ctx = CallContext.current();
         Long callerUserId = ctx.getCallingUserId();
         Account caller = ctx.getCallingAccount();
+        ctx.setEventDisplayEnabled(cmdObj.isDisplayResourceEnabled());
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
@@ -512,7 +513,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // save the scheduled event
             Long eventId =
                 ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                    asyncCmd.getEventDescription(), startEventId);
+                    asyncCmd.getEventDescription(), asyncCmd.isDisplayResourceEnabled(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;

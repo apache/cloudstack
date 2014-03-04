@@ -101,7 +101,7 @@ public class ApiDispatcher {
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) throws Exception {
         processParameters(cmd, params);
-
+        CallContext.current().setEventDisplayEnabled(cmd.isDisplayResourceEnabled());
         cmd.create();
 
     }
@@ -131,6 +131,7 @@ public class ApiDispatcher {
     public void dispatch(BaseCmd cmd, Map<String, String> params, boolean execute) throws Exception {
         processParameters(cmd, params);
         CallContext ctx = CallContext.current();
+        ctx.setEventDisplayEnabled(cmd.isDisplayResourceEnabled());
 
         if (cmd instanceof BaseAsyncCmd) {
 

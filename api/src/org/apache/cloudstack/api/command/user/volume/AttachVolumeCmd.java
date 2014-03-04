@@ -108,6 +108,15 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public boolean isDisplayResourceEnabled(){
+        Volume volume = _responseGenerator.findVolumeById(getId());
+        if (volume == null) {
+            return true; // bad id given, parent this command to true so ERROR events are tracked
+        }
+        return volume.isDisplayVolume();
+    }
+
+    @Override
     public String getEventDescription() {
         return "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
     }

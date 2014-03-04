@@ -152,6 +152,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public Boolean getDisplayVolume() {
+        if(displayVolume == null){
+            return true;
+        }
+
         return displayVolume;
     }
 
@@ -192,6 +196,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     @Override
+    public boolean isDisplayResourceEnabled(){
+        return getDisplayVolume();
+    }
+
+    @Override
     public String getEventDescription() {
         return "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
@@ -211,6 +220,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
+        CallContext.current().setEventDisplayEnabled(getDisplayVolume());
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
