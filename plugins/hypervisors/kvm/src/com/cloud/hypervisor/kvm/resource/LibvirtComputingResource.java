@@ -3075,7 +3075,7 @@ ServerResource {
 
         NicTO[] nics = vm.getNics();
 
-        boolean success = false;
+        boolean skipDisconnect = false;
 
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vm.getName());
@@ -3091,13 +3091,16 @@ ServerResource {
                 }
             }
 
-            _storagePoolMgr.connectPhysicalDisksViaVmSpec(vm);
+            if (!_storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
+                skipDisconnect = true;
+                return new PrepareForMigrationAnswer(cmd, "failed to connect physical disks to host");
+            }
 
             synchronized (_vms) {
                 _vms.put(vm.getName(), State.Migrating);
             }
 
-            success = true;
+            skipDisconnect = true;
 
             return new PrepareForMigrationAnswer(cmd);
         } catch (LibvirtException e) {
@@ -3107,7 +3110,7 @@ ServerResource {
         } catch (URISyntaxException e) {
             return new PrepareForMigrationAnswer(cmd, e.toString());
         } finally {
-            if (!success) {
+            if (!skipDisconnect) {
                 _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
             }
         }
@@ -3654,7 +3657,9 @@ ServerResource {
 
             createVbd(conn, vmSpec, vmName, vm);
 
-            _storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec);
+            if (!_storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)) {
+                return new StartAnswer(cmd, "Failed to connect physical disks to host");
+            }
 
             createVifs(vmSpec, vm);
 
