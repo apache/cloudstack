@@ -2555,7 +2555,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
                 if (vlans != null && vlans.size() > 0) {
                     VlanVO vlan = vlans.get(0);
-                    if (vlanId == null) {
+                    if (vlanId == null || vlanId.contains(Vlan.UNTAGGED)) {
                         vlanId = vlan.getVlanTag();
                     } else if (!NetUtils.isSameIsolationId(vlan.getVlanTag(), vlanId)) {
                         throw new InvalidParameterValueException("there is already one vlan " + vlan.getVlanTag() + " on network :" + +network.getId()
