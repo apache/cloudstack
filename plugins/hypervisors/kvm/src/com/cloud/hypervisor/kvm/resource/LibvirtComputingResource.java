@@ -254,11 +254,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -306,6 +309,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _pod;
     private String _clusterId;
     private int _migrateSpeed;
+    private int _migrateDowntime;
+    private int _migratePauseAfter;
 
     private long _hvVersion;
     private long _kernelVersion;
@@ -888,6 +893,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_mountPoint == null) {
             _mountPoint = "/mnt";
         }
+
+        value = (String) params.get("vm.migrate.downtime");
+        _migrateDowntime = NumbersUtil.parseInt(value, -1);
+
+        value = (String) params.get("vm.migrate.pauseafter");
+        _migratePauseAfter = NumbersUtil.parseInt(value, -1);
 
         value = (String)params.get("vm.migrate.speed");
         _migrateSpeed = NumbersUtil.parseInt(value, -1);
@@ -2986,7 +2997,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Connect conn = null;
         String xmlDesc = null;
         try {
-            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
+            conn = LibvirtConnection.getConnectionByVmName(vmName);
             ifaces = getInterfaces(conn, vmName);
             disks = getDisks(conn, vmName);
             dm = conn.domainLookupByName(vmName);
@@ -3006,16 +3017,64 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             xmlDesc = dm.getXMLDesc(0).replace(_privateIp, cmd.getDestinationIp());
 
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
-            /*
-             * Hard code lm flag: VIR_MIGRATE_LIVE(1<<0)
-             */
-            destDomain = dm.migrate(dconn, (1 << 0), xmlDesc, vmName, "tcp:" + cmd.getDestinationIp(), _migrateSpeed);
 
-            for (DiskDef disk : disks) {
-                cleanupDisk(disk);
+            //run migration in thread so we can monitor it
+            s_logger.info("Live migration of instance " + vmName + " initiated");
+            ExecutorService executor = Executors.newFixedThreadPool(1);
+            Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, vmName, cmd.getDestinationIp());
+            Future<Domain> migrateThread = executor.submit(worker);
+            executor.shutdown();
+            long sleeptime = 0;
+            while (!executor.isTerminated()) {
+                Thread.sleep(100);
+                sleeptime += 100;
+                if (sleeptime == 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
+                    if (_migrateDowntime > 0 ) {
+                        try {
+                            int setDowntime = dm.migrateSetMaxDowntime(_migrateDowntime);
+                            if (setDowntime == 0 ) {
+                                s_logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(_migrateDowntime) + "ms");
+                            }
+                        } catch (LibvirtException e) {
+                            s_logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
+                        }
+                    }
+                }
+                if ((sleeptime % 1000) == 0) {
+                    s_logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
+                }
+
+                // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
+                if (_migratePauseAfter > 0 && sleeptime > _migratePauseAfter && dm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING ) {
+                    s_logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + _migratePauseAfter+ "ms to complete migration");
+                    try {
+                        dm.suspend();
+                    } catch (LibvirtException e) {
+                        // pause could be racy if it attempts to pause right when vm is finished, simply warn
+                        s_logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
+                    }
+                }
+            }
+            s_logger.info("Migration thread for " + vmName + " is done");
+
+            destDomain = migrateThread.get(10, TimeUnit.SECONDS);
+
+            if (destDomain != null) {
+                for (DiskDef disk : disks) {
+                    cleanupDisk(disk);
+                }
             }
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
+            result = e.getMessage();
+        } catch (InterruptedException e) {
+            s_logger.debug("Interrupted while migrating domain: " + e.getMessage());
+            result = e.getMessage();
+        } catch (ExecutionException e) {
+            s_logger.debug("Failed to execute while migrating domain: " + e.getMessage());
+            result = e.getMessage();
+        } catch (TimeoutException e) {
+            s_logger.debug("Timed out while migrating domain: " + e.getMessage());
             result = e.getMessage();
         } finally {
             try {
@@ -3052,6 +3111,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return new MigrateAnswer(cmd, result == null, result, null);
+    }
+
+    private class MigrateKVMAsync implements Callable<Domain> {
+        Domain dm = null;
+        Connect dconn = null;
+        String vmName = "";
+        String destIp = "";
+
+        MigrateKVMAsync(Domain dm, Connect dconn, String vmName, String destIp) {
+            this.dm = dm;
+            this.dconn = dconn;
+            this.vmName = vmName;
+            this.destIp = destIp;
+        }
+
+        @Override
+        public Domain call() throws LibvirtException {
+            // set compression flag for migration if libvirt version supports it
+            if (dconn.getLibVirVersion() < 1003000) {
+                return dm.migrate(dconn, (1 << 0), vmName, "tcp:" + destIp, _migrateSpeed);
+            } else {
+                return dm.migrate(dconn, (1 << 0)|(1 << 11), vmName, "tcp:" + destIp, _migrateSpeed);
+            }
+        }
     }
 
     private synchronized Answer execute(PrepareForMigrationCommand cmd) {
