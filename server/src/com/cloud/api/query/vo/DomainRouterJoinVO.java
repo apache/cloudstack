@@ -26,6 +26,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
@@ -510,4 +512,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     public VirtualRouter.Role getRole() {
         return role;
     }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
+    }
+
 }

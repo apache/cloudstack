@@ -27,7 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.template.VirtualMachineTemplate.State;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -35,6 +35,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -539,4 +540,10 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     public State getTemplateState() { return templateState; }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachineTemplate;
+    }
+
 }

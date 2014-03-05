@@ -36,6 +36,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -183,27 +185,27 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled) {
         this.id = id;
-        this.hostName = name != null ? name : this.uuid;
+        hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
-            this.templateId = vmTemplateId;
+            templateId = vmTemplateId;
         }
         this.instanceName = instanceName;
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        this.vncPassword = Long.toHexString(new Random().nextLong());
-        this.state = State.Stopped;
+        vncPassword = Long.toHexString(new Random().nextLong());
+        state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        this.limitCpuUse = false;
+        limitCpuUse = false;
     }
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled, boolean limitResourceUse, Long diskOfferingId) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
-        this.limitCpuUse = limitResourceUse;
+        limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
     }
 
@@ -324,11 +326,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public Date getProxyAssignTime() {
-        return this.proxyAssignTime;
+        return proxyAssignTime;
     }
 
     public void setProxyAssignTime(Date time) {
-        this.proxyAssignTime = time;
+        proxyAssignTime = time;
     }
 
     @Override
@@ -412,7 +414,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public void setPodId(long podId) {
-        this.podIdToDeployIn = podId;
+        podIdToDeployIn = podId;
     }
 
     public void setPrivateMacAddress(String privateMacAddress) {
@@ -436,7 +438,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public String getReservationId() {
-        return this.reservationId;
+        return reservationId;
     }
 
     @Override
@@ -500,7 +502,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public Boolean isDynamicallyScalable() {
-        return this.dynamicallyScalable;
+        return dynamicallyScalable;
     }
 
     public VirtualMachine.PowerState getPowerState() {
@@ -535,4 +537,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         powerHostId = hostId;
     }
 
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
+    }
 }

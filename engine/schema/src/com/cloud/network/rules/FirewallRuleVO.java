@@ -34,6 +34,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
@@ -191,7 +193,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     protected FirewallRuleVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
@@ -202,13 +204,13 @@ public class FirewallRuleVO implements FirewallRule {
         }
         this.accountId = accountId;
         this.domainId = domainId;
-        this.sourceIpAddressId = ipAddressId;
-        this.sourcePortStart = portStart;
-        this.sourcePortEnd = portEnd;
+        sourceIpAddressId = ipAddressId;
+        sourcePortStart = portStart;
+        sourcePortEnd = portEnd;
         this.protocol = protocol;
         this.purpose = purpose;
         this.networkId = networkId;
-        this.state = State.Staged;
+        state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         this.sourceCidrs = sourceCidrs;
@@ -218,8 +220,8 @@ public class FirewallRuleVO implements FirewallRule {
         }
 
         this.related = related;
-        this.uuid = UUID.randomUUID().toString();
-        this.type = FirewallRuleType.User;
+        uuid = UUID.randomUUID().toString();
+        type = FirewallRuleType.User;
         this.trafficType = trafficType;
     }
 
@@ -256,7 +258,7 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -280,4 +282,10 @@ public class FirewallRuleVO implements FirewallRule {
     public boolean isDisplay() {
         return display;
     }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
+    }
+
 }

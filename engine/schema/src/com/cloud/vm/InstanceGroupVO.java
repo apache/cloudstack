@@ -28,6 +28,8 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -63,7 +65,7 @@ public class InstanceGroupVO implements InstanceGroup {
     public InstanceGroupVO(String name, long accountId) {
         this.name = name;
         this.accountId = accountId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     protected InstanceGroupVO() {
@@ -105,7 +107,7 @@ public class InstanceGroupVO implements InstanceGroup {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -115,5 +117,10 @@ public class InstanceGroupVO implements InstanceGroup {
     @Override
     public Short getAccountType() {
         return accountType;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.InstanceGroup;
     }
 }

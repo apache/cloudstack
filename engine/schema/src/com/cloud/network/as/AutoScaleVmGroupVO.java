@@ -30,6 +30,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.GenericDao;
@@ -97,8 +98,8 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
             long accountId, int minMembers, int maxMembers, int memberPort,
             int interval, Date lastInterval, long profileId, String state) {
 
-        this.uuid = UUID.randomUUID().toString();
-        this.loadBalancerId = lbRuleId;
+        uuid = UUID.randomUUID().toString();
+        loadBalancerId = lbRuleId;
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -224,4 +225,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     public boolean isDisplay() {
         return display;
     }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AutoScaleVmGroup;
+    }
+
 }

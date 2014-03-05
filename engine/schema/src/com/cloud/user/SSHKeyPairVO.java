@@ -24,6 +24,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 @Entity
 @Table(name = "ssh_keypairs")
 public class SSHKeyPairVO implements SSHKeyPair {
@@ -114,4 +116,8 @@ public class SSHKeyPairVO implements SSHKeyPair {
         this.privateKey = privateKey;
     }
 
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.SSHKeyPair;
+    }
 }

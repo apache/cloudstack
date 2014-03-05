@@ -30,6 +30,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.GenericDao;
@@ -77,7 +78,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
 
     public AutoScalePolicyVO(long domainId, long accountId, int duration,
             int quietTime, Date lastQuiteTime, String action) {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.domainId = domainId;
         this.accountId = accountId;
         this.duration = duration;
@@ -150,4 +151,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     public void setLastQuiteTime(Date lastQuiteTime) {
         this.lastQuiteTime = lastQuiteTime;
     }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.AutoScalePolicy;
+    }
+
 }

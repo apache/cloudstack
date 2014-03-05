@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -76,16 +78,16 @@ public class UserIpv6AddressVO implements UserIpv6Address {
     Date created;
 
     protected UserIpv6AddressVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public UserIpv6AddressVO(String address, long dataCenterId, String macAddress, long vlanDbId) {
         this.address = address;
         this.dataCenterId = dataCenterId;
-        this.vlanId = vlanDbId;
-        this.state = State.Free;
-        this.setMacAddress(macAddress);
-        this.uuid = UUID.randomUUID().toString();
+        vlanId = vlanDbId;
+        state = State.Free;
+        setMacAddress(macAddress);
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -183,5 +185,10 @@ public class UserIpv6AddressVO implements UserIpv6Address {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.UserIpv6Address;
     }
 }

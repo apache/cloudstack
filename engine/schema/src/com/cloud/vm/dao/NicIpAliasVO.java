@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -39,18 +41,18 @@ public class NicIpAliasVO implements NicIpAlias {
     public NicIpAliasVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
         this.nicId = nicId;
         this.vmId = vmId;
-        this.ip4Address = ipaddr;
+        ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
         this.netmask = netmask;
         this.gateway = gateway;
-        this.state = NicIpAlias.state.active;
+        state = NicIpAlias.state.active;
         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         long cidrSize = Long.parseLong(cidrPair[1]);
-        this.startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
+        startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
     }
 
     protected NicIpAliasVO() {
@@ -199,7 +201,7 @@ public class NicIpAliasVO implements NicIpAlias {
     }
 
     public void setAliasCount(long count) {
-        this.aliasCount = count;
+        aliasCount = count;
     }
 
     public void setNetmask(String netmask) {
@@ -232,4 +234,8 @@ public class NicIpAliasVO implements NicIpAlias {
         return startIpOfSubnet;
     }
 
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.NicIpAlias;
+    }
 }

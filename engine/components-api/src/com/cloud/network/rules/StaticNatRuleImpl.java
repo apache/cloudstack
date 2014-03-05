@@ -18,6 +18,8 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 public class StaticNatRuleImpl implements StaticNatRule {
     long id;
     String xid;
@@ -34,19 +36,19 @@ public class StaticNatRuleImpl implements StaticNatRule {
     boolean forDisplay;
 
     public StaticNatRuleImpl(FirewallRuleVO rule, String dstIp) {
-        this.id = rule.getId();
-        this.xid = rule.getXid();
-        this.uuid = rule.getUuid();
-        this.protocol = rule.getProtocol();
-        this.portStart = rule.getSourcePortStart();
-        this.portEnd = rule.getSourcePortEnd();
-        this.state = rule.getState();
-        this.accountId = rule.getAccountId();
-        this.domainId = rule.getDomainId();
-        this.networkId = rule.getNetworkId();
-        this.sourceIpAddressId = rule.getSourceIpAddressId();
-        this.destIpAddress = dstIp;
-        this.forDisplay = rule.isDisplay();
+        id = rule.getId();
+        xid = rule.getXid();
+        uuid = rule.getUuid();
+        protocol = rule.getProtocol();
+        portStart = rule.getSourcePortStart();
+        portEnd = rule.getSourcePortEnd();
+        state = rule.getState();
+        accountId = rule.getAccountId();
+        domainId = rule.getDomainId();
+        networkId = rule.getNetworkId();
+        sourceIpAddressId = rule.getSourceIpAddressId();
+        destIpAddress = dstIp;
+        forDisplay = rule.isDisplay();
     }
 
     @Override
@@ -147,5 +149,10 @@ public class StaticNatRuleImpl implements StaticNatRule {
     @Override
     public boolean isDisplay() {
         return forDisplay;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
     }
 }

@@ -25,6 +25,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.GenericDao;
 
@@ -223,4 +225,10 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     public boolean getDisplayEvent() {
         return displayEvent;
     }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Event;
+    }
+
 }

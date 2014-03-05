@@ -33,6 +33,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 
 import com.cloud.utils.db.GenericDao;
@@ -133,10 +134,10 @@ public class VMSnapshotVO implements VMSnapshot {
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
-        this.state = State.Allocated;
+        state = State.Allocated;
         this.description = description;
-        this.name = vmSnapshotName;
-        this.displayName = vsDisplayName;
+        name = vmSnapshotName;
+        displayName = vsDisplayName;
         this.type = type;
         this.current = current;
     }
@@ -227,7 +228,7 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Override
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     @Override
@@ -242,5 +243,10 @@ public class VMSnapshotVO implements VMSnapshot {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VMSnapshot;
     }
 }

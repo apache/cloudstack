@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.network.Site2SiteVpnConnection;
@@ -76,10 +77,10 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     }
 
     public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId, boolean passive) {
-        this.uuid = UUID.randomUUID().toString();
-        this.setVpnGatewayId(vpnGatewayId);
-        this.setCustomerGatewayId(customerGatewayId);
-        this.setState(State.Pending);
+        uuid = UUID.randomUUID().toString();
+        setVpnGatewayId(vpnGatewayId);
+        setCustomerGatewayId(customerGatewayId);
+        setState(State.Pending);
         this.accountId = accountId;
         this.domainId = domainId;
         this.passive = passive;
@@ -170,5 +171,10 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Site2SiteVpnConnection;
     }
 }
