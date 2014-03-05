@@ -96,7 +96,7 @@
                                         }
                                     },
                                     isCustomized: {
-                                        label: 'Custom',                                       
+                                        label: 'label.custom',                                       
                                         isBoolean: true,
                                         isReverse: true,
                                         isChecked: false
@@ -2320,34 +2320,34 @@
                                                         // Sanitize names
                                                         switch (serviceName) {
                                                             case 'Vpn':
-                                                                serviceDisplayName = 'VPN';
+                                                                serviceDisplayName = dictionary['label.vpn'];
                                                                 break;
                                                             case 'Dhcp':
                                                                 serviceDisplayName = dictionary['label.dhcp'];
                                                                 break;
                                                             case 'Dns':
-                                                                serviceDisplayName = 'DNS';
+                                                                serviceDisplayName = dictionary['label.dns'];
                                                                 break;
                                                             case 'Lb':
-                                                                serviceDisplayName = 'Load Balancer';
+                                                                serviceDisplayName = dictionary['label.load.balancer'];
                                                                 break;
                                                             case 'SourceNat':
-                                                                serviceDisplayName = 'Source NAT';
+                                                                serviceDisplayName = dictionary['label.source.nat'];
                                                                 break;
                                                             case 'StaticNat':
-                                                                serviceDisplayName = 'Static NAT';
+                                                                serviceDisplayName = dictionary['label.static.nat'];
                                                                 break;
                                                             case 'PortForwarding':
-                                                                serviceDisplayName = 'Port Forwarding';
+                                                                serviceDisplayName = dictionary['label.port.forwarding'];
                                                                 break;
                                                             case 'SecurityGroup':
-                                                                serviceDisplayName = 'Security Groups';
+                                                                serviceDisplayName = dictionary['label.security.groups'];
                                                                 break;
                                                             case 'UserData':
-                                                                serviceDisplayName = 'User Data';
+                                                                serviceDisplayName = dictionary['label.user.data'];
                                                                 break;
                                                             case 'Connectivity':
-                                                                serviceDisplayName = 'Virtual Networking';
+                                                                serviceDisplayName = dictionary['label.virtual.networking'];
                                                                 break;
                                                             default:
                                                                 serviceDisplayName = serviceName;
@@ -2454,7 +2454,7 @@
 
                                     //show or hide upon checked services and selected providers above (begin)
                                     serviceofferingid: {
-                                        label: 'System Offering for Router',
+                                        label: 'label.system.offering.for.router',
                                         isHidden: true,
                                         docID: 'helpNetworkOfferingSystemOffering',
                                         select: function(args) {
@@ -2488,7 +2488,7 @@
                                     },
 
                                     "service.SourceNat.redundantRouterCapabilityCheckbox": {
-                                        label: "label.redundant.router.capability",
+                                        label: 'label.redundant.router.capability',
                                         isHidden: true,
                                         dependsOn: 'service.SourceNat.isEnabled',
                                         docID: 'helpNetworkOfferingRedundantRouterCapability',
@@ -2534,7 +2534,7 @@
                                         }
                                     },
                                     "service.Lb.inlineModeDropdown": {
-                                        label: 'Mode',
+                                        label: 'label.mode',
                                         docID: 'helpNetworkOfferingMode',
                                         select: function(args) {
                                             var items = [];
@@ -2559,7 +2559,7 @@
                                     },
 
                                     "service.StaticNat.associatePublicIP": {
-                                        label: 'Associate Public IP',
+                                        label: 'label.associate.public.ip',
                                         docID: 'helpNetworkOfferingAssociatePublicIP',
                                         isBoolean: true,
                                         isHidden: true
@@ -2585,23 +2585,23 @@
                                             args.response.success({
                                                 data: [{
                                                     id: 'Optional',
-                                                    description: 'Optional'
+                                                    description: 'label.optional'
                                                 }, {
                                                     id: 'Required',
-                                                    description: 'Required'
+                                                    description: 'label.required'
                                                 }]
                                             });
                                         }
                                     },
 
                                     egresspolicy: {
-                                        label: 'Default egress policy',
+                                        label: 'label.default.egress.policy',
                                         isHidden: true,
                                         select: function(args) {
                                             args.response.success({
                                                 data: [
-                                                    { id: 'ALLOW', description: 'Allow' },
-                                                    { id: 'DENY', description: 'Deny' }
+                                                    { id: 'ALLOW', description: 'label.allow' },
+                                                    { id: 'DENY', description: 'label.deny' }
                                                 ]
                                             });
                                         }
@@ -2829,13 +2829,13 @@
                             },
 
                             enable: {
-                                label: 'Enable network offering',
+                                label: 'label.enable.network.offering',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to enable this network offering?';
+                                        return 'message.confirm.enable.network.offering';
                                     },
                                     notification: function(args) {
-                                        return 'Enabling network offering';
+                                        return 'message.enabling.network.offering';
                                     }
                                 },
                                 action: function(args) {
@@ -2864,13 +2864,13 @@
                             },
 
                             disable: {
-                                label: 'Disable network offering',
+                                label: 'label.disable.network.offering',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to disable this network offering?';
+                                        return 'message.confirm.disable.network.offering';
                                     },
                                     notification: function(args) {
-                                        return 'Disabling network offering';
+                                        return 'message.disabling.network.offering';
                                     }
                                 },
                                 action: function(args) {
@@ -2899,7 +2899,7 @@
                             },
 
                             remove: {
-                                label: 'Remove network offering',
+                                label: 'label.remove.network.offering',
                                 action: function(args) {
                                     $.ajax({
                                         url: createURL('deleteNetworkOffering'),
@@ -2919,10 +2919,10 @@
                                 },
                                 messages: {
                                     confirm: function() {
-                                        return 'Are you sure you want to remove this network offering?';
+                                        return 'message.confirm.remove.network.offering';
                                     },
                                     notification: function() {
-                                        return 'Remove network offering';
+                                        return 'label.remove.network.offering';
                                     }
                                 },
                                 notification: {
@@ -2968,7 +2968,7 @@
                                     },
 
                                     ispersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent ',
                                         converter: cloudStack.converters.toBooleanText
                                     },
 

@@ -66,7 +66,7 @@
         fields: {
 
             'number': {
-                label: 'Rule Number',
+                label: 'label.rule.number',
                 edit: true,
                 isEditable: true
 
@@ -78,16 +78,16 @@
                 isEditable: true
             },
             action: {
-                label: 'Action',
+                label: 'label.action',
                 isEditable: true,
                 select: function(args) {
                     args.response.success({
                         data: [{
-                            name: 'Allow',
-                            description: 'Allow'
+                            name: 'label.allow',
+                            description: 'label.allow'
                         }, {
-                            name: 'Deny',
-                            description: 'Deny'
+                            name: 'label.deny',
+                            description: 'label.deny'
                         }]
                     });
                 }
@@ -1926,14 +1926,14 @@
                             docID: 'helpVPCGatewayNetmask'
                         },
                         sourceNat: {
-                            label: 'Source NAT',
+                            label: 'label.source.nat',
                             isBoolean: true,
                             isChecked: false
 
                         },
 
                         aclid: {
-                            label: 'ACL',
+                            label: 'label.acl',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listNetworkACLLists'),
