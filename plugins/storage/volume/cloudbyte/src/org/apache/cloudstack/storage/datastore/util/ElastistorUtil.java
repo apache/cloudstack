@@ -1,79 +1,62 @@
 package org.apache.cloudstack.storage.datastore.util;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.security.InvalidParameterException;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.naming.ServiceUnavailableException;
+import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.cloudstack.storage.datastore.client.ElastiCenterClient;
 import org.apache.cloudstack.storage.datastore.command.AddQosGroupCmd;
+import org.apache.cloudstack.storage.datastore.command.CreateTsmCmd;
 import org.apache.cloudstack.storage.datastore.command.CreateVolumeCmd;
 import org.apache.cloudstack.storage.datastore.command.DeleteTsmCmd;
 import org.apache.cloudstack.storage.datastore.command.DeleteVolumeCmd;
+import org.apache.cloudstack.storage.datastore.command.ListHAPoolCmd;
 import org.apache.cloudstack.storage.datastore.command.ListTsmCmd;
 import org.apache.cloudstack.storage.datastore.command.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.command.UpdateFileSystemCmd;
+import org.apache.cloudstack.storage.datastore.command.UpdateQosGroupCmd;
+import org.apache.cloudstack.storage.datastore.command.UpdateStorageCmd;
+import org.apache.cloudstack.storage.datastore.command.UpdateTsmCmd;
 import org.apache.cloudstack.storage.datastore.response.AddQosGroupCmdResponse;
+import org.apache.cloudstack.storage.datastore.response.CreateTsmCmdResponse;
 import org.apache.cloudstack.storage.datastore.response.CreateVolumeCmdResponse;
 import org.apache.cloudstack.storage.datastore.response.DeleteTsmResponse;
 import org.apache.cloudstack.storage.datastore.response.DeleteVolumeResponse;
+import org.apache.cloudstack.storage.datastore.response.ListHAPoolResponse;
 import org.apache.cloudstack.storage.datastore.response.ListTsmsResponse;
 import org.apache.cloudstack.storage.datastore.response.QueryAsyncJobResultResponse;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.BasicClientConnectionManager;
+import org.apache.cloudstack.storage.datastore.response.UpdateFileSystemCmdResponse;
+import org.apache.cloudstack.storage.datastore.response.UpdateQosGroupCmdResponse;
+import org.apache.cloudstack.storage.datastore.response.UpdateStorageCmdResponse;
+import org.apache.cloudstack.storage.datastore.response.UpdateTsmCmdResponse;
+import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.http.auth.InvalidCredentialsException;
+import org.apache.log4j.Logger;
 
-import com.cloud.storage.VolumeVO;
+import com.cloud.agent.api.Answer;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 
 /**
  * The util class for elastistor's storage plugin codebase.
- *
+ * 
  * @author amit.das@cloudbyte.com
  * @author punith.s@cloudbyte.com
- *
+ * 
  */
 public class ElastistorUtil {
+    
+    private static final Logger s_logger = Logger.getLogger(ElastistorUtil.class);
 
     /**
-     * Elastistor REST API Connection Info
-     */
-    private static final String REST_PROTOCOL = "https";
-    private static final String REST_CONTEXT_PATH = "client/api";
-    private static final String REST_VALUE_RESPONSE = "json";
-
-    /**
-     * Elastistor REST API Commands. Refer ElastistorUtil.RESTApi
+     * Elastistor restclient for http rest calls
      */
 
+    public static ElastiCenterClient restclient = null;
+    
+    
     /**
      * Elastistor REST API Param Keys. These should match exactly with the
      * elastistor API commands' params.
@@ -93,6 +76,31 @@ public class ElastistorUtil {
     public static final String REST_PARAM_IPADDRESS = "ipaddress";
     public static final String REST_PARAM_JOBID = "jobId";
     public static final String REST_PARAM_FORECEDELETE = "forcedelete";
+    public static final String REST_PARAM_TSM_THROUGHPUT = "totalthroughput";
+    public static final String REST_PARAM_NAME = "name";
+    public static final String REST_PARAM_NOOFCOPIES = "noofcopies";
+    public static final String REST_PARAM_RECORDSIZE = "recordsize";
+    public static final String REST_PARAM_TOTALIOPS = "totaliops";
+    public static final String REST_PARAM_LATENCY = "latency";
+    public static final String REST_PARAM_BLOCKSIZE = "blocksize";
+    public static final String REST_PARAM_GRACEALLOWED = "graceallowed";
+    public static final String REST_PARAM_IOPS = "iops";
+    public static final String REST_PARAM_THROUGHPUT = "throughput";
+    public static final String REST_PARAM_MEMLIMIT= "memlimit";
+    public static final String REST_PARAM_NETWORKSPEED = "networkspeed";
+    public static final String REST_PARAM_TSMID = "tsmid";
+    public static final String REST_PARAM_DATASETID = "datasetid";
+    public static final String REST_PARAM_QOSGROUPID = "qosgroupid";
+    public static final String REST_PARAM_DEDUPLICATION = "deduplication";
+    public static final String REST_PARAM_COMPRESSION = "compression";
+    public static final String REST_PARAM_SYNC = "sync";
+    public static final String REST_PARAM_MOUNTPOINT= "mountpoint";
+    public static final String REST_PARAM_CASESENSITIVITY = "casesensitivity";
+    public static final String REST_PARAM_UNICODE = "unicode";
+    public static final String REST_PARAM_PROTOCOLTYPE= "protocoltype";
+    public static final String REST_PARAM_AUTHNETWORK = "authnetwork";
+    public static final String REST_PARAM_MAPUSERSTOROOT = "mapuserstoroot";
+
     /**
      * Constants related to elastistor which are persisted in cloudstack
      * databases as keys.
@@ -119,19 +127,32 @@ public class ElastistorUtil {
      * ElastiCenter API. These might in turn be saved as DB updates along with
      * above keys.
      */
-    public static String esip = "";
-    public static String esapikey = "";
-    public static String esaccountid = "";
-    public static String espoolid = "";
+    public static String ES_IP_VAL = "";
+    public static String ES_API_KEY_VAL = "";
+    public static String ES_ACCOUNT_ID_VAL = "";
+    public static String ES_POOL_ID_VAL = "";
+    public static String ES_SUBNET_VAL = "";
+    public static String ES_INTERFACE_VAL = "";
+    public static String ES_GATEWAY_VAL = "";
 
     /**
-     * Error messages
+     * hardcoded constants for elastistor api calls.
      */
-    private static final String PRESETUP_VOL_NOT_AVAILABLE = "A presetup volume is not available for account [%s].";
-    private static final String FILESYSTEM_ID_NOT_AVAILABLE = "File system id is not available for this operation [%s].";
-    private static final String INVALID_ARGUMENTS = "Invalid or null arguments were provided for this operation [%s] on account [%s].";
-    private static final String DESERIALIZATION_ERROR = "Error while deserializing json to [%s] using key [%s].";
-    public static final String ELASTISTOR_ACCOUNT_MISSING = "Elastistor does not have any account named [%s].";
+    private static final String ES_NOOFCOPIES_VAL = "1";
+    private static final String ES_BLOCKSIZE_VAL = "4K";
+    private static final String ES_LATENCY_VAL = "15";
+    private static final String ES_GRACEALLOWED_VAL = "false";
+    private static final String ES_MEMLIMIT_VAL = "0";
+    private static final String ES_NETWORKSPEED_VAL = "0";
+    private static final String ES_DEDUPLICATION_VAL = "off";
+    private static final String ES_COMPRESSION_VAL = "off";
+    private static final String ES_CASESENSITIVITY_VAL = "sensitive";
+    private static final String ES_READONLY_VAL = "off";
+    private static final String ES_UNICODE_VAL = "off";
+    private static final String ES_AUTHNETWORK_VAL = "all";
+    private static final String ES_MAPUSERSTOROOT_VAL = "yes";
+    private static final String ES_SYNC_VAL = "always";
+
 
     /**
      * Private constructor s.t. its never instantiated.
@@ -139,1088 +160,372 @@ public class ElastistorUtil {
     private ElastistorUtil() {
 
     }
+    
+    public static void setElastistorRestClient(String managementIp , String apiKey) {
+        try {
+            
+            restclient = new ElastiCenterClient(managementIp, apiKey);
+            
+            s_logger.info("ELASTICENTER REST CLIENT INTIALIZED");
+            
+        } catch (InvalidCredentialsException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidParameterException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SSLHandshakeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ServiceUnavailableException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
     public static void setElastistorApiKey(String value) {
-        esapikey = value;
+        ES_API_KEY_VAL = value;
     }
 
     public static void setElastistorManagementIp(String value) {
-        esip = value;
+        ES_IP_VAL = value;
     }
 
     public static void setElastistorPoolId(String value) {
-        espoolid = value;
+        ES_POOL_ID_VAL = value;
     }
 
     public static void setElastistorAccountId(String value) {
-        esaccountid = value;
+        ES_ACCOUNT_ID_VAL = value;
+    }
+    
+    public static void setElastistorGateway(String value) {
+        ES_GATEWAY_VAL = value;
     }
 
-    public enum ElastistorStoragePoolType {
+    public static void setElastistorInterface(String value) {
+        ES_INTERFACE_VAL = value;
     }
 
-    private static ElastistorFilesystem deleteVolume(String esFilesystemId,
-            ElastistorConnectionInfo esConnectionInfo) {
-        // prepare REST arguments
-        Map<String, String> restArgs = new HashMap<String, String>();
-        restArgs.put(REST_PARAM_ID, esFilesystemId);
-        restArgs.put(REST_PARAM_QUOTA_SIZE, "1M");
-        restArgs.put(REST_PARAM_READONLY, "false");
-
-        String strElastistorResultJson = executeHttpReq(esConnectionInfo,
-                RESTApi.DEL_ES_VOLUME.setPairs(restArgs));
-
-        return (ElastistorFilesystem) deserializeJsonToJava(
-                strElastistorResultJson, "filesystem",
-                ElastistorFilesystem.class);
-
+    public static void setElastistorSubnet(String value) {
+        ES_SUBNET_VAL = value;
     }
 
-    private static ElastistorFilesystem createVolume(long volSize,
-            ElastistorFilesystem esFilesystem,
-            ElastistorConnectionInfo esConnectionInfo) {
+    
 
-        // prepare REST arguments
-        Map<String, String> restArgs = new HashMap<String, String>();
-        restArgs.put(REST_PARAM_ID, esFilesystem.getId());
-        String size = String.valueOf(volSize) + "M";
-        restArgs.put(REST_PARAM_QUOTA_SIZE, size);
-        restArgs.put(REST_PARAM_READONLY, "false");
-
-        String strElastistorFilesystemJson = executeHttpReq(esConnectionInfo,
-                RESTApi.POST_ES_VOLUME.setPairs(restArgs));
-
-        return (ElastistorFilesystem) deserializeJsonToJava(
-                strElastistorFilesystemJson, "filesystem",
-                ElastistorFilesystem.class);
+    public static CreateTsmCmdResponse createElastistorTsm(String storagePoolName, String storageIp, Long capacityBytes, Long capacityIops) throws Throwable {
+        
+           s_logger.info("creation of elastistor plugin started");
+        
+            String quotasize; 
+            String totalthroughput = String.valueOf(capacityIops*4);
+            String totaliops = String.valueOf(capacityIops);
+        
+           if((1099511627776L)>capacityBytes &&(capacityBytes>(1073741824))){
+                
+                quotasize =(String.valueOf(capacityBytes/(1024*1024*1024))+"G");
+            }
+            else
+            {
+                int temp1 = (int) (capacityBytes/(1024*1024*1024));
+                int temp2  = temp1/1024;
+                
+                quotasize =(String.valueOf(temp2)+"T");
+                
+            }          
+        
+          CreateTsmCmd cmd = new CreateTsmCmd();
+        
+    
+          if ( null != ElastistorUtil.ES_ACCOUNT_ID_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_ACCOUNTID, ElastistorUtil.ES_ACCOUNT_ID_VAL);
+          if ( null != totalthroughput ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_TSM_THROUGHPUT, totalthroughput);
+          if ( null != ElastistorUtil.ES_POOL_ID_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_POOLID, ElastistorUtil.ES_POOL_ID_VAL);
+          if ( null != storagePoolName ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_NAME, "TSM"+storagePoolName);
+          if ( null != quotasize ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_QUOTA_SIZE, quotasize);
+          if ( null != storageIp ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_IPADDRESS, storageIp);
+          if ( null != ElastistorUtil.ES_SUBNET_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_SUBNET, ElastistorUtil.ES_SUBNET_VAL);
+          if ( null != ElastistorUtil.ES_GATEWAY_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_GATEWAY, ElastistorUtil.ES_GATEWAY_VAL);
+          if ( null != ElastistorUtil.ES_INTERFACE_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_INTERFACE, ElastistorUtil.ES_INTERFACE_VAL);           
+          if ( null != ElastistorUtil.ES_NOOFCOPIES_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_NOOFCOPIES, ElastistorUtil.ES_NOOFCOPIES_VAL);           
+          if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_RECORDSIZE, ElastistorUtil.ES_BLOCKSIZE_VAL);      
+          if ( null != totaliops ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_TOTALIOPS, totaliops);
+          if ( null != ElastistorUtil.ES_LATENCY_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_LATENCY, ElastistorUtil.ES_LATENCY_VAL);
+          if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_BLOCKSIZE, ElastistorUtil.ES_BLOCKSIZE_VAL);
+          if ( null != ElastistorUtil.ES_GRACEALLOWED_VAL ) cmd.putCommandParameter(ElastistorUtil.REST_PARAM_GRACEALLOWED, ElastistorUtil.ES_GRACEALLOWED_VAL);
+          
+        CreateTsmCmdResponse cmdResponse;
+        
+    try {
+        cmdResponse = (CreateTsmCmdResponse) ElastistorUtil.restclient.executeCommand(cmd);
+        
+        if ( cmdResponse.getTsm().getUuid() == null  ){
+             
+             throw new CloudRuntimeException("tsm creation failed , contact elatistor admin");
+         }
+        
+        return cmdResponse;
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        s_logger.error("tsm creation failed");
+        throw new CloudRuntimeException("tsm creation failed , contact elatistor admin");       
     }
-
-    private static List<ElastistorFilesystem> selectIscsiFileSystems(
-            ElastistorAccount esAccount) {
-        List<ElastistorFilesystem> esFilesystems = esAccount
-                .getFilesystemslist();
-        if (null == esFilesystems || 0 == esFilesystems.size()) {
-            return null;
-        }
-
-        List<ElastistorFilesystem> selectedEsFilesystems = (List<ElastistorFilesystem>) Collections2
-                .filter(esFilesystems, new Predicate<ElastistorFilesystem>() {
-                    @Override
-                    public boolean apply(ElastistorFilesystem filesystem) {
-                        return filesystem.isIscsi();
-                    }
-                });
-
-        return selectedEsFilesystems;
-
+        
     }
+    
+    
+    public static CreateVolumeCmdResponse createElastistorVolume(String storagePoolName, CreateTsmCmdResponse cmdResponse, Long capacityBytes, Long capacityIops,String protocoltype, String mountpoint) throws Throwable {
 
-    private static List<ElastistorFilesystem> filterFileSystemsOf1MB(
-            List<ElastistorFilesystem> esFilesystems) {
-
-        if (null == esFilesystems || 0 == esFilesystems.size()) {
-            return null;
-        }
-
-        List<ElastistorFilesystem> filteredEsFilesystems = (List<ElastistorFilesystem>) Collections2
-                .filter(esFilesystems, new Predicate<ElastistorFilesystem>() {
-                    @Override
-                    public boolean apply(ElastistorFilesystem filesystem) {
-                        return filesystem.quota.contains("1M")
-                                || filesystem.quota.contains("1MB");
-                    }
-                });
-
-        return filteredEsFilesystems;
-    }
-
-    private static List<ElastistorTSM> filterTsmsBySize(final long size,
-            List<ElastistorTSM> tsms) {
-
-        if (null == tsms || 0 == tsms.size()) {
-            return null;
-        }
-
-        List<ElastistorTSM> filteredTsms = (List<ElastistorTSM>) Collections2
-                .filter(tsms, new Predicate<ElastistorTSM>() {
-                    @Override
-                    public boolean apply(ElastistorTSM tsm) {
-                        return tsm.getAvailspace() > size;
-                    }
-                });
-
-        return filteredTsms;
-    }
-
-    private static List<ElastistorFilesystem> filterFilesystemsByTsms(
-            List<ElastistorTSM> tsms, List<ElastistorFilesystem> filesystems) {
-
-        if (null == filesystems || 0 == filesystems.size()) {
-            return null;
-        }
-
-        List<ElastistorFilesystem> filteredFilesystems = new ArrayList<ElastistorUtil.ElastistorFilesystem>();
-        for (ElastistorTSM tsm : tsms) {
-            filteredFilesystems
-                    .addAll(filterFilesystemsByTsm(tsm, filesystems));
-        }
-
-        return filteredFilesystems;
-    }
-
-    private static List<ElastistorFilesystem> filterFilesystemsByTsm(
-            ElastistorTSM tsm, List<ElastistorFilesystem> esFilesystems) {
-
-        if (null == esFilesystems || 0 == esFilesystems.size()) {
-            return null;
-        }
-
-        final String tsmId = tsm.getId();
-
-        List<ElastistorFilesystem> selectedEsFilesystems = (List<ElastistorFilesystem>) Collections2
-                .filter(esFilesystems, new Predicate<ElastistorFilesystem>() {
-                    @Override
-                    public boolean apply(ElastistorFilesystem filesystem) {
-                        if (null != filesystem.getTsmid()) {
-                            return filesystem.getTsmid().equals(tsmId);
-                        } else {
-                            return false;
-                        }
-                    }
-                });
-
-        return selectedEsFilesystems;
-    }
-
-    /**
-     * This class holds the connection details to elastistor .
-     *
-     */
-    public static final class ElastistorConnectionInfo {
-        private final String _managementIP;
-        private final int _managementPort;
-        private final String _apiKey;
-
-        public ElastistorConnectionInfo(String managementIP,int managementPort, String apiKey) {
-            _managementIP = managementIP;
-            _managementPort = managementPort;
-            _apiKey = apiKey;
-        }
-
-        public String getManagementIP() {
-            return _managementIP;
-        }
-
-        public int getManagementPort() {
-            return _managementPort;
-        }
-
-        public String getApiKey() {
-            return _apiKey;
-        }
-
-    }
-
-    /**
-     * This class is the representation of an elastistor's generic REST
-     * response. The normal naming conventions are not followed here s.t. gson
-     * can de-serialize the rest response to this bean easily.
-     *
-     */
-    public static final class ElastistorRestResponse {
-        private int count;
-        private boolean success;
-        private String jobid;
-
-        public int getCount() {
-            return count;
-        }
-
-        public void setCount(int count) {
-            this.count = count;
-        }
-
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public void setSuccess(boolean success) {
-            this.success = success;
-        }
-
-        public String getJobid() {
-            return jobid;
-        }
-
-        public void setJobid(String jobid) {
-            this.jobid = jobid;
-        }
-
-    }
-
-    /**
-     * This class is the representation of an elastistor's account as received
-     * from a REST response.
-     *
-     * Note - The code naming conventions are not followed here s.t. gson can
-     * de-serialize the rest response to this bean easily.
-     *
-     */
-    public static final class ElastistorAccount {
-
-        private String id;
-        private String name;
-        private long availIOPS;
-        private long totaliops;
-        private long usedIOPS;
-        private long currentUsedSpace;
-        private long currentAvailableSpace;
-        private List<ElastistorVolume> volumes;
-        private List<ElastistorTSM> tsms;
-        private List<ElastistorFilesystem> filesystemslist;
-
-        public List<ElastistorFilesystem> getFilesystemslist() {
-            return filesystemslist;
-        }
-
-        public void setFilesystemslist(
-                List<ElastistorFilesystem> filesystemslist) {
-            this.filesystemslist = filesystemslist;
-        }
-
-        public List<ElastistorVolume> getVolumes() {
-            return volumes;
-        }
-
-        public void setVolumes(List<ElastistorVolume> volumes) {
-            this.volumes = volumes;
-        }
-
-        public List<ElastistorTSM> getTsms() {
-            return tsms;
-        }
-
-        public void setTsms(List<ElastistorTSM> tsms) {
-            this.tsms = tsms;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public long getAvailIOPS() {
-            return availIOPS;
-        }
-
-        public void setAvailIOPS(long availIOPS) {
-            this.availIOPS = availIOPS;
-        }
-
-        public long getTotaliops() {
-            return totaliops;
-        }
-
-        public void setTotaliops(long totaliops) {
-            this.totaliops = totaliops;
-        }
-
-        public long getUsedIOPS() {
-            return usedIOPS;
-        }
-
-        public void setUsedIOPS(long usedIOPS) {
-            this.usedIOPS = usedIOPS;
-        }
-
-        public long getCurrentUsedSpace() {
-            return currentUsedSpace;
-        }
-
-        public void setCurrentUsedSpace(long currentUsedSpace) {
-            this.currentUsedSpace = currentUsedSpace;
-        }
-
-        public long getCurrentAvailableSpace() {
-            return currentAvailableSpace;
-        }
-
-        public void setCurrentAvailableSpace(long currentAvailableSpace) {
-            this.currentAvailableSpace = currentAvailableSpace;
-        }
-
-    }
-
-    /**
-     * This class represents an elastistor TSM as received from a REST response.
-     * This is specific to elastistor & probably should be removed in future
-     * plugin implementations when elastistor API has improved provisioning
-     * capability.
-     *
-     * Note - The code naming conventions are not followed here s.t. gson can
-     * de-serialize the rest response to this bean easily.
-     *
-     * @author amit.das@cloudbyte.com
-     *
-     */
-    public static final class ElastistorTSM {
-
-        private String id;
-        private String name;
-        private String ipaddress;
-        private long availiops;
-        private long availthroughput;
-        private long availspace;
-        private String datasetid;
-
-        public String getDatasetid() {
-            return datasetid;
-        }
-
-        public void setDatasetid(String datasetid) {
-            this.datasetid = datasetid;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getIpaddress() {
-            return ipaddress;
-        }
-
-        public void setIpaddress(String ipaddress) {
-            this.ipaddress = ipaddress;
-        }
-
-        public long getAvailiops() {
-            return availiops;
-        }
-
-        public void setAvailiops(long availiops) {
-            this.availiops = availiops;
-        }
-
-        public long getAvailthroughput() {
-            return availthroughput;
-        }
-
-        public void setAvailthroughput(long availthroughput) {
-            this.availthroughput = availthroughput;
-        }
-
-        public long getAvailspace() {
-            return availspace;
-        }
-
-        public void setAvailspace(long availspace) {
-            this.availspace = availspace;
-        }
-
-    }
-
-    /**
-     * This class is the representation of an elastistor's volume as received
-     * from a REST response.
-     *
-     * Note - The code naming conventions are not followed here s.t. gson can
-     * de-serialize the rest response to this bean easily.
-     *
-     */
-    public static final class ElastistorVolume {
-
-        private String name;
-        private String type;
-        private String path;
-        private String accountid;
-        private String accountname;
-        private String mountpoint;
-        private String ipaddress;
-        private boolean nfs;
-        private boolean cifs;
-        private boolean iscsi;
-        private boolean fc;
-        private String id;
-        private String groupId;
-        private String tsmId;
-        private long iops;
-        private long totalspace;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public String getAccountid() {
-            return accountid;
-        }
-
-        public void setAccountid(String accountid) {
-            this.accountid = accountid;
-        }
-
-        public String getAccountname() {
-            return accountname;
-        }
-
-        public void setAccountname(String accountname) {
-            this.accountname = accountname;
-        }
-
-        public String getMountpoint() {
-            return mountpoint;
-        }
-
-        public void setMountpoint(String mountpoint) {
-            this.mountpoint = mountpoint;
-        }
-
-        public String getIpaddress() {
-            return ipaddress;
-        }
-
-        public void setIpaddress(String ipaddress) {
-            this.ipaddress = ipaddress;
-        }
-
-        public boolean isNfs() {
-            return nfs;
-        }
-
-        public void setNfs(boolean nfs) {
-            this.nfs = nfs;
-        }
-
-        public boolean isCifs() {
-            return cifs;
-        }
-
-        public void setCifs(boolean cifs) {
-            this.cifs = cifs;
-        }
-
-        public boolean isIscsi() {
-            return iscsi;
-        }
-
-        public void setIscsi(boolean iscsi) {
-            this.iscsi = iscsi;
-        }
-
-        public boolean isFc() {
-            return fc;
-        }
-
-        public void setFc(boolean fc) {
-            this.fc = fc;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getGroupId() {
-            return groupId;
-        }
-
-        public void setGroupId(String groupId) {
-            this.groupId = groupId;
-        }
-
-        public String getTsmId() {
-            return tsmId;
-        }
-
-        public void setTsmId(String tsmId) {
-            this.tsmId = tsmId;
-        }
-
-        public long getIops() {
-            return iops;
-        }
-
-        public void setIops(long iops) {
-            this.iops = iops;
-        }
-
-        public long getTotalspace() {
-            return totalspace;
-        }
-
-        public void setTotalspace(long totalspace) {
-            this.totalspace = totalspace;
-        }
-
-    }
-
-    public static class ElastistorFilesystem {
-        private String id;
-        private String name;
-        private String type;
-        private String path;
-        private String tsmid;
-        private String quota;
-        private long availspace;
-        private boolean cifs;
-        private boolean nfs;
-        private boolean fc;
-        private boolean iscsi;
-        private long iops;
-        private long throughput;
-        private String mountpoint;
-
-        public String getMountpoint() {
-            return mountpoint;
-        }
-
-        public void setMountpoint(String mountpoint) {
-            this.mountpoint = mountpoint;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public String getTsmid() {
-            return tsmid;
-        }
-
-        public void setTsmid(String tsmid) {
-            this.tsmid = tsmid;
-        }
-
-        public String getQuota() {
-            return quota;
-        }
-
-        public void setQuota(String quota) {
-            this.quota = quota;
-        }
-
-        public long getAvailspace() {
-            return availspace;
-        }
-
-        public void setAvailspace(long availspace) {
-            this.availspace = availspace;
-        }
-
-        public boolean isCifs() {
-            return cifs;
-        }
-
-        public void setCifs(boolean cifs) {
-            this.cifs = cifs;
-        }
-
-        public boolean isNfs() {
-            return nfs;
-        }
-
-        public void setNfs(boolean nfs) {
-            this.nfs = nfs;
-        }
-
-        public boolean isFc() {
-            return fc;
-        }
-
-        public void setFc(boolean fc) {
-            this.fc = fc;
-        }
-
-        public boolean isIscsi() {
-            return iscsi;
-        }
-
-        public void setIscsi(boolean iscsi) {
-            this.iscsi = iscsi;
-        }
-
-        public long getIops() {
-            return iops;
-        }
-
-        public void setIops(long iops) {
-            this.iops = iops;
-        }
-
-        public long getThroughput() {
-            return throughput;
-        }
-
-        public void setThroughput(long throughput) {
-            this.throughput = throughput;
-        }
-    }
-
-    /**
-     * Enum to represent all the REST supported commands supported at
-     * elastistor.
-     *
-     */
-    private static enum RESTApi {
-        GET_ES_ACCOUNT("listAccount2"), DEL_ES_VOLUME("updateFileSystem"), POST_ES_VOLUME(
-                "updateFileSystem");
-
-        private Map<String, String> _pairs;
-        private String _restCommandName;
-
-        /**
-         * constructor
-         *
-         */
-        private RESTApi(String restCommandName) {
-            _restCommandName = restCommandName;
-            _pairs = new HashMap<String, String>();
-        }
-
-        public Map<String, String> getPairs() {
-            return _pairs;
-        }
-
-        public RESTApi setPair(String key, String value) {
-            _pairs.put(key, value);
-            return this;
-        }
-
-        public RESTApi setPairs(Map<String, String> args) {
-            _pairs.putAll(args);
-            return this;
-        }
-
-        public String getCommandName() {
-            return _restCommandName;
-        }
-    }
-
-    /**
-     * Get the elastistor account details. This should create a new account in
-     * elastistor if not present.
-     *
-     * @param esAccountName
-     *            represents the es account name, composed of cs account
-     *            properties
-     * @param esConnectionInfo
-     *            has the connection details to es
-     * @return {@link ElastistorAccount} the elastistor account that was queried
-     */
-    public static ElastistorAccount getElastistorAccountByName(
-            ElastistorConnectionInfo esConnectionInfo, String esAccountName) {
-
-        String strElastistorAccountJson = executeHttpReq(esConnectionInfo,
-                RESTApi.GET_ES_ACCOUNT.setPair(REST_PARAM_KEYWORD,
-                        esAccountName));
-
-        return (ElastistorAccount) deserializeJsonToJava(
-                strElastistorAccountJson, "account", ElastistorAccount.class);
-
-    }
-
-    public static VolumeVO createElastistorVolume(StoragePoolVO storagePool,
-            VolumeVO volume, String esmanagementip, String esapikey)
-            throws Throwable {
-        ElastiCenterClient restClient = new ElastiCenterClient(esmanagementip,
-                esapikey);
-
-        // AddQosGroup parameters
-        String memlimit = "0";
-        String networkspeed = "0";
         String datasetid;
         String tsmid;
-
-        // createVolume parameters
         String qosgroupid;
-        String deduplication = "off";
-        String compression = "off";
-        String sync = "always";
-        String casesensitivity = "sensitive";
-        String readonly = "off";
-        String unicode = "off";
-        String authnetwork = "all";
-        String mapuserstoroot = "yes";
+        String VolumeName = storagePoolName;
+        String totaliops = String.valueOf(capacityIops);
+        String totalthroughput = String.valueOf(capacityIops*4);
 
-        String VolumeName = volume.getName();
-        String totaliops = String.valueOf(volume.getMaxIops());
-        String latency = "15";
-        String blocksize = "4K";
-        String totalthroughput = String.valueOf(volume.getMaxIops() * 4);
-        String graceallowed = "false";
-        String quotasize = String.valueOf(volume.getSize()
-                / (1024 * 1024 * 1024));
-        String noofcopies = "1";
+        String quotasize; 
+            
+        if((1099511627776L)>capacityBytes &&(capacityBytes>(1073741824))){
+                quotasize =(String.valueOf(capacityBytes/(1024*1024*1024))+"G");
+            }
+            else
+            {
+                int temp1 = (int) (capacityBytes/(1024*1024*1024));
+                int temp2  = temp1/1024;                
+                quotasize =(String.valueOf(temp2)+"T");
+                
+            }
+        
+           
+           
+        AddQosGroupCmd addQosGroupCmd = new AddQosGroupCmd();
 
-        AddQosGroupCmd cmd2 = new AddQosGroupCmd();
 
-        ListTsmsResponse listTsmsResponse = listTsm(restClient,
-                storagePool.getHostAddress());
+        tsmid = cmdResponse.getTsm().getUuid();
+        datasetid = cmdResponse.getTsm().getDatasetid();
 
-        tsmid = listTsmsResponse.getTsms().getTsm(0).getUuid();
-        datasetid = listTsmsResponse.getTsms().getTsm(0).getDatasetid();
+        if (null != VolumeName)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_NAME, "QOS_" + VolumeName);
+        if (null != totaliops)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_IOPS, totaliops);
+        if (null != ElastistorUtil.ES_LATENCY_VAL)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_LATENCY, ElastistorUtil.ES_LATENCY_VAL);
+        if (null != ElastistorUtil.ES_BLOCKSIZE_VAL)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_BLOCKSIZE, ElastistorUtil.ES_BLOCKSIZE_VAL);
+        if (null != totalthroughput)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_THROUGHPUT, totalthroughput);
+        if (null != ElastistorUtil.ES_MEMLIMIT_VAL)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_MEMLIMIT, ElastistorUtil.ES_MEMLIMIT_VAL);
+        if (null != ElastistorUtil.ES_NETWORKSPEED_VAL)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_NETWORKSPEED, ElastistorUtil.ES_NETWORKSPEED_VAL);
+        if (null != tsmid)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_TSMID, tsmid);
+        if (null != datasetid)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_DATASETID, datasetid);
+        if (null != ElastistorUtil.ES_GRACEALLOWED_VAL)addQosGroupCmd.putCommandParameter(ElastistorUtil.REST_PARAM_GRACEALLOWED, ElastistorUtil.ES_GRACEALLOWED_VAL);
 
-        if (null != VolumeName)
-            cmd2.putCommandParameter("name", "QOS_" + VolumeName);
-        if (null != totaliops)
-            cmd2.putCommandParameter("iops", totaliops);
-        if (null != latency)
-            cmd2.putCommandParameter("latency", latency);
-        if (null != blocksize)
-            cmd2.putCommandParameter("blocksize", blocksize);
-        if (null != totalthroughput)
-            cmd2.putCommandParameter("throughput", totalthroughput);
-        if (null != memlimit)
-            cmd2.putCommandParameter("memlimit", memlimit);
-        if (null != networkspeed)
-            cmd2.putCommandParameter("networkspeed", networkspeed);
-        if (null != tsmid)
-            cmd2.putCommandParameter("tsmid", tsmid);
-        if (null != datasetid)
-            cmd2.putCommandParameter("datasetid", datasetid);
-        if (null != graceallowed)
-            cmd2.putCommandParameter("graceallowed", graceallowed);
+        AddQosGroupCmdResponse addQosGroupCmdResponse = (AddQosGroupCmdResponse) ElastistorUtil.restclient.executeCommand(addQosGroupCmd);
 
-        AddQosGroupCmdResponse cmdResponse2 = (AddQosGroupCmdResponse) restClient
-                .executeCommand(cmd2);
+        if (addQosGroupCmdResponse.getQoSGroup().getUuid() == null) {
 
-        if (cmdResponse2.getQoSGroup().getUuid() == null) {
-
-            // s_logger.error("*************ADD QOS GROUP FAILED *********************");
-            throw new CloudRuntimeException(
-                    "ADD QOS GROUP FAILED , contact elatistor admin");
+            throw new CloudRuntimeException("adding qos group failed , contact elatistor admin");
 
         }
 
         else {
 
-            CreateVolumeCmd cmd3 = new CreateVolumeCmd();
+            CreateVolumeCmd createVolumeCmd = new CreateVolumeCmd();
 
-            qosgroupid = cmdResponse2.getQoSGroup().getUuid();
+            qosgroupid = addQosGroupCmdResponse.getQoSGroup().getUuid();
 
-            if (null != ElastistorUtil.esaccountid)
-                cmd3.putCommandParameter(ElastistorUtil.REST_PARAM_ACCOUNTID,
-                        ElastistorUtil.esaccountid);
-            if (null != qosgroupid)
-                cmd3.putCommandParameter("qosgroupid", qosgroupid);
-            if (null != tsmid)
-                cmd3.putCommandParameter("tsmid", tsmid);
-            if (null != ElastistorUtil.espoolid)
-                cmd3.putCommandParameter(ElastistorUtil.REST_PARAM_POOLID,
-                        ElastistorUtil.espoolid);
-            if (null != VolumeName)
-                cmd3.putCommandParameter("name", VolumeName);
-            if (null != quotasize)
-                cmd3.putCommandParameter("quotasize", quotasize);
-            if (null != blocksize)
-                cmd3.putCommandParameter("recordsize", blocksize);
-            if (null != deduplication)
-                cmd3.putCommandParameter("deduplication", deduplication);
-            if (null != sync)
-                cmd3.putCommandParameter("sync", sync);
-            if (null != compression)
-                cmd3.putCommandParameter("compression", compression);
-            if (null != noofcopies)
-                cmd3.putCommandParameter("noofcopies", noofcopies);
-            cmd3.putCommandParameter("mountpoint", "/" + volume.getName());
-            if (null != casesensitivity)
-                cmd3.putCommandParameter("casesensitivity", casesensitivity);
-            if (null != readonly)
-                cmd3.putCommandParameter("readonly", readonly);
-            if (null != datasetid)
-                cmd3.putCommandParameter("datasetid", datasetid);
-            if (null != unicode)
-                cmd3.putCommandParameter("unicode", unicode);
-            cmd3.putCommandParameter("protocoltype", "iscsi");
-            if (null != authnetwork)
-                cmd3.putCommandParameter("authnetwork", authnetwork);
-            if (null != mapuserstoroot)
-                cmd3.putCommandParameter("mapuserstoroot", mapuserstoroot);
+            if (null != ElastistorUtil.ES_ACCOUNT_ID_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ACCOUNTID,ElastistorUtil.ES_ACCOUNT_ID_VAL);
+            if (null != qosgroupid)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_QOSGROUPID, qosgroupid);
+            if (null != tsmid)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_TSMID, tsmid);
+            if (null != ElastistorUtil.ES_POOL_ID_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_POOLID,ElastistorUtil.ES_POOL_ID_VAL);
+            if (null != VolumeName)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_NAME, VolumeName);
+            if (null != quotasize)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_QUOTA_SIZE, quotasize);
+            if(protocoltype.equalsIgnoreCase("nfs")){
+                  if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_BLOCKSIZE, ElastistorUtil.ES_BLOCKSIZE_VAL);
+                  if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_RECORDSIZE, ElastistorUtil.ES_BLOCKSIZE_VAL);
+                  }
+                  else{                   
+                      if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_BLOCKSIZE, "512B");
+                      if ( null != ElastistorUtil.ES_BLOCKSIZE_VAL ) createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_RECORDSIZE, "512B");
+                  }
+            if (null != ElastistorUtil.ES_DEDUPLICATION_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_DEDUPLICATION, ElastistorUtil.ES_DEDUPLICATION_VAL);
+            if (null != ElastistorUtil.ES_SYNC_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_SYNC, ElastistorUtil.ES_SYNC_VAL);
+            if (null != ElastistorUtil.ES_COMPRESSION_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_COMPRESSION, ElastistorUtil.ES_COMPRESSION_VAL);
+            if (null != ElastistorUtil.ES_NOOFCOPIES_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_NOOFCOPIES, ElastistorUtil.ES_NOOFCOPIES_VAL);           
+            
+            createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_MOUNTPOINT, mountpoint);
+            
+            if (null != ElastistorUtil.ES_CASESENSITIVITY_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_CASESENSITIVITY, ElastistorUtil.ES_CASESENSITIVITY_VAL);
+            if (null != ElastistorUtil.ES_READONLY_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_READONLY, ElastistorUtil.ES_READONLY_VAL);
+            if (null != datasetid)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_DATASETID, datasetid);
+            if (null != ElastistorUtil.ES_UNICODE_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_UNICODE, ElastistorUtil.ES_UNICODE_VAL);
+            
+            createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_PROTOCOLTYPE, protocoltype);
+            
+            if (null != ElastistorUtil.ES_AUTHNETWORK_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_AUTHNETWORK, ElastistorUtil.ES_AUTHNETWORK_VAL);
+            if (null != ElastistorUtil.ES_MAPUSERSTOROOT_VAL)createVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_MAPUSERSTOROOT, ElastistorUtil.ES_MAPUSERSTOROOT_VAL);
 
-            CreateVolumeCmdResponse cmdResponse3 = (CreateVolumeCmdResponse) restClient
-                    .executeCommand(cmd3);
+            CreateVolumeCmdResponse createVolumeCmdResponse;
+            try {
+                createVolumeCmdResponse = (CreateVolumeCmdResponse) ElastistorUtil.restclient.executeCommand(createVolumeCmd);
+                
+                if (createVolumeCmdResponse.getFileSystem().getUuid() == null) {
 
-            if (cmdResponse3.getFileSystem().getUuid() == null) {
-                // s_logger.error("*************CREATING VOLUME FAILED *********************");
-                throw new CloudRuntimeException(
-                        "CREATING VOLUME FAILED , contact elatistor admin");
+                    throw new CloudRuntimeException("creating volume failed , contact elatistor admin");
 
-            } else {
-                System.out.println("elastistor volume creation complete");
-            }
-
-            volume.set_iScsiName(cmdResponse3.getFileSystem().getIqn());
-            volume.setFolder(String.valueOf(cmdResponse3.getFileSystem()
-                    .getUuid()));
+                } else {
+                    
+                    return createVolumeCmdResponse;
+                }
+                
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new CloudRuntimeException("creating volume failed , contact elatistor admin");
+            }           
 
         }
 
-        return volume;
     }
 
     @SuppressWarnings("null")
-    public static boolean deleteElastistorVolume(String poolip,
-            String esmanagementip, String esapikey) throws Throwable {
-        ElastiCenterClient restClient = new ElastiCenterClient(esmanagementip,
-                esapikey);
+    public static boolean deleteElastistorVolume(String poolip, String esmanagementip, String esapikey) throws Throwable {
 
-        String esvolumeid;
-        String estsmid;
-        /*
-         * ListTsmCmd listTsmCmd = new ListTsmCmd();
-         *
-         * listTsmCmd.putCommandParameter(ElastistorUtil.REST_PARAM_IPADDRESS,
-         * poolip);
-         *
-         * ListTsmsResponse listTsmsResponse = (ListTsmsResponse)
-         * restClient.executeCommand( listTsmCmd );
-         */
+        String esvolumeid = null;
+        String estsmid = null;
 
-        ListTsmsResponse listTsmsResponse = listTsm(restClient, poolip);
+        ListTsmsResponse listTsmsResponse = listTsm(poolip);
 
         if (listTsmsResponse.getTsmsCount() != 0) {
-            // getting cloudbyte volume id and tsm id
 
-            estsmid = listTsmsResponse.getTsms().getTsm(0).getUuid();
+            int i;
 
-            if (listTsmsResponse.getTsms().getTsm(0).checkvolume()) {
-                esvolumeid = listTsmsResponse.getTsms().getTsm(0)
-                        .getVolumeProperties(0).getid();
-                /*
-                 * DeleteVolumeCmd deleteVolumeCmd = new DeleteVolumeCmd();
-                 *
-                 * deleteVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ID
-                 * , esvolumeid); DeleteVolumeResponse deleteVolumeResponse =
-                 * (DeleteVolumeResponse) restClient.executeCommand(
-                 * deleteVolumeCmd );
-                 */
+            for (i = 0; i < listTsmsResponse.getTsmsCount(); i++) {
+                if (poolip.compareTo(listTsmsResponse.getTsms().getTsm(i)
+                        .getIpaddress()) == 0) {
+                    estsmid = listTsmsResponse.getTsms().getTsm(i).getUuid();
+                    break;
+                }
+            }
 
-                DeleteVolumeResponse deleteVolumeResponse = deleteVolume(
-                        restClient, esvolumeid, null);
+            if (listTsmsResponse.getTsms().getTsm(i).checkvolume()) {
+                esvolumeid = listTsmsResponse.getTsms().getTsm(i).getVolumeProperties(0).getid();
+
+                DeleteVolumeResponse deleteVolumeResponse = deleteVolume(esvolumeid, null);
 
                 if (deleteVolumeResponse != null) {
 
                     String jobid = deleteVolumeResponse.getJobId();
 
-                    /*
-                     * QueryAsyncJobResultCmd asyncJobResultCmd = new
-                     * QueryAsyncJobResultCmd();
-                     *
-                     * asyncJobResultCmd.putCommandParameter(ElastistorUtil.
-                     * REST_PARAM_JOBID, jobid);
-                     *
-                     * QueryAsyncJobResultResponse asyncJobResultResponse =
-                     * (QueryAsyncJobResultResponse) restClient.executeCommand(
-                     * asyncJobResultCmd );
-                     *
-                     * if(asyncJobResultResponse != null) { int jobstatus =
-                     * asyncJobResultResponse.getAsync().getJobStatus();
-                     *
-                     * while(jobstatus == 0){
-                     *
-                     * QueryAsyncJobResultResponse jobResultResponse =
-                     * (QueryAsyncJobResultResponse) restClient.executeCommand(
-                     * asyncJobResultCmd );
-                     *
-                     * jobstatus = jobResultResponse.getAsync().getJobStatus();
-                     * }
-                     */
-
-                    int jobstatus = queryAsyncJobResult(restClient, jobid);
+                    int jobstatus = queryAsyncJobResult(jobid);
 
                     if (jobstatus == 1) {
-                        System.out.println(" elastistor volume successfully deleted");
+                        s_logger.info("elastistor volume successfully deleted");
 
                     } else {
-                        System.out
-                                .println(" an error occurred in deleting elastistor volume, now force deleting the elastistor volume");
+                        s_logger.info("now farce deleting the volume");
 
                         while (jobstatus != 1) {
-                            DeleteVolumeResponse deleteVolumeResponse1 = deleteVolume(
-                                    restClient, esvolumeid, "true");
+                            DeleteVolumeResponse deleteVolumeResponse1 = deleteVolume(esvolumeid, "true");
 
                             if (deleteVolumeResponse1 != null) {
 
-                                String jobid1 = deleteVolumeResponse1
-                                        .getJobId();
+                                String jobid1 = deleteVolumeResponse1.getJobId();
 
-                                jobstatus = queryAsyncJobResult(restClient,
-                                        jobid1);
+                                jobstatus = queryAsyncJobResult(jobid1);
 
                             }
 
                         }
 
-                        System.out.println(" elastistor volume successfully deleted");
+                        s_logger.info("elastistor volume successfully deleted");
                     }
 
                 }
 
             } else {
-                System.out.println(" no volume present in on the given TSM");
+                s_logger.info("no volume present in on the given tsm");
 
             }
-
-            System.out.println("now trying to delete elastistor TSM");
+            s_logger.info("now trying to delete elastistor tsm");
 
             if (estsmid != null) {
 
                 DeleteTsmCmd deleteTsmCmd = new DeleteTsmCmd();
-                deleteTsmCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ID,
-                        estsmid);
-                DeleteTsmResponse deleteTsmResponse = (DeleteTsmResponse) restClient
-                        .executeCommand(deleteTsmCmd);
+                deleteTsmCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ID,estsmid);
+                DeleteTsmResponse deleteTsmResponse = (DeleteTsmResponse) restclient.executeCommand(deleteTsmCmd);
 
                 if (deleteTsmResponse != null) {
                     String jobstatus = deleteTsmResponse.getJobStatus();
 
                     if (jobstatus.equalsIgnoreCase("true")) {
-                        System.out.println(" delete elastistor tsm successful");
+                        s_logger.info("delete elastistor tsm successful");
                         return true;
                     } else {
-                        System.out.println("failed to delete elastistor tsm ");
+                        s_logger.info("failed to delete elastistor tsm");
                         return false;
                     }
 
                 } else {
-                    System.out.println("elastistor tsm id not present");
-
+                    s_logger.info("elastistor tsm id not present");
                 }
             }
 
             else {
-                System.out.println("no volume is present in the tsm");
+                s_logger.info("no volume is present in the tsm");
             }
 
         } else {
-            System.out
-                    .println("List tsm failed, no tsm present in the eastistor for the given IP ");
+            s_logger.info("List tsm failed, no tsm present in the eastistor for the given IP ");
             return false;
         }
         return false;
 
     }
 
-    private static ListTsmsResponse listTsm(ElastiCenterClient restClient,
-            String poolip) throws Throwable {
+    private static ListHAPoolResponse listPool(String poolid) throws Throwable {
+
+        ListHAPoolCmd listHAPoolCmd = new ListHAPoolCmd();
+
+        listHAPoolCmd.putCommandParameter(ElastistorUtil.REST_PARAM_POOLID,poolid);
+
+        ListHAPoolResponse listHAPoolResponse = (ListHAPoolResponse) restclient.executeCommand(listHAPoolCmd);
+
+        return listHAPoolResponse;
+    }
+
+    private static ListTsmsResponse listTsm(String poolip) throws Throwable {
 
         ListTsmCmd listTsmCmd = new ListTsmCmd();
 
-        listTsmCmd.putCommandParameter(ElastistorUtil.REST_PARAM_IPADDRESS,
-                poolip);
+        listTsmCmd.putCommandParameter(ElastistorUtil.REST_PARAM_IPADDRESS,poolip);
 
-        ListTsmsResponse listTsmsResponse = (ListTsmsResponse) restClient
-                .executeCommand(listTsmCmd);
+        ListTsmsResponse listTsmsResponse = (ListTsmsResponse) restclient.executeCommand(listTsmCmd);
 
         return listTsmsResponse;
     }
 
-    private static DeleteVolumeResponse deleteVolume(
-            ElastiCenterClient restClient, String esvolumeid, String forcedelete)
-            throws Throwable {
+    private static DeleteVolumeResponse deleteVolume(String esvolumeid, String forcedelete)throws Throwable {
 
         DeleteVolumeCmd deleteVolumeCmd = new DeleteVolumeCmd();
 
-        deleteVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ID,
-                esvolumeid);
-        deleteVolumeCmd.putCommandParameter(
-                ElastistorUtil.REST_PARAM_FORECEDELETE, forcedelete);
-        DeleteVolumeResponse deleteVolumeResponse = (DeleteVolumeResponse) restClient
-                .executeCommand(deleteVolumeCmd);
+        deleteVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_ID,esvolumeid);
+        deleteVolumeCmd.putCommandParameter(ElastistorUtil.REST_PARAM_FORECEDELETE, forcedelete);
+        
+        DeleteVolumeResponse deleteVolumeResponse = (DeleteVolumeResponse) restclient.executeCommand(deleteVolumeCmd);
 
         return deleteVolumeResponse;
     }
 
-    private static int queryAsyncJobResult(ElastiCenterClient restClient,
-            String jobid) throws Throwable {
+    private static int queryAsyncJobResult(String jobid) throws Throwable {
 
         QueryAsyncJobResultCmd asyncJobResultCmd = new QueryAsyncJobResultCmd();
 
-        asyncJobResultCmd.putCommandParameter(ElastistorUtil.REST_PARAM_JOBID,
-                jobid);
+        asyncJobResultCmd.putCommandParameter(ElastistorUtil.REST_PARAM_JOBID, jobid);
 
-        QueryAsyncJobResultResponse asyncJobResultResponse = (QueryAsyncJobResultResponse) restClient
-                .executeCommand(asyncJobResultCmd);
+        QueryAsyncJobResultResponse asyncJobResultResponse = (QueryAsyncJobResultResponse) restclient.executeCommand(asyncJobResultCmd);
 
         if (asyncJobResultResponse != null) {
             int jobstatus = asyncJobResultResponse.getAsync().getJobStatus();
 
             while (jobstatus == 0) {
 
-                QueryAsyncJobResultResponse jobResultResponse = (QueryAsyncJobResultResponse) restClient
-                        .executeCommand(asyncJobResultCmd);
+                QueryAsyncJobResultResponse jobResultResponse = (QueryAsyncJobResultResponse) restclient.executeCommand(asyncJobResultCmd);
 
                 jobstatus = jobResultResponse.getAsync().getJobStatus();
             }
@@ -1230,203 +535,148 @@ public class ElastistorUtil {
 
     }
 
-    /**
-     * This method is responsible for making http connection to elastistor REST
-     * server & parsing the REST response recevied afterwards.
-     *
-     * @param esConnectionInfo
-     *            has the connection details to make a http connection to
-     *            elastistor server
-     * @param restApi
-     *            represents the REST command & parameters that needs to be
-     *            executed at elastistor REST server
-     * @return a json string formatted response received from REST server.
-     */
-    private static String executeHttpReq(
-            ElastistorConnectionInfo esConnectionInfo, RESTApi restApi) {
+    public static Boolean updateElastistorVolumeSize(VolumeObject vol,StoragePool pool, Long newSize) throws Throwable {
 
-        DefaultHttpClient httpClient = null;
-        StringBuilder sb = new StringBuilder();
-        BufferedReader reader = null;
+        ElastiCenterClient restClient = new ElastiCenterClient(ES_IP_VAL, ES_API_KEY_VAL);
+        Boolean status = false;
+        String poolip = pool.getHostAddress();
 
-        try {
+        ListTsmsResponse listTsmsResponse = listTsm(poolip);
+        String esvolumeid = null;
+        String esdatasetid = null;
+        int i;
 
-            String ip = esConnectionInfo.getManagementIP();
-            int port = esConnectionInfo.getManagementPort();
-            String apiKey = esConnectionInfo.getApiKey();
-
-            // add common params to restApi object
-            restApi.setPair(REST_PARAM_APIKEY, apiKey);
-            restApi.setPair(REST_PARAM_RESPONSE, REST_VALUE_RESPONSE);
-
-            // prepare url query param
-            String queryParam = "?" + REST_PARAM_COMMAND + "="
-                    + restApi.getCommandName()
-                    + prepareQueryParam(restApi.getPairs());
-
-            URI uri = new URI(REST_PROTOCOL + "://" + ip + ":" + port + "/"
-                    + REST_CONTEXT_PATH + queryParam);
-
-            httpClient = getHttpClient(port);
-
-            HttpPost postRequest = new HttpPost(uri);
-            HttpResponse response = httpClient.execute(postRequest);
-
-            if (!isHttpSuccess(response.getStatusLine().getStatusCode())) {
-                throw new CloudRuntimeException("Failed on ["
-                        + restApi.toString()
-                        + "] API call. HTTP error code = ["
-                        + response.getStatusLine().getStatusCode()
-                        + "]. HTTP error desc = ["
-                        + response.getStatusLine().getReasonPhrase() + "].");
-            }
-
-            reader = new BufferedReader(new InputStreamReader(response
-                    .getEntity().getContent()));
-
-            String strOutput;
-            sb = new StringBuilder();
-            while ((strOutput = reader.readLine()) != null) {
-                sb.append(strOutput);
-            }
-
-        } catch (UnsupportedEncodingException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        } catch (ClientProtocolException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        } catch (IOException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        } catch (URISyntaxException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        } finally {
-            if (null != httpClient) {
-                try {
-                    httpClient.getConnectionManager().shutdown();
-                } catch (Exception t) {
-                    // TODO log as warning
-                    t.printStackTrace();
-                }
-            }
-            if (null != reader) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    // TODO log as warning
-                    e.printStackTrace();
-                }
+        for (i = 0; i < listTsmsResponse.getTsmsCount(); i++) {
+            if (poolip.compareTo(listTsmsResponse.getTsms().getTsm(i).getIpaddress()) == 0) {
+                esvolumeid = listTsmsResponse.getTsms().getTsm(i).getVolumeProperties(0).getid();
+                esdatasetid = listTsmsResponse.getTsms().getTsm(i).getDatasetid();
+                break;
             }
         }
+        
+        String quotasize = (String.valueOf(newSize / (1024 * 1024 * 1024)) + "G");
 
-        return sb.toString();
+        String protocol;
+
+        if (pool.getPoolType() == StoragePoolType.IscsiLUN) {
+            protocol = "iscsi";
+        } else {
+            protocol = "nfs";
+        }
+        
+        UpdateStorageCmdResponse updateStorageCmdResponse = updateStorage(quotasize, esdatasetid);
+        
+        UpdateFileSystemCmdResponse fileSystemCmdResponse = updateFileSystem(quotasize, protocol, esvolumeid);
+
+        status = true;
+
+        return status;
     }
 
-    private static DefaultHttpClient getHttpClient(int iPort) {
-        try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
-            X509TrustManager tm = new X509TrustManager() {
-                public void checkClientTrusted(X509Certificate[] xcs,
-                        String string) throws CertificateException {
-                }
+    public static Answer updateElastistorVolumeQosGroup(VolumeObject vol,StoragePool pool, Long newIOPS) throws Throwable {
 
-                public void checkServerTrusted(X509Certificate[] xcs,
-                        String string) throws CertificateException {
-                }
+        String poolip = pool.getHostAddress();
+        ListHAPoolResponse listHAPoolResponse = listPool(ES_POOL_ID_VAL);
 
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-            };
+        if (listHAPoolResponse.getPool().getUuid() != null) {
+            String availiops = listHAPoolResponse.getPool().getAvailIOPS();
 
-            sslContext
-                    .init(null, new TrustManager[] { tm }, new SecureRandom());
+            Long temp = (long) Integer.parseInt(availiops);
 
-            SSLSocketFactory socketFactory = new SSLSocketFactory(sslContext,
-                    SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            SchemeRegistry registry = new SchemeRegistry();
-
-            registry.register(new Scheme("https", iPort, socketFactory));
-
-            BasicClientConnectionManager mgr = new BasicClientConnectionManager(
-                    registry);
-            DefaultHttpClient client = new DefaultHttpClient();
-
-            return new DefaultHttpClient(mgr, client.getParams());
-        } catch (NoSuchAlgorithmException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        } catch (KeyManagementException ex) {
-            throw new CloudRuntimeException(ex.getMessage());
-        }
-    }
-
-    /**
-     * This method determines if the http response is a success or a failure.
-     *
-     * @param iCode
-     *            represents the Http response code
-     * @return true for successful http responses
-     */
-    private static boolean isHttpSuccess(int iCode) {
-        return iCode >= 200 && iCode < 300;
-    }
-
-    /**
-     * This string utility method will return a string of format
-     * &keyName=Value&keyName2=Value2 This should be appended to an URI having
-     * query parameter.
-     *
-     * @param pairs
-     *            contains the url query parameter name & corresponding value
-     * @return url query param formated string
-     */
-    private static String prepareQueryParam(Map<String, String> pairs) {
-
-        StringBuilder queryParam = new StringBuilder();
-        if (null == pairs || 0 == pairs.size()) {
-            return "";
-        }
-
-        Collection<String> keys = pairs.keySet();
-        for (String key : keys) {
-            queryParam.append("&").append(key).append("=")
-                    .append(pairs.get(key));
-        }
-
-        return queryParam.toString();
-    }
-
-    /**
-     * This deserializes a json string to the corresponding Java object.
-     *
-     * @param strJson
-     *            the json string to be deserialized
-     * @param clazz
-     *            the Java class to which the json will be deserialized into
-     * @return the deserialized Java object
-     */
-    private static Object deserializeJsonToJava(String strJson, String key,
-            Class<?> clazz) {
-        try {
-
-            Gson gson = new GsonBuilder().create();
-
-            // Json string to Elastistor Java object transformation
-            if (null == key || 0 == key.length()) {
-                return gson.fromJson(strJson, clazz);
-
-            } else {
-                JsonElement jsonEl = gson.fromJson(strJson, JsonElement.class);
-                JsonObject jsonObj = jsonEl.getAsJsonObject();
-
-                // get the required JsonObject now
-                jsonObj = jsonObj.getAsJsonObject(key);
-                // convert the required JsonObject to particular Java
-                // representation
-                return gson.fromJson(jsonObj.toString(), clazz);
+            if (newIOPS > temp) {
+                return new Answer(null,false,"elastistor does not have enough iops in the pool, the available IOPS in the pool : " + temp);
             }
-        } catch (JsonParseException jpEx) {
-            throw new CloudRuntimeException(String.format(
-                    DESERIALIZATION_ERROR, clazz.getSimpleName(), key), jpEx);
+
         }
+
+        ListTsmsResponse listTsmsResponse = listTsm(poolip);
+        String iops = String.valueOf(newIOPS);
+        String esQosgroupid = null;
+        String estsmid = null;
+        String currentiops = null;
+        int i;
+
+        for (i = 0; i < listTsmsResponse.getTsmsCount(); i++) {
+            if (poolip.compareTo(listTsmsResponse.getTsms().getTsm(i).getIpaddress()) == 0) {
+                
+                estsmid = listTsmsResponse.getTsms().getTsm(i).getUuid();
+                currentiops = listTsmsResponse.getTsms().getTsm(i).getVolumeProperties(0).getIops();
+                esQosgroupid = listTsmsResponse.getTsms().getTsm(i).getVolumeProperties(0).getQosgroupid();
+                break;
+            }
+        }
+
+        long ciops = Long.valueOf(currentiops).longValue();
+
+        if (ciops < newIOPS) {
+            
+            updateQosGroupTsm(iops, estsmid);
+
+            updateQosGroupVolume(iops, esQosgroupid);
+
+        } else {
+
+            updateQosGroupVolume(iops, esQosgroupid);
+
+            updateQosGroupTsm(iops, estsmid);
+
+        }
+
+        return new Answer(null, true, null);
+    }
+
+    private static UpdateStorageCmdResponse updateStorage(String quotasize, String esdatasetid)throws Throwable {
+
+        UpdateStorageCmd updateStorageCmd = new UpdateStorageCmd();
+
+        updateStorageCmd.putCommandParameter("id", esdatasetid);
+        updateStorageCmd.putCommandParameter("quotasize", quotasize);
+
+        UpdateStorageCmdResponse updateStorageCmdResponse = (UpdateStorageCmdResponse) restclient.executeCommand(updateStorageCmd);
+
+        return updateStorageCmdResponse;
+    }
+
+    private static UpdateFileSystemCmdResponse updateFileSystem(String quotasize, String protocol,String esvolumeid) throws Throwable {
+
+        UpdateFileSystemCmd fileSystemCmd = new UpdateFileSystemCmd();
+
+        fileSystemCmd.putCommandParameter("id", esvolumeid);
+        fileSystemCmd.putCommandParameter("quotasize", quotasize);
+        if (protocol == "nfs") {
+            fileSystemCmd.putCommandParameter("recordsize", "4k");
+        } else {
+            fileSystemCmd.putCommandParameter("blocklength", "512B");
+        }
+        UpdateFileSystemCmdResponse fileSystemCmdResponse = (UpdateFileSystemCmdResponse) restclient.executeCommand(fileSystemCmd);
+
+        return fileSystemCmdResponse;
+    }
+
+    private static UpdateTsmCmdResponse updateQosGroupTsm(String iops, String tsmid)throws Throwable {
+
+        UpdateTsmCmd updateTsmCmd = new UpdateTsmCmd();
+        
+        updateTsmCmd.putCommandParameter("id", tsmid);
+        updateTsmCmd.putCommandParameter("iops", iops);
+        int throughtput = Integer.parseInt(iops) * 4;
+        updateTsmCmd.putCommandParameter("throughput",String.valueOf(throughtput));
+
+        UpdateTsmCmdResponse updateTsmCmdResponse = (UpdateTsmCmdResponse) restclient.executeCommand(updateTsmCmd);
+
+        return updateTsmCmdResponse;
+    }
+
+    private static UpdateQosGroupCmdResponse updateQosGroupVolume(String iops, String qosgroupid)throws Throwable {
+
+        UpdateQosGroupCmd updateQosGroupCmd = new UpdateQosGroupCmd();
+        updateQosGroupCmd.putCommandParameter("id", qosgroupid);
+        updateQosGroupCmd.putCommandParameter("iops", iops);
+        updateQosGroupCmd.putCommandParameter("graceallowed", "false");
+
+        UpdateQosGroupCmdResponse updateQosGroupCmdResponse = (UpdateQosGroupCmdResponse) restclient.executeCommand(updateQosGroupCmd);
+
+        return updateQosGroupCmdResponse;
     }
 
 }
