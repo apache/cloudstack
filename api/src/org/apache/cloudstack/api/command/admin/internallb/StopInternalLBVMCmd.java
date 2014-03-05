@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB vm.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB vm.", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
 public class StopInternalLBVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopInternalLBVMCmd.class.getName());
     private static final String s_name = "stopinternallbvmresponse";
@@ -43,7 +46,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
     private Long id;
 

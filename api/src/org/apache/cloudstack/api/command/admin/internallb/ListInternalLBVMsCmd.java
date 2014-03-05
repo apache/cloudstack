@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
 public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLBVMsCmd.class.getName());
 

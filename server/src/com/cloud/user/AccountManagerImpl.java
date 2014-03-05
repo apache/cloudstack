@@ -1106,7 +1106,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), null, true, account);
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
 
         if (firstName != null) {
             if (firstName.isEmpty()) {
@@ -1220,7 +1220,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = doSetUserStatus(userId, State.disabled);
         if (success) {
@@ -1258,7 +1258,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
@@ -1307,7 +1307,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
@@ -1416,7 +1416,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Check if user performing the action is allowed to modify this account
         Account caller = CallContext.current().getCallingAccount();
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -1450,7 +1450,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, lock is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         if (lockAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1480,7 +1480,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, disable is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         if (disableAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1599,7 +1599,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The user is default and can't be removed");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), null, true, account);
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return _userDao.remove(id);
     }

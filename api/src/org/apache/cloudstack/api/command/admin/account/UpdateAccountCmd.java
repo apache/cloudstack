@@ -23,6 +23,9 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,7 +39,7 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAccount", description = "Updates account information for the authenticated user", responseObject = AccountResponse.class)
+@APICommand(name = "updateAccount", description = "Updates account information for the authenticated user", responseObject = AccountResponse.class, entityType = { IAMEntityType.Account })
 public class UpdateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
@@ -44,7 +47,7 @@ public class UpdateAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account id")
     private Long id;
 

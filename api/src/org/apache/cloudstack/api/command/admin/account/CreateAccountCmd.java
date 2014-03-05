@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class)
+@APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class, entityType = { IAMEntityType.Account })
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
