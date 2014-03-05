@@ -701,6 +701,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
+
                 _itMgr.advanceStop(vm.getUuid(), false);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
@@ -711,6 +712,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
+
                 _itMgr.advanceStop(vm.getUuid(), true);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
