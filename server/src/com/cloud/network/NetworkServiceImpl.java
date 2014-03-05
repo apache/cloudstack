@@ -40,6 +40,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
@@ -53,7 +55,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -1237,7 +1238,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         // Vlan is created in 1 cases - works in Advance zone only:
         // 1) GuestType is Shared
-        boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced && (ntwkOff.getGuestType() == Network.GuestType.Shared));
+        boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced
+                && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
+                		|| (ntwkOff.getGuestType() == GuestType.Isolated &&
+                		!areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
 
         if (!createVlan) {
             // Only support advance shared network in IPv6, which means createVlan is a must
@@ -4003,7 +4007,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Inject
     public void setNetworkGurus(List<NetworkGuru> networkGurus) {
-        this._networkGurus = networkGurus;
+        _networkGurus = networkGurus;
+
     }
 
 }
