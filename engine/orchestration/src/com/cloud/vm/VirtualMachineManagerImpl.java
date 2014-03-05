@@ -3027,11 +3027,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        if (!VmJobEnabled.value()) {
-            for (final Answer answer : answers) {
-                if (answer instanceof ClusterSyncAnswer) {
+        for (final Answer answer : answers) {
+            if (answer instanceof ClusterSyncAnswer) {
+                if (!VmJobEnabled.value()) {
                     ClusterSyncAnswer hs = (ClusterSyncAnswer)answer;
-                    if (!hs.isExceuted()) {
+                    if (!hs.isExecuted()) {
                         deltaSync(hs.getNewStates());
                         hs.setExecuted();
                     }
@@ -3129,7 +3129,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             if (!VmJobEnabled.value()) {
                 StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
-                HashMap<String, Ternary<String, State, String>> allStates = startup.getClusterVMStateChanges();
+                HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
                 if (allStates != null) {
                     fullSync(clusterId, allStates);
                 }
