@@ -319,4 +319,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         }
         return false;
     }
+
+    @Override
+    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action)
+            throws PermissionDeniedException {
+        return checkAccess(caller, entity, accessType);
+    }
 }

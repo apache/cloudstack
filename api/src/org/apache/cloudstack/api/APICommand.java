@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -44,4 +45,6 @@ public @interface APICommand {
     boolean responseHasSensitiveInfo() default true;
 
     RoleType[] authorized() default {};
+
+    IAMEntityType[] entityType() default {};
 }

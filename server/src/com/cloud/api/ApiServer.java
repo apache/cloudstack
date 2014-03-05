@@ -891,7 +891,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    private Class<?> getCmdClass(String cmdName) {
+    @Override
+    public Class<?> getCmdClass(String cmdName) {
         return s_apiNameCmdClassMap.get(cmdName);
     }
 
