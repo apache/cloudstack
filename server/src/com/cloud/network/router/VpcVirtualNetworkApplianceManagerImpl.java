@@ -1210,7 +1210,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //3) allocate nic for guest gateway if needed
         List<? extends Network> guestNetworks = _vpcMgr.getVpcNetworks(vpcId);
         for (Network guestNetwork : guestNetworks) {
-            if (guestNetwork.getState() == Network.State.Implemented) {
+            if (guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup) {
                 NicProfile guestNic = createGuestNicProfileForVpcRouter(guestNetwork);
                 networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
             }
