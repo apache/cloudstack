@@ -70,6 +70,11 @@
                 return key;
             });
 
+            $(window).trigger('cloudStack.createForm.makeFields', {
+                $form: $form,
+                fields: fields
+            });
+
             var ret = function() {
                 $('.overlay').remove();
 
