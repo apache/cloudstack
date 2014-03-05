@@ -12,56 +12,67 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.driver.ElastistorPrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.ElastistorPrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.storage.datastore.service.ElastistorVolumeServiceImpl;
 import org.apache.cloudstack.storage.datastore.util.ElastistorUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * This is the starting point of the elastistor storage plugin. This bean will
  * be detected by Spring container & initialized. This will be one of the
  * providers available via {@link DataStoreProviderManagerImpl} object.
- *
+ * 
  * @author amit.das@cloudbyte.com
- * @author punith.s@cloudbyte.com
+ * 
  */
 @Component
-public class ElastistorPrimaryDataStoreProvider implements
-        PrimaryDataStoreProvider {
-
-    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
-
+public class ElastistorPrimaryDataStoreProvider implements PrimaryDataStoreProvider {
+	
+	 private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+	    
+	
     private ElastistorPrimaryDataStoreLifeCycle lifecycle;
     private PrimaryDataStoreDriver driver;
-    private HypervisorHostListener listener;
-    private String esmanagementip;
-    private String esapikey;
-    private String esaccountid;
+    private HypervisorHostListener listener;     
+    private ElastistorVolumeServiceImpl elastistorVolumeService;
+    private String esmanagementip;      
+	private String esapikey;     
+    private String esaccountid;    
     private String espoolid;
-    private String esdefaultgateway;
+    private String esdefaultgateway;    
     private String essubnet;
-    private String estntinterface;
-
+    private String estntinterface; 
+   
     @Inject
     AgentManager agentMgr;
     @Inject
-    DataStoreManager dataStoreMgr;
+    DataStoreManager dataStoreMgr;  
     @Inject
     AlertManager alertMgr;
     @Inject
     StoragePoolHostDao storagePoolHostDao;
     @Inject
     PrimaryDataStoreDao primaryStoreDao;
+    
 
     @Override
     public String getName() {
-        return ElastistorUtil.ES_PROVIDER_NAME;
+        return ElastistorUtil.ES_PROVIDER_NAME;    	
     }
 
     @Override
@@ -78,29 +89,39 @@ public class ElastistorPrimaryDataStoreProvider implements
     public HypervisorHostListener getHostListener() {
         return listener;
     }
+    
+
+    public ElastistorVolumeServiceImpl getElastistorVolumeService() {
+        return elastistorVolumeService;
+    }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-
-        lifecycle = ComponentContext
-                .inject(ElastistorPrimaryDataStoreLifeCycle.class);
-        driver = ComponentContext
-                .inject(ElastistorPrimaryDataStoreDriver.class);
+    	
+        lifecycle = ComponentContext.inject(ElastistorPrimaryDataStoreLifeCycle.class);
+        driver = ComponentContext.inject(ElastistorPrimaryDataStoreDriver.class);
         listener = ComponentContext.inject(ElastistorHostListener.class);
-
-        lifecycle.setEsaccountid(esaccountid);
-        lifecycle.setEsapikey(esapikey);
-        lifecycle.setEsmanagementip(esmanagementip);
-        lifecycle.setEspoolid(espoolid);
-        lifecycle.setEssubnet(essubnet);
-        lifecycle.setesdefaultgateway(esdefaultgateway);
-        lifecycle.setEstntinterface(estntinterface);
+        elastistorVolumeService = ComponentContext.inject(ElastistorVolumeServiceImpl.class);
+        
+        s_logger.info("elastistor_poolid: " + espoolid );
+        s_logger.info("elastistor_accountid: " + esaccountid );
+        s_logger.info("elastistor_esmanagmentip: " + esmanagementip );
+        s_logger.info("elastistor_apikey: " + esapikey );
+        s_logger.info("elastistor_subnet: " + essubnet );
+        s_logger.info("elastistor_defaultgateway: " + esdefaultgateway );
+        s_logger.info("elastistor_interface: " + estntinterface );
 
         ElastistorUtil.setElastistorAccountId(esaccountid);
         ElastistorUtil.setElastistorApiKey(esapikey);
         ElastistorUtil.setElastistorManagementIp(esmanagementip);
         ElastistorUtil.setElastistorPoolId(espoolid);
-        return true;
+        ElastistorUtil.setElastistorGateway(esdefaultgateway);
+        ElastistorUtil.setElastistorInterface(estntinterface);
+        ElastistorUtil.setElastistorSubnet(essubnet);
+        
+        ElastistorUtil.setElastistorRestClient(esmanagementip, esapikey);
+        
+		return true;
     }
 
     @Override
@@ -111,60 +132,68 @@ public class ElastistorPrimaryDataStoreProvider implements
 
         return types;
     }
-
     public String getEspoolid() {
-        return espoolid;
-    }
+		return espoolid;
+	}
 
-    public void setEspoolid(String espoolid) {
-        this.espoolid = espoolid;
-    }
 
-    public String getEsmanagementip() {
-        return esmanagementip;
-    }
+	public void setEspoolid(String espoolid) {
+		this.espoolid = espoolid;
+	}
 
-    public void setEsmanagementip(String esmanagementip) {
-        this.esmanagementip = esmanagementip;
-    }
 
-    public String getEsaccountid() {
-        return esaccountid;
-    }
+	public String getEsmanagementip() {
+		return esmanagementip;
+	}
 
-    public void setEsaccountid(String esaccountid) {
-        this.esaccountid = esaccountid;
-    }
 
-    public String getEsapikey() {
-        return esapikey;
-    }
+	public void setEsmanagementip(String esmanagementip) {
+		this.esmanagementip = esmanagementip;
+	}
 
-    public void setEsapikey(String esapikey) {
-        this.esapikey = esapikey;
-    }
 
-    public String getesdefaultgateway() {
-        return esdefaultgateway;
-    }
+	public String getEsaccountid() {
+		return esaccountid;
+	}
 
-    public void setesdefaultgateway(String esdefaultgateway) {
-        this.esdefaultgateway = esdefaultgateway;
-    }
 
-    public String getEssubnet() {
-        return essubnet;
-    }
+	public void setEsaccountid(String esaccountid) {
+		this.esaccountid = esaccountid;
+	}
 
-    public void setEssubnet(String essubnet) {
-        this.essubnet = essubnet;
-    }
 
-    public String getEstntinterface() {
-        return estntinterface;
-    }
+	public String getEsapikey() {
+		return esapikey;
+	}
 
-    public void setEstntinterface(String estntinterface) {
-        this.estntinterface = estntinterface;
-    }
+
+	public void setEsapikey(String esapikey) {
+		this.esapikey = esapikey;
+	}
+	
+	public String getesdefaultgateway() {
+		return esdefaultgateway;
+	}
+
+	public void setesdefaultgateway(String esdefaultgateway) {
+		this.esdefaultgateway = esdefaultgateway;
+	}
+	public String getEssubnet() {
+		return essubnet;
+	}
+
+
+	public void setEssubnet(String essubnet) {
+		this.essubnet = essubnet;
+	}
+
+
+	public String getEstntinterface() {
+		return estntinterface;
+	}
+
+
+	public void setEstntinterface(String estntinterface) {
+		this.estntinterface = estntinterface;
+	}
 }

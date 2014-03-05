@@ -37,7 +37,7 @@ public class ElastiCenterClient {
     private String apiKey = null;
     private String elastiCenterAddress = null;
     private String responseType = "json";
-    private boolean ignoreSSLCertificate = false;
+    private boolean ignoreSSLCertificate = true;
 
     private String restprotocol = "https://";
     private String restpath = "/client/api";
