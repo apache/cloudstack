@@ -80,6 +80,8 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
@@ -339,6 +341,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             "On destroy, force-stop takes this value ", true);
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60",
             "Cluster Delta sync interval in seconds",
+            false);
+    static final ConfigKey<Integer> ClusterVMMetaDataSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmmetadata.sync.interval", "180", "Cluster VM metadata sync interval in seconds",
             false);
 
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
@@ -2521,7 +2525,35 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return commands;
     }
 
-    public void deltaSync(Map<String, Ternary<String, State, String>> newStates) {
+    // this is XenServer specific
+    public void syncVMMetaData(Map<String, String> vmMetadatum) {
+        if (vmMetadatum == null || vmMetadatum.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : vmMetadatum.entrySet()) {
+            String name = entry.getKey();
+            String platform = entry.getValue();
+            if (platform == null || platform.isEmpty()) {
+                continue;
+            }
+            VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
+            if (vm != null && vm.getType() == VirtualMachine.Type.User) {
+                // track platform info
+                UserVmVO userVm = _userVmDao.findById(vm.getId());
+                _userVmDao.loadDetails(userVm);
+                userVm.setDetail("platform",  platform);
+                String pvdriver = "xenserver56";
+                if ( platform.contains("device_id")) {
+                    pvdriver = "xenserver61";
+                }
+                userVm.setDetail("hypervisortoolsversion", pvdriver);
+                _userVmDao.saveDetails(userVm);
+            }
+        }
+    }
+
+
+    public void deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
@@ -2556,7 +2588,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public void fullSync(final long clusterId, Map<String, Ternary<String, State, String>> newStates) {
+    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         if (newStates == null)
             return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
@@ -2686,24 +2718,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     }
 
-    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Ternary<String, State, String>> newStates) {
+    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
         if (newStates == null) {
             return map;
         }
         boolean is_alien_vm = true;
         long alien_vm_count = -1;
-        for (Map.Entry<String, Ternary<String, State, String>> entry : newStates.entrySet()) {
+        for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
             is_alien_vm = true;
             String name = entry.getKey();
             VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
             if (vm != null) {
-                map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue().second(), entry.getValue().first(), entry.getValue().third()));
+                map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue().second(), entry.getValue().first()));
                 is_alien_vm = false;
             }
             // alien VMs
             if (is_alien_vm) {
-                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, entry.getValue().second(), entry.getValue().first(), entry.getValue().third()));
+                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, entry.getValue().second(), entry.getValue().first()));
                 s_logger.warn("Found an alien VM " + entry.getKey());
             }
         }
@@ -2783,15 +2815,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() +
                     ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" +
                             vm.getHostId() + "] stopped due to storage failure.");
-        }
-        // track platform info
-        if (info.platform != null && !info.platform.isEmpty()) {
-            if (vm.getType() == VirtualMachine.Type.User) {
-                UserVmVO userVm = _userVmDao.findById(vm.getId());
-                _userVmDao.loadDetails(userVm);
-                userVm.setDetail("platform", info.platform);
-                _userVmDao.saveDetails(userVm);
-            }
         }
 
         if (trackExternalChange) {
@@ -3013,6 +3036,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         hs.setExecuted();
                     }
                 }
+            } else if ( answer instanceof ClusterVMMetaDataSyncAnswer) {
+                ClusterVMMetaDataSyncAnswer cvms = (ClusterVMMetaDataSyncAnswer)answer;
+                if (!cvms.isExecuted()) {
+                    syncVMMetaData(cvms.getVMMetaDatum());
+                    cvms.setExecuted();
+                }
             }
         }
         return true;
@@ -3046,7 +3075,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
                     }
                 }
-
                 if(VmJobEnabled.value()) {
                     if (ping.getHostVmStateReport() != null) {
                         _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport());
@@ -3105,7 +3133,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (allStates != null) {
                     fullSync(clusterId, allStates);
                 }
-
                 // initiate the cron job
                 ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
                 try {
@@ -3114,6 +3141,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (AgentUnavailableException e) {
                     s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
                 }
+            }
+            // initiate the cron job
+            ClusterVMMetaDataSyncCommand syncVMMetaDataCmd = new ClusterVMMetaDataSyncCommand(ClusterVMMetaDataSyncInterval.value(), clusterId);
+            try {
+                long seq_no = _agentMgr.send(agentId, new Commands(syncVMMetaDataCmd), this);
+                s_logger.debug("Cluster VM metadata sync started with jobid " + seq_no);
+            } catch (AgentUnavailableException e) {
+                s_logger.fatal("The Cluster VM metadata sync process failed for cluster id " + clusterId + " with ", e);
             }
         } else { // for others KVM and VMWare
             if (!VmJobEnabled.value()) {
@@ -3185,32 +3220,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public State state;
         public String hostUuid;
         public VMInstanceVO vm;
-        public String platform;
 
         @SuppressWarnings("unchecked")
-        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host, String platform) {
+        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
             this.name = name;
             this.state = state;
             this.vm = vm;
             hostUuid = host;
-            this.platform = platform;
-
-        }
-
-        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            this(name, vm, state, host, null);
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state) {
-            this(name, vm, state, null, null);
+            this(name, vm, state, null);
         }
 
         public String getHostUuid() {
             return hostUuid;
-        }
-
-        public String getPlatform() {
-            return platform;
         }
     }
 

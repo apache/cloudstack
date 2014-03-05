@@ -16,35 +16,32 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.PowerState;
 
-//
-// TODO vmsync
-// We should also have a HostVmStateReport class instead of using raw Map<> data structure,
-// for now, we store host-specific info at each VM entry and host fields are fixed
-//
-// This needs to be refactor-ed afterwards
-//
-public class HostVmStateReportEntry {
-    VirtualMachine.PowerState state;
+public class ClusterVMMetaDataSyncCommand extends Command implements CronCommand {
+    int _interval;
 
-    // host name or host uuid
-    String host;
+    long _clusterId;
 
-    public HostVmStateReportEntry() {
+    public ClusterVMMetaDataSyncCommand() {
     }
 
-    public HostVmStateReportEntry(PowerState state, String host) {
-        this.state = state;
-        this.host = host;
+    public ClusterVMMetaDataSyncCommand(int interval, long clusterId){
+        _interval = interval;
+        _clusterId = clusterId;
     }
 
-    public PowerState getState() {
-        return state;
+    @Override
+    public int getInterval() {
+        return _interval;
     }
 
-    public String getHost() {
-        return host;
+    public long getClusterId() {
+        return _clusterId;
     }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
 }

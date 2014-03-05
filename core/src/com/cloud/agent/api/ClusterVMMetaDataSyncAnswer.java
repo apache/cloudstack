@@ -16,35 +16,37 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.PowerState;
+import java.util.HashMap;
 
-//
-// TODO vmsync
-// We should also have a HostVmStateReport class instead of using raw Map<> data structure,
-// for now, we store host-specific info at each VM entry and host fields are fixed
-//
-// This needs to be refactor-ed afterwards
-//
-public class HostVmStateReportEntry {
-    VirtualMachine.PowerState state;
+public class ClusterVMMetaDataSyncAnswer extends Answer {
+    private long _clusterId;
+    private HashMap<String, String> _vmMetaDatum;
+    private boolean _isExecuted=false;
 
-    // host name or host uuid
-    String host;
-
-    public HostVmStateReportEntry() {
+    // this is here because a cron command answer is being sent twice
+    //  AgentAttache.processAnswers
+    //  AgentManagerImpl.notifyAnswersToMonitors
+    public boolean isExecuted(){
+        return _isExecuted;
     }
 
-    public HostVmStateReportEntry(PowerState state, String host) {
-        this.state = state;
-        this.host = host;
+    public void setExecuted(){
+        _isExecuted = true;
     }
 
-    public PowerState getState() {
-        return state;
+
+    public ClusterVMMetaDataSyncAnswer(long clusterId, HashMap<String, String> vmMetaDatum){
+        _clusterId = clusterId;
+        _vmMetaDatum = vmMetaDatum;
+        result = true;
     }
 
-    public String getHost() {
-        return host;
+    public long getClusterId() {
+        return _clusterId;
     }
+
+    public HashMap<String, String> getVMMetaDatum() {
+        return _vmMetaDatum;
+    }
+
 }
