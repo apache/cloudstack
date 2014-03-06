@@ -4811,4 +4811,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         return vm.getUserData();
     }
+
+    @Override
+    public boolean isDisplayResourceEnabled(Long vmId) {
+        UserVm vm = _vmDao.findById(vmId);
+        if (vm != null) {
+            return vm.isDisplayVm();
+        }
+
+        return true; // no info then default to true
+    }
 }

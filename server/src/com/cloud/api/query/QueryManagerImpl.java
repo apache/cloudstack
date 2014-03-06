@@ -504,7 +504,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-        sb.and("displayEvent", sb.entity().getDisplayEvent(), SearchCriteria.Op.EQ);
+        sb.and("displayEvent", sb.entity().getDisplay(), SearchCriteria.Op.EQ);
         sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();

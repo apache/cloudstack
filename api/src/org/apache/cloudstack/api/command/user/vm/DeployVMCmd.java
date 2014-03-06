@@ -390,6 +390,16 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     @Override
+    public boolean isDisplayResourceEnabled(){
+        Boolean display = getDisplayVm();
+        if(display == null){
+            return true;
+        } else {
+            return display;
+        }
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_CREATE;
     }

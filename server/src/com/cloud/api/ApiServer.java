@@ -479,7 +479,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         CallContext ctx = CallContext.current();
         Long callerUserId = ctx.getCallingUserId();
         Account caller = ctx.getCallingAccount();
-        ctx.setEventDisplayEnabled(cmdObj.isDisplayResourceEnabled());
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.

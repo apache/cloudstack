@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -31,7 +31,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class MigrateVolumeCmd extends BaseAsyncCmd {
+public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
     private static final String s_name = "migratevolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -58,8 +58,14 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    // TODO remove this in 5.0 and use id as param instead.
     public Long getVolumeId() {
         return volumeId;
+    }
+
+    @Override
+    public Long getId() {
+        return getVolumeId();
     }
 
     public Long getStoragePoolId() {

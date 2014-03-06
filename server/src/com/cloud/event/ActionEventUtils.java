@@ -159,7 +159,7 @@ public class ActionEventUtils {
         event.setType(type);
         event.setState(state);
         event.setDescription(description);
-        event.setDisplayEventEnabled(eventDisplayEnabled);
+        event.setDisplay(eventDisplayEnabled);
 
         if (domainId != null) {
             event.setDomainId(domainId);

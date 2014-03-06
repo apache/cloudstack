@@ -20,7 +20,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ResizeVolumeCmd extends BaseAsyncCmd {
+public class ResizeVolumeCmd extends BaseAsyncVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
     private static final String s_name = "resizevolumeresponse";
@@ -67,8 +67,14 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    //TODO use the method getId() instead of this one.
     public Long getEntityId() {
         return id;
+    }
+
+    @Override
+    public Long getId() {
+        return getEntityId();
     }
 
     public Long getSize() {
