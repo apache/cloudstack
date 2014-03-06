@@ -221,6 +221,17 @@
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
                                     </div>
                                 </div>
+                                <!-- Custom iops slider -->
+                                <div class="section custom-iops">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

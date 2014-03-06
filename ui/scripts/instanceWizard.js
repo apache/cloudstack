@@ -301,6 +301,7 @@
                         args.response.success({
                             customFlag: 'iscustomized',
                         	//customFlag: 'offerha', //for testing only
+                        	customIopsFlag: 'iscustomizediops',
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }
@@ -631,7 +632,20 @@
 	            	});
 	            }               
             }
-            
+
+            if (args.$wizard.find('input[name=disk-min-iops]').parent().parent().css('display') != 'none') {
+	            if (args.$wizard.find('input[name=disk-min-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].minIops' : args.$wizard.find('input[name=disk-min-iops]').val()
+	            	});
+	            }
+	            if (args.$wizard.find('input[name=disk-max-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].maxIops' : args.$wizard.find('input[name=disk-max-iops]').val()
+	            	});
+	            }
+            }
+
             //step 4: select disk offering
             if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {                
             	$.extend(deployVmData, {

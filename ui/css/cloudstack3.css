@@ -6050,11 +6050,24 @@ label.error {
   border-radius: 4px;
 }
 
+.multi-wizard.instance-wizard .section.custom-iops {
+  position: relative;
+  background: #F4F4F4;
+  padding: 7px;
+  border-radius: 4px;
+}
+
 .multi-wizard.instance-wizard .section.custom-size input[type=radio] {
   float: left;
 }
 
 .multi-wizard.instance-wizard .section.custom-size input[type=text] {
+  float: left;
+  width: 28px;
+  margin: 6px -1px 0 8px;
+}
+
+.multi-wizard.instance-wizard .section.custom-iops input[type=text] {
   float: left;
   width: 28px;
   margin: 6px -1px 0 8px;
@@ -6075,11 +6088,23 @@ label.error {
   height: 235px;
 }
 
+.instance-wizard .step.service-offering.custom-iops .select-container {
+  height: 235px;
+}
+
 .instance-wizard .step.service-offering .custom-size {
   display: none;
 }
 
+.instance-wizard .step.service-offering .custom-iops {
+  display: none;
+}
+
 .instance-wizard .step.service-offering.custom-size .custom-size {
+  display: block;
+}
+
+.instance-wizard .step.service-offering.custom-iops .custom-iops {
   display: block;
 }
 
@@ -6089,11 +6114,26 @@ label.error {
   margin-bottom: 13px;
 }
 
+.instance-wizard .step.service-offering .custom-iops .field {
+  width: 30%;
+  float: left;
+  margin-bottom: 13px;
+}
+
 .instance-wizard .step.service-offering .custom-size .field label {
   text-indent: 20px;
 }
 
+.instance-wizard .step.service-offering .custom-iops .field label {
+  text-indent: 20px;
+}
+
 .instance-wizard .step.service-offering .custom-size .field input {
+  width: 88%;
+  margin-left: 26px;
+}
+
+.instance-wizard .step.service-offering .custom-iops .field input {
   width: 88%;
   margin-left: 26px;
 }

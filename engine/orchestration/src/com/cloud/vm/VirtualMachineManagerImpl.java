@@ -154,6 +154,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -372,7 +373,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(String vmInstanceName, final VirtualMachineTemplate template, ServiceOffering serviceOffering,
-            final Pair<? extends DiskOffering, Long> rootDiskOffering, LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
+            final DiskOfferingInfo rootDiskOfferingInfo, LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan, HypervisorType hyperType)
                     throws InsufficientCapacityException {
 
@@ -412,11 +413,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
 
                         if (template.getFormat() == ImageFormat.ISO) {
-                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vmFinal, template, owner);
+                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(), vmFinal,
+                                    template, owner);
                         } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                             // Do nothing
                         } else {
-                            volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), template, vmFinal, owner);
+                            volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                                    rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                         }
 
                         for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
@@ -433,7 +436,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
             LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOffering, Long>(serviceOffering, null), null, networks, plan, hyperType);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), null, networks, plan, hyperType);
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
