@@ -962,6 +962,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
             final VMInstanceVO vm = _instanceDao.findById(vo.getId());
             if (vm.isHaEnabled()) {
+                if (vm.getState() == State.Stopped)
+                    s_logger.warn("Sanity check failed. postStateTransitionEvent reports transited to Stopped but VM " + vm + " is still at state " + vm.getState());
+
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
                 _executor.submit(new ManagedContextRunnable() {
                     @Override
@@ -976,5 +979,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean hasPendingHaWork(long vmId) {
+        List<HaWorkVO> haWorks = _haDao.listRunningHaWorkForVm(vmId);
+        return haWorks.size() > 0;
     }
 }

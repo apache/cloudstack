@@ -100,6 +100,8 @@ public interface HighAvailabilityManager extends Manager {
 
     void cancelScheduledMigrations(HostVO host);
 
+    boolean hasPendingHaWork(long vmId);
+
     /**
      * @return
      */

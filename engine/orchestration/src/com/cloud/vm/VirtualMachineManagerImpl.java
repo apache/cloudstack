@@ -4100,7 +4100,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vmId);
-        if (pendingWorkJobs.size() == 0) {
+        if (pendingWorkJobs.size() == 0 || _haMgr.hasPendingHaWork(vmId)) {
             // there is no pending operation job
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm != null) {
@@ -4125,7 +4125,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.warn("VM " + vmId + " no longer exists when processing VM state report");
             }
         } else {
-            s_logger.info("There is pending job working on the VM. vm id: " + vmId + ", postpone power-change report by resetting power-change counters");
+            s_logger.info("There is pending job or HA tasks working on the VM. vm id: " + vmId + ", postpone power-change report by resetting power-change counters");
 
             // reset VM power state tracking so that we won't lost signal when VM has
             // been translated to
