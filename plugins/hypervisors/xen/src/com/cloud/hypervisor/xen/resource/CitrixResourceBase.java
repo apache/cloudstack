@@ -2361,9 +2361,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 double diskReadKBs = 0;
                 double diskWriteKBs = 0;
                 for (VBD vbd : vm.getVBDs(conn)) {
-                    VBDMetrics record = vbd.getMetrics(conn);
-                    diskReadKBs += record.getIoReadKbs(conn);
-                    diskWriteKBs += record.getIoWriteKbs(conn);
+                    VBDMetrics vbdmetrics = vbd.getMetrics(conn);
+                    if (!isRefNull(vbdmetrics)) {
+                        try {
+                            diskReadKBs += vbdmetrics.getIoReadKbs(conn);
+                            diskWriteKBs += vbdmetrics.getIoWriteKbs(conn);
+                        }  catch (Types.HandleInvalid e) {
+                            s_logger.debug("vbdmetrics doesn't exist ");
+                        }
+                    }
                 }
                 if (stats == null) {
                     stats = new VmStatsEntry();
