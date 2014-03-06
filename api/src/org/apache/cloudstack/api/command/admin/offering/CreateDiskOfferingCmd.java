@@ -93,9 +93,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private Long maxIops;
 
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
-               type = CommandType.INTEGER,
-               required = false,
-               description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+            type = CommandType.INTEGER,
+            required = false,
+            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
     private Integer hypervisorSnapshotReserve;
 
 /////////////////////////////////////////////////////

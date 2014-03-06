@@ -71,6 +71,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
         diskOfferingResponse.setCustomizedIops(offering.isCustomizedIops());
+        diskOfferingResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         diskOfferingResponse.setStorageType(offering.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         diskOfferingResponse.setBytesReadRate(offering.getBytesReadRate());
         diskOfferingResponse.setBytesWriteRate(offering.getBytesWriteRate());

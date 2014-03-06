@@ -671,6 +671,37 @@
                                     networkrate: {
                                         label: 'label.network.rate'
                                     },
+                                    iscustomizediops: {
+                                        label: 'label.custom.disk.iops',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    miniops: {
+                                        label: 'label.disk.iops.min',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
+                                    maxiops: {
+                                        label: 'label.disk.iops.max',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
+                                    hypervisorsnapshotreserve: {
+                                        label: 'label.hypervisor.snapshot.reserve',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
                                     diskBytesReadRate: {
                                         label: 'label.disk.bytes.read.rate'
                                     },
@@ -1776,6 +1807,15 @@
                                     },
                                     maxiops: {
                                         label: 'label.disk.iops.max',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
+                                    hypervisorsnapshotreserve: {
+                                        label: 'label.hypervisor.snapshot.reserve',
                                         converter: function(args) {
                                             if (args > 0)
                                                 return args;
