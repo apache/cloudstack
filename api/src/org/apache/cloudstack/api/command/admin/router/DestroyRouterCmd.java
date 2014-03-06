@@ -35,7 +35,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class, entityType = {IAMEntityType.VirtualMachine},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyRouterCmd.class.getName());
     private static final String s_name = "destroyrouterresponse";
@@ -103,7 +104,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy router");
         }

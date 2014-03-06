@@ -42,7 +42,8 @@ import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listBigSwitchVnsDevices", responseObject = BigSwitchVnsDeviceResponse.class, description = "Lists BigSwitch Vns devices", since = "4.1.0")
+@APICommand(name = "listBigSwitchVnsDevices", responseObject = BigSwitchVnsDeviceResponse.class, description = "Lists BigSwitch Vns devices", since = "4.1.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListBigSwitchVnsDevicesCmd.class.getName());
     private static final String s_name = "listbigswitchvnsdeviceresponse";

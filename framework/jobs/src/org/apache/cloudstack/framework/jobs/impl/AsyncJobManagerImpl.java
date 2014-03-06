@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -35,8 +34,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -84,12 +85,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global, 60l);
     private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced", "60",
-        "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global, 60l);
+            "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global, 240l);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 60;     // 60 seconds
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;
     private static final int HEARTBEAT_INTERVAL = 2000;
@@ -365,23 +365,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         SyncQueueVO queue = null;
-
-        // to deal with temporary DB exceptions like DB deadlock/Lock-wait time out cased rollbacks
-        // we retry five times until we throw an exception
-        Random random = new Random();
-
-        for (int i = 0; i < 5; i++) {
-            queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId(), queueSizeLimit);
-            if (queue != null) {
-                break;
-            }
-
-            try {
-                Thread.sleep(1000 + random.nextInt(5000));
-            } catch (InterruptedException e) {
-            }
-        }
-
+        queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId(), queueSizeLimit);
         if (queue == null)
             throw new CloudRuntimeException("Unable to insert queue item into database, DB is full?");
     }
@@ -445,6 +429,24 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private Runnable getExecutorRunnable(final AsyncJob job) {
         return new ManagedContextRunnable() {
+
+            @Override
+            public void run() {
+                // register place-holder context to avoid installing system account call context
+                if (CallContext.current() == null)
+                    CallContext.registerPlaceHolderContext();
+
+                if (job.getRelated() != null && !job.getRelated().isEmpty())
+                    NDC.push("Job-" + job.getRelated() + "/" + "Job-" + job.getId());
+                else
+                    NDC.push("Job-" + job.getId());
+                try {
+                    super.run();
+                } finally {
+                    NDC.pop();
+                }
+            }
+
             @Override
             protected void runInContext() {
                 long runNumber = getJobRunNumber();
@@ -703,14 +705,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 try {
                     s_logger.trace("Begin cleanup expired async-jobs");
 
-                    Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - JobExpireMinutes.value() * 1000);
+                    Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - JobExpireMinutes.value() * 60000);
 
                     // limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
                     // hopefully this will be fast enough to balance potential growth of job table
                     //1) Expire unfinished jobs that weren't processed yet
                     List<AsyncJobVO> l = _jobDao.getExpiredUnfinishedJobs(cutTime, 100);
                     for (AsyncJobVO job : l) {
-                        s_logger.trace("Expunging unfinished job " + job);
+                        s_logger.info("Expunging unfinished job " + job);
+
+                        _jobMonitor.unregisterByJobId(job.getId());
                         expungeAsyncJob(job);
                     }
 
@@ -718,15 +722,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     List<AsyncJobVO> completedJobs = _jobDao.getExpiredCompletedJobs(cutTime, 100);
                     for (AsyncJobVO job : completedJobs) {
                         s_logger.trace("Expunging completed job " + job);
+
                         expungeAsyncJob(job);
                     }
 
                     // forcefully cancel blocking queue items if they've been staying there for too long
-                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(JobCancelThresholdMinutes.value() * 1000, false);
+                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(JobCancelThresholdMinutes.value() * 60000, false);
                     if (blockItems != null && blockItems.size() > 0) {
                         for (SyncQueueItemVO item : blockItems) {
                             if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                                s_logger.info("Remove Job-" + item.getContentId() + " from Queue-" + item.getId() + " since it has been blocked for too long");
                                 completeAsyncJob(item.getContentId(), JobInfo.Status.FAILED, 0, "Job is cancelled as it has been blocking others for too long");
+
+                                _jobMonitor.unregisterByJobId(item.getContentId());
                             }
 
                             // purge the item and resume queue processing

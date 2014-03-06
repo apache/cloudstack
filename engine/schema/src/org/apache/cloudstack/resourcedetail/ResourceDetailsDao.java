@@ -66,6 +66,6 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
 
     public void saveDetails(List<R> details);
 
-    public void addDetail(long resourceId, String key, String value);
+    public void addDetail(long resourceId, String key, String value, boolean display);
 
 }

@@ -29,6 +29,8 @@ import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 
 public class AsyncJobExecutionContext  {
     private static final Logger s_logger = Logger.getLogger(AsyncJobExecutionContext.class);
@@ -167,10 +169,15 @@ public class AsyncJobExecutionContext  {
     public static AsyncJobExecutionContext getCurrentExecutionContext() {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
         if (context == null) {
-            // TODO, this has security implicitions
+            // TODO, this has security implications, operations carried from API layer should always
+            // set its context, otherwise, the fall-back here will use system security context
+            //
             s_logger.warn("Job is executed without a context, setup psudo job for the executing thread");
-            context = registerPseudoExecutionContext(CallContext.current().getCallingAccountId(),
-                    CallContext.current().getCallingUserId());
+            if (CallContext.current() != null)
+                context = registerPseudoExecutionContext(CallContext.current().getCallingAccountId(),
+                        CallContext.current().getCallingUserId());
+            else
+                context = registerPseudoExecutionContext(Account.ACCOUNT_ID_SYSTEM, User.UID_SYSTEM);
         }
         return context;
     }
@@ -197,7 +204,11 @@ public class AsyncJobExecutionContext  {
         s_currentExectionContext.set(currentContext);
     }
 
-    public static String getOriginJobContextId() {
-        return String.valueOf(CallContext.current().getContextId());
+    public static String getOriginJobId() {
+        AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (context != null && context.getJob() != null)
+            return "" + context.getJob().getId();
+
+        return "";
     }
 }

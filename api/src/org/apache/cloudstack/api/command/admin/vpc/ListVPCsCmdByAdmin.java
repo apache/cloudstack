@@ -36,10 +36,10 @@ public class ListVPCsCmdByAdmin extends ListVPCsCmd {
 
     @Override
     public void execute() {
-        List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
-                getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
-                getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(),
-                listAll(), getRestartRequired(), getTags(), getProjectId());
+        List<? extends Vpc> vpcs =
+                _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(), getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
+                        getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(), listAll(), getRestartRequired(), getTags(),
+                        getProjectId(), getDisplay());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {

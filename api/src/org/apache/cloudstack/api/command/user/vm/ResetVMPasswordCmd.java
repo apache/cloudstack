@@ -40,7 +40,8 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
                     "The virtual machine must be in a \"Stopped\" state and the template must already " +
- "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
+        "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 

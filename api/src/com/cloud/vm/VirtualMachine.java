@@ -34,7 +34,10 @@ import com.cloud.utils.fsm.StateObject;
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
     public enum PowerState {
-        PowerUnknown, PowerOn, PowerOff,
+        PowerUnknown,
+        PowerOn,
+        PowerOff,
+        PowerReportMissing
     }
 
     public enum State {

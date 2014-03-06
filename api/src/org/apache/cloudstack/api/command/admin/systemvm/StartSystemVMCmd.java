@@ -35,7 +35,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startSystemVm", responseObject = SystemVmResponse.class, description = "Starts a system virtual machine.", entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "startSystemVm", responseObject = SystemVmResponse.class, description = "Starts a system virtual machine.", entityType = {IAMEntityType.VirtualMachine},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
@@ -115,7 +116,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to start system vm");
         }

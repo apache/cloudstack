@@ -455,6 +455,7 @@ public class EventTypes {
 
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
+    // IAM events
     public static final String EVENT_IAM_POLICY_CREATE = "IAMPOLICY.CREATE";
     public static final String EVENT_IAM_POLICY_DELETE = "IAMPOLICY.DELETE";
     public static final String EVENT_IAM_POLICY_GRANT = "IAMPOLICY.GRANT";

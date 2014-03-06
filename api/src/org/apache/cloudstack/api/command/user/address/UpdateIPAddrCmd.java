@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.address;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
@@ -37,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePublicIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class)
+@APICommand(name = "updatePublicIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPAddrCmd.class.getName());
     private static final String s_name = "updateipaddressresponse";
@@ -53,6 +55,9 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,6 +68,10 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getDisplayIp() {
+        return display;
     }
 
 
@@ -78,6 +87,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public String getEventDescription() {
         return ("Updating ip address with id=" + id);
     }
+
 
     @Override
     public long getEntityOwnerId() {
@@ -116,7 +126,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-        IpAddress result = _networkService.updateIP(getId(), getCustomId());
+        IpAddress result = _networkService.updateIP(getId(), getCustomId(), getDisplayIp());
         IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
         ipResponse.setResponseName(getCommandName());
         setResponseObject(ipResponse);

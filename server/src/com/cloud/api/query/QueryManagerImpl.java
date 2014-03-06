@@ -511,12 +511,18 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        sb.and("displayEvent", sb.entity().getDisplayEvent(), SearchCriteria.Op.EQ);
         sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();
         SearchCriteria<EventJoinVO> aclSc = _eventJoinDao.createSearchCriteria();
         // building ACL search criteria
         _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
+
+        // For end users display only enabled events
+        if(!_accountMgr.isRootAdmin(caller.getType())){
+            sc.setParameters("displayEvent", true);
+        }
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -736,6 +742,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
+        Boolean display = cmd.getDisplay();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
@@ -775,6 +782,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object isoId = cmd.getIsoId();
         Object vpcId = cmd.getVpcId();
         Object affinityGroupId = cmd.getAffinityGroupId();
+        Object serviceOffId = cmd.getServiceOfferingId();
         Object pod = null;
         Object hostId = null;
         Object storageId = null;
@@ -799,6 +807,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("isoId", sb.entity().getIsoId(), SearchCriteria.Op.EQ);
         sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
 
+        if (serviceOffId != null) {
+            sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
+        }
+        if (display != null) {
+            sb.and("display", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
+        }
         if (groupId != null && (Long)groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
@@ -853,6 +867,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (serviceOffId != null) {
+            sc.setParameters("serviceOfferingId", serviceOffId);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if (id != null) {
@@ -1625,6 +1647,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
         Long storageId = cmd.getStorageId();
+        Long diskOffId = cmd.getDiskOfferingId();
+        Boolean display = cmd.getDisplay();
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -1655,6 +1679,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("storageId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+        sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
@@ -1685,6 +1711,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("name", name);
         }
 
+        if (display != null) {
+            sc.setParameters("display", display);
+        }
+
         sc.setParameters("systemUse", 1);
 
         if (tags != null && !tags.isEmpty()) {
@@ -1696,6 +1726,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
             }
             sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
+        }
+
+        if (diskOffId != null) {
+            sc.setParameters("diskOfferingId", diskOffId);
         }
 
         if (id != null) {
@@ -3276,7 +3310,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean forDisplay = cmd.forDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceIdStr = cmd.getResourceId();
-        long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        Long resourceId = null;
+        if (resourceIdStr != null) {
+            resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        }
         List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
         ResourceDetail requestedDetail = null;
 

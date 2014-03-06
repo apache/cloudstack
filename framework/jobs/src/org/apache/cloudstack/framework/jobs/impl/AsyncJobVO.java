@@ -132,7 +132,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     public AsyncJobVO() {
         uuid = UUID.randomUUID().toString();
-        related = UUID.randomUUID().toString();
+        related = "";
         status = Status.IN_PROGRESS;
     }
 

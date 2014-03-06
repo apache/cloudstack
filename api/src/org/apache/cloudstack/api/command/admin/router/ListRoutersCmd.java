@@ -36,7 +36,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "listRouters", description = "List routers.", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "listRouters", description = "List routers.", responseObject = DomainRouterResponse.class, entityType = {IAMEntityType.VirtualMachine},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 
@@ -149,6 +150,6 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public void execute() {
         ListResponse<DomainRouterResponse> response = _queryService.searchForRouters(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

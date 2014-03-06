@@ -259,13 +259,13 @@ public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2Sit
     }
 
     @Override
-    public Site2SiteVpnConnection updateVpnConnection(long id, String customId) {
+    public Site2SiteVpnConnection updateVpnConnection(long id, String customId, Boolean forDisplay) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Site2SiteVpnGateway updateVpnGateway(Long id, String customId) {
+    public Site2SiteVpnGateway updateVpnGateway(Long id, String customId, Boolean forDisplay) {
         // TODO Auto-generated method stub
         return null;
     }

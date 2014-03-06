@@ -549,6 +549,7 @@ public class VolumeVO implements Volume {
         _iScsiName = iScsiName;
     }
 
+    @Override
     public boolean isDisplayVolume() {
         return displayVolume;
     }
@@ -589,11 +590,6 @@ public class VolumeVO implements Volume {
         this.state = state;
     }
 
-    @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Volume;
-    }
-
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
@@ -602,5 +598,10 @@ public class VolumeVO implements Volume {
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
 
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Volume;
     }
 }

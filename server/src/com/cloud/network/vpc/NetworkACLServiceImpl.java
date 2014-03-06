@@ -97,14 +97,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     VpcService _vpcSvc;
 
     @Override
-    public NetworkACL createNetworkACL(String name, String description, long vpcId) {
+    public NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find VPC");
         }
         _accountMgr.checkAccess(caller, null, true, vpc);
-        return _networkAclMgr.createNetworkACL(name, description, vpcId);
+        return _networkAclMgr.createNetworkACL(name, description, vpcId, forDisplay);
     }
 
     @Override
@@ -119,10 +119,13 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
         String keyword = cmd.getKeyword();
+        Boolean display = cmd.getDisplay();
+
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), Op.IN);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -139,6 +142,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if(id != null){
@@ -333,7 +340,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 //Create new ACL
                 String aclName = "VPC_" + vpc.getName() + "_Tier_" + network.getName() + "_ACL_" + network.getUuid();
                 String description = "ACL for " + aclName;
-                NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId());
+                NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId(), aclItemCmd.getDisplay());
                 if (acl == null) {
                     throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
                 }
@@ -378,7 +385,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         return _networkAclMgr.createNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getProtocol(),
             aclItemCmd.getSourceCidrList(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getTrafficType(), aclId, aclItemCmd.getAction(),
-            aclItemCmd.getNumber());
+            aclItemCmd.getNumber(), aclItemCmd.getDisplay());
     }
 
     private void validateNetworkACLItem(Integer portStart, Integer portEnd, List<String> sourceCidrList, String protocol, Integer icmpCode, Integer icmpType,
@@ -481,6 +488,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String action = cmd.getAction();
         Map<String, String> tags = cmd.getTags();
         Account caller = CallContext.current().getCallingAccount();
+        Boolean display = cmd.getDisplay();
 
         Filter filter = new Filter(NetworkACLItemVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkACLItemVO> sb = _networkACLItemDao.createSearchBuilder();
@@ -490,6 +498,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), Op.EQ);
         sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -511,6 +520,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         SearchCriteria<NetworkACLItemVO> sc = sb.create();
+
+        if (display != null) {
+            sc.setParameters("display", display);
+        }
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -613,7 +626,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID, Boolean forDisplay) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         if (aclItem == null) {
             throw new InvalidParameterValueException("Unable to find ACL Item cannot be found");
@@ -642,12 +655,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd()
             : sourcePortEnd, sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action, number);
 
-        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType, newUUID);
+        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType, newUUID, forDisplay);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_UPDATE, eventDescription = "updating network acl", async = true)
-    public NetworkACL updateNetworkACL(Long id, String customId) {
+    public NetworkACL updateNetworkACL(Long id, String customId, Boolean forDisplay) {
         NetworkACLVO acl = _networkACLDao.findById(id);
         Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
         Account caller = CallContext.current().getCallingAccount();
@@ -655,6 +668,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (customId != null) {
             acl.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            acl.setDisplay(forDisplay);
         }
 
         _networkACLDao.update(id, acl);

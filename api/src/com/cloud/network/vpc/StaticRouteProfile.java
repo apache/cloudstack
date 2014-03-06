@@ -107,5 +107,4 @@ public class StaticRouteProfile implements StaticRoute {
     public IAMEntityType getEntityType() {
         return IAMEntityType.StaticRoute;
     }
-
 }

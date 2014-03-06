@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.S3Utils.putFile;
 
 import java.io.BufferedOutputStream;
@@ -547,18 +548,22 @@ public class KVMStorageProcessor implements StorageProcessor {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    protected String copyToS3(File srcFile, S3TO destStore, String destPath) {
+    protected String copyToS3(File srcFile, S3TO destStore, String destPath) throws InterruptedException {
         final String bucket = destStore.getBucketName();
 
+        long srcSize = srcFile.length();
         String key = destPath + S3Utils.SEPARATOR + srcFile.getName();
-        putFile(destStore, srcFile, bucket, key);
+        if (!destStore.getSingleUpload(srcSize)) {
+            mputFile(destStore, srcFile, bucket, key);
+        } else {
+            putFile(destStore, srcFile, bucket, key);
+        }
         return key;
     }
 
     protected Answer copyToObjectStore(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         NfsTO srcStore = (NfsTO)srcData.getDataStore();
         String srcPath = srcData.getPath();
@@ -585,6 +590,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(destPath);
             return new CopyCmdAnswer(newSnapshot);
+        } catch (Exception e) {
+            s_logger.error("failed to upload" + srcPath, e);
+            return new CopyCmdAnswer("failed to upload" + srcPath + e.toString());
         } finally {
             try {
                 if (srcFile != null) {
@@ -600,9 +608,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected Answer backupSnapshotForObjectStore(CopyCommand cmd) {
-        DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         DataTO cacheData = cmd.getCacheTO();
         if (cacheData == null) {
@@ -682,8 +688,6 @@ public class KVMStorageProcessor implements StorageProcessor {
                     IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
                     RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-
-                    long startTime = System.currentTimeMillis() / 1000;
 
                     File snapDir = new File(snapshotDestPath);
                     s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively");
@@ -935,7 +939,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 diskdef = new DiskDef();
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
-                        attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                        attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD, DiskDef.diskFmtType.RAW);
+                } else if (attachingPool.getType() == StoragePoolType.Gluster) {
+                    String mountpoint = attachingPool.getLocalPath();
+                    String path = attachingDisk.getPath();
+                    String glusterVolume = attachingPool.getSourceDir().replace("/", "");
+                    diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
+                        null, devId, DiskDef.diskBus.VIRTIO, diskProtocol.GLUSTER, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -970,6 +980,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
+            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             return new AttachAnswer(e.toString());
         } catch (InternalErrorException e) {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());

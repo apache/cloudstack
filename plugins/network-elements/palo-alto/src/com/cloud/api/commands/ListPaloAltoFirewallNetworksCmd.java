@@ -43,7 +43,8 @@ import com.cloud.network.Network;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device")
+@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPaloAltoFirewallNetworksCmd.class.getName());

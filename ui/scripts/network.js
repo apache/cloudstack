@@ -35,7 +35,8 @@
         return elemData;
     };
 
-    var instanceSecondaryIPSubselect = function(args) {        
+    //value of Primary IP in subselect dropdown is -1, for single VM selection (API parameter virtualmachineid + vmguestip), e.g. enableStaticNat API, createPortForwardingRule API.
+    var singleVmSecondaryIPSubselect = function(args) {        
         var instance = args.context.instances[0];
         var network = args.context.networks[0];
 
@@ -116,6 +117,88 @@
         })
     };
 
+    //value of Primary IP in subselect dropdown is itself (not -1), for multiple VM selection (API parameter vmidipmap), e.g. assignToLoadBalancerRule API.
+    var multipleVmSecondaryIPSubselect = function(args) {        
+        var instance = args.context.instances[0];
+        var network = args.context.networks[0];
+
+        if (args.context.ipAddresses[0].isportable) {
+            $.ajax({
+                url: createURL('listNics'),
+                data: {
+                    virtualmachineid: instance.id
+                },
+                success: function(json) {
+                    var nics = json.listnicsresponse.nic;
+                    var ipSelection = [];
+
+                    $(nics).map(function(index, nic) {
+                        var ips = nic.secondaryip ? nic.secondaryip : [];
+                        var prefix = '[NIC ' + (index + 1) + '] ';
+
+                        // Add primary IP as default
+                        ipSelection.push({
+                            id: nic.networkid + ',' + nic.ipaddress,
+                            description: prefix + nic.ipaddress + ' (Primary)'
+                        });
+                        
+                        // Add secondary IPs
+                        $(ips).map(function(index, ip) {
+                            ipSelection.push({
+                                id: nic.networkid + ',' + ip.ipaddress,
+                                description: prefix + ip.ipaddress
+                            });
+                        });
+                    });                  
+
+
+                    args.response.success({
+                        data: ipSelection
+                    });
+                }
+            });
+            
+            return;
+        }
+        
+        var nic = $.grep(instance.nic, function(nic) {
+            return nic.networkid == network.id;
+        })[0];
+
+        // Get NIC IPs
+        $.ajax({
+            url: createURL('listNics'),
+            data: {
+                virtualmachineid: instance.id,
+                nicId: nic.id
+            },
+            success: function(json) {
+                var nic = json.listnicsresponse.nic[0];
+                var ips = nic.secondaryip ? nic.secondaryip : [];
+                var ipSelection = [];
+
+                // Add primary IP as default
+                ipSelection.push({
+                    id: nic.ipaddress,
+                    description: nic.ipaddress + ' (Primary)'
+                });
+
+                // Add secondary IPs
+                $(ips).map(function(index, ip) {
+                    ipSelection.push({
+                        id: ip.ipaddress,
+                        description: ip.ipaddress
+                    });
+                });
+
+
+                args.response.success({
+                    data: ipSelection
+                });
+            }
+        })
+    };
+    
     var ipChangeNotice = function() {
         cloudStack.dialog.confirm({
             message: 'message.ip.address.changed',
@@ -2386,7 +2469,7 @@
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
-                                                    dataProvider: instanceSecondaryIPSubselect
+                                                    dataProvider: singleVmSecondaryIPSubselect
                                                 },
                                                 dataProvider: function(args) {
                                                     var data = {
@@ -3232,6 +3315,15 @@
                                                     }
                                                 },
                                                 filters: false,
+                                                
+                                                //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, uncomment the following commented 4 lines. 
+                                                /*
+                                                subselect: {
+                                                    label: 'label.use.vm.ip',
+                                                    dataProvider: multipleVmSecondaryIPSubselect                                                     
+                                                },
+                                                */
+                                                
                                                 dataProvider: function(args) {
                                                     var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                                                         args.context.multiRule[0]['_itemData'] : [];
@@ -3485,7 +3577,7 @@
                                                 };
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
-
+                                                  
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
                                                     data: data,
@@ -3495,17 +3587,44 @@
                                                         var itemData = args.itemData;
                                                         var jobID = data.createloadbalancerruleresponse.jobid;
                                                         var lbID = data.createloadbalancerruleresponse.id;
-
+                                                        
+                                                        
+                                                        var inputData = {
+                                                            id: data.createloadbalancerruleresponse.id,
+                                                            virtualmachineids: $.map(itemData, function(elem) {
+                                                                return elem.id;
+                                                            }).join(',')
+                                                        }; 
+                                                        //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, remove the above 6 lines and uncomment the commented section below.
+                                                        
+                                                        
+                                                        /*                                                       
+                                                        var inputData = {
+                                                        	id: data.createloadbalancerruleresponse.id	
+                                                        };   
+                                                        if (args.context.ipAddresses[0].isportable) {                                                        	
+                                                        	if (args.itemData != null) {
+                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
+                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
+                                                        			inputData['vmidipmap[' + k + '].ip'] = args.itemData[k]._subselect.split(',')[1];  
+                                                        		}
+                                                        	}       
+                                                        	
+                                                        } else {                                                            
+                                                        	if (args.itemData != null) {
+                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
+                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
+                                                        			inputData['vmidipmap[' + k + '].ip'] = args.itemData[k]._subselect;  
+                                                        		}
+                                                        	}                                                        	
+                                                        }  
+                                                        */
+                                                        //http://localhost:8080/client/api?command=assignToLoadBalancerRule&response=json&sessionkey=M6I8h6gBXuEMeBMb4pjSDTjYprc=&id=da97bae5-9389-4bbb-aef3-ccca8408a852&vmidipmap[0].vmid=667d1450-3cd9-4670-b22e-aebb77f521a3&vmidipmap[0].ip=10.1.1.23&vmidipmap[1].vmid=5128d30b-7747-4a05-bdbc-6262191d7642&vmidipmap[1].ip=10.1.1.82&vmidipmap[2].vmid=48c61d00-28d2-4048-aed5-774289470804&vmidipmap[2].ip=10.1.1.5&_=1393451067671
+                                                                                                                                                                  
+                                                        
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
-                                                            data: {
-                                                                id: data.createloadbalancerruleresponse.id,
-                                                                virtualmachineids: $.map(itemData, function(elem) {
-                                                                    return elem.id;
-                                                                }).join(',')
-                                                            },
-                                                            dataType: 'json',
-                                                            async: true,
+                                                            data: inputData,                                                            
                                                             success: function(data) {
                                                                 var jobID = data.assigntoloadbalancerruleresponse.jobid;
                                                                 var lbStickyCreated = false;
@@ -3878,7 +3997,7 @@
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
-                                                    dataProvider: instanceSecondaryIPSubselect
+                                                    dataProvider: singleVmSecondaryIPSubselect
                                                 },
                                                 dataProvider: function(args) {
                                                     var networkid;

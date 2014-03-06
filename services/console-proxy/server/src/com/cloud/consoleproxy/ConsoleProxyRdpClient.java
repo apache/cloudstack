@@ -179,9 +179,11 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
         int mod = mapModifier(modifiers);
         switch (code) {
         case 0:
-            return mod = mod | MouseEvent.BUTTON1_DOWN_MASK;
+            mod = mod | MouseEvent.BUTTON1_DOWN_MASK;
+            break;
         case 2:
-            return mod = mod | MouseEvent.BUTTON3_DOWN_MASK;
+            mod = mod | MouseEvent.BUTTON3_DOWN_MASK;
+            break;
         default:
         }
         return mod;
@@ -191,9 +193,11 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
         int mod = mapModifier(modifiers);
         switch (code) {
         case 0:
-            return mod = mod | MouseEvent.BUTTON1_MASK;
+            mod = mod | MouseEvent.BUTTON1_MASK;
+            break;
         case 2:
-            return mod = mod | MouseEvent.BUTTON3_MASK;
+            mod = mod | MouseEvent.BUTTON3_MASK;
+            break;
         default:
         }
         return mod;

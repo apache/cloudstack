@@ -1411,7 +1411,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
-        Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol) throws NetworkRuleConflictException,
+        Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException {
         Account lbOwner = _accountMgr.getAccount(lbOwnerId);
 
@@ -1467,9 +1467,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
                 }
 
-                result =
-                    createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                        lbProtocol);
+                result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
+                        lbProtocol, forDisplay);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
                 if (ex instanceof NetworkRuleConflictException) {
@@ -1498,7 +1497,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @DB
     @Override
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
-        final long sourceIpId, final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol)
+ final long sourceIpId,
+            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay)
             throws NetworkRuleConflictException {
 
         if (!NetUtils.isValidPort(destPort)) {
@@ -1559,6 +1559,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 LoadBalancerVO newRule =
                     new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
                         ipAddr.getAllocatedInDomainId(), lbProtocol);
+
+                if (forDisplay != null) {
+                    newRule.setDisplay(forDisplay);
+                }
 
                 // verify rule is supported by Lb provider of the network
                 Ip sourceIp = getSourceIp(newRule);
@@ -1889,6 +1893,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lb = _lbDao.findById(lbRuleId);
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
+        Boolean forDisplay = cmd.getDisplay();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -1911,6 +1916,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (customId != null) {
             lb.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            lb.setDisplay(forDisplay);
         }
 
         boolean success = _lbDao.update(lbRuleId, lb);

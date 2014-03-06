@@ -3,9 +3,9 @@ Veewee::Definition.declare({
   :memory_size=> '256',
   :disk_size => '2500', :disk_format => 'VDI', :hostiocache => 'off',
   :os_type_id => 'Debian',
-  :iso_file => "debian-7.3.0-i386-netinst.iso",
-  :iso_src => "http://ftp.acc.umu.se/mirror/cdimage/release/7.3.0/i386/iso-cd/debian-7.3.0-i386-netinst.iso",
-  :iso_md5 => "04c58f30744e64a0459caf7d7cace479",
+  :iso_file => "debian-7.4.0-i386-netinst.iso",
+  :iso_src => "http://ftp.acc.umu.se/mirror/cdimage/release/7.4.0/i386/iso-cd/debian-7.4.0-i386-netinst.iso",
+  :iso_md5 => "7339b668a81b417ac023d73739dc6a03",
   :iso_download_timeout => "1000",
   :boot_wait => "10", :boot_cmd_sequence => [
      '<Esc>',

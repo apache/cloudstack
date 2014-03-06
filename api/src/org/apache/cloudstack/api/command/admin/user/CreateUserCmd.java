@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class)
+@APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 

@@ -88,6 +88,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Column(name = "state")
     private String state;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public AutoScaleVmGroupVO() {
     }
 
@@ -212,6 +215,15 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 
     @Override

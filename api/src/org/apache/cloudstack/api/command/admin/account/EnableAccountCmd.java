@@ -36,7 +36,8 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "enableAccount", description = "Enables an account", responseObject = AccountResponse.class, entityType = { IAMEntityType.Account })
+@APICommand(name = "enableAccount", description = "Enables an account", responseObject = AccountResponse.class, entityType = {IAMEntityType.Account},
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";

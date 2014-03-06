@@ -447,4 +447,11 @@ public class LibvirtComputingResourceTest {
         Assert.assertTrue(vmStat.getDiskReadKBs() > 0);
         Assert.assertTrue(vmStat.getDiskWriteKBs() > 0);
     }
+
+    @Test
+    public void getCpuSpeed() {
+        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+        NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
+        LibvirtComputingResource.getCpuSpeed(nodeInfo);
+    }
 }

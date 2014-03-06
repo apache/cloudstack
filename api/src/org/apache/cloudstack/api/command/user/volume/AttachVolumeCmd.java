@@ -36,7 +36,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
@@ -105,6 +106,15 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VOLUME_ATTACH;
+    }
+
+    @Override
+    public boolean isDisplayResourceEnabled(){
+        Volume volume = _responseGenerator.findVolumeById(getId());
+        if (volume == null) {
+            return true; // bad id given, parent this command to true so ERROR events are tracked
+        }
+        return volume.isDisplayVolume();
     }
 
     @Override

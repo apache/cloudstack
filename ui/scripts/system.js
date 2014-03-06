@@ -199,6 +199,16 @@
         return allowedActions;
     };
     
+    function ovsProviderActionFilter(args) {
+        var allowedActions = [];
+        var jsonObj = args.context.item; //args.context.item == nspMap["virtualRouter"]
+        if (jsonObj.state == "Enabled")
+            allowedActions.push("disable");
+        else if (jsonObj.state == "Disabled")
+            allowedActions.push("enable");
+        return allowedActions;
+    };
+    
     cloudStack.sections.system = {
         title: 'label.menu.infrastructure',
         id: 'system',
@@ -584,15 +594,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -3908,6 +3918,120 @@
                         }
                     },
                     
+                    Ovs: {
+                        id: "Ovs",
+                        label: "Ovs",
+                        isMaximized: true,
+                        type: 'detailView',
+                        fields: {
+                            name: {
+                                label: 'label.name'
+                            },                          
+                            state: {
+                                label: 'label.status',
+                                indicator: {
+                                    'Enabled': 'on'
+                                }
+                            }
+                        },
+                        tabs: {
+                            network: {
+                                title: 'label.network',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {                                    
+                                    state: {
+                                        label: 'label.state'
+                                    },                                                                      
+                                    supportedServices: {
+                                        label: 'label.supported.services'
+                                    },
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    physicalnetworkid: {
+                                        label: 'label.physical.network.ID'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    refreshNspData("Ovs");
+                                    args.response.success({
+                                        actionFilter: ovsProviderActionFilter,
+                                        data: $.extend(nspMap["Ovs"], {
+                                            supportedServices: nspMap["Ovs"] == undefined? "": nspMap["Ovs"].servicelist.join(', ')
+                                        })
+                                    });
+                                }
+                            },
+                        },
+                        actions: {
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["Ovs"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["Ovs"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },                    
+                   
                     // NetScaler provider detail view
                     netscaler: {
                         type: 'detailView',
@@ -15171,6 +15295,10 @@
                                                     id: "clvm",
                                                     description: "CLVM"
                                                 });
+                                                items.push({
+                                                    id: "gluster",
+                                                    description: "Gluster"
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
@@ -15277,6 +15405,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "SMB") {
                                                     //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -15302,6 +15432,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "ocfs2") {
                                                     //ocfs2 is the same as nfs, except no server field.
                                                     $form.find('.form-item[rel=server]').hide();
@@ -15327,6 +15459,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "PreSetup") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
@@ -15351,6 +15485,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "iscsi") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15373,6 +15509,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if ($(this).val() == "clvm") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
@@ -15395,6 +15533,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "vmfs") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15417,6 +15557,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "SharedMountPoint") {
                                                     //"SharedMountPoint" show the same fields as "nfs" does.
                                                     $form.find('.form-item[rel=server]').hide();
@@ -15442,6 +15584,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "rbd") {
                                                     $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=rbdmonitor]').find(".name").find("label").text("RADOS Monitor:");
@@ -15466,6 +15610,33 @@
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
                                                     $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
+                                                } else if (protocol == "gluster") {
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=server]').find(".value").find("input");
+
+                                                    $form.find('.form-item[rel=glustervolume]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=glustervolume]').find(".name").find("label").text("Volume:");
+
+                                                    $form.find('.form-item[rel=path]').hide();
+
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=iqn]').hide();
+                                                    $form.find('.form-item[rel=lun]').hide();
+
+                                                    $form.find('.form-item[rel=volumegroup]').hide();
+
+                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
+                                                    $form.find('.form-item[rel=rbdpool]').hide();
+                                                    $form.find('.form-item[rel=rbdid]').hide();
+                                                    $form.find('.form-item[rel=rbdsecret]').hide();
                                                 } else {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15486,6 +15657,8 @@
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
                                                     $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 }
                                             });
                                             
@@ -15613,7 +15786,16 @@
                                         },
                                         isHidden: true
                                     },
-                                    
+
+                                    //gluster
+                                    glustervolume: {
+                                        label: 'label.gluster.volume',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+
                                     //always appear (begin)
                                     storageTags: {
                                         label: 'label.storage.tags',
@@ -15661,9 +15843,12 @@
                                 } else if (args.data.protocol == "SMB") {
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
-                                    path = "/" + path;
-                                    url = smbURL(server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
-                                } else if (args.data.protocol == "PreSetup") {
+                                        path = "/" + path;
+                                    url = smbURL(server, path);
+                                    array1.push("&details[0].user=" + args.data.smbUsername);
+                                    array1.push("&details[1].password=" + todb(args.data.smbPassword));
+                                    array1.push("&details[2].domain=" + args.data.smbDomain);
+                                } else if (args.data.protocol == "PreSetup") {                                    
                                     var path = args.data.path;
                                     if (path.substring(0, 1) != "/")
                                     path = "/" + path;
@@ -15695,6 +15880,12 @@
                                     path = "/" + path;
                                     path += "/" + args.data.vCenterDataStore;
                                     url = vmfsURL("dummy", path);
+                                } else if (args.data.protocol == "gluster") {
+                                    var glustervolume = args.data.glustervolume;
+
+                                    if (glustervolume.substring(0, 1) != "/")
+                                        glustervolume = "/" + glustervolume;
+                                    url = glusterURL(server, glustervolume);
                                 } else {
                                     var iqn = args.data.iqn;
                                     if (iqn.substring(0, 1) != "/")
@@ -16058,16 +16249,16 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add UCS Manager',
+                            label: 'label.add.ucs.manager',
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'Add UCS Manager';
+                                    return 'label.add.ucs.manager';
                                 }
                             },
                             
                             createForm: {
-                                title: 'Add UCS Manager',
+                                title: 'label.add.ucs.manager',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -16900,8 +17091,7 @@
                                                 }
                                             },
                                             //SMB (end)
-                                            
-                                            
+
                                             //S3 (begin)
                                             accesskey: {
                                                 label: 'label.s3.access_key',
@@ -17065,12 +17255,17 @@
                                             var zoneid = args.data.zoneid;
                                             var nfs_server = args.data.nfsServer;
                                             var path = args.data.path;
-                                            var url = smbURL(nfs_server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
-                                            
+                                            var url = smbURL(nfs_server, path);
                                             $.extend(data, {
                                                 provider: args.data.provider,
                                                 zoneid: zoneid,
-                                                url: url
+                                                url: url,
+                                                'details[0].key': 'user',
+                                                'details[0].value': args.data.smbUsername,
+                                                'details[1].key': 'password',
+                                                'details[1].value': args.data.smbPassword,
+                                                'details[2].key': 'domain',
+                                                'details[2].value': args.data.smbDomain
                                             });
                                             
                                             $.ajax({
@@ -18931,6 +19126,9 @@
                             case "VpcVirtualRouter":
                             nspMap[ "vpcVirtualRouter"] = items[i];
                             break;
+                            case "Ovs":
+                                nspMap["Ovs"] = items[i];
+                                break;      
                             case "Netscaler":
                             nspMap[ "netscaler"] = items[i];
                             break;
@@ -19060,6 +19258,12 @@
                 state: nspMap.pa ? nspMap.pa.state: 'Disabled'
             });
         }
+        
+        nspHardcodingArray.push({
+            id: "Ovs",
+            name: "Ovs",
+            state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
+        });        
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {

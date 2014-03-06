@@ -41,7 +41,9 @@ import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
             description = "Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules",
-            responseObject = IPAddressResponse.class, entityType = { IAMEntityType.Network })
+        responseObject = IPAddressResponse.class, entityType = {IAMEntityType.Network},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
@@ -94,7 +96,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         boolean result = _networkService.restartNetwork(this, getCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restart network");
         }

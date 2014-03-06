@@ -27,8 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 @Entity
 @Table(name = ("affinity_group"))

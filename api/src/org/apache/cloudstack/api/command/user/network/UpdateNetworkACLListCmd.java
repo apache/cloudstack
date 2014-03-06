@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
@@ -30,7 +31,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkACLList", description = "Updates Network ACL list", responseObject = SuccessResponse.class, since = "4.4")
+@APICommand(name = "updateNetworkACLList", description = "Updates Network ACL list", responseObject = SuccessResponse.class, since = "4.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkACLListCmd.class.getName());
     private static final String s_name = "updatenetworkacllistresponse";
@@ -42,12 +44,19 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
     private Long id;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////
@@ -76,7 +85,7 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        NetworkACL acl = _networkACLService.updateNetworkACL(id, this.getCustomId());
+        NetworkACL acl = _networkACLService.updateNetworkACL(id, this.getCustomId(), getDisplay());
         NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
         setResponseObject(aclResponse);
         aclResponse.setResponseName(getCommandName());

@@ -20,13 +20,12 @@ package org.apache.cloudstack.engine.orchestration;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
-
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
@@ -36,6 +35,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
@@ -157,11 +157,11 @@ public class CloudOrchestrator implements OrchestrationService {
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
 
-        LinkedHashMap<NetworkVO, NicProfile> networkIpMap = new LinkedHashMap<NetworkVO, NicProfile>();
+        LinkedHashMap<NetworkVO, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<NetworkVO, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {
             NetworkVO network = _networkDao.findByUuid(uuid);
-            if (network != null) {
-                networkIpMap.put(network, networkNicMap.get(uuid));
+            if(network != null){
+                networkIpMap.put(network, new ArrayList<NicProfile>(Arrays.asList(networkNicMap.get(uuid))));
             }
         }
 
@@ -241,11 +241,11 @@ public class CloudOrchestrator implements OrchestrationService {
         rootDiskOffering.first(diskOffering);
         rootDiskOffering.second(size);
 
-        LinkedHashMap<Network, NicProfile> networkIpMap = new LinkedHashMap<Network, NicProfile>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<Network, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {
             NetworkVO network = _networkDao.findByUuid(uuid);
-            if (network != null) {
-                networkIpMap.put(network, networkNicMap.get(uuid));
+            if(network != null){
+                networkIpMap.put(network, new ArrayList<NicProfile>(Arrays.asList(networkNicMap.get(uuid))));
             }
         }
 

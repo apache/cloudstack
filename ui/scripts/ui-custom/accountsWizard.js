@@ -132,17 +132,32 @@
                         success: function(json) {
                             if (json.ldapuserresponse.count > 0) {
                                 $(json.ldapuserresponse.LdapUser).each(function() {
-                                    var result = $("<tr>");
-                                    result.append("<td><input type=\"checkbox\" name=\"username\" value=\"" + this.username + "\"></td>");
-                                    result.append("<td>" + this.firstname + " " + this.lastname + "</td>");
-                                    result.append("<td>" + this.username + "</td>");
-                                    result.append("<td>" + this.email + "</td>");
-                                    $table.append(result);
+                                    var $result = $('<tr>');
+
+                                    $result.append(
+                                        $('<td>').addClass('select').append(
+                                            $('<input>').attr({
+                                                type: 'checkbox', name: 'username', value: this.username
+                                            })
+                                        ),
+                                        $('<td>').addClass('name').html(this.firstname + ' ' + this.lastname)
+                                            .attr('title', this.firstname + ' ' + this.lastname),
+                                        $('<td>').addClass('username').html(this.username)
+                                            .attr('title', this.username),
+                                        $('<td>').addClass('email').html(this.email)
+                                            .attr('title', this.email)
+                                    )
+
+                                    $table.append($result);
                                 });
                             } else {
-                                var result = $("<tr>");
-                                result.append("<td colspan=\"4\">No data to show</td>");
-                                $table.append(result);
+                                var $result = $('<tr>');
+
+                                $result.append(
+                                    $('<td>').attr('colspan', 4).html(_l('label.no.data'))
+                                );
+
+                                $table.append($result);
                             }
                         }
                     });

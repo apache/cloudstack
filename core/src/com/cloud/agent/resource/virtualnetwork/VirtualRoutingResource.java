@@ -22,36 +22,28 @@ import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
-import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -77,6 +69,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -89,6 +82,37 @@ import java.util.Map;
  *  }
  **/
 public class VirtualRoutingResource {
+    protected class VRScripts {
+        protected static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
+        protected static final String S2SVPN_IPSEC = "ipsectunnel.sh";
+        protected static final String DHCP = "edithosts.sh";
+        protected static final String DNSMASQ_CONFIG = "dnsmasq.sh";
+        protected static final String FIREWALL_EGRESS = "firewall_egress.sh";
+        protected static final String FIREWALL_INGRESS = "firewall_ingress.sh";
+        protected static final String FIREWALL_NAT = "firewall_nat.sh";
+        protected static final String IPALIAS_CREATE = "createipAlias.sh";
+        protected static final String IPALIAS_DELETE = "deleteipAlias.sh";
+        protected static final String IPASSOC = "ipassoc.sh";
+        protected static final String LB = "loadbalancer.sh";
+        protected static final String MONITOR_SERVICE = "monitor_service.sh";
+        protected static final String PASSWORD = "savepassword.sh";
+        protected static final String RVR_CHECK = "checkrouter.sh";
+        protected static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
+        protected static final String VMDATA = "vmdata.py";
+        protected static final String VERSION = "get_template_version.sh";
+        protected static final String VPC_ACL = "vpc_acl.sh";
+        protected static final String VPC_GUEST_NETWORK = "vpc_guestnw.sh";
+        protected static final String VPC_IPASSOC = "vpc_ipassoc.sh";
+        protected static final String VPC_LB = "vpc_loadbalancer.sh";
+        protected static final String VPC_PRIVATEGW = "vpc_privateGateway.sh";
+        protected static final String VPC_PRIVATEGW_ACL = "vpc_privategw_acl.sh";
+        protected static final String VPC_PORTFORWARDING = "vpc_portforwarding.sh";
+        protected static final String VPC_SOURCE_NAT = "vpc_snat.sh";
+        protected static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
+        protected static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
+        protected static final String VPN_L2TP = "vpn_l2tp.sh";
+    }
+
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
 
@@ -101,78 +125,221 @@ public class VirtualRoutingResource {
         this._vrDeployer = deployer;
     }
 
-    public Answer executeRequest(final Command cmd) {
+    public Answer executeRequest(final NetworkElementCommand cmd) {
         try {
-            ExecutionResult rc = _vrDeployer.prepareCommand((NetworkElementCommand)cmd);
+            ExecutionResult rc = _vrDeployer.prepareCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to prepare VR command due to " + rc.getDetails());
                 return new Answer(cmd, false, rc.getDetails());
             }
 
+            assert cmd.getRouterAccessIp() != null : "Why there is no access IP for VR?";
+
+            if (cmd.isQuery()) {
+                return executeQueryCommand(cmd);
+            }
+
+            List<ConfigItem> cfg;
             if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-                return execute((SetPortForwardingRulesVpcCommand)cmd);
+                cfg = generateConfig((SetPortForwardingRulesVpcCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                return execute((SetPortForwardingRulesCommand)cmd);
+                cfg = generateConfig((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof SetStaticRouteCommand) {
-                return execute((SetStaticRouteCommand)cmd);
+                cfg = generateConfig((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return execute((SetStaticNatRulesCommand)cmd);
+                cfg = generateConfig((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                return execute((LoadBalancerConfigCommand)cmd);
+                cfg = generateConfig((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof SavePasswordCommand) {
-                return execute((SavePasswordCommand)cmd);
+                cfg = generateConfig((SavePasswordCommand)cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                return execute((DhcpEntryCommand)cmd);
+                cfg = generateConfig((DhcpEntryCommand)cmd);
             } else if (cmd instanceof CreateIpAliasCommand) {
-                return execute((CreateIpAliasCommand)cmd);
+                cfg = generateConfig((CreateIpAliasCommand)cmd);
             } else if (cmd instanceof DnsMasqConfigCommand) {
-                return execute((DnsMasqConfigCommand)cmd);
+                cfg = generateConfig((DnsMasqConfigCommand)cmd);
             } else if (cmd instanceof DeleteIpAliasCommand) {
-                return execute((DeleteIpAliasCommand)cmd);
+                cfg = generateConfig((DeleteIpAliasCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-                return execute((VmDataCommand)cmd);
-            } else if (cmd instanceof CheckRouterCommand) {
-                return execute((CheckRouterCommand)cmd);
+                cfg = generateConfig((VmDataCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-                return execute((SetFirewallRulesCommand)cmd);
+                cfg = generateConfig((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
-                return execute((BumpUpPriorityCommand)cmd);
+                cfg = generateConfig((BumpUpPriorityCommand)cmd);
             } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-                return execute((RemoteAccessVpnCfgCommand)cmd);
+                cfg = generateConfig((RemoteAccessVpnCfgCommand)cmd);
             } else if (cmd instanceof VpnUsersCfgCommand) {
-                return execute((VpnUsersCfgCommand)cmd);
-            } else if (cmd instanceof GetDomRVersionCmd) {
-                return execute((GetDomRVersionCmd)cmd);
+                cfg = generateConfig((VpnUsersCfgCommand)cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-                return execute((Site2SiteVpnCfgCommand)cmd);
-            } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-                return execute((CheckS2SVpnConnectionsCommand)cmd);
+                cfg = generateConfig((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof SetMonitorServiceCommand) {
-                return execute((SetMonitorServiceCommand)cmd);
+                cfg = generateConfig((SetMonitorServiceCommand)cmd);
             } else if (cmd instanceof SetupGuestNetworkCommand) {
-                return execute((SetupGuestNetworkCommand)cmd);
+                cfg = generateConfig((SetupGuestNetworkCommand)cmd);
             } else if (cmd instanceof SetNetworkACLCommand) {
-                return execute((SetNetworkACLCommand)cmd);
+                cfg = generateConfig((SetNetworkACLCommand)cmd);
             } else if (cmd instanceof SetSourceNatCommand) {
-                return execute((SetSourceNatCommand)cmd);
-            } else if (cmd instanceof IpAssocVpcCommand) {
-                return execute((IpAssocVpcCommand)cmd);
+                cfg = generateConfig((SetSourceNatCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                return execute((IpAssocCommand)cmd);
+                cfg = generateConfig((IpAssocCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
+
+            return applyConfig(cmd, cfg);
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
-            ExecutionResult rc = _vrDeployer.cleanupCommand((NetworkElementCommand)cmd);
+            ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to cleanup VR command due to " + rc.getDetails());
             }
         }
     }
 
-    private Answer execute(VpnUsersCfgCommand cmd) {
+    protected class ConfigItem {
+        private String script;
+        private String args;
+        private String info;
+        private String filePath;
+        private String fileName;
+        private String fileContents;
+        private boolean isFile;
+
+        public ConfigItem(String script, String args) {
+            this.script = script;
+            this.args = args;
+            this.isFile = false;
+        }
+
+        public ConfigItem(String filePath, String fileName, String fileContents) {
+            this.filePath = filePath;
+            this.fileName = fileName;
+            this.fileContents = fileContents;
+            this.isFile = true;
+        }
+
+        public String getScript() {
+            return script;
+        }
+
+        public void setScript(String script) {
+            this.script = script;
+        }
+
+        public String getArgs() {
+            return args;
+        }
+
+        public void setArgs(String args) {
+            this.args = args;
+        }
+
+        public String getInfo() {
+            return info;
+        }
+
+        public void setInfo(String info) {
+            this.info = info;
+        }
+
+        public String getFilePath() {
+            return filePath;
+        }
+
+        public void setFilePath(String filePath) {
+            this.filePath = filePath;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String getFileContents() {
+            return fileContents;
+        }
+
+        public void setFileContents(String fileContents) {
+            this.fileContents = fileContents;
+        }
+
+        public boolean isFile() {
+            return isFile;
+        }
+    }
+
+    private Answer executeQueryCommand(NetworkElementCommand cmd) {
+        if (cmd instanceof CheckRouterCommand) {
+            return execute((CheckRouterCommand)cmd);
+        } else if (cmd instanceof GetDomRVersionCmd) {
+            return execute((GetDomRVersionCmd)cmd);
+        } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
+            return execute((CheckS2SVpnConnectionsCommand)cmd);
+        } else {
+            s_logger.error("Unknown query command in VirtualRoutingResource!");
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+
+    private ExecutionResult applyConfigToVR(NetworkElementCommand cmd, ConfigItem c) {
+        if (c.isFile()) {
+            return _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), c.getFilePath(), c.getFileName(), c.getFileContents());
+        } else {
+            return _vrDeployer.executeInVR(cmd.getRouterAccessIp(), c.getScript(), c.getArgs());
+        }
+    }
+
+    private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
+        int answersCount = cmd.getAnswersCount();
+
+        // Use the last answer as final answer
+        if (answersCount == 1) {
+            ExecutionResult result = new ExecutionResult(true, "No configure to be applied");
+            for (ConfigItem c : cfg) {
+                result = applyConfigToVR(cmd, c);
+                if (!result.isSuccess()) {
+                    break;
+                }
+            }
+            return new Answer(cmd, result.isSuccess(), result.getDetails());
+        }
+
+        ExecutionResult[] results = new ExecutionResult[answersCount];
+        String[] resultsString = new String[answersCount];
+        boolean finalResult = true;
+        int i = 0, j;
+        for (ConfigItem c : cfg) {
+            results[i] = applyConfigToVR(cmd, c);
+            if (c.getInfo() != null) {
+                if (results[i].isSuccess()) {
+                    results[i].setDetails(c.getInfo() + " - success: " + results[i].getDetails());
+                } else {
+                    results[i].setDetails(c.getInfo() + " - failed: " + results[i].getDetails());
+                }
+            }
+            i ++;
+        }
+        i = 0; j = 0;
+        while (j < answersCount) {
+            resultsString[j] = results[i].getDetails();
+            if (!results[i].isSuccess()) {
+                finalResult = false;
+            }
+            // Fill the resultsString with the last result of execution, mostly in 1:n
+            if (i < cfg.size() - 1) {
+                i ++;
+            }
+            j ++;
+        }
+        return new GroupAnswer(cmd, finalResult, answersCount, resultsString);
+    }
+
+    private List<ConfigItem> generateConfig(VpnUsersCfgCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
         for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
             String args = "";
             if (!userpwd.isAdd()) {
@@ -182,15 +349,13 @@ public class VirtualRoutingResource {
                 args += "-u ";
                 args += userpwd.getUsernamePassword();
             }
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpn_l2tp.sh", args);
-            if (!result.isSuccess()) {
-                return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername() + ":" + result.getDetails());
-            }
+            cfg.add(new ConfigItem(VRScripts.VPN_L2TP, args));
         }
-        return new Answer(cmd);
+        return cfg;
     }
 
-    private Answer execute(RemoteAccessVpnCfgCommand cmd) {
+    private List<ConfigItem> generateConfig(RemoteAccessVpnCfgCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
         String args = "";
         if (cmd.isCreate()) {
             args += "-r ";
@@ -209,18 +374,14 @@ public class VirtualRoutingResource {
         }
         args += " -C " + cmd.getLocalCidr();
         args += " -i " + cmd.getPublicInterface();
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpn_l2tp.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        cfg.add(new ConfigItem(VRScripts.VPN_L2TP, args));
+        return cfg;
     }
 
-    private Answer execute(SetFirewallRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-        String routerAccessIp = cmd.getRouterAccessIp();
-        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
+    private List<ConfigItem> generateConfig(SetFirewallRulesCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        if (routerAccessIp == null) {
-            return new SetFirewallRulesAnswer(cmd, false, results);
-        }
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
 
         FirewallRuleTO[] allrules = cmd.getRules();
         FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
@@ -248,116 +409,69 @@ public class VirtualRoutingResource {
             args += " -a " + sb.toString();
         }
 
-        ExecutionResult result;
-
         if (trafficType == FirewallRule.TrafficType.Egress) {
-            result = _vrDeployer.executeInVR(routerAccessIp, "firewall_egress.sh", args);
+            cfg.add(new ConfigItem(VRScripts.FIREWALL_EGRESS, args));
         } else {
-            result = _vrDeployer.executeInVR(routerAccessIp, "firewall_ingress.sh", args);
+            cfg.add(new ConfigItem(VRScripts.FIREWALL_INGRESS, args));
         }
 
-        if (!result.isSuccess()) {
-            //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
-            for (int i = 0; i < results.length; i++) {
-                results[i] = "Failed: " + result.getDetails();
-            }
-            return new SetFirewallRulesAnswer(cmd, false, results);
-        }
-        return new SetFirewallRulesAnswer(cmd, true, results);
-
+        return cfg;
     }
 
-    private Answer execute(SetPortForwardingRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
-        boolean endResult = true;
+    private List<ConfigItem> generateConfig(SetPortForwardingRulesCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
-            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(rule.revoked() ? "-D" : "-A");
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -p ").append(rule.getStringSrcPortRange());
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
-
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "firewall_nat.sh", args.toString());
-
-            if (!result.isSuccess()) {
-                results[i++] = "Failed";
-                endResult = false;
-            } else {
-                results[i++] = null;
-            }
+            cfg.add(new ConfigItem(VRScripts.FIREWALL_NAT, args.toString()));
         }
 
-        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+        return cfg;
     }
 
-    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
-        boolean endResult = true;
-
-        for (StaticNatRuleTO rule : cmd.getRules()) {
-            String args = rule.revoked() ? " -D" : " -A";
-            args += " -l " + rule.getSrcIp();
-            args += " -r " + rule.getDstIp();
-
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_staticnat.sh", args);
-
-            if (!result.isSuccess()) {
-                results[i++] = null;
-            } else {
-                results[i++] = "Failed";
-                endResult = false;
-            }
-        }
-        return new SetStaticNatRulesAnswer(cmd, results, endResult);
-
-    }
-
-    private SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
+    private List<ConfigItem> generateConfig(SetStaticNatRulesCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
         if (cmd.getVpcId() != null) {
-            return SetVPCStaticNatRules(cmd);
-        }
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
-        boolean endResult = true;
-        for (StaticNatRuleTO rule : cmd.getRules()) {
-            //1:1 NAT needs instanceip;publicip;domrip;op
-            StringBuilder args = new StringBuilder();
-            args.append(rule.revoked() ? " -D " : " -A ");
-            args.append(" -l ").append(rule.getSrcIp());
-            args.append(" -r ").append(rule.getDstIp());
+            for (StaticNatRuleTO rule : cmd.getRules()) {
+                String args = rule.revoked() ? " -D" : " -A";
+                args += " -l " + rule.getSrcIp();
+                args += " -r " + rule.getDstIp();
 
-            if (rule.getProtocol() != null) {
-                args.append(" -P ").append(rule.getProtocol().toLowerCase());
+                cfg.add(new ConfigItem(VRScripts.VPC_STATIC_NAT, args));
             }
+        } else {
+            for (StaticNatRuleTO rule : cmd.getRules()) {
+                //1:1 NAT needs instanceip;publicip;domrip;op
+                StringBuilder args = new StringBuilder();
+                args.append(rule.revoked() ? " -D " : " -A ");
+                args.append(" -l ").append(rule.getSrcIp());
+                args.append(" -r ").append(rule.getDstIp());
 
-            args.append(" -d ").append(rule.getStringSrcPortRange());
-            args.append(" -G ");
+                if (rule.getProtocol() != null) {
+                    args.append(" -P ").append(rule.getProtocol().toLowerCase());
+                }
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "firewall_nat.sh", args.toString());
+                args.append(" -d ").append(rule.getStringSrcPortRange());
+                args.append(" -G ");
 
-            if (!result.isSuccess()) {
-                results[i++] = "Failed";
-                endResult = false;
-            } else {
-                results[i++] = null;
+                cfg.add(new ConfigItem(VRScripts.FIREWALL_NAT, args.toString()));
             }
         }
-
-        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+        return cfg;
     }
 
-    private Answer execute(LoadBalancerConfigCommand cmd) {
+    private List<ConfigItem> generateConfig(LoadBalancerConfigCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        if (routerIp == null) {
-            return new Answer(cmd);
-        }
-
         LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+
         String[] config = cfgtr.generateConfiguration(cmd);
         String tmpCfgFileContents = "";
         for (int i = 0; i < config.length; i++) {
@@ -366,12 +480,8 @@ public class VirtualRoutingResource {
         }
 
         String tmpCfgFilePath = "/etc/haproxy/";
-        String tmpCfgFileName = "haproxy.cfg.new";
-        ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents);
-
-        if (!result.isSuccess()) {
-            return new Answer(cmd, false, "Fail to copy LB config file to VR");
-        }
+        String tmpCfgFileName = "haproxy.cfg.new." + String.valueOf(System.currentTimeMillis());
+        cfg.add(new ConfigItem(tmpCfgFilePath, tmpCfgFileName, tmpCfgFileContents));
 
         String[][] rules = cfgtr.generateFwRules(cmd);
 
@@ -379,7 +489,7 @@ public class VirtualRoutingResource {
         String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
         String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-        String args = "";
+        String args = " -f " + tmpCfgFilePath + tmpCfgFileName;
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
             for (int i = 0; i < addRules.length; i++) {
@@ -408,17 +518,17 @@ public class VirtualRoutingResource {
 
         if (cmd.getVpcId() == null) {
             args = " -i " + routerIp + args;
-            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "loadbalancer.sh", args);
+            cfg.add(new ConfigItem(VRScripts.LB, args));
         } else {
             args = " -i " + cmd.getNic().getIp() + args;
-            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_loadbalancer.sh", args);
+            cfg.add(new ConfigItem(VRScripts.VPC_LB, args));
         }
 
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return cfg;
     }
 
-
-    protected Answer execute(VmDataCommand cmd) {
+    private List<ConfigItem> generateConfig(VmDataCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
 
@@ -429,23 +539,26 @@ public class VirtualRoutingResource {
 
         String args = "-d " + json;
 
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vmdata.py", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        cfg.add(new ConfigItem(VRScripts.VMDATA, args));
+        return cfg;
     }
 
-    protected Answer execute(final SavePasswordCommand cmd) {
+    private List<ConfigItem> generateConfig(SavePasswordCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         final String password = cmd.getPassword();
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmIpAddress = cmd.getVmIpAddress();
 
         String args = "-v " + vmIpAddress;
         args += " -p " + password;
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "savepassword.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        cfg.add(new ConfigItem(VRScripts.PASSWORD, args));
+        return cfg;
     }
 
-    protected Answer execute(final DhcpEntryCommand cmd) {
+    private List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         String args = " -m " + cmd.getVmMac();
         if (cmd.getVmIpAddress() != null) {
             args += " -4 " + cmd.getVmIpAddress();
@@ -472,22 +585,27 @@ public class VirtualRoutingResource {
         if (!cmd.isDefault()) {
             args += " -N";
         }
+        cfg.add(new ConfigItem(VRScripts.DHCP, args));
 
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "edithosts.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+        return cfg;
     }
 
-    protected Answer execute(final CreateIpAliasCommand cmd) {
+    private List<ConfigItem> generateConfig(CreateIpAliasCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
         String args = "";
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "createipAlias.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+
+        cfg.add(new ConfigItem(VRScripts.IPALIAS_CREATE, args));
+        return cfg;
     }
 
-    protected Answer execute(final DeleteIpAliasCommand cmd) {
+    private List<ConfigItem> generateConfig(DeleteIpAliasCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         String args = "";
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
@@ -499,51 +617,50 @@ public class VirtualRoutingResource {
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "deleteipAlias.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+
+        cfg.add(new ConfigItem(VRScripts.IPALIAS_DELETE, args));
+        return cfg;
     }
 
-    protected Answer execute(final DnsMasqConfigCommand cmd) {
+    private List<ConfigItem> generateConfig(DnsMasqConfigCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         List<DhcpTO> dhcpTos = cmd.getIps();
         String args = "";
         for (DhcpTO dhcpTo : dhcpTos) {
             args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
-        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "dnsmasq.sh", args);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+
+        cfg.add(new ConfigItem(VRScripts.DNSMASQ_CONFIG, args));
+        return cfg;
     }
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
-        final String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
         String args = "";
         for (String ip : cmd.getVpnIps()) {
             args += ip + " ";
         }
 
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "checkbatchs2svpn.sh", args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.S2SVPN_CHECK, args);
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "checkrouter.sh", null);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RVR_CHECK, null);
         if (!result.isSuccess()) {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
     }
 
-    protected Answer execute(BumpUpPriorityCommand cmd) {
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "bumpup_priority.sh", null);
-        return new Answer(cmd, result.isSuccess(), result.getDetails());
+    private List<ConfigItem> generateConfig(BumpUpPriorityCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        cfg.add(new ConfigItem(VRScripts.RVR_BUMPUP_PRI, null));
+        return cfg;
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        final ExecutionResult result = _vrDeployer.executeInVR(routerPrivateIPAddress, "get_template_version.sh", null);
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VERSION, null);
         if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
         }
@@ -554,7 +671,9 @@ public class VirtualRoutingResource {
         return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
 
-    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+    private List<ConfigItem> generateConfig(Site2SiteVpnCfgCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         String args = "";
         if (cmd.isCreate()) {
             args += "-A";
@@ -596,28 +715,30 @@ public class VirtualRoutingResource {
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), "ipsectunnel.sh", args);
-        if (!result.isSuccess()) {
-            return new Answer(cmd, false, "Configure site to site VPN failed due to " + result.getDetails());
-        }
-        return new Answer(cmd);
+
+        cfg.add(new ConfigItem(VRScripts.S2SVPN_IPSEC, args));
+        return cfg;
     }
 
-    protected Answer execute(SetMonitorServiceCommand cmd) {
+    protected List<ConfigItem> generateConfig(SetMonitorServiceCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         String config = cmd.getConfiguration();
+        String disableMonitoring =  cmd.getAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE);
 
         String args = " -c " + config;
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "monitor_service.sh", args);
-
-        if (!result.isSuccess()) {
-            return new Answer(cmd, false, result.getDetails());
+        if (disableMonitoring != null) {
+            args = args + " -d";
         }
-        return new Answer(cmd);
+
+        cfg.add(new ConfigItem(VRScripts.MONITOR_SERVICE, args));
+        return cfg;
     }
 
-    protected SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+    protected List<ConfigItem> generateConfig(SetupGuestNetworkCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         NicTO nic = cmd.getNic();
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
@@ -637,6 +758,7 @@ public class VirtualRoutingResource {
         String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
 
         String args = " -C";
+        args += " -M " + nic.getMac();
         args += " -d " + dev;
         args += " -i " + routerGIP;
         args += " -g " + gateway;
@@ -648,224 +770,171 @@ public class VirtualRoutingResource {
         if (domainName != null && !domainName.isEmpty()) {
             args += " -e " + domainName;
         }
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_guestnw.sh", args);
 
-        if (!result.isSuccess()) {
-            return new SetupGuestNetworkAnswer(cmd, false, "Creating guest network failed due to " + result.getDetails());
-        }
-        return new SetupGuestNetworkAnswer(cmd, true, "success");
+        cfg.add(new ConfigItem(VRScripts.VPC_GUEST_NETWORK, args));
+        return cfg;
     }
 
-    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
+    protected List<ConfigItem> generateConfig(SetNetworkACLCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
 
         String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
-        try {
-            String[][] rules = cmd.generateFwRules();
-            String[] aclRules = rules[0];
-            NicTO nic = cmd.getNic();
-            String dev = "eth" + nic.getDeviceId();
-            String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            StringBuilder sb = new StringBuilder();
+        String[][] rules = cmd.generateFwRules();
+        String[] aclRules = rules[0];
+        NicTO nic = cmd.getNic();
+        String dev = "eth" + nic.getDeviceId();
+        String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+        StringBuilder sb = new StringBuilder();
 
-            for (int i = 0; i < aclRules.length; i++) {
-                sb.append(aclRules[i]).append(',');
-            }
-
-            String rule = sb.toString();
-            ExecutionResult result;
-
-            String args = " -d " + dev;
-            if (privateGw != null) {
-                args += " -a " + rule;
-                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_privategw_acl.sh", args);
-            } else {
-                args += " -i " + nic.getIp();
-                args += " -m " + netmask;
-                args += " -a " + rule;
-                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_acl.sh", args);
-            }
-
-            if (!result.isSuccess()) {
-                for (int i = 0; i < results.length; i++) {
-                    results[i] = "Failed";
-                }
-                return new SetNetworkACLAnswer(cmd, false, results);
-            }
-
-            return new SetNetworkACLAnswer(cmd, true, results);
-        } catch (Exception e) {
-            String msg = "SetNetworkACL failed due to " + e.toString();
-            s_logger.error(msg, e);
-            return new SetNetworkACLAnswer(cmd, false, results);
+        for (int i = 0; i < aclRules.length; i++) {
+            sb.append(aclRules[i]).append(',');
         }
+
+        String rule = sb.toString();
+
+        String args = " -d " + dev;
+        args += " -M " + nic.getMac();
+        if (privateGw != null) {
+            args += " -a " + rule;
+
+            cfg.add(new ConfigItem(VRScripts.VPC_PRIVATEGW_ACL, args));
+        } else {
+            args += " -i " + nic.getIp();
+            args += " -m " + netmask;
+            args += " -a " + rule;
+            cfg.add(new ConfigItem(VRScripts.VPC_ACL, args));
+        }
+
+        return cfg;
     }
 
-    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    protected List<ConfigItem> generateConfig(SetSourceNatCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
         IpAddressTO pubIP = cmd.getIpAddress();
         String dev = "eth" + pubIP.getNicDevId();
-        String args = " -A ";
+        String args = "-A";
         args += " -l ";
         args += pubIP.getPublicIp();
         args += " -c ";
         args += dev;
-        ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_snat.sh", args);
-        return new SetSourceNatAnswer(cmd, result.isSuccess(), result.getDetails());
+
+        cfg.add(new ConfigItem(VRScripts.VPC_SOURCE_NAT, args));
+        return cfg;
     }
 
-    private SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
+    protected List<ConfigItem> generateConfig(SetPortForwardingRulesVpcCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
 
-        boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String args = rule.revoked() ? " -D" : " -A";
+            String args = rule.revoked() ? "-D" : "-A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
             args += " -p " + rule.getStringSrcPortRange();
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "vpc_portforwarding.sh", args);
-
-            if (!result.isSuccess()) {
-                results[i++] = "Failed";
-                endResult = false;
-            } else {
-                results[i++] = null;
-            }
+            cfg.add(new ConfigItem(VRScripts.VPC_PORTFORWARDING, args));
         }
-        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+
+        return cfg;
     }
 
-    public IpAssocAnswer execute(IpAssocVpcCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String[] results = new String[cmd.getIpAddresses().length];
-        String args = "";
-        String snatArgs = "";
-        for (int i = 0; i < cmd.getIpAddresses().length; i ++) {
-            results[i] = "Failed";
+    protected List<ConfigItem> generateConfig(SetStaticRouteCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
+        String[][] rules = cmd.generateSRouteRules();
+        StringBuilder sb = new StringBuilder();
+        String[] srRules = rules[0];
+
+        for (int i = 0; i < srRules.length; i++) {
+            sb.append(srRules[i]).append(',');
         }
 
-        int i = 0;
-        for (IpAddressTO ip : cmd.getIpAddresses()) {
-            if (ip.isAdd()) {
-                args += " -A ";
-                snatArgs += " -A ";
-            } else {
-                args += " -D ";
-                snatArgs += " -D ";
-            }
+        String args = " -a " + sb.toString();
 
-            args += " -l ";
-            args += ip.getPublicIp();
-            String nicName = "eth" + ip.getNicDevId();
-            args += " -c ";
-            args += nicName;
-            args += " -g ";
-            args += ip.getVlanGateway();
-            args += " -m ";
-            args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
-            args += " -n ";
-            args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
+        cfg.add(new ConfigItem(VRScripts.VPC_STATIC_ROUTE, args));
+        return cfg;
+    }
 
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_ipassoc.sh", args);
-            if (!result.isSuccess()) {
-                results[i++] = ip.getPublicIp() + " - vpc_ipassoc failed:" + result.getDetails();
-                break;
-            }
+    protected List<ConfigItem> generateConfig(IpAssocCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+        ConfigItem c;
 
-            if (ip.isSourceNat()) {
-                snatArgs += " -l " + ip.getPublicIp();
-                snatArgs += " -c " + nicName;
+        if (cmd instanceof IpAssocVpcCommand) {
+            for (IpAddressTO ip : cmd.getIpAddresses()) {
+                String args = "";
+                String snatArgs = "";
 
-                result = _vrDeployer.executeInVR(routerIP, "vpc_privateGateway.sh", snatArgs);
-                if (result != null) {
-                    results[i++] = ip.getPublicIp() + " - vpc_privateGateway failed:" + result.getDetails();
-                    break;
+                if (ip.isAdd()) {
+                    args += " -A ";
+                    snatArgs += " -A ";
+                } else {
+                    args += " -D ";
+                    snatArgs += " -D ";
+                }
+
+                args += " -l ";
+                args += ip.getPublicIp();
+                String nicName = "eth" + ip.getNicDevId();
+                args += " -c ";
+                args += nicName;
+                args += " -g ";
+                args += ip.getVlanGateway();
+                args += " -m ";
+                args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
+                args += " -n ";
+                args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
+
+                c = new ConfigItem(VRScripts.VPC_IPASSOC, args);
+                c.setInfo(ip.getPublicIp() + " - vpc_ipassoc");
+                cfg.add(c);
+
+                if (ip.isSourceNat()) {
+                    snatArgs += " -l " + ip.getPublicIp();
+                    snatArgs += " -c " + nicName;
+
+                    c = new ConfigItem(VRScripts.VPC_PRIVATEGW, snatArgs);
+                    c.setInfo(ip.getPublicIp() + " - vpc_privategateway");
+                    cfg.add(c);
                 }
             }
-            results[i++] = ip.getPublicIp() + " - success ";
-        }
-        return new IpAssocAnswer(cmd, results);
-    }
-
-    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        try {
-            String[] results = new String[cmd.getStaticRoutes().length];
-            String[][] rules = cmd.generateSRouteRules();
-            StringBuilder sb = new StringBuilder();
-            String[] srRules = rules[0];
-
-            for (int i = 0; i < srRules.length; i++) {
-                sb.append(srRules[i]).append(',');
-            }
-
-            String args = " -a " + sb.toString();
-            ExecutionResult result = _vrDeployer.executeInVR(routerIP, "vpc_staticroute.sh", args);
-
-            if (!result.isSuccess()) {
-                for (int i = 0; i < results.length; i++) {
-                    results[i] = "Failed";
+        } else {
+            for (IpAddressTO ip: cmd.getIpAddresses()) {
+                String args = "";
+                if (ip.isAdd()) {
+                    args += "-A";
+                } else {
+                    args += "-D";
                 }
-                return new SetStaticRouteAnswer(cmd, false, results);
-            }
+                String cidrSize = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
+                if (ip.isSourceNat()) {
+                    args += " -s";
+                }
+                if (ip.isFirstIP()) {
+                    args += " -f";
+                }
+                args += " -l ";
+                args += ip.getPublicIp() + "/" + cidrSize;
 
-            return new SetStaticRouteAnswer(cmd, true, results);
-        } catch (Exception e) {
-            String msg = "SetStaticRoute failed due to " + e.toString();
-            s_logger.error(msg, e);
-            return new SetStaticRouteAnswer(cmd, false, null);
-        }
-    }
+                String publicNic = "eth" + ip.getNicDevId();
+                args += " -c ";
+                args += publicNic;
 
-    public Answer execute(IpAssocCommand cmd) {
-        String[] results = new String[cmd.getIpAddresses().length];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = IpAssocAnswer.errorResult;
-        }
+                args += " -g ";
+                args += ip.getVlanGateway();
 
-        int i = 0;
-        for (IpAddressTO ip: cmd.getIpAddresses()) {
-            String args = "";
-            if (ip.isAdd()) {
-                args += "-A";
-            } else {
-                args += "-D";
-            }
-            String cidrSize = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
-            if (ip.isSourceNat()) {
-                args += " -s";
-            }
-            if (ip.isFirstIP()) {
-                args += " -f";
-            }
-            args += " -l ";
-            args += ip.getPublicIp() + "/" + cidrSize;
+                if (ip.isNewNic()) {
+                    args += " -n";
+                }
 
-            String publicNic = "eth" + ip.getNicDevId();
-            args += " -c ";
-            args += publicNic;
-
-            args += " -g ";
-            args += ip.getVlanGateway();
-
-            if (ip.isNewNic()) {
-                args += " -n";
-            }
-
-            ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), "ipassoc.sh", args);
-            if (result.isSuccess()) {
-                results[i++] = ip.getPublicIp() + " - success";
-            } else {
-                results[i++] = ip.getPublicIp() + " - failed:" + result.getDetails();
-                break;
+                c = new ConfigItem(VRScripts.IPASSOC, args);
+                c.setInfo(ip.getPublicIp());
+                cfg.add(c);
             }
         }
-        return new IpAssocAnswer(cmd, results);
+        return cfg;
     }
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {

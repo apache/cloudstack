@@ -30,10 +30,9 @@ import net.juniper.contrail.api.types.ServiceInstanceType;
 import net.juniper.contrail.api.types.ServiceTemplate;
 import net.juniper.contrail.api.types.ServiceTemplateType;
 
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -72,8 +71,14 @@ public class ServiceInstanceModel extends ModelObjectBase {
         String parent_name;
         if (project != null) {
             parent_name = StringUtils.join(project.getQualifiedName(), ':');
+
+            _projectId = project.getUuid();
         } else {
             parent_name = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT;
+
+            //In the original code, if the projectId is null, it will simply throw NPE on the last line (nr. 90) of the method where the projectId.getUuid() is called.
+            //This was added as a way to avoid NPE. Should we perhaps throw a CloudRuntimeException if the project object is null?
+            _projectId = UUID.randomUUID().toString();
         }
         _fqName = parent_name + ":" + name;
 
@@ -86,8 +91,6 @@ public class ServiceInstanceModel extends ModelObjectBase {
         _templateName = template.getName();
         _templateId = template.getUuid();
         _templateUrl = template.getUrl();
-
-        _projectId = project.getUuid();
     }
 
     /**
@@ -170,16 +173,16 @@ public class ServiceInstanceModel extends ModelObjectBase {
     }
 
     private void clearServicePolicy(ModelController controller) {
-       _left.addToNetworkPolicy(null);
-       _right.addToNetworkPolicy(null);
-       try {
+        _left.addToNetworkPolicy(null);
+        _right.addToNetworkPolicy(null);
+        try {
             controller.getManager().getDatabase().getNetworkPolicys().remove(_policy);
             _policy.delete(controller.getManager().getModelController());
             _policy = null;
         } catch (Exception e) {
             s_logger.error(e);
         }
-       try {
+        try {
             _left.update(controller.getManager().getModelController());
             _right.update(controller.getManager().getModelController());
         } catch (Exception ex) {
@@ -194,7 +197,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         _right.addToNetworkPolicy(policyModel);
         List<String> siList = new ArrayList<String>();
         siList.add(StringUtils.join(_serviceInstance.getQualifiedName(), ':'));
-       try {
+        try {
             policyModel.build(controller.getManager().getModelController(), _leftName, _rightName, "in-network", siList, "pass");
         } catch (Exception e) {
             s_logger.error(e);

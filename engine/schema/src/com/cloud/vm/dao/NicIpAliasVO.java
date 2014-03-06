@@ -238,5 +238,4 @@ public class NicIpAliasVO implements NicIpAlias  {
     public IAMEntityType getEntityType() {
         return IAMEntityType.NicIpAlias;
     }
-
 }

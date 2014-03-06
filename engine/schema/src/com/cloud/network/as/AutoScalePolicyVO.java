@@ -148,13 +148,13 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         this.quietTime = quietTime;
     }
 
+    public void setLastQuiteTime(Date lastQuiteTime) {
+        this.lastQuiteTime = lastQuiteTime;
+    }
 
     @Override
     public IAMEntityType getEntityType() {
         return IAMEntityType.AutoScalePolicy;
     }
 
-    public void setLastQuiteTime(Date lastQuiteTime) {
-        this.lastQuiteTime = lastQuiteTime;
-    }
 }

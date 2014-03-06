@@ -48,8 +48,9 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
 @APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted)
-        public class CreateTemplateCmd extends BaseAsyncCreateCmd {
+        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted,
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 

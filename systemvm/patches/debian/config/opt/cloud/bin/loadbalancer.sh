@@ -177,7 +177,8 @@ fw_entry() {
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
-  /root/reconfigLB.sh
+  logger -t cloud "Reconfiguring loadbalancer using $1"
+  /root/reconfigLB.sh $1
   return $?
 }
 
@@ -190,7 +191,7 @@ restore_lb() {
   if [ $? -eq 0 ]
   then
     # Run reconfigLB.sh again
-    /root/reconfigLB.sh
+    /root/reconfigLB.sh /etc/haproxy/haproxy.cfg.new
   fi
 }
 
@@ -234,7 +235,6 @@ do
   f)	fflag=1
 		cfgfile="$OPTARG"
 		;;
-
   s)	sflag=1
 		statsIp="$OPTARG"
 		;;
@@ -296,7 +296,6 @@ then
   logger -t cloud "Failed to apply firewall rules for load balancing, reverting HA Proxy config"
   # Restore the LB
   restore_lb
-
 
   logger -t cloud "Reverting firewall config"
   # Revert iptables rules on DomR

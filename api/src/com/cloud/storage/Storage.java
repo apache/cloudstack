@@ -98,7 +98,8 @@ public class Storage {
         PreSetup(true), // for XenServer, Storage Pool is set up by customers.
         EXT(false), // XenServer local EXT SR
         OCFS2(true),
-        SMB(true);
+        SMB(true),
+        Gluster(true);
 
         boolean shared;
 

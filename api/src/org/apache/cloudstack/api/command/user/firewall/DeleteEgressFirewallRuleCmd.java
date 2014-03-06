@@ -39,7 +39,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an ggress firewall rule", responseObject = SuccessResponse.class, entityType = { IAMEntityType.FirewallRule })
+@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an ggress firewall rule", responseObject = SuccessResponse.class, entityType = {IAMEntityType.FirewallRule},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteEgressFirewallRuleCmd.class.getName());
     private static final String s_name = "deleteegressfirewallruleresponse";
@@ -102,7 +103,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete egress firewall rule");
         }

@@ -1902,6 +1902,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
         Long vpcId = cmd.getVpcId();
+        Boolean forDisplay = cmd.getDisplay();
         Map<String, String> tags = cmd.getTags();
 
         Boolean isAllocated = cmd.isAllocatedOnly();
@@ -1940,6 +1941,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -2035,6 +2037,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (associatedNetworkId != null) {
             sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+        }
+
+        if (forDisplay != null) {
+            sc.setParameters("display", forDisplay);
         }
 
         Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
@@ -3297,13 +3303,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, startEventId);
+    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, boolean displayResourceEnabled, Long startEventId) {
+        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, displayResourceEnabled, startEventId);
     }
 
     @Override
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, description, startEventId);
+    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, boolean displayResourceEnabled, long startEventId) {
+        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, displayResourceEnabled, description, startEventId);
     }
 
     @Override

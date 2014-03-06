@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listStaticRoutes", description = "Lists all static routes", responseObject = StaticRouteResponse.class, entityType = { IAMEntityType.StaticRoute })
+@APICommand(name = "listStaticRoutes", description = "Lists all static routes", responseObject = StaticRouteResponse.class, entityType = {IAMEntityType.StaticRoute},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     private static final String s_name = "liststaticroutesresponse";
 
@@ -80,7 +81,7 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(routeResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
 }

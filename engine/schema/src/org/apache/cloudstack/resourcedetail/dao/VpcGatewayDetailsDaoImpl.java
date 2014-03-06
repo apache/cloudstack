@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.VpcGatewayDetailVO;
 public class VpcGatewayDetailsDaoImpl extends ResourceDetailsDaoBase<VpcGatewayDetailVO> implements VpcGatewayDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new VpcGatewayDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new VpcGatewayDetailVO(resourceId, key, value, display));
     }
 }

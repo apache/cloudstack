@@ -52,6 +52,7 @@ public class LibvirtStoragePoolXMLParser {
 
             Element source = (Element)rootElement.getElementsByTagName("source").item(0);
             String host = getAttrValue("host", "name", source);
+            String format = getAttrValue("format", "type", source);
 
             if (type.equalsIgnoreCase("rbd")) {
                 int port = Integer.parseInt(getAttrValue("host", "port", source));
@@ -63,10 +64,27 @@ public class LibvirtStoragePoolXMLParser {
                     String authUsername = auth.getAttribute("username");
                     String authType = auth.getAttribute("type");
                     return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, authUsername,
-                        LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
+                            LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
                 } else {
                     return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, "");
                 }
+                /* Gluster is a sub-type of LibvirtStoragePoolDef.poolType.NETFS, need to check format */
+            } else if (format != null && format.equalsIgnoreCase("glusterfs")) {
+                /* libvirt does not return the default port, but requires it for a disk-definition */
+                int port = 24007;
+
+                String path = getAttrValue("dir", "path", source);
+
+                Element target = (Element) rootElement.getElementsByTagName(
+                        "target").item(0);
+                String targetPath = getTagValue("path", target);
+
+                String portValue = getAttrValue("host", "port", source);
+                if (portValue != null && !portValue.isEmpty())
+                    port = Integer.parseInt(portValue);
+
+                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(format.toUpperCase()),
+                        poolName, uuid, host, port, path, targetPath);
             } else {
                 String path = getAttrValue("dir", "path", source);
 

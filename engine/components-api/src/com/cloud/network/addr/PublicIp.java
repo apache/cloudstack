@@ -235,6 +235,11 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
+    public boolean isDisplay() {
+        return _addr.isDisplay();
+    }
+
+    @Override
     public IAMEntityType getEntityType() {
         return IAMEntityType.PublicIpAddress;
     }

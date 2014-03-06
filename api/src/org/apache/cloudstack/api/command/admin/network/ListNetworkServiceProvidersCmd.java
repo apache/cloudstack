@@ -36,7 +36,9 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listNetworkServiceProviders",
             description = "Lists network serviceproviders for a given physical network.",
             responseObject = ProviderResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
     private static final String Name = "listnetworkserviceprovidersresponse";

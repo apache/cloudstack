@@ -38,4 +38,6 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
     Long getVpcId();
 
     State getState();
+
+    boolean isDisplay();
 }

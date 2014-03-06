@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils;
 
 import java.io.File;
@@ -94,15 +97,12 @@ public class UriUtils {
 
         if (pathStart > 0) {
             String[] tokens = url.substring(pathStart + 1).split("/");
-            if (tokens != null) {
-                StringBuffer sb = new StringBuffer();
-                sb.append(url.substring(0, pathStart));
-                for (String token : tokens) {
-                    sb.append("/").append(URLEncoder.encode(token));
-                }
-
-                return sb.toString();
+            StringBuilder sb = new StringBuilder(url.substring(0, pathStart));
+            for (String token : tokens) {
+                sb.append("/").append(URLEncoder.encode(token));
             }
+
+            return sb.toString();
         }
 
         // no need to do URL component encoding
@@ -111,13 +111,7 @@ public class UriUtils {
 
     public static String getCifsUriParametersProblems(URI uri) {
         if (!UriUtils.hostAndPathPresent(uri)) {
-            String errMsg = "cifs URI missing host and/or path.  " + " Make sure it's of the format " + "cifs://hostname/path?user=<username>&password=<password>";
-            s_logger.warn(errMsg);
-            return errMsg;
-        }
-        if (!UriUtils.cifsCredentialsPresent(uri)) {
-            String errMsg =
-                "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
+            String errMsg = "cifs URI missing host and/or path. Make sure it's of the format cifs://hostname/path";
             s_logger.warn(errMsg);
             return errMsg;
         }
@@ -152,7 +146,7 @@ public class UriUtils {
             URIBuilder builder = new URIBuilder(url);
             builder.removeQuery();
 
-            String updatedQuery = new String();
+            StringBuilder updatedQuery = new StringBuilder();
             List<NameValuePair> queryParams = getUserDetails(query);
             ListIterator<NameValuePair> iterator = queryParams.listIterator();
             while (iterator.hasNext()) {
@@ -165,14 +159,16 @@ public class UriUtils {
                     value = param.getValue();
                 }
 
-                if (updatedQuery.isEmpty()) {
-                    updatedQuery += (param.getName() + "=" + value);
+                if (updatedQuery.length() == 0) {
+                    updatedQuery.append(param.getName()).append('=')
+                            .append(value);
                 } else {
-                    updatedQuery += ("&" + param.getName() + "=" + value);
+                    updatedQuery.append('&').append(param.getName())
+                            .append('=').append(value);
                 }
             }
 
-            String schemeAndHost = new String();
+            String schemeAndHost = "";
             URI newUri = builder.build();
             if (newUri.getScheme() != null) {
                 schemeAndHost = newUri.getScheme() + "://" + newUri.getHost();
@@ -188,11 +184,13 @@ public class UriUtils {
 
     private static List<NameValuePair> getUserDetails(String query) {
         List<NameValuePair> details = new ArrayList<NameValuePair>();
-        StringTokenizer allParams = new StringTokenizer(query, "&");
-        while (allParams.hasMoreTokens()) {
-            String param = allParams.nextToken();
-            details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
-                    param.substring(param.indexOf("=") + 1)));
+        if (query != null && !query.isEmpty()) {
+            StringTokenizer allParams = new StringTokenizer(query, "&");
+            while (allParams.hasMoreTokens()) {
+                String param = allParams.nextToken();
+                details.add(new BasicNameValuePair(param.substring(0, param.indexOf("=")),
+                        param.substring(param.indexOf("=") + 1)));
+            }
         }
 
         return details;

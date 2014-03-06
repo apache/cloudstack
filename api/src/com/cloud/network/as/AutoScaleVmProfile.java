@@ -48,4 +48,6 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
 
     public long getAutoScaleUserId();
 
+    boolean isDisplay();
+
 }

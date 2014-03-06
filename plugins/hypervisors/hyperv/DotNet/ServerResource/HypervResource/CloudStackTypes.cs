@@ -173,11 +173,11 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        fileName = Path.Combine(store.Path, this.uuid);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.uuid;
                         fileName = Utils.NormalizePath(fileName);
                     }
                 }
@@ -198,7 +198,7 @@ namespace HypervResource
                         fileName = Utils.NormalizePath(fileName);
                         if (Directory.Exists(fileName))
                         {
-                            fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+                            fileName = Utils.NormalizePath(fileName + @"\" + this.uuid);
                         }
                     }
                 }
@@ -300,11 +300,11 @@ namespace HypervResource
                 path = Utils.NormalizePath(path);
                 if (Directory.Exists(path))
                 {
-                    string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
+                    string[] choices = choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
                     if (choices.Length != 1)
                     {
                         String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
-                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.name);
+                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.uuid);
                         logger.Debug(errMsg);
                     }
                     else
@@ -334,18 +334,18 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        fileName = Path.Combine(store.Path, this.uuid);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.uuid;
                     }
                     fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
                 else if (this.nfsDataStoreTO != null)
                 {
                     NFSTO store = this.nfsDataStoreTO;
-                    fileName = store.UncPath + @"\" + this.path + @"\" + this.name;
+                    fileName = store.UncPath + @"\" + this.path + @"\" + this.uuid;
                     if (!this.format.Equals("RAW"))
                     {
                         fileName = fileName + '.' + this.format.ToLowerInvariant();
@@ -918,5 +918,6 @@ namespace HypervResource
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
+        public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

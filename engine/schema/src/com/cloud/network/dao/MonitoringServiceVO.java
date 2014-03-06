@@ -123,5 +123,4 @@ public class MonitoringServiceVO implements MonitoringService {
     public IAMEntityType getEntityType() {
         return IAMEntityType.MonitorService;
     }
-
 }

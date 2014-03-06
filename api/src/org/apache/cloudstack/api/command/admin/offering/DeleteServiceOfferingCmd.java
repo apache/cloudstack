@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteServiceOffering", description = "Deletes a service offering.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteServiceOffering", description = "Deletes a service offering.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteServiceOfferingCmd.class.getName());
     private static final String s_name = "deleteserviceofferingresponse";

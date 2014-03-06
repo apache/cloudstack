@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -37,7 +38,8 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
-        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {IAMEntityType.PortForwardingRule})
+        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {IAMEntityType.PortForwardingRule},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -74,6 +76,9 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
                description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -100,6 +105,10 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////
@@ -141,7 +150,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getCustomId());
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getCustomId(), getDisplay());
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
         if (rule != null) {
             fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);

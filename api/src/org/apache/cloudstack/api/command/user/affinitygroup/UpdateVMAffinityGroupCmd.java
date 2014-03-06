@@ -45,8 +45,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
-        + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "updateVMAffinityGroup",
+            description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
+                + "new properties to take effect.",
+            responseObject = UserVmResponse.class,
+        responseView = ResponseView.Restricted,
+        entityType = {IAMEntityType.VirtualMachine},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
 public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";

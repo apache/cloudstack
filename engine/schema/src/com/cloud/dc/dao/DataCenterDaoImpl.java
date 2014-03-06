@@ -375,7 +375,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
         List<DataCenterDetailVO> resourceDetails = new ArrayList<DataCenterDetailVO>();
         for (String key : details.keySet()) {
-            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key)));
+            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key), true));
         }
 
         _detailsDao.saveDetails(resourceDetails);

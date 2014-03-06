@@ -62,11 +62,16 @@ from marvin.integration.lib.base import (Configurations,
                                          Template,
                                          Resources,
                                          PhysicalNetwork,
-                                         Host)
+                                         Host,
+                                         PublicIPAddress,
+                                         NetworkOffering,
+                                         Network)
 from marvin.integration.lib.utils import (get_process_status,
-                                          xsplit)
+                                          xsplit,
+                                          validateList)
 
 from marvin.sshClient import SshClient
+from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, BASIC_ZONE, FAIL
 import random
 
 #Import System modules
@@ -212,17 +217,7 @@ def get_pod(apiclient, zoneid, services=None):
 def get_template(apiclient, zoneid, ostype, services=None,
                  templatefilter='featured',
                  templatetype='BUILTIN'):
-    "Returns a template"
-
-    cmd = listOsTypes.listOsTypesCmd()
-    cmd.description = ostype
-    ostypes = apiclient.listOsTypes(cmd)
-
-    if isinstance(ostypes, list):
-        ostypeid = ostypes[0].id
-    else:
-        raise Exception(
-            "Failed to find OS type with description: %s" % ostype)
+    "Returns a featured built in template in given zone"
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.templatefilter = templatefilter
@@ -235,13 +230,13 @@ def get_template(apiclient, zoneid, ostype, services=None,
     list_templates = apiclient.listTemplates(cmd)
 
     if isinstance(list_templates, list):
-        assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
+        assert len(list_templates) > 0, "received empty response on featured templates"
         for template in list_templates:
-            if template.ostypeid == ostypeid and template.isready and template.templatetype == templatetype:
+            if template.isready and template.templatetype == templatetype:
                 return template
 
-    raise Exception("Exception: Failed to find template of type %s with OSTypeID and which is in "
-                                "ready state: %s" %(templatetype, ostypeid))
+    raise Exception("Exception: Failed to find built in template which is in "
+                                "ready state: %s" % templatetype)
     return
 
 
@@ -907,3 +902,81 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         return None, None
 
     return physical_network, vlan
+
+def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
+    """ Check if the given IP is in the correct state (given)
+    and return True/False accordingly"""
+    retriesCount = 10
+    while True:
+        portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
+        assert validateList(portableips)[0] == PASS, "IPs list validation failed"
+        if str(portableips[0].state).lower() == state:
+            break
+        elif retriesCount == 0:
+           return False
+        else:
+            retriesCount -= 1
+            time.sleep(60)
+            continue
+    return True
+
+def setSharedNetworkParams(networkServices, range=20):
+    """Fill up the services dictionary for shared network using random subnet"""
+
+    # @range: range decides the endip. Pass the range as "x" if you want the difference between the startip
+    # and endip as "x"
+    # Set the subnet number of shared networks randomly prior to execution
+    # of each test case to avoid overlapping of ip addresses
+    shared_network_subnet_number = random.randrange(1,254)
+
+    networkServices["gateway"] = "172.16."+str(shared_network_subnet_number)+".1"
+    networkServices["startip"] = "172.16."+str(shared_network_subnet_number)+".2"
+    networkServices["endip"] = "172.16."+str(shared_network_subnet_number)+"."+str(range+1)
+    networkServices["netmask"] = "255.255.255.0"
+    return networkServices
+
+def createEnabledNetworkOffering(apiclient, networkServices):
+    """Create and enable network offering according to the type
+
+       @output: List, containing [ Result,Network Offering,Reason ]
+                 Ist Argument('Result') : FAIL : If exception or assertion error occurs
+                                          PASS : If network offering
+                                          is created and enabled successfully
+                 IInd Argument(Net Off) : Enabled network offering
+                                                In case of exception or
+                                                assertion error, it will be None
+                 IIIrd Argument(Reason) :  Reason for failure,
+                                              default to None
+    """
+    try:
+        resultSet = [FAIL, None, None]
+        # Create network offering
+        network_offering = NetworkOffering.create(apiclient, networkServices, conservemode=False)
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(network_offering, apiclient, id=network_offering.id,
+                               state="enabled")
+    except Exception as e:
+        resultSet[2] = e
+        return resultSet
+    return [PASS, network_offering, None]
+
+def shouldTestBeSkipped(networkType, zoneType):
+    """Decide which test to skip, according to type of network and zone type"""
+
+    # If network type is isolated or vpc and zone type is basic, then test should be skipped
+    skipIt = False
+    if ((networkType.lower() == str(ISOLATED_NETWORK).lower() or networkType.lower() == str(VPC_NETWORK).lower())
+            and (zoneType.lower() == BASIC_ZONE)):
+        skipIt = True
+    return skipIt
+
+def verifyNetworkState(apiclient, networkid, state):
+    """List networks and check if the network state matches the given state"""
+    try:
+        networks = Network.list(apiclient, id=networkid)
+    except Exception as e:
+        raise Exception("Failed while fetching network list with error: %s" % e)
+    assert validateList(networks)[0] == PASS, "Networks list validation failed, list is %s" % networks
+    assert str(networks[0].state).lower() == state, "network state should be %s, it is %s" % (state, networks[0].state)
+    return

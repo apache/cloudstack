@@ -35,7 +35,9 @@ import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since = "3.0.0", entityType = { IAMEntityType.SecurityGroup })
+@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since = "3.0.0", entityType = {IAMEntityType.SecurityGroup},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
 

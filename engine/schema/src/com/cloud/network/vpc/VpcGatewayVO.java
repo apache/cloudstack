@@ -92,7 +92,7 @@ public class VpcGatewayVO implements VpcGateway {
     long networkACLId;
 
     protected VpcGatewayVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -119,10 +119,10 @@ public class VpcGatewayVO implements VpcGateway {
         this.broadcastUri = broadcastUri;
         this.gateway = gateway;
         this.netmask = netmask;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
-        this.state = State.Creating;
+        state = State.Creating;
         this.sourceNat = sourceNat;
         this.networkACLId = networkACLId;
 
@@ -130,7 +130,7 @@ public class VpcGatewayVO implements VpcGateway {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
@@ -206,7 +206,7 @@ public class VpcGatewayVO implements VpcGateway {
 
     @Override
     public boolean getSourceNat() {
-        return this.sourceNat;
+        return sourceNat;
     }
 
     public void setNetworkACLId(long networkACLId) {

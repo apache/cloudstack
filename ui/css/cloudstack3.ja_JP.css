@@ -57,10 +57,20 @@ div.toolbar div.button.main-action,
 .toolbar div.button.header-action,
 .detail-group .button.add {
   font-size: 10px;
+  white-space: nowrap;
 }
 
 table tbody td.quick-view,
 table thead th.quick-view {
   font-size: 8px;
+}
+
+.multi-wizard.instance-wizard .progress ul li span.multiline {
+  font-size: 9px;
+}
+
+.multi-wizard .review .select-container .select .name {
+  white-space: nowrap;
+  font-size: 10px;
 }
 

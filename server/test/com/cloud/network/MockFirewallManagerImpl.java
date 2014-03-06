@@ -185,7 +185,7 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     }
 
     @Override
-    public FirewallRule updateFirewallRule(long ruleId, String customId) {
+    public FirewallRule updateFirewallRule(long ruleId, String customId, Boolean forDisplay) {
         // TODO Auto-generated method stub
         return null;
     }

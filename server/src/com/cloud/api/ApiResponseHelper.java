@@ -714,6 +714,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ipResponse.setForDisplay(ipAddr.isDisplay());
+
         ipResponse.setPortable(ipAddr.isPortable());
 
         //set tag information
@@ -745,6 +747,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
         lbResponse.setLbProtocol(loadBalancer.getLbProtocol());
+        lbResponse.setForDisplay(loadBalancer.isDisplay());
         FirewallRule.State state = loadBalancer.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
@@ -1015,6 +1018,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
 
+
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
         response.setPublicIpAddressId(ip.getUuid());
         response.setPublicIpAddress(ip.getAddress().addr());
@@ -1049,6 +1053,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
 
         response.setState(stateToSet);
+        response.setForDisplay(fwRule.isDisplay());
         response.setObjectName("portforwardingrule");
         return response;
     }
@@ -1125,7 +1130,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter) {
             // SystemVm vm = (SystemVm) systemVM;
             vmResponse.setId(vm.getUuid());
             // vmResponse.setObjectId(vm.getId());
@@ -1270,11 +1275,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         vpnResponse.setIpRange(vpn.getIpRange());
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
-
         populateOwner(vpnResponse, vpn);
-
         vpnResponse.setState(vpn.getState().toString());
         vpnResponse.setId(vpn.getUuid());
+        vpnResponse.setForDisplay(vpn.isDisplay());
         vpnResponse.setObjectName("remoteaccessvpn");
 
         return vpnResponse;
@@ -2250,6 +2254,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
+        response.setForDisplay(fwRule.isDisplay());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
@@ -2295,6 +2300,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setNumber(aclItem.getNumber());
         response.setAction(aclItem.getAction().toString());
+        response.setForDisplay(aclItem.isDisplay());
 
         NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
         if (acl != null) {
@@ -2794,6 +2800,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
+        response.setForDisplay(vpc.isDisplay());
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
@@ -2974,6 +2981,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMaxMembers(vmGroup.getMaxMembers());
         response.setState(vmGroup.getState());
         response.setInterval(vmGroup.getInterval());
+        response.setForDisplay(vmGroup.isDisplay());
         AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(vmGroup.getProfileId());
         if (profile != null) {
             response.setProfileId(profile.getUuid());
@@ -3047,6 +3055,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVpcId(vpc.getUuid());
         }
         response.setRemoved(result.getRemoved());
+        response.setForDisplay(result.isDisplay());
         response.setObjectName("vpngateway");
 
         populateAccount(response, result.getAccountId());
@@ -3116,6 +3125,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
+        response.setForDisplay(result.isDisplay());
         response.setObjectName("vpnconnection");
         return response;
     }
@@ -3487,6 +3497,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setName(lb.getName());
         lbResponse.setDescription(lb.getDescription());
         lbResponse.setAlgorithm(lb.getAlgorithm());
+        lbResponse.setForDisplay(lb.isDisplay());
         Network nw = ApiDBUtils.findNetworkById(lb.getNetworkId());
         lbResponse.setNetworkId(nw.getUuid());
         populateOwner(lbResponse, lb);
@@ -3673,6 +3684,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(networkACL.getUuid());
         response.setName(networkACL.getName());
         response.setDescription(networkACL.getDescription());
+        response.setForDisplay(networkACL.isDisplay());
         Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());

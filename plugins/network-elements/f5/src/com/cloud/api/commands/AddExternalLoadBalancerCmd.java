@@ -36,7 +36,8 @@ import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addExternalLoadBalancer", description = "Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
+@APICommand(name = "addExternalLoadBalancer", description = "Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 @Deprecated
 // API supported only for backward compatibility.
 public class AddExternalLoadBalancerCmd extends BaseCmd {

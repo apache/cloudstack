@@ -41,7 +41,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createInternalLoadBalancerElement",
             responseObject = InternalLoadBalancerElementResponse.class,
             description = "Create an Internal Load Balancer element.",
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateInternalLoadBalancerElementCmd.class.getName());
     private static final String s_name = "createinternalloadbalancerelementresponse";

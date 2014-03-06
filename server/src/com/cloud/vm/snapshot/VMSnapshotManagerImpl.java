@@ -135,7 +135,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     // TODO
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "false",
+            Boolean.class, "vm.job.enabled", "true",
             "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.check.interval", "3000",
@@ -865,7 +865,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -876,7 +877,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkCreateVMSnapshot workInfo = new VmWorkCreateVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -886,6 +887,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -909,7 +913,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -920,7 +925,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkDeleteVMSnapshot workInfo = new VmWorkDeleteVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -930,6 +935,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -953,7 +961,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -964,7 +973,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkRevertToVMSnapshot workInfo = new VmWorkRevertToVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -974,6 +983,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -997,7 +1009,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -1008,7 +1021,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkDeleteAllVMSnapshots workInfo = new VmWorkDeleteAllVMSnapshots(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -1018,6 +1031,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 

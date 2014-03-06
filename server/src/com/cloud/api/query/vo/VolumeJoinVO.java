@@ -266,6 +266,9 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "path")
     protected String path;
 
+    @Column(name = "chain_info", length = 65535)
+    String chainInfo;
+
     public VolumeJoinVO() {
     }
 
@@ -567,6 +570,11 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getPath() {
         return path;
+    }
+
+
+    public String getChainInfo() {
+        return chainInfo;
     }
 
     @Override

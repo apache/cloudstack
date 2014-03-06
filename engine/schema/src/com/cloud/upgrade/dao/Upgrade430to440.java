@@ -162,7 +162,7 @@ public class Upgrade430to440 implements DbUpgrade {
                         if (networkRs.next()) {
                             String guesttype = networkRs.getString(1);
 
-                            if (guesttype == Network.GuestType.Shared.toString()) {
+                            if (guesttype.equals(Network.GuestType.Shared.toString())) {
                                 pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`user_ip_address` SET account_id = ?, domain_id= ? WHERE public_ip_address = ?");
                                 pstmtUpdate.setLong(1,vmAccountId);
                                 pstmtUpdate.setLong(2,vmDomainId);

@@ -131,6 +131,13 @@ class Account:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listAccounts(cmd))
 
+    def disable(self, apiclient, lock=False):
+        """Disable an account"""
+        cmd = disableAccount.disableAccountCmd()
+        cmd.id = self.id
+        cmd.lock = lock
+        apiclient.disableAccount(cmd)
+
 
 class User:
     """ User Life Cycle """
@@ -3623,7 +3630,36 @@ class Resources:
         cmd = updateResourceCount.updateResourceCountCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateResourceCount(cmd))
-    
+   
+class NIC:
+    """NIC related API"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def addIp(cls, apiclient, id, ipaddress=None):
+        """Add Ip (secondary) to NIC"""
+        cmd = addIpToNic.addIpToNicCmd()
+        cmd.nicid = id
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        return(apiclient.addIpToNic(cmd))
+
+    @classmethod
+    def removeIp(cls,apiclient,ipaddressid):
+        """Remove secondary Ip from NIC"""
+        cmd = removeIpFromNic.removeIpFromNicCmd()
+        cmd.id = ipaddressid
+        return(apiclient.addIpToNic(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List NICs belonging to a virtual machine"""
+
+        cmd = listNics.listNicsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listNics(cmd))
+        
 class IAMGroup:
     def __init__(self, items):
         self.__dict__.update(items)

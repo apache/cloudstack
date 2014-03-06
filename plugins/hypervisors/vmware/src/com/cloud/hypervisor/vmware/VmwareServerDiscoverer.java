@@ -42,14 +42,12 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -88,8 +86,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
 
     @Inject
-    ClusterDao _clusterDao;
-    @Inject
     VmwareManager _vmwareMgr;
     @Inject
     AlertManager _alertMgr;
@@ -97,8 +93,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     VMTemplateDao _tmpltDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
-    @Inject
-    HostDao _hostDao;
     @Inject
     DataCenterDao _dcDao;
     @Inject

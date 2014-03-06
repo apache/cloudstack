@@ -188,5 +188,4 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Snapshot;
     }
-
 }

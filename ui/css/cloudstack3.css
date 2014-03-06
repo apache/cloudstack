@@ -2338,6 +2338,11 @@ div.detail-group.actions td {
   position: relative;
   top: 5px;
   left: 7px;
+  /*+text-shadow:0px -1px 1px #464646;*/
+  -moz-text-shadow: 0px -1px 1px #464646;
+  -webkit-text-shadow: 0px -1px 1px #464646;
+  -o-text-shadow: 0px -1px 1px #464646;
+  text-shadow: 0px -1px 1px #464646;
 }
 
 #header div.notifications:hover {
@@ -2594,10 +2599,9 @@ div.detail-group.actions td {
   position: relative;
   left: 14px;
   top: 13px;
-  font-size: 11px;
+  font-size: 12px;
   color: #515151;
   padding-left: 19px;
-  font-weight: bold;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;
@@ -2636,63 +2640,127 @@ div.detail-group.actions td {
   margin-right: -14px;
 }
 
-#navigation ul li.last.active,
-#navigation ul li.last:hover {
-}
-
 /*Navigation icons*/
 #navigation ul li.dashboard span.icon,
 #navigation ul li.dashboard-user span.icon {
   background-position: -14px -18px;
 }
 
+#navigation ul li.dashboard:hover span.icon,
+#navigation ul li.dashboard-user:hover span.icon span.icon,
+#navigation ul li.dashboard.active span.icon,
+#navigation ul li.dashboard-user.active span.icon span.icon {
+  background-position: -23px -687px;
+}
+
 #navigation ul li.instances span.icon {
-  background-position: -73px -23px;
+  background-position: -73px -18px;
+}
+
+#navigation ul li.instances.active span.icon,
+#navigation ul li.instances:hover span.icon {
+  background-position: -82px -686px;
 }
 
 #navigation ul li.affinityGroups span.icon {
   background-position: -73px -87px;
 }
 
+#navigation ul li.affinityGroups.active span.icon,
+#navigation ul li.affinityGroups:hover span.icon {
+  background-position: -82px -755px;
+}
+
 #navigation ul li.storage span.icon {
-  background-position: -127px -23px;
+  background-position: -127px -19px;
+}
+
+#navigation ul li.storage.active span.icon,
+#navigation ul li.storage:hover span.icon {
+  background-position: -137px -687px;
 }
 
 #navigation ul li.network span.icon {
-  background-position: -180px -23px;
+  background-position: -180px -20px;
+}
+
+#navigation ul li.network.active span.icon,
+#navigation ul li.network:hover span.icon {
+  background-position: -189px -690px;
 }
 
 #navigation ul li.templates span.icon {
-  background-position: -233px -23px;
+  background-position: -233px -21px;
+}
+
+#navigation ul li.templates.active span.icon,
+#navigation ul li.templates:hover span.icon {
+  background-position: -242px -690px;
 }
 
 #navigation ul li.projects span.icon {
-  background-position: -294px -23px;
+  background-position: -294px -21px;
+}
+
+#navigation ul li.projects.active span.icon,
+#navigation ul li.projects:hover span.icon {
+  background-position: -303px -690px;
 }
 
 #navigation ul li.events span.icon {
   background-position: -351px -23px;
 }
 
+#navigation ul li.events.active span.icon,
+#navigation ul li.events:hover span.icon {
+  background-position: -359px -692px;
+}
+
 #navigation ul li.configuration span.icon {
-  background-position: -400px -24px;
+  background-position: -401px -21px;
+}
+
+#navigation ul li.configuration.active span.icon,
+#navigation ul li.configuration:hover span.icon {
+  background-position: -410px -690px;
 }
 
 #navigation ul li.global-settings span.icon {
   background-image: url(../images/sprites.png);
-  background-position: -141px -241px;
+  background-position: -143px -240px;
+}
+
+#navigation ul li.global-settings.active span.icon,
+#navigation ul li.global-settings:hover span.icon {
+  background-image: url(../images/sprites.png);
+  background-position: -366px -239px;
 }
 
 #navigation ul li.accounts span.icon {
-  background-position: -458px -24px;
+  background-position: -458px -19px;
+}
+
+#navigation ul li.accounts.active span.icon,
+#navigation ul li.accounts:hover span.icon {
+  background-position: -467px -688px;
 }
 
 #navigation ul li.system span.icon {
-  background-position: -565px -24px;
+  background-position: -569px -24px;
+}
+
+#navigation ul li.system.active span.icon,
+#navigation ul li.system:hover span.icon {
+  background-position: -578px -692px;
 }
 
 #navigation ul li.domains span.icon {
-  background-position: -519px -24px;
+  background-position: -520px -21px;
+}
+
+#navigation ul li.domains.active span.icon,
+#navigation ul li.domains:hover span.icon {
+  background-position: -529px -690px;
 }
 
 #navigation ul li.plugins span.icon {
@@ -2700,7 +2768,12 @@ div.detail-group.actions td {
 }
 
 #navigation ul li.regions span.icon {
-  background: url(../images/sprites.png) no-repeat -141px -381px;
+  background: url(../images/sprites.png) no-repeat -141px -379px;
+}
+
+#navigation ul li.regions.active span.icon,
+#navigation ul li.regions:hover span.icon {
+  background: url(../images/sprites.png) no-repeat -365px -377px;
 }
 
 /*Browser*/
@@ -3375,7 +3448,7 @@ div.toolbar div.filters select {
 #breadcrumbs .home {
   height: 21px;
   float: left;
-  font-size: 11px;
+  font-size: 13px;
   color: #FFFFFF;
   padding: 9px 5px 0px 8px;
   cursor: pointer;
@@ -3440,6 +3513,7 @@ div.toolbar div.filters select {
   top: 0px;
   margin-left: -10px;
   text-indent: 13px;
+  font-size: 13px;
 }
 
 #breadcrumbs div.active-project {
@@ -3680,6 +3754,13 @@ Dialogs*/
 
 .ui-dialog .ui-widget-content .nothing-to-select p {
   margin: 18px 0 0;
+}
+
+.ui-dialog .ui-widget-content .nothing-to-select .specify-ip {
+  margin-top: 28px;
+  padding-top: 21px;
+  font-size: 12px;
+  border-top: 1px solid #DFDFDF;
 }
 
 .ui-dialog-buttonset {
@@ -4461,6 +4542,8 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
+  border: 1px solid #FF7070;
+  background: #FFEFEF;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li span.title {
@@ -6109,6 +6192,10 @@ label.error {
   color: #000000;
 }
 
+.multi-wizard.instance-wizard .select-network .select.advanced .secondary-input {
+  height: 73px;
+}
+
 .multi-wizard.instance-wizard .select-network .select .secondary-input input {
   margin: 0 !important;
   padding: 0 !important;
@@ -6130,10 +6217,55 @@ label.error {
   width: 100%;
   float: left;
   padding: 0;
+  position: relative;
+}
+
+.multi-wizard.instance-wizard .select-network .select-container .select.advanced {
+  height: 74px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .advanced-options {
+  background: url(../images/sprites.png) -7px -795px;
+  width: 20px;
+  height: 20px;
+  float: right;
+  cursor: pointer;
+  margin-top: 15px;
+  margin-right: 13px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .advanced-options:hover,
+.multi-wizard.instance-wizard .select-network .select.advanced .advanced-options {
+  background: url(../images/sprites.png) -32px -795px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .specify-ip {
+  display: none;
+  position: absolute;
+  top: 45px;
+  left: 0px;
+  width: 100%;
+}
+
+.multi-wizard.instance-wizard .select-network .select.advanced .specify-ip {
+  display: block;
+}
+
+.multi-wizard.instance-wizard .select-network .select.advanced .specify-ip input {
+  margin: 0px 0 0 15px;
+  width: 138px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select input {
   margin: 21px 15px 0px;
+  float: left;
+}
+
+.multi-wizard.instance-wizard .select-network .select-container .select label {
+  float: left;
+  font-size: 11px;
+  margin: 4px 0 0 42px;
+  color: #4E6B82;
 }
 
 .multi-wizard.instance-wizard .select-network .select-vpc {
@@ -6156,6 +6288,28 @@ label.error {
 
 /**** New networ*/
 .multi-wizard.instance-wizard .select-network .select.new-network {
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .advanced-options {
+  /*+placement:shift 379px 15px;*/
+  position: relative;
+  left: 379px;
+  top: 15px;
+  position: absolute;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select.advanced {
+  height: 106px;
+  position: relative;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network.unselected .select.advanced {
+  height: auto;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select.advanced .specify-ip {
+  top: 74px;
+  left: 29px;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network .hide-if-selected {
@@ -7499,7 +7653,6 @@ label.error {
 }
 
 #navigation ul li.last.active {
-  height: 52px;
 }
 
 .detail-group table tbody {
@@ -9189,8 +9342,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .project-switcher label {
   top: 29px;
   color: #FFFFFF;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
   float: left;
   margin-right: 7px;
   margin-top: 5px;
@@ -9199,7 +9351,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .project-switcher select {
   width: 70%;
   float: left;
-  margin-top: -1px;
+  margin-top: 0px;
   border: 1px solid #393939;
   /*+text-shadow:0px -1px 1px #373737;*/
   -moz-text-shadow: 0px -1px 1px #373737;
@@ -9207,7 +9359,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   -o-text-shadow: 0px -1px 1px #373737;
   text-shadow: 0px -1px 1px #373737;
   background: #515151;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 100;
   color: #FFFFFF;
 }
@@ -11841,10 +11993,10 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .region-switcher .title {
   display: inline-block;
   float: right;
-  padding: 10px 9px 0 34px;
+  padding: 9px 9px 0 34px;
   color: #FFFFFF;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 100;
   max-width: 285px;
   overflow: hidden;
   white-space: nowrap;
@@ -12379,8 +12531,35 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   display: inline-block;
 }
 
+.accounts-wizard .content td {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.accounts-wizard .content td.select,
+.accounts-wizard .content th.select {
+  background: none;
+  border-right: 1px solid #BFBFBF;
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+}
+
+.accounts-wizard .content .select input {
+  padding: 0;
+  width: auto;
+  height: auto;
+  margin: 18px 0 0 24px;
+}
+
 .accounts-wizard .content:last-child {
   margin-left: 14px;
+}
+
+.accounts-wizard table thead th:first-child {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
 }
 
 .accounts-wizard .input-area {

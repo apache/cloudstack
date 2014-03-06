@@ -67,6 +67,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name = "vpc_id")
     private Long vpcId;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public RemoteAccessVpnVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -153,6 +156,15 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 
     @Override

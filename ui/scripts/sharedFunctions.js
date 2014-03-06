@@ -900,6 +900,9 @@ var roleTypeDomainAdmin = "2";
 
 cloudStack.converters = {
     convertBytes: function(bytes) {
+	    if (bytes == undefined)
+	    	return '';
+	
         if (bytes < 1024 * 1024) {
             return (bytes / 1024).toFixed(2) + " KB";
         } else if (bytes < 1024 * 1024 * 1024) {
@@ -1253,7 +1256,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         	url += 'cifs://';
         }
         
-        url += (server + path + '?user=' + smbUsername + '&password=' + smbPassword + '&domain=' + smbDomain);
+        url += (server + path);
                
         return url;
     }
@@ -1334,6 +1337,15 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
             url = "iscsi://" + server + iqn + "/" + lun;
         else
             url = server + iqn + "/" + lun;
+        return url;
+    }
+
+    function glusterURL(server, path) {
+        var url;
+        if (server.indexOf("://") == -1)
+            url = "gluster://" + server + path;
+        else
+            url = server + path;
         return url;
     }
 

@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.network.router;
 
+
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -36,7 +38,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -321,7 +322,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         VirtualRouterProvider vrProvider, long svcOffId, Long vpcId, PublicIp sourceNatIp) throws ConcurrentOperationException, InsufficientAddressCapacityException,
         InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
-        LinkedHashMap<Network, NicProfile> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp), vpcId);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),vpcId);
         DomainRouterVO router =
             super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true, _vpcMgr.getSupportedVpcHypervisors());
 
@@ -339,7 +340,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmds.addCommand("setupguestnetwork", setupCmd);
             sendCommandsToRouter(router, cmds);
 
-            SetupGuestNetworkAnswer setupAnswer = cmds.getAnswer(SetupGuestNetworkAnswer.class);
+            Answer setupAnswer = cmds.getAnswer("setupguestnetwork");
             String setup = add ? "set" : "destroy";
             if (!(setupAnswer != null && setupAnswer.getResult())) {
                 s_logger.warn("Unable to " + setup + " guest network on router " + router);
@@ -1153,10 +1154,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
 
-    protected LinkedHashMap<Network, NicProfile> createVpcRouterNetworks(Account owner, boolean isRedundant, DeploymentPlan plan, Pair<Boolean, PublicIp> sourceNatIp,
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createVpcRouterNetworks(Account owner, boolean isRedundant, DeploymentPlan plan, Pair<Boolean, PublicIp> sourceNatIp,
         long vpcId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(4);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(4);
 
         TreeSet<String> publicVlans = new TreeSet<String>();
         publicVlans.add(sourceNatIp.second().getVlanTag());
@@ -1170,7 +1171,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (PrivateGateway privateGateway : privateGateways) {
                 NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
                 Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
-                networks.put(privateNetwork, privateNic);
+                networks.put(privateNetwork, new ArrayList<NicProfile>(Arrays.asList(privateNic)));
             }
         }
 
@@ -1179,12 +1180,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         for (Network guestNetwork : guestNetworks) {
             if (guestNetwork.getState() == Network.State.Implemented) {
                 NicProfile guestNic = createGuestNicProfileForVpcRouter(guestNetwork);
-                networks.put(guestNetwork, guestNic);
+                networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
             }
         }
 
         //4) allocate nic for additional public network(s)
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, false);
+        List<NicProfile> publicNics = new ArrayList<NicProfile>();
+        Network publicNetwork = null;
         for (IPAddressVO ip : ips) {
             PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && _vpcMgr.isIpAllocatedToVpc(ip) &&
@@ -1200,9 +1203,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
                 NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-                List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
-                networks.put(publicNetworks.get(0), publicNic);
+                if (publicNetwork == null) {
+                    List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+                    publicNetwork = publicNetworks.get(0);
+                }
+                publicNics.add(publicNic);
                 publicVlans.add(publicIp.getVlanTag());
+            }
+        }
+        if (publicNetwork != null) {
+            if (networks.get(publicNetwork) != null) {
+                List<NicProfile> publicNicProfiles = (List<NicProfile>)networks.get(publicNetwork);
+                publicNicProfiles.addAll(publicNics);
+                networks.put(publicNetwork, publicNicProfiles);
+            } else {
+                networks.put(publicNetwork, publicNics);
             }
         }
 

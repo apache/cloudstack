@@ -26,7 +26,9 @@ import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Restricted,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listtemplatepermissionsresponse";

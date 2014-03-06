@@ -1,19 +1,19 @@
 /*
  * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- *
+ * 
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -27,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -60,14 +61,14 @@ public class PIF extends XenAPIObject {
      * For internal use only.
      */
     PIF(String ref) {
-        this.ref = ref;
+       this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-        return this.ref;
+       return this.ref;
     }
 
     /**
@@ -78,7 +79,7 @@ public class PIF extends XenAPIObject {
     {
         if (obj != null && obj instanceof PIF)
         {
-            PIF other = (PIF)obj;
+            PIF other = (PIF) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -127,14 +128,15 @@ public class PIF extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "IPv6", this.IPv6);
             print.printf("%1$20s: %2$s\n", "ipv6Gateway", this.ipv6Gateway);
             print.printf("%1$20s: %2$s\n", "primaryAddressType", this.primaryAddressType);
+            print.printf("%1$20s: %2$s\n", "managed", this.managed);
             return writer.toString();
         }
 
         /**
          * Convert a PIF.Record to a Map
          */
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new HashMap<String, Object>();
+        public Map<String,Object> toMap() {
+            Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("device", this.device == null ? "" : this.device);
             map.put("network", this.network == null ? new Network("OpaqueRef:NULL") : this.network);
@@ -163,6 +165,7 @@ public class PIF extends XenAPIObject {
             map.put("IPv6", this.IPv6 == null ? new LinkedHashSet<String>() : this.IPv6);
             map.put("ipv6_gateway", this.ipv6Gateway == null ? "" : this.ipv6Gateway);
             map.put("primary_address_type", this.primaryAddressType == null ? Types.PrimaryAddressType.UNRECOGNIZED : this.primaryAddressType);
+            map.put("managed", this.managed == null ? false : this.managed);
             return map;
         }
 
@@ -278,6 +281,10 @@ public class PIF extends XenAPIObject {
          * Which protocol should define the primary address of this interface
          */
         public Types.PrimaryAddressType primaryAddressType;
+        /**
+         * Indicates whether the interface is managed by xapi. If it is not, then xapi will not configure the interface, the commands PIF.plug/unplug/reconfigure_ip(v6) can not be used, nor can the interface be bonded or have VLANs based on top through xapi.
+         */
+        public Boolean managed;
     }
 
     /**
@@ -286,15 +293,15 @@ public class PIF extends XenAPIObject {
      * @return all fields from the object
      */
     public PIF.Record getRecord(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIFRecord(result);
+            return Types.toPIFRecord(result);
     }
 
     /**
@@ -304,15 +311,15 @@ public class PIF extends XenAPIObject {
      * @return reference to the object
      */
     public static PIF getByUuid(Connection c, String uuid) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIF(result);
+            return Types.toPIF(result);
     }
 
     /**
@@ -321,15 +328,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -338,15 +345,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getDevice(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_device";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -355,15 +362,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Network getNetwork(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_network";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toNetwork(result);
+            return Types.toNetwork(result);
     }
 
     /**
@@ -372,15 +379,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Host getHost(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_host";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toHost(result);
+            return Types.toHost(result);
     }
 
     /**
@@ -389,15 +396,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getMAC(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_MAC";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -406,15 +413,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Long getMTU(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_MTU";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toLong(result);
+            return Types.toLong(result);
     }
 
     /**
@@ -423,15 +430,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Long getVLAN(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_VLAN";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toLong(result);
+            return Types.toLong(result);
     }
 
     /**
@@ -440,15 +447,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public PIFMetrics getMetrics(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_metrics";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIFMetrics(result);
+            return Types.toPIFMetrics(result);
     }
 
     /**
@@ -457,15 +464,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getPhysical(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_physical";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -474,15 +481,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getCurrentlyAttached(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_currently_attached";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -491,15 +498,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Types.IpConfigurationMode getIpConfigurationMode(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_ip_configuration_mode";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toIpConfigurationMode(result);
+            return Types.toIpConfigurationMode(result);
     }
 
     /**
@@ -508,15 +515,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getIP(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_IP";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -525,15 +532,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getNetmask(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_netmask";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -542,15 +549,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getGateway(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_gateway";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -559,15 +566,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getDNS(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_DNS";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -576,15 +583,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Bond getBondSlaveOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_bond_slave_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBond(result);
+            return Types.toBond(result);
     }
 
     /**
@@ -593,15 +600,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<Bond> getBondMasterOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_bond_master_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfBond(result);
+            return Types.toSetOfBond(result);
     }
 
     /**
@@ -610,15 +617,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public VLAN getVLANMasterOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_VLAN_master_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toVLAN(result);
+            return Types.toVLAN(result);
     }
 
     /**
@@ -627,15 +634,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<VLAN> getVLANSlaveOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_VLAN_slave_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfVLAN(result);
+            return Types.toSetOfVLAN(result);
     }
 
     /**
@@ -644,15 +651,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getManagement(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_management";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -661,15 +668,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfStringString(result);
+            return Types.toMapOfStringString(result);
     }
 
     /**
@@ -678,15 +685,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getDisallowUnplug(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_disallow_unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toBoolean(result);
+            return Types.toBoolean(result);
     }
 
     /**
@@ -695,15 +702,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<Tunnel> getTunnelAccessPIFOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_tunnel_access_PIF_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfTunnel(result);
+            return Types.toSetOfTunnel(result);
     }
 
     /**
@@ -712,15 +719,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<Tunnel> getTunnelTransportPIFOf(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_tunnel_transport_PIF_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfTunnel(result);
+            return Types.toSetOfTunnel(result);
     }
 
     /**
@@ -729,15 +736,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Types.Ipv6ConfigurationMode getIpv6ConfigurationMode(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_ipv6_configuration_mode";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toIpv6ConfigurationMode(result);
+            return Types.toIpv6ConfigurationMode(result);
     }
 
     /**
@@ -746,15 +753,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getIPv6(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_IPv6";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfString(result);
+            return Types.toSetOfString(result);
     }
 
     /**
@@ -763,15 +770,15 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public String getIpv6Gateway(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_ipv6_gateway";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toString(result);
+            return Types.toString(result);
     }
 
     /**
@@ -780,15 +787,32 @@ public class PIF extends XenAPIObject {
      * @return value of the field
      */
     public Types.PrimaryAddressType getPrimaryAddressType(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_primary_address_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPrimaryAddressType(result);
+            return Types.toPrimaryAddressType(result);
+    }
+
+    /**
+     * Get the managed field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Boolean getManaged(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_managed";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBoolean(result);
     }
 
     /**
@@ -797,9 +821,9 @@ public class PIF extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -814,9 +838,9 @@ public class PIF extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -830,9 +854,9 @@ public class PIF extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -846,9 +870,9 @@ public class PIF extends XenAPIObject {
      * @param disallowUnplug New value to set
      */
     public void setDisallowUnplug(Connection c, Boolean disallowUnplug) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.set_disallow_unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(disallowUnplug)};
@@ -866,16 +890,14 @@ public class PIF extends XenAPIObject {
      * @param VLAN VLAN tag for the new interface
      * @return Task
      */
-    @Deprecated
-    public static Task createVLANAsync(Connection c, String device, Network network, Host host, Long VLAN) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.VlanTagInvalid {
+   @Deprecated public static Task createVLANAsync(Connection c, String device, Network network, Host host, Long VLAN) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VlanTagInvalid {
         String method_call = "Async.PIF.create_VLAN";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host),
-            Marshalling.toXMLRPC(VLAN)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(VLAN)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -891,19 +913,17 @@ public class PIF extends XenAPIObject {
      * @param VLAN VLAN tag for the new interface
      * @return The reference of the created PIF object
      */
-    @Deprecated
-    public static PIF createVLAN(Connection c, String device, Network network, Host host, Long VLAN) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.VlanTagInvalid {
+   @Deprecated public static PIF createVLAN(Connection c, String device, Network network, Host host, Long VLAN) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.VlanTagInvalid {
         String method_call = "PIF.create_VLAN";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host),
-            Marshalling.toXMLRPC(VLAN)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(VLAN)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIF(result);
+            return Types.toPIF(result);
     }
 
     /**
@@ -912,12 +932,11 @@ public class PIF extends XenAPIObject {
      *
      * @return Task
      */
-    @Deprecated
-    public Task destroyAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.PifIsPhysical {
+   @Deprecated public Task destroyAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.PifIsPhysical {
         String method_call = "Async.PIF.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -931,12 +950,11 @@ public class PIF extends XenAPIObject {
      * @deprecated
      *
      */
-    @Deprecated
-    public void destroy(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.PifIsPhysical {
+   @Deprecated public void destroy(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.PifIsPhysical {
         String method_call = "PIF.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -955,13 +973,12 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task reconfigureIpAsync(Connection c, Types.IpConfigurationMode mode, String IP, String netmask, String gateway, String DNS) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.reconfigure_ip";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IP),
-            Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -977,13 +994,12 @@ public class PIF extends XenAPIObject {
      * @param DNS the new DNS settings
      */
     public void reconfigureIp(Connection c, Types.IpConfigurationMode mode, String IP, String netmask, String gateway, String DNS) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.reconfigure_ip";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IP),
-            Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }
@@ -998,13 +1014,12 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task reconfigureIpv6Async(Connection c, Types.Ipv6ConfigurationMode mode, String IPv6, String gateway, String DNS) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.reconfigure_ipv6";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6),
-            Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1019,13 +1034,12 @@ public class PIF extends XenAPIObject {
      * @param DNS the new DNS settings
      */
     public void reconfigureIpv6(Connection c, Types.Ipv6ConfigurationMode mode, String IPv6, String gateway, String DNS) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.reconfigure_ipv6";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6),
-            Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }
@@ -1037,9 +1051,9 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task setPrimaryAddressTypeAsync(Connection c, Types.PrimaryAddressType primaryAddressType) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.set_primary_address_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(primaryAddressType)};
@@ -1054,9 +1068,9 @@ public class PIF extends XenAPIObject {
      * @param primaryAddressType Whether to prefer IPv4 or IPv6 connections
      */
     public void setPrimaryAddressType(Connection c, Types.PrimaryAddressType primaryAddressType) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.set_primary_address_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(primaryAddressType)};
@@ -1071,9 +1085,9 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public static Task scanAsync(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.scan";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
@@ -1088,9 +1102,9 @@ public class PIF extends XenAPIObject {
      * @param host The host on which to scan
      */
     public static void scan(Connection c, Host host) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.scan";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
@@ -1104,15 +1118,16 @@ public class PIF extends XenAPIObject {
      * @param host The host on which the interface exists
      * @param MAC The MAC address of the interface
      * @param device The device name to use for the interface
+     * @param managed Indicates whether the interface is managed by xapi (defaults to "true")
      * @return Task
      */
-    public static Task introduceAsync(Connection c, Host host, String MAC, String device) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static Task introduceAsync(Connection c, Host host, String MAC, String device, Boolean managed) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(device)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(managed)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1124,18 +1139,19 @@ public class PIF extends XenAPIObject {
      * @param host The host on which the interface exists
      * @param MAC The MAC address of the interface
      * @param device The device name to use for the interface
+     * @param managed Indicates whether the interface is managed by xapi (defaults to "true")
      * @return The reference of the created PIF object
      */
-    public static PIF introduce(Connection c, Host host, String MAC, String device) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static PIF introduce(Connection c, Host host, String MAC, String device, Boolean managed) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(device)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(managed)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIF(result);
+            return Types.toPIF(result);
     }
 
     /**
@@ -1144,10 +1160,10 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task forgetAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.PifTunnelStillExists {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.PifTunnelStillExists {
         String method_call = "Async.PIF.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1161,10 +1177,10 @@ public class PIF extends XenAPIObject {
      *
      */
     public void forget(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.PifTunnelStillExists {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.PifTunnelStillExists {
         String method_call = "PIF.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1178,9 +1194,9 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task unplugAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1194,9 +1210,9 @@ public class PIF extends XenAPIObject {
      *
      */
     public void unplug(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.unplug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1210,10 +1226,10 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task plugAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.TransportPifNotConfigured {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.TransportPifNotConfigured {
         String method_call = "Async.PIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1227,10 +1243,10 @@ public class PIF extends XenAPIObject {
      *
      */
     public void plug(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException,
-        Types.TransportPifNotConfigured {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.TransportPifNotConfigured {
         String method_call = "PIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1241,43 +1257,37 @@ public class PIF extends XenAPIObject {
     /**
      * Create a new PIF record in the database only
      *
-     * @param device
-     * @param network
-     * @param host
-     * @param MAC
-     * @param MTU
-     * @param VLAN
-     * @param physical
-     * @param ipConfigurationMode
-     * @param IP
-     * @param netmask
-     * @param gateway
-     * @param DNS
-     * @param bondSlaveOf
-     * @param VLANMasterOf
-     * @param management
-     * @param otherConfig
-     * @param disallowUnplug
-     * @param ipv6ConfigurationMode
-     * @param IPv6
-     * @param ipv6Gateway
-     * @param primaryAddressType
+     * @param device 
+     * @param network 
+     * @param host 
+     * @param MAC 
+     * @param MTU 
+     * @param VLAN 
+     * @param physical 
+     * @param ipConfigurationMode 
+     * @param IP 
+     * @param netmask 
+     * @param gateway 
+     * @param DNS 
+     * @param bondSlaveOf 
+     * @param VLANMasterOf 
+     * @param management 
+     * @param otherConfig 
+     * @param disallowUnplug 
+     * @param ipv6ConfigurationMode 
+     * @param IPv6 
+     * @param ipv6Gateway 
+     * @param primaryAddressType 
+     * @param managed 
      * @return Task
      */
-    public static Task dbIntroduceAsync(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical,
-        Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management,
-        Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway,
-        Types.PrimaryAddressType primaryAddressType) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static Task dbIntroduceAsync(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway, Types.PrimaryAddressType primaryAddressType, Boolean managed) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host),
-            Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode),
-            Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf),
-            Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug),
-            Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug), Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType), Marshalling.toXMLRPC(managed)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1286,46 +1296,40 @@ public class PIF extends XenAPIObject {
     /**
      * Create a new PIF record in the database only
      *
-     * @param device
-     * @param network
-     * @param host
-     * @param MAC
-     * @param MTU
-     * @param VLAN
-     * @param physical
-     * @param ipConfigurationMode
-     * @param IP
-     * @param netmask
-     * @param gateway
-     * @param DNS
-     * @param bondSlaveOf
-     * @param VLANMasterOf
-     * @param management
-     * @param otherConfig
-     * @param disallowUnplug
-     * @param ipv6ConfigurationMode
-     * @param IPv6
-     * @param ipv6Gateway
-     * @param primaryAddressType
+     * @param device 
+     * @param network 
+     * @param host 
+     * @param MAC 
+     * @param MTU 
+     * @param VLAN 
+     * @param physical 
+     * @param ipConfigurationMode 
+     * @param IP 
+     * @param netmask 
+     * @param gateway 
+     * @param DNS 
+     * @param bondSlaveOf 
+     * @param VLANMasterOf 
+     * @param management 
+     * @param otherConfig 
+     * @param disallowUnplug 
+     * @param ipv6ConfigurationMode 
+     * @param IPv6 
+     * @param ipv6Gateway 
+     * @param primaryAddressType 
+     * @param managed 
      * @return The ref of the newly created PIF record.
      */
-    public static PIF dbIntroduce(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical,
-        Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management,
-        Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway,
-        Types.PrimaryAddressType primaryAddressType) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+    public static PIF dbIntroduce(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway, Types.PrimaryAddressType primaryAddressType, Boolean managed) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host),
-            Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode),
-            Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf),
-            Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug),
-            Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug), Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType), Marshalling.toXMLRPC(managed)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toPIF(result);
+            return Types.toPIF(result);
     }
 
     /**
@@ -1334,9 +1338,9 @@ public class PIF extends XenAPIObject {
      * @return Task
      */
     public Task dbForgetAsync(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "Async.PIF.db_forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1350,9 +1354,9 @@ public class PIF extends XenAPIObject {
      *
      */
     public void dbForget(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.db_forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1366,15 +1370,15 @@ public class PIF extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<PIF> getAll(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toSetOfPIF(result);
+            return Types.toSetOfPIF(result);
     }
 
     /**
@@ -1383,15 +1387,15 @@ public class PIF extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<PIF, PIF.Record> getAllRecords(Connection c) throws
-        BadServerResponse,
-        XenAPIException,
-        XmlRpcException {
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
         String method_call = "PIF.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-        return Types.toMapOfPIFPIFRecord(result);
+            return Types.toMapOfPIFPIFRecord(result);
     }
 
 }

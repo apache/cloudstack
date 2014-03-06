@@ -43,15 +43,16 @@ public class UserVmDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public UserVmDetailVO() {
     }
 
-    public UserVmDetailVO(long vmId, String name, String value) {
+    public UserVmDetailVO(long vmId, String name, String value, boolean display) {
         this.resourceId = vmId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

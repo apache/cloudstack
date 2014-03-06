@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "createCounter", description = "Adds metric counter", responseObject = CounterResponse.class)
+@APICommand(name = "createCounter", description = "Adds metric counter", responseObject = CounterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateCounterCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateCounterCmd.class.getName());
     private static final String s_name = "counterresponse";

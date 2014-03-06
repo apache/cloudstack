@@ -73,4 +73,6 @@ public interface NetworkACLItem extends InternalIdentity {
      */
     TrafficType getTrafficType();
 
+    boolean isDisplay();
+
 }

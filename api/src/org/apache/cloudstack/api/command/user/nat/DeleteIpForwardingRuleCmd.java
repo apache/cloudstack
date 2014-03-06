@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteIpForwardingRule", description = "Deletes an ip forwarding rule", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteIpForwardingRule", description = "Deletes an ip forwarding rule", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIpForwardingRuleCmd.class.getName());
 

@@ -40,7 +40,9 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listTrafficTypeImplementors",
             description = "Lists implementors of implementor of a network traffic type or implementors of all network traffic types",
             responseObject = TrafficTypeImplementorResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListTrafficTypeImplementorsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypeImplementorsCmd.class);
     private static final String Name = "listtraffictypeimplementorsresponse";

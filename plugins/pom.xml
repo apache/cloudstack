@@ -22,6 +22,19 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>none</phase>
+              <inherited>false</inherited>
+            </execution>
+          </executions>
+      </plugin>
+    </plugins>
   </build>
   <modules>
     <module>api/rate-limit</module>
@@ -158,6 +171,17 @@
       <modules>
         <module>hypervisors/vmware</module>
         <module>network-elements/cisco-vnmc</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>mysqlha</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <modules>
+        <module>database/mysql-ha</module>
       </modules>
     </profile>
     <profile>

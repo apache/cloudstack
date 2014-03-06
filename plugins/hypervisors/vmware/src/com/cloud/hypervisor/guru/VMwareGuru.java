@@ -83,12 +83,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
@@ -151,9 +150,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (details == null)
             details = new HashMap<String, String>();
 
+        Type vmType = vm.getType();
+        boolean userVm = !(vmType.equals(VirtualMachine.Type.DomainRouter) || vmType.equals(VirtualMachine.Type.ConsoleProxy)
+                || vmType.equals(VirtualMachine.Type.SecondaryStorageVm));
+
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO ||
-            vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (!userVm) {
 
             if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
@@ -180,8 +182,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
-            // user vm
+        if (userVm) {
             if (diskDeviceType == null) {
                 details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
@@ -203,7 +204,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
 
-        if (vm.getVirtualMachine() instanceof DomainRouterVO) {
+        if (vmType.equals(VirtualMachine.Type.DomainRouter)) {
 
             NicProfile publicNicProfile = null;
             for (NicProfile nicProfile : nicProfiles) {
@@ -269,15 +270,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
-            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-            String bootArgs = to.getBootArgs();
-            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            if (!sbMacSequence.toString().isEmpty()) {
+                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+                String bootArgs = to.getBootArgs();
+                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            }
 
         }
 
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
+        if (userVm) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
                 s_logger.debug("Nested virtualization requested, adding flag to vm configuration");

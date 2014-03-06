@@ -41,6 +41,7 @@ public class ApiConstants {
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
+    public static final String CHAIN_INFO = "chaininfo";
     public static final String CIDR = "cidr";
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
@@ -543,6 +544,7 @@ public class ApiConstants {
     public static final String ROUTING = "isrouting";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
+
     public static final String IAM_ACCOUNT_IDS = "accountids";
     public static final String IAM_MEMBER_ACCOUNTS = "memberaccounts";
     public static final String IAM_PARENT_POLICY_ID = "parentpolicyid";

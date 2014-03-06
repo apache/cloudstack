@@ -19,47 +19,53 @@
 
 package com.cloud.network.nicira;
 
-import java.util.List;
 
 /**
  *
  */
-public class LogicalRouterConfig {
-    private String displayName;
-    private RoutingConfig routingConfig;
+public class LogicalRouter extends BaseNiciraNamedEntity {
+    public static final String REPLICATION_MODE_SERVICE = "service";
+    public static final String REPLICATION_MODE_SOURCE = "source";
+
     private final String type = "LogicalRouterConfig";
-    private String uuid;
-    private List<NiciraNvpTag> tags;
+    private RoutingConfig routingConfig;
+    private boolean distributed;
+    private boolean natSynchronizationEnabled;
+    private String replicationMode;
+
+    public String getType() {
+        return type;
+    }
 
     public RoutingConfig getRoutingConfig() {
         return routingConfig;
     }
 
-    public void setRoutingConfig(RoutingConfig routingConfig) {
+    public void setRoutingConfig(final RoutingConfig routingConfig) {
         this.routingConfig = routingConfig;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public boolean isDistributed() {
+        return distributed;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setDistributed(final boolean distributed) {
+        this.distributed = distributed;
     }
 
-    public String getUuid() {
-        return uuid;
+    public boolean isNatSynchronizationEnabled() {
+        return natSynchronizationEnabled;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setNatSynchronizationEnabled(final boolean natSynchronizationEnabled) {
+        this.natSynchronizationEnabled = natSynchronizationEnabled;
     }
 
-    public List<NiciraNvpTag> getTags() {
-        return tags;
+    public String getReplicationMode() {
+        return replicationMode;
     }
 
-    public void setTags(List<NiciraNvpTag> tags) {
-        this.tags = tags;
+    public void setReplicationMode(final String replicationMode) {
+        this.replicationMode = replicationMode;
     }
 }

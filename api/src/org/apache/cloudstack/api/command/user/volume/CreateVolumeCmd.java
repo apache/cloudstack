@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = { IAMEntityType.Volume })
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {IAMEntityType.Volume},
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -97,7 +99,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
@@ -151,6 +153,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public Boolean getDisplayVolume() {
+        if(displayVolume == null){
+            return true;
+        }
+
         return displayVolume;
     }
 
@@ -191,6 +197,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     @Override
+    public boolean isDisplayResourceEnabled(){
+        return getDisplayVolume();
+    }
+
+    @Override
     public String getEventDescription() {
         return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
@@ -210,6 +221,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
+        CallContext.current().setEventDisplayEnabled(getDisplayVolume());
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);

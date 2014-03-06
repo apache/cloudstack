@@ -638,5 +638,4 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachineTemplate;
     }
-
 }

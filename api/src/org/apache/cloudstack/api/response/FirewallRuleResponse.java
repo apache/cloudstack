@@ -18,14 +18,14 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = FirewallRule.class)
 @SuppressWarnings("unused")
@@ -93,6 +93,10 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "the id of the guest network the port forwarding rule belongs to")
     private String networkId;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is firewall for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public String getDestNatVmIp() {
         return destNatVmIp;
@@ -217,5 +221,9 @@ public class FirewallRuleResponse extends BaseResponse {
 
     public void setNetworkId(String networkId) {
         this.networkId = networkId;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

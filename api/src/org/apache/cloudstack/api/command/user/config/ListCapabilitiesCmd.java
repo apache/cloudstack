@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.CapabilitiesResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listCapabilities", description = "Lists capabilities", responseObject = CapabilitiesResponse.class)
+@APICommand(name = "listCapabilities", description = "Lists capabilities", responseObject = CapabilitiesResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 

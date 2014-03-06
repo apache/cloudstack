@@ -100,6 +100,7 @@ public interface SecurityChecker extends Adapter {
      */
     boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action) throws PermissionDeniedException;
 
+
     /**
      * Checks if the user belongs to an account that can access the object.
      *

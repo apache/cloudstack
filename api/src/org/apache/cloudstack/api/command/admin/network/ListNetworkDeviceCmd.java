@@ -42,7 +42,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetworkDevice", description = "List network devices", responseObject = NetworkDeviceResponse.class)
+@APICommand(name = "listNetworkDevice", description = "List network devices", responseObject = NetworkDeviceResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkDeviceCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
     private static final String s_name = "listnetworkdevice";

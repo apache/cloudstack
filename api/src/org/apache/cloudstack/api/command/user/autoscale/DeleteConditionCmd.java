@@ -37,7 +37,8 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class, entityType = { IAMEntityType.Condition })
+@APICommand(name = "deleteCondition", description = "Removes a condition", responseObject = SuccessResponse.class, entityType = {IAMEntityType.Condition},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteConditionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteConditionCmd.class.getName());
     private static final String s_name = "deleteconditionresponse";
@@ -65,7 +66,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
         }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete condition " + getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");

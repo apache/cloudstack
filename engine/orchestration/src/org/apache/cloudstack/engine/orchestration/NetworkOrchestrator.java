@@ -699,24 +699,40 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException,
+    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
             ConcurrentOperationException {
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
                 int deviceId = 0;
+                int size = 0;
+                for (Network ntwk : networks.keySet()) {
+                    List<? extends NicProfile> profiles = networks.get(ntwk);
+                    if (profiles != null && !profiles.isEmpty()) {
+                        size = size + profiles.size();
+                    } else {
+                        size = size + 1;
+                    }
+                }
 
-                boolean[] deviceIds = new boolean[networks.size()];
+                boolean[] deviceIds = new boolean[size];
                 Arrays.fill(deviceIds, false);
 
-                List<NicProfile> nics = new ArrayList<NicProfile>(networks.size());
+                List<NicProfile> nics = new ArrayList<NicProfile>(size);
                 NicProfile defaultNic = null;
 
-                for (Map.Entry<? extends Network, ? extends NicProfile> network : networks.entrySet()) {
+                for (Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
                     Network config = network.getKey();
-                    NicProfile requested = network.getValue();
+                    List<? extends NicProfile> requestedProfiles = network.getValue();
+                    if (requestedProfiles == null) {
+                        requestedProfiles = new ArrayList<NicProfile>();
+                    }
+                    if (requestedProfiles.isEmpty()) {
+                        requestedProfiles.add(null);
+                    }
 
+                    for (NicProfile requested : requestedProfiles) {
                     Boolean isDefaultNic = false;
                     if (vm != null && (requested != null && requested.isDefaultNic())) {
                         isDefaultNic = true;
@@ -754,12 +770,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                     nics.add(vmNic);
                     vm.addNic(vmNic);
-
                 }
-
-                if (nics.size() != networks.size()) {
-                    s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
-                    throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
+                }
+                if (nics.size() != size) {
+                    s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested nics " + size);
+                    throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + size);
                 }
 
                 if (nics.size() == 1) {
@@ -782,12 +797,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             requested.setMode(network.getMode());
         }
         NicProfile profile = guru.allocate(network, requested, vm);
-        if (isDefaultNic != null) {
-            profile.setDefaultNic(isDefaultNic);
-        }
-
         if (profile == null) {
             return null;
+        }
+
+        if (isDefaultNic != null) {
+            profile.setDefaultNic(isDefaultNic);
         }
 
         if (requested != null && requested.getMode() == null) {
@@ -1008,11 +1023,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.debug("Lock is released for network id " + networkId + " as a part of network implement");
             }
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
@@ -1552,16 +1562,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        if (vm.getType() == Type.User
+                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
+                && network.getTrafficType() == TrafficType.Guest
+                && network.getGuestType() == GuestType.Shared
+                && isLastNicInSubnet(nic)) {
         // remove the dhcpservice ip if this is the last nic in subnet.
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         if (dhcpServiceProvider != null
-                && vm.getType() == Type.User
-                && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)
-                && isLastNicInSubnet(nic)
-                && network.getTrafficType() == TrafficType.Guest
-                && network.getGuestType() == GuestType.Shared) {
+                    && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
             removeDhcpServiceInSubnet(nic);
         }
+        }
+
         NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
@@ -2450,7 +2463,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         NetworkElement element = _networkModel.getElementImplementingProvider(DhcpProvider);
         if ( element instanceof DhcpServiceProvider ) {
-        return (DhcpServiceProvider)_networkModel.getElementImplementingProvider(DhcpProvider);
+            return (DhcpServiceProvider)element;
         } else {
             return null;
         }
@@ -2498,8 +2511,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (dc.getNetworkType() == NetworkType.Basic) {
             List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
             NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
-            final LinkedHashMap<Network, NicProfile> profiles = new LinkedHashMap<Network, NicProfile>();
-            profiles.put(network, null);
+            final LinkedHashMap<Network, List<? extends NicProfile>> profiles = new LinkedHashMap<Network, List<? extends NicProfile>>();
+            profiles.put(network, new ArrayList<NicProfile>());
 
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override

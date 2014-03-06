@@ -522,7 +522,10 @@
                                     memory: {
                                         label: 'label.memory.mb',
                                         converter: function(args) {
-                                            return cloudStack.converters.convertBytes(args * 1024 * 1024);
+                                    	    if (args == undefined)
+                                    	    	return '';
+                                    	    else                                     	
+                                                return cloudStack.converters.convertBytes(args * 1024 * 1024);
                                         }
                                     },
                                     networkrate: {
@@ -1038,7 +1041,10 @@
                                     memory: {
                                         label: 'label.memory.mb',
                                         converter: function(args) {
-                                            return cloudStack.converters.convertBytes(args * 1024 * 1024);
+                                    	    if (args == undefined)
+                                	    	    return '';
+                                	        else 
+                                                return cloudStack.converters.convertBytes(args * 1024 * 1024);
                                         }
                                     },
                                     networkrate: {

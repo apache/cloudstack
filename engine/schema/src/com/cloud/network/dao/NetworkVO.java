@@ -29,8 +29,8 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;

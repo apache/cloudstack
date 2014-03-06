@@ -18,6 +18,7 @@ package com.cloud.ha;
 
 import java.util.List;
 
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
@@ -103,4 +104,6 @@ public interface HighAvailabilityManager extends Manager {
      * @return
      */
     String getHaTag();
+
+    DeploymentPlanner getHAPlanner();
 }

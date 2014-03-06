@@ -42,7 +42,9 @@ import com.cloud.network.VirtualRouterProvider;
 @APICommand(name = "listInternalLoadBalancerElements",
             description = "Lists all available Internal Load Balancer elements.",
             responseObject = InternalLoadBalancerElementResponse.class,
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLoadBalancerElementsCmd.class.getName());
     private static final String Name = "listinternalloadbalancerelementsresponse";

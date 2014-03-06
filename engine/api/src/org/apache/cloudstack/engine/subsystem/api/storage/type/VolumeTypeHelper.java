@@ -16,26 +16,33 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage.type;
 
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 public class VolumeTypeHelper {
-    static private List<VolumeType> types;
+
     private static VolumeType defaultType = new Unknown();
+
+    private List<VolumeType> types;
+    private final Map<String, VolumeType> mapTypes = new Hashtable<String, VolumeType>();
 
     @Inject
     public void setTypes(List<VolumeType> types) {
-        VolumeTypeHelper.types = types;
+        this.types = types;
+
+        mapTypes.clear();
+        for (VolumeType ty : this.types) {
+            mapTypes.put(ty.getClass().getSimpleName().toUpperCase(), ty);
+        }
     }
 
-    public static VolumeType getType(String type) {
-        for (VolumeType ty : types) {
-            if (ty.equals(type)) {
-                return ty;
-            }
+    public VolumeType getType(String type) {
+        if (mapTypes.containsKey(type.toUpperCase())) {
+            return mapTypes.get(type.toUpperCase());
         }
         return VolumeTypeHelper.defaultType;
     }
-
 }

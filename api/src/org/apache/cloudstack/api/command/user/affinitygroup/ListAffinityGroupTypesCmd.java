@@ -28,7 +28,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listAffinityGroupTypes", description = "Lists affinity group types available", responseObject = AffinityGroupTypeResponse.class)
+@APICommand(name = "listAffinityGroupTypes", description = "Lists affinity group types available", responseObject = AffinityGroupTypeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAffinityGroupTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupTypesCmd.class.getName());
 

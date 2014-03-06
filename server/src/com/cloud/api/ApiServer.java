@@ -369,7 +369,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
 
                 Class<?> cmdClass = getCmdClass(command[0]);
+
                 if (cmdClass != null) {
+                    APICommand annotation = cmdClass.getAnnotation(APICommand.class);
+                    if (annotation == null) {
+                        s_logger.error("No APICommand annotation found for class " + cmdClass.getCanonicalName());
+                        throw new CloudRuntimeException("No APICommand annotation found for class " + cmdClass.getCanonicalName());
+                    }
+
                     BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
                     cmdObj = ComponentContext.inject(cmdObj);
                     cmdObj.configure();
@@ -379,6 +386,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
+                    if (annotation.responseHasSensitiveInfo())
+                    {
+                        buildAuditTrail(auditTrailSb, command[0],
+                                StringUtils.cleanString(response));
+                    }
+                    else
                     buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
                     if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
@@ -470,6 +483,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         CallContext ctx = CallContext.current();
         Long callerUserId = ctx.getCallingUserId();
         Account caller = ctx.getCallingAccount();
+        ctx.setEventDisplayEnabled(cmdObj.isDisplayResourceEnabled());
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
@@ -503,7 +517,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // save the scheduled event
             Long eventId =
                 ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                    asyncCmd.getEventDescription(), startEventId);
+                    asyncCmd.getEventDescription(), asyncCmd.isDisplayResourceEnabled(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;
@@ -513,9 +527,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("cmdEventType", asyncCmd.getEventType().toString());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
-            AsyncJobVO job =
-                new AsyncJobVO(ctx.getContextId(), callerUserId, caller.getId(), cmdObj.getClass().getName(), ApiGsonHelper.getBuilder().create().toJson(params),
-                    instanceId, asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
+            AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
+                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
+                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
             job.setDispatcher(_asyncDispatcher.getName());
 
             long jobId = _asyncMgr.submitAsyncJob(job);

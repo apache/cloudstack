@@ -40,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteF5LoadBalancer", responseObject = SuccessResponse.class, description = " delete a F5 load balancer device")
+@APICommand(name = "deleteF5LoadBalancer", responseObject = SuccessResponse.class, description = " delete a F5 load balancer device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteF5LoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteF5LoadBalancerCmd.class.getName());
     private static final String s_name = "deletef5loadbalancerresponse";

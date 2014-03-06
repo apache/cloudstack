@@ -34,7 +34,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateZone", description = "Updates a Zone.", responseObject = ZoneResponse.class)
+@APICommand(name = "updateZone", description = "Updates a Zone.", responseObject = ZoneResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 

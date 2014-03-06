@@ -541,5 +541,4 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachine;
     }
-
 }

@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.Pod;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPods", description = "Lists all Pods.", responseObject = PodResponse.class)
+@APICommand(name = "listPods", description = "Lists all Pods.", responseObject = PodResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 

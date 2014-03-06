@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "rebootRouter", description = "Starts a router.", responseObject = DomainRouterResponse.class, entityType = { IAMEntityType.VirtualMachine })
+@APICommand(name = "rebootRouter", description = "Starts a router.", responseObject = DomainRouterResponse.class, entityType = {IAMEntityType.VirtualMachine},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RebootRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";
@@ -98,11 +99,11 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         CallContext.current().setEventDetails("Router Id: " + getId());
-        VirtualRouter result = _routerService.rebootRouter(this.getId(), true);
+        VirtualRouter result = _routerService.rebootRouter(getId(), true);
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName("router");
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reboot router");
         }

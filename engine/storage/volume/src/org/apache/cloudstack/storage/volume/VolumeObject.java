@@ -163,6 +163,11 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getHypervisorSnapshotReserve();
     }
 
+    @Override
+    public boolean isDisplayVolume() {
+        return volumeVO.isDisplayVolume();
+    }
+
     public long getVolumeId() {
         return volumeVO.getId();
     }

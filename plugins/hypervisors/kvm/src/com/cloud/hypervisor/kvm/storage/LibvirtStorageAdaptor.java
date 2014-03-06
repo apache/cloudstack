@@ -129,9 +129,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNfsStoragePool(Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(poolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid, host, path, targetPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -170,7 +170,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine nfs storage pool with: " + l.toString());
+                    s_logger.debug("Failed to undefine " + fsType.toString() + " storage pool with: " + l.toString());
                 }
             }
             return null;
@@ -244,12 +244,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         LibvirtStoragePoolDef spd;
         StoragePool sp = null;
+        Secret s = null;
 
         String[] userInfoTemp = userInfo.split(":");
         if (userInfoTemp.length == 2) {
             LibvirtSecretDef sd = new LibvirtSecretDef(usage.CEPH, uuid);
-
-            Secret s = null;
 
             sd.setCephName(userInfoTemp[0] + "@" + host + ":" + port + "/" + path);
 
@@ -258,15 +257,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 s = conn.secretDefineXML(sd.toString());
                 s.setValue(Base64.decodeBase64(userInfoTemp[1]));
             } catch (LibvirtException e) {
-                s_logger.error(e.toString());
+                s_logger.error("Failed to define the libvirt secret: " + e.toString());
                 if (s != null) {
                     try {
                         s.undefine();
                         s.free();
                     } catch (LibvirtException l) {
-                        s_logger.debug("Failed to define secret with: " + l.toString());
+                        s_logger.debug("Failed to undefine the libvirt secret: " + l.toString());
                     }
                 }
+                return null;
             }
             spd = new LibvirtStoragePoolDef(poolType.RBD, uuid, uuid, host, port, path, userInfoTemp[0], authType.CEPH, uuid);
         } else {
@@ -278,7 +278,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug(e.toString());
+            s_logger.debug("Failed to create RBD storage pool: " + e.toString());
             if (sp != null) {
                 try {
                     if (sp.isPersistent() == 1) {
@@ -289,9 +289,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to define RBD storage pool with: " + l.toString());
+                    s_logger.debug("Failed to undefine RBD storage pool: " + l.toString());
                 }
             }
+
+            if (s != null) {
+                try {
+                    s_logger.debug("Failed to create the RBD storage pool, cleaning up the libvirt secret");
+                    s.undefine();
+                    s.free();
+                } catch (LibvirtException se) {
+                    s_logger.debug("Failed to remove the libvirt secret: " + se.toString());
+                }
+            }
+
             return null;
         }
     }
@@ -310,11 +321,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new InternalErrorException("volume:" + srcPath + " is not exits");
         }
         String result = Script.runSimpleBashScript("cp " + srcPath + " " + destPath + File.separator + volumeName, timeout);
-        if (result != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return result == null;
     }
 
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
@@ -349,14 +356,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.RBD;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.GLUSTERFS) {
+                type = StoragePoolType.Gluster;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(), type, this, storage);
 
-            if (pool.getType() != StoragePoolType.RBD) {
+            if (pool.getType() != StoragePoolType.RBD)
                 pool.setLocalPath(spd.getTargetPath());
-            } else {
+            else
                 pool.setLocalPath("");
+
+            if (pool.getType() == StoragePoolType.RBD
+             || pool.getType() == StoragePoolType.Gluster) {
                 pool.setSourceHost(spd.getSourceHost());
                 pool.setSourcePort(spd.getSourcePort());
                 pool.setSourceDir(spd.getSourceDir());
@@ -488,9 +500,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNfsStoragePool(conn, name, host, path);
+                    sp = createNetfsStoragePool(poolType.NETFS, conn, name, host, path);
                 } catch (LibvirtException e) {
-                    s_logger.error("Failed to create mount");
+                    s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
+                    s_logger.error(e.getStackTrace());
+                    throw new CloudRuntimeException(e.toString());
+                }
+            } else if (type == StoragePoolType.Gluster) {
+                try {
+                    sp = createNetfsStoragePool(poolType.GLUSTERFS, conn, name, host, path);
+                } catch (LibvirtException e) {
+                    s_logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
                     throw new CloudRuntimeException(e.toString());
                 }
@@ -501,6 +521,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } else if (type == StoragePoolType.CLVM) {
                 sp = createCLVMStoragePool(conn, name, host, path);
             }
+        }
+
+        if (sp == null) {
+            throw new CloudRuntimeException("Failed to create storage pool: " + name);
         }
 
         try {

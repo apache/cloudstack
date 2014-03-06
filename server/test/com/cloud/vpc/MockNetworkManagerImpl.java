@@ -154,7 +154,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long, java.lang.Long)
      */
     @Override
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp) throws ResourceAllocationException, InsufficientAddressCapacityException,
         ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
@@ -521,10 +521,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException,
-        ConcurrentOperationException {
+    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks)
+            throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
-
     }
 
     /* (non-Javadoc)
@@ -858,7 +857,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public IpAddress updateIP(Long id, String customId) {
+    public IpAddress updateIP(Long id, String customId, Boolean displayIp) {
         // TODO Auto-generated method stub
         return null;
     }

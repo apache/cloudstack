@@ -108,6 +108,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "archived")
     private boolean archived;
 
+    @Column(name = "display_event")
+    protected boolean displayEvent = true;
+
     public EventJoinVO() {
     }
 
@@ -217,6 +220,10 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean getArchived() {
         return archived;
+    }
+
+    public boolean getDisplayEvent() {
+        return displayEvent;
     }
 
     @Override

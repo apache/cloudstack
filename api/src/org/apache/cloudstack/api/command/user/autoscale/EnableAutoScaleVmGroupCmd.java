@@ -35,7 +35,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "enableAutoScaleVmGroup", description = "Enables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = { IAMEntityType.AutoScaleVmGroup })
+@APICommand(name = "enableAutoScaleVmGroup", description = "Enables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {IAMEntityType.AutoScaleVmGroup},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAutoScaleVmGroupCmd.class.getName());
     private static final String s_name = "enableautoscalevmGroupresponse";
@@ -62,7 +63,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable AutoScale Vm Group");
         }

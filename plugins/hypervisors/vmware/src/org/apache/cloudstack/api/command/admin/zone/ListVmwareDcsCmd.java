@@ -43,7 +43,8 @@ import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
 
-@APICommand(name = "listVmwareDcs", responseObject = VmwareDatacenterResponse.class, description = "Retrieves VMware DC(s) associated with a zone.")
+@APICommand(name = "listVmwareDcs", responseObject = VmwareDatacenterResponse.class, description = "Retrieves VMware DC(s) associated with a zone.",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVmwareDcsCmd extends BaseListCmd {
 
     @Inject

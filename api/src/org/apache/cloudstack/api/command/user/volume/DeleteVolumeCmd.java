@@ -34,7 +34,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class, entityType = { IAMEntityType.Volume })
+@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class, entityType = {IAMEntityType.Volume},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVolumeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";

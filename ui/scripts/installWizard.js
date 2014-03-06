@@ -287,7 +287,7 @@
                 response: {
                     success: function(args) {
                         var enableZone = function() {
-                            message('Enabling zone...');
+                            message(dictionary['message.enabling.zone.dots']);
                             cloudStack.zoneWizard.enableZoneAction({
                                 data: args.data,
                                 formData: args.data,
@@ -302,7 +302,7 @@
 
                         var pollSystemVMs = function() {
                             // Poll System VMs, then enable zone
-                            message('Creating system VMs (this may take a while)');
+                            message(dictionary['message.creating.systemVM']);
                             var poll = setInterval(function() {
                                 $.ajax({
                                     url: createURL('listSystemVms'),

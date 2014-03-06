@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.DeploymentPlannersResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listDeploymentPlanners", description = "Lists all DeploymentPlanners available.", responseObject = DeploymentPlannersResponse.class)
+@APICommand(name = "listDeploymentPlanners", description = "Lists all DeploymentPlanners available.", responseObject = DeploymentPlannersResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDeploymentPlannersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDeploymentPlannersCmd.class.getName());
 

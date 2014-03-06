@@ -18,6 +18,7 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,8 +41,6 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
@@ -58,6 +56,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -106,6 +105,7 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -251,6 +251,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -281,9 +282,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
  */
-@Local(value = {VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class})
-public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru,
-Listener, Configurable {
+@Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
+public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
+        VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -674,6 +675,8 @@ Listener, Configurable {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
+
+        VirtualMachine.State.getStateMachine().registerListener(this);
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
@@ -1566,10 +1569,10 @@ Listener, Configurable {
                 final int count = routerCount - routers.size();
                 final DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                    final LinkedHashMap<Network, NicProfile> networks =
-                            createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                    LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(
+                            publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-                    final DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
+                    DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
 
                     if (router != null) {
                         _routerDao.addRouterToGuestNetwork(router, guestNetwork);
@@ -1607,7 +1610,7 @@ Listener, Configurable {
     }
 
     protected DomainRouterVO deployRouter(final Account owner, final DeployDestination dest, final DeploymentPlan plan, final Map<Param, Object> params, final boolean isRedundant,
-            final VirtualRouterProvider vrProvider, final long svcOffId, final Long vpcId, final LinkedHashMap<Network, NicProfile> networks, final boolean startRouter,
+            final VirtualRouterProvider vrProvider, final long svcOffId, final Long vpcId, final LinkedHashMap<Network, List<? extends NicProfile>> networks, final boolean startRouter,
             final List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientServerCapacityException,
             InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
@@ -1747,7 +1750,7 @@ Listener, Configurable {
         return hypervisors;
     }
 
-    protected LinkedHashMap<Network, NicProfile> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan, final Network guestNetwork,
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan, final Network guestNetwork,
             final Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         boolean setupPublicNetwork = false;
@@ -1756,8 +1759,7 @@ Listener, Configurable {
         }
 
         //Form networks
-        final LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
-
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         //1) Guest network
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
@@ -1813,17 +1815,16 @@ Listener, Configurable {
                 gatewayNic.setDefaultNic(true);
             }
 
-            networks.put(guestNetwork, gatewayNic);
+            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
             hasGuestNetwork = true;
         }
 
         //2) Control network
         s_logger.debug("Adding nic for Virtual Router in Control network ");
-        final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
-        final NetworkOffering controlOffering = offerings.get(0);
-        final Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        networks.put(controlConfig, null);
-
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+        NetworkOffering controlOffering = offerings.get(0);
+        Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
         //3) Public network
         if (setupPublicNetwork) {
             final PublicIp sourceNatIp = publicNetwork.second();
@@ -1858,7 +1859,7 @@ Listener, Configurable {
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
-            networks.put(publicNetworks.get(0), defaultNic);
+            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
 
         return networks;
@@ -2327,12 +2328,23 @@ Listener, Configurable {
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
-        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0));
+
+
+        String serviceMonitringSet = SetServiceMonitor.valueIn(router.getDataCenterId());
+        //String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
+
+        if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
+            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), true);
+        } else {
+            finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), false);
+        }
+
+
 
         return true;
     }
 
-    private void finalizeMonitorServiceOnStrat(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider, final long networkId) {
+    private void finalizeMonitorServiceOnStrat(Commands cmds, VirtualMachineProfile profile, DomainRouterVO router, Provider provider, long networkId, Boolean add) {
 
         final NetworkVO network = _networkDao.findById(networkId);
 
@@ -2373,6 +2385,9 @@ Listener, Configurable {
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
+        if (!add) {
+            command.setAccessDetail(NetworkElementCommand.ROUTER_MONITORING_ENABLE, add.toString());
+        }
         cmds.addCommand("monitor", command);
     }
 
@@ -3421,7 +3436,6 @@ Listener, Configurable {
                 "vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(),
                         vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
-
     }
 
     private void createVmDataCommandForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
@@ -4178,26 +4192,26 @@ Listener, Configurable {
         return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
     }
 
-    private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
-        final List<Long> jobIds = new ArrayList<Long>();
-        for (final DomainRouterVO router : routers) {
-            if (!checkRouterVersion(router)) {
-                s_logger.debug("Upgrading template for router: " + router.getId());
-                final Map<String, String> params = new HashMap<String, String>();
-                params.put("ctxUserId", "1");
-                params.put("ctxAccountId", "" + router.getAccountId());
+    private List<Long> rebootRouters(List<DomainRouterVO> routers){
+        List<Long> jobIds = new ArrayList<Long>();
+        for(DomainRouterVO router: routers){
+            if(!checkRouterVersion(router)){
+                    s_logger.debug("Upgrading template for router: "+router.getId());
+                    ApiDispatcher.getInstance();
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("ctxUserId", "1");
+                    params.put("ctxAccountId", "" + router.getAccountId());
 
-                final RebootRouterCmd cmd = new RebootRouterCmd();
-                ComponentContext.inject(cmd);
-                params.put("id", "" + router.getId());
-                params.put("ctxStartEventId", "1");
-                final AsyncJobVO job =
-                        new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(), ApiGsonHelper.getBuilder()
-                                .create()
-                                .toJson(params), router.getId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
-                job.setDispatcher(_asyncDispatcher.getName());
-                final long jobId = _asyncMgr.submitAsyncJob(job);
-                jobIds.add(jobId);
+                    RebootRouterCmd cmd = new RebootRouterCmd();
+                    ComponentContext.inject(cmd);
+                    params.put("id", ""+router.getId());
+                    params.put("ctxStartEventId", "1");
+                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(),
+                            ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
+                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                    job.setDispatcher(_asyncDispatcher.getName());
+                    long jobId = _asyncMgr.submitAsyncJob(job);
+                    jobIds.add(jobId);
             } else {
                 s_logger.debug("Router: " + router.getId() + " is already at the latest version. No upgrade required");
             }
@@ -4212,6 +4226,41 @@ Listener, Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor};
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
+            if (vo.getType() == VirtualMachine.Type.DomainRouter) {
+                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+            }
+        }
+        return true;
+    }
+
+    protected class RebootTask extends ManagedContextRunnable {
+
+        long _routerId;
+
+        public RebootTask(long routerId) {
+            _routerId = routerId;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                s_logger.info("Reboot router " + _routerId + " to refresh network rules");
+                rebootRouter(_routerId, true);
+            } catch (Exception e) {
+                s_logger.warn("Error while rebooting the router", e);
+            }
+        }
     }
 }

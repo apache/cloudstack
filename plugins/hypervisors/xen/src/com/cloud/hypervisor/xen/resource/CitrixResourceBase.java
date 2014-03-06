@@ -239,7 +239,6 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
  * to perform the required functionalities for CloudStack.
@@ -325,9 +324,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     static {
         s_powerStatesTable = new HashMap<Types.VmPowerState, PowerState>();
         s_powerStatesTable.put(Types.VmPowerState.HALTED, PowerState.PowerOff);
-        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOff);
         s_powerStatesTable.put(Types.VmPowerState.RUNNING, PowerState.PowerOn);
-        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOff);
         s_powerStatesTable.put(Types.VmPowerState.UNRECOGNIZED, PowerState.PowerUnknown);
     }
 
@@ -348,6 +347,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _host;
     }
 
+    private static boolean isAlienVm(VM vm, Connection conn) throws XenAPIException, XmlRpcException {
+        // TODO : we need a better way to tell whether or not the VM belongs to CloudStack
+        String vmName = vm.getNameLabel(conn);
+        if (vmName.matches("^[ivs]-\\d+-.+"))
+            return false;
+
+        return true;
+    }
+
     protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.uuid);
         Map<VM, VM.Record> vms = VM.getAllRecords(conn);
@@ -359,7 +367,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 continue;
             }
 
-            if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host)) {
+            if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host) && !isAlienVm(vm, conn)) {
                 try {
                     vm.destroy(conn);
                 } catch (Exception e) {
@@ -412,7 +420,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (clazz == CreateCommand.class) {
             return execute((CreateCommand)cmd);
         } else if (cmd instanceof NetworkElementCommand) {
-            return _vrResource.executeRequest(cmd);
+            return _vrResource.executeRequest((NetworkElementCommand)cmd);
         } else if (clazz == CheckConsoleProxyLoadCommand.class) {
             return execute((CheckConsoleProxyLoadCommand)cmd);
         } else if (clazz == WatchConsoleProxyLoadCommand.class) {
@@ -569,7 +577,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
         if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
-            cleanupNetworkElementCommand((IpAssocCommand)cmd);
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
         }
         return new ExecutionResult(true, null);
     }
@@ -876,7 +884,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Set<VIF> dom0Vifs = dom0.getVIFs(conn);
         for (VIF vif : dom0Vifs) {
             vif.getRecord(conn);
-            if (vif.getNetwork(conn).getUuid(conn) == nw.getUuid(conn)) {
+            if (vif.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
                 dom0vif = vif;
                 s_logger.debug("A VIF for dom0 has already been found - No need to create one");
             }
@@ -1956,7 +1964,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
@@ -2029,12 +2036,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
         Connection conn = getConnection();
-        String[] results = new String[cmd.getIpAddresses().length];
-        int i = 0;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             IpAddressTO[] ips = cmd.getIpAddresses();
+            int ipsCount = ips.length;
             for (IpAddressTO ip : ips) {
 
                 VM router = getVM(conn, routerName);
@@ -2062,6 +2068,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // If we are disassociating the last IP address in the VLAN, we need
                 // to remove a VIF
                 boolean removeVif = false;
+
+                //there is only one ip in this public vlan and removing it, so remove the nic
+                if (ipsCount == 1 && !ip.isAdd()) {
+                    removeVif = true;
+                }
 
                 if (correctVif == null) {
                     throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
@@ -2493,6 +2504,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Connection conn) {
+
+        // TODO : new VM sync model does not require a cluster-scope report, we need to optimize
+        // the report accordingly
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         Map<VM, VM.Record> vm_map = null;
         for (int i = 0; i < 2; i++) {
@@ -2510,7 +2524,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (vm_map == null) {
-            return null;
+            return vmStates;
         }
         for (VM.Record record : vm_map.values()) {
             if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
@@ -2531,7 +2545,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (XmlRpcException e) {
                     s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 }
-                vmStates.put(record.nameLabel, new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion));
+
+                if (host_uuid.equalsIgnoreCase(_host.uuid)) {
+                    vmStates.put(
+                            record.nameLabel,
+                            new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion)
+                            );
+                }
             }
         }
 
@@ -4907,7 +4927,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (srr.shared) {
                 Host host = Host.getByUuid(conn, _host.uuid);
-
                 boolean found = false;
                 for (PBD pbd : pbds) {
                     PBD.Record pbdr = pbd.getRecord(conn);
@@ -7297,14 +7316,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 VM router = getVM(conn, routerName);
 
                 VIF correctVif = getVifByMac(conn, router, ip.getVifMacAddress());
-                if (correctVif == null) {
-                    if (ip.isAdd()) {
-                        throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
-                    } else {
-                        s_logger.debug("VIF to deassociate IP with does not exist, return success");
-                    }
-                }
-                ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+                setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
             }
         } catch (Exception e) {
             s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
@@ -7312,6 +7324,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return new ExecutionResult(true, null);
+    }
+
+    protected void setNicDevIdIfCorrectVifIsNotNull(Connection conn, IpAddressTO ip, VIF correctVif) throws InternalErrorException, BadServerResponse, XenAPIException,
+    XmlRpcException {
+        if (correctVif == null) {
+            if (ip.isAdd()) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
+            } else {
+                s_logger.debug("VIF to deassociate IP with does not exist, return success");
+            }
+        } else {
+            ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+        }
     }
 
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {

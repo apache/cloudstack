@@ -441,5 +441,4 @@ public class TemplateObject implements TemplateInfo {
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachineTemplate;
     }
-
 }

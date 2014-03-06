@@ -37,7 +37,8 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "addHost", description = "Adds a new host.", responseObject = HostResponse.class)
+@APICommand(name = "addHost", description = "Adds a new host.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 

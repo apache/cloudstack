@@ -37,7 +37,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class, entityType = { IAMEntityType.AffinityGroup })
+@APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class, entityType = {IAMEntityType.AffinityGroup},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAffinityGroupCmd.class.getName());
     private static final String s_name = "deleteaffinitygroupresponse";
@@ -132,7 +133,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
         boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete affinity group");
         }

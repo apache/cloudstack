@@ -222,7 +222,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     // TODO
-    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.job.enabled", "false",
+    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
+            Boolean.class, "vm.job.enabled", "true",
             "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
@@ -373,13 +374,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
 
         long ownerId = cmd.getEntityOwnerId();
-        Boolean displayVolumeEnabled = cmd.getDisplayVolume();
+        Boolean displayVolume = cmd.getDisplayVolume();
 
         // permission check
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getActiveAccountById(ownerId));
 
-        if (displayVolumeEnabled == null) {
-            displayVolumeEnabled = true;
+        if (displayVolume == null) {
+            displayVolume = true;
         } else {
             if (!_accountMgr.isRootAdmin(caller.getType())) {
                 throw new PermissionDeniedException("Cannot update parameter displayvolume, only admin permitted ");
@@ -387,7 +388,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume, displayVolumeEnabled);
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume, displayVolume);
 
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
@@ -528,7 +529,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that the resource limit for primary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage, displayVolumeEnabled, new Long(size));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.primary_storage, displayVolume, new Long(size));
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -552,13 +553,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolume, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
-    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolumeEnabled, final Long zoneId,
+    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolume, final Long zoneId,
             final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
@@ -577,7 +578,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
-        volume.setDisplayVolume(displayVolumeEnabled);
+                volume.setDisplayVolume(displayVolume);
         if (parentVolume != null) {
             volume.setTemplateId(parentVolume.getTemplateId());
             volume.setFormat(parentVolume.getFormat());
@@ -596,8 +597,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Increment resource count during allocation; if actual creation fails,
         // decrement it
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolumeEnabled);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolumeEnabled, new Long(volume.getSize()));
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
+                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
         return volume;
     }
         });
@@ -824,7 +825,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Volume vol = null;
                 try {
-                    vol = outcome.get();
+                    outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (java.util.concurrent.ExecutionException e) {
@@ -837,6 +838,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw (ConcurrentOperationException)jobResult;
                     else if (jobResult instanceof Throwable)
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                    else if (jobResult instanceof Long) {
+                        vol = _volumeDao.findById((Long)jobResult);
+                    }
                 }
                 return volume;
             }
@@ -1024,7 +1028,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             Volume vol = null;
             try {
-                vol = outcome.get();
+                outcome.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
@@ -1037,6 +1041,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                else if (jobResult instanceof Long) {
+                    vol = _volumeDao.findById((Long)jobResult);
+                }
             }
             return vol;
         }
@@ -1205,7 +1212,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId) {
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
 
         VolumeVO volume = _volumeDao.findById(volumeId);
 
@@ -1215,6 +1222,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (displayVolume != null) {
             volume.setDisplayVolume(displayVolume);
+        }
+
+        if(chainInfo != null){
+            volume.setChainInfo(chainInfo);
         }
 
         if (state != null) {
@@ -1335,7 +1346,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             Volume vol = null;
             try {
-                vol = outcome.get();
+                outcome.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
@@ -1348,6 +1359,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                else if (jobResult instanceof Long) {
+                    vol = _volumeDao.findById((Long)jobResult);
+                }
             }
             return vol;
         }
@@ -2124,7 +2138,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -2135,11 +2150,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
-                VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId,
-                        deviceId);
+                    VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                            VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
                 workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -2148,6 +2163,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -2171,7 +2189,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -2182,15 +2201,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
-                VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
+                    VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                            VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
                 workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -2215,7 +2238,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -2226,7 +2251,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -2236,6 +2261,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -2260,7 +2288,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -2271,7 +2300,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
@@ -2281,6 +2310,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -2305,7 +2337,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
-                _vmInstanceDao.lockRow(vm.getId(), true);
+                _vmInstanceDao.lockInLockTable(String.valueOf(vm.getId()), Integer.MAX_VALUE);
+                try {
                 workJob = new VmWorkJobVO(context.getContextId());
 
                 workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
@@ -2316,7 +2349,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setStep(VmWorkJobVO.Step.Starting);
                 workJob.setVmType(VirtualMachine.Type.Instance);
                 workJob.setVmInstanceId(vm.getId());
-                workJob.setRelated(AsyncJobExecutionContext.getOriginJobContextId());
+                    workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
                 // save work context info (there are some duplications)
                 VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(
@@ -2327,6 +2360,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
                 return new Object[] {workJob, new Long(workJob.getId())};
+                } finally {
+                    _vmInstanceDao.unlockFromLockTable(String.valueOf(vm.getId()));
+                }
             }
         });
 
@@ -2338,19 +2374,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
-        orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
+
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkDetachVolume work) throws Exception {
-        orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        Volume vol = orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
-        orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
+        Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
                 work.getNewServiceOfferingId(), work.isShrinkOk());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateMigrateVolume(VmWorkMigrateVolume work) throws Exception {

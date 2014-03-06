@@ -40,7 +40,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "deleteOpenDaylightController", responseObject = OpenDaylightControllerResponse.class, description = "Removes an OpenDyalight controler")
+@APICommand(name = "deleteOpenDaylightController", responseObject = OpenDaylightControllerResponse.class, description = "Removes an OpenDyalight controler",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteOpenDaylightControllerCmd extends BaseAsyncCmd {
     @Inject
     private OpenDaylightControllerResourceManager resourceManager;

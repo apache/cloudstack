@@ -85,6 +85,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -150,6 +151,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -172,6 +174,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -441,6 +444,37 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
 
         return tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
+    }
+
+    @Override
+    public void prepareIsoForVmProfile(VirtualMachineProfile profile) {
+        UserVmVO vm = _userVmDao.findById(profile.getId());
+        if (vm.getIsoId() != null) {
+            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            if (template == null){
+                s_logger.error("Failed to prepare ISO on secondary or cache storage");
+                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
+            }
+            if (template.isBootable()) {
+                profile.setBootLoaderType(BootloaderType.CD);
+            }
+
+            GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
+            String displayName = null;
+            if (guestOS != null) {
+                displayName = guestOS.getDisplayName();
+            }
+
+            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setGuestOsType(displayName);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            profile.addDisk(disk);
+        } else {
+            TemplateObjectTO iso = new TemplateObjectTO();
+            iso.setFormat(ImageFormat.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
+            profile.addDisk(disk);
+        }
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
@@ -1744,12 +1778,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw ex;
         }
 
-        // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(String.valueOf(id), "templateId");
-            throw ex;
-        }
+        verifyTemplateId(id);
 
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
@@ -1824,6 +1853,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(id, template);
 
         return _tmpltDao.findById(id);
+    }
+
+    void verifyTemplateId(Long id) {
+        // Don't allow to modify system template
+        if (id.equals(Long.valueOf(1))) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
+            ex.addProxyObject(String.valueOf(id), "templateId");
+            throw ex;
+        }
     }
 
     @Override

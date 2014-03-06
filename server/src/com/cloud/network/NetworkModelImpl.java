@@ -1019,7 +1019,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         for (NetworkOfferingServiceMapVO instance : map) {
             String service = instance.getService();
             Set<Provider> providers;
-            providers = serviceProviderMap.get(service);
+            providers = serviceProviderMap.get(Service.getService(service));
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }

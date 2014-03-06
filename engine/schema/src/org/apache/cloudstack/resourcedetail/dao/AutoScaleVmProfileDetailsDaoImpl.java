@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 public class AutoScaleVmProfileDetailsDaoImpl extends ResourceDetailsDaoBase<AutoScaleVmProfileDetailVO> implements AutoScaleVmProfileDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new AutoScaleVmProfileDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new AutoScaleVmProfileDetailVO(resourceId, key, value, display));
     }
 }

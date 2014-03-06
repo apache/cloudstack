@@ -22,7 +22,7 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 public class SnapshotDetailsDaoImpl extends ResourceDetailsDaoBase<SnapshotDetailsVO> implements SnapshotDetailsDao {
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new SnapshotDetailsVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new SnapshotDetailsVO(resourceId, key, value, display));
     }
 }

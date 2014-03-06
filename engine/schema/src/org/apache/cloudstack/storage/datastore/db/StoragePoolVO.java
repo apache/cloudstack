@@ -298,9 +298,6 @@ public class StoragePoolVO implements StoragePool {
 
     public void setPath(String path) {
         this.path = path;
-        if (this.poolType == StoragePoolType.SMB) {
-            this.path = UriUtils.getUpdateUri(this.path, true);
-        }
     }
 
     public void setUserInfo(String userInfo) {

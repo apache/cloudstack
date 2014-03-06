@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteDiskOffering", description = "Updates a disk offering.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteDiskOffering", description = "Updates a disk offering.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
     private static final String s_name = "deletediskofferingresponse";

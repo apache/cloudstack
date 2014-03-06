@@ -33,7 +33,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteExternalFirewall", description = "Deletes an external firewall appliance.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteExternalFirewall", description = "Deletes an external firewall appliance.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteExternalFirewallCmd.class.getName());
     private static final String s_name = "deleteexternalfirewallresponse";

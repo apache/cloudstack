@@ -127,10 +127,6 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         return vmId;
     }
 
-    public void setVmId(Long vmId) {
-        this.vmId = vmId;
-    }
-
     @Override
     public IAMEntityType getEntityType() {
         return IAMEntityType.NicSecondaryIp;

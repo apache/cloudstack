@@ -201,7 +201,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
-    public PortForwardingRule createPortForwardingRule(final PortForwardingRule rule, final Long vmId, Ip vmIp, final boolean openFirewall)
+    public PortForwardingRule createPortForwardingRule(final PortForwardingRule rule, final Long vmId, Ip vmIp, final boolean openFirewall, final Boolean forDisplay)
             throws NetworkRuleConflictException {
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
@@ -316,6 +316,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                     PortForwardingRuleVO newRule =
                         new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIpFinal,
                             rule.getDestinationPortStart(), rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+
+                    if (forDisplay != null) {
+                        newRule.setDisplay(forDisplay);
+                    }
                     newRule = _portForwardingDao.persist(newRule);
 
                     // create firewallRule for 0.0.0.0/0 cidr
@@ -775,6 +779,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
         Long networkId = cmd.getNetworkId();
+        Boolean display = cmd.getDisplay();
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedDomains = new ArrayList<Long>();
@@ -803,6 +808,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -821,6 +827,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         if (tags != null && !tags.isEmpty()) {
@@ -1489,7 +1499,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, String customId) {
+    public PortForwardingRule updatePortForwardingRule(long id, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
@@ -1500,6 +1510,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         if (customId != null) {
             rule.setUuid(customId);
         }
+
+        if (forDisplay != null) {
+            rule.setDisplay(forDisplay);
+        }
+
         _portForwardingDao.update(id, rule);
         return _portForwardingDao.findById(id);
     }

@@ -30,7 +30,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = { IAMEntityType.SSHKeyPair })
+@APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {IAMEntityType.SSHKeyPair},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletesshkeypairresponse";
@@ -80,7 +81,7 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
         boolean result = _mgr.deleteSSHKeyPair(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -246,7 +245,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
                 Long eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volumeId, 0);
+                        volumeId, true, 0);
 
                 Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
@@ -261,10 +260,9 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("id", "" + cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
 
-                AsyncJobVO job =
-                    new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(), ApiGsonHelper.getBuilder()
-                        .create()
-                        .toJson(params), cmd.getEntityId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
+                        ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
                 job.setDispatcher(_asyncDispatcher.getName());
 
                 long jobId = _asyncMgr.submitAsyncJob(job);

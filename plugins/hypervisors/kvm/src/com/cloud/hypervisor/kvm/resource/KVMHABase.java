@@ -48,11 +48,11 @@ public class KVMHABase {
         PoolType _type;
 
         public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
-            this._poolUUID = poolUUID;
-            this._poolIp = poolIp;
-            this._poolMountSourcePath = poolSourcePath;
-            this._mountDestPath = mountDestPath;
-            this._type = type;
+            _poolUUID = poolUUID;
+            _poolIp = poolIp;
+            _poolMountSourcePath = poolSourcePath;
+            _mountDestPath = mountDestPath;
+            _type = type;
         }
     }
 
@@ -115,8 +115,9 @@ public class KVMHABase {
                      * the storage pool still running
                      */
                 }
+                poolName = pool.getName();
             }
-            poolName = pool.getName();
+
         } catch (LibvirtException e) {
             s_logger.debug("Ignoring libvirt error.", e);
         } finally {

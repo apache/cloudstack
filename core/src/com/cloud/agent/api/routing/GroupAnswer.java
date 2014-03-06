@@ -14,13 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
 
-public class SetupGuestNetworkAnswer extends Answer {
-    public SetupGuestNetworkAnswer() {
+package com.cloud.agent.api.routing;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+
+public class GroupAnswer extends Answer {
+    String[] results;
+
+    protected GroupAnswer() {
+        super();
     }
 
-    public SetupGuestNetworkAnswer(SetupGuestNetworkCommand cmd, boolean success, String result) {
-        super(cmd, success, result);
+    public GroupAnswer(Command cmd, boolean success, int rulesCount, String[] results) {
+        super(cmd, success, null);
+
+        assert (rulesCount == results.length) : "Results' count should match requests' count!";
+        this.results = results;
+    }
+
+    public String[] getResults() {
+        return results;
     }
 }

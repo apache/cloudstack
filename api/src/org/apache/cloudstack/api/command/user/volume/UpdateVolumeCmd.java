@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -37,7 +38,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.Volume })
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.Volume },
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";
@@ -53,6 +55,9 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume")
     private String path;
 
+    @Parameter(name = ApiConstants.CHAIN_INFO, type = CommandType.STRING, description = "The chain info of the volume")
+    private String chainInfo;
+
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
@@ -65,7 +70,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_VOLUME,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the volume to the end user or not.")
+ description = "an optional field, whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
     /////////////////////////////////////////////////////
@@ -92,7 +97,10 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
         return displayVolume;
     }
 
-/////////////////////////////////////////////////////
+    public String getChainInfo() {
+        return chainInfo;
+    }
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
@@ -145,7 +153,8 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(), getCustomId(), getEntityOwnerId());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
+                getCustomId(), getEntityOwnerId(), getChainInfo());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());

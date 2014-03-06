@@ -52,7 +52,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 
-@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0")
+@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public final class AddS3Cmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddS3Cmd.class.getName());
 

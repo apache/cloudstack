@@ -417,13 +417,13 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
 
-        if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan && profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
+        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.getSpecifyVlan()) {
             s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(),
                 profile.getAccountId(), profile.getReservationId());
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO,
                 EventTypes.EVENT_ZONE_VLAN_RELEASE,
-                "Released Zone Vlan: " + BroadcastDomainType.getValue(profile.getBroadcastUri()) + " for Network: " + profile.getId(), 0);
+                "Released Zone Vnet: " + BroadcastDomainType.getValue(profile.getBroadcastUri()) + " for Network: " + profile.getId(), 0);
         }
         profile.setBroadcastUri(null);
     }

@@ -30,7 +30,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class, entityType = { IAMEntityType.SSHKeyPair })
+@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class, entityType = {IAMEntityType.SSHKeyPair},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
     private static final String s_name = "registersshkeypairresponse";
@@ -102,7 +103,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
         SSHKeyPairResponse response = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
         response.setResponseName(getCommandName());
         response.setObjectName("keypair");
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

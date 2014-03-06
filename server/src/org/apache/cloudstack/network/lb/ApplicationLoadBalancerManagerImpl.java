@@ -104,7 +104,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
-        int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
+        int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId, Boolean forDisplay) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
         InsufficientVirtualNetworkCapcityException {
 
         //Validate LB rule guest network
@@ -126,11 +126,11 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Can't find the lb owner account");
         }
 
-        return createApplicationLoadBalancer(name, description, scheme, sourceIpNtwk, sourceIp, sourcePort, instancePort, algorithm, lbOwner, guestNtwk);
+        return createApplicationLoadBalancer(name, description, scheme, sourceIpNtwk, sourceIp, sourcePort, instancePort, algorithm, lbOwner, guestNtwk, forDisplay);
     }
 
     protected ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, Network sourceIpNtwk, String sourceIp,
-        int sourcePort, int instancePort, String algorithm, Account lbOwner, Network guestNtwk) throws NetworkRuleConflictException,
+        int sourcePort, int instancePort, String algorithm, Account lbOwner, Network guestNtwk, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientVirtualNetworkCapcityException {
 
         //Only Internal scheme is supported in this release
@@ -150,6 +150,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         ApplicationLoadBalancerRuleVO newRule =
             new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(), lbOwner.getId(), lbOwner.getDomainId(),
                 sourceIpAddr, sourceIpNtwk.getId(), scheme);
+
+        if (forDisplay != null) {
+            newRule.setDisplay(forDisplay);
+        }
 
         //4) Validate Load Balancing rule on the providers
         LoadBalancingRule loadBalancing =
@@ -379,6 +383,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         String keyword = cmd.getKeyword();
         Scheme scheme = cmd.getScheme();
         Long networkId = cmd.getNetworkId();
+        Boolean display = cmd.getDisplay();
 
         Map<String, String> tags = cmd.getTags();
 
@@ -404,6 +409,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         sb.and("sourceIpAddressNetworkId", sb.entity().getSourceIpNetworkId(), SearchCriteria.Op.EQ);
         sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         //list only load balancers having not null sourceIp/sourceIpNtwkId
         sb.and("sourceIpAddress", sb.entity().getSourceIp(), SearchCriteria.Op.NNULL);
@@ -463,6 +469,10 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
+        }
+
+        if (display != null) {
+            sc.setParameters("display", display);
         }
 
         Pair<List<ApplicationLoadBalancerRuleVO>, Integer> result = _lbDao.searchAndCount(sc, searchFilter);
@@ -529,7 +539,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
-    public ApplicationLoadBalancerRule deleteApplicationLoadBalancer(Long id, String customId) {
+    public ApplicationLoadBalancerRule updateApplicationLoadBalancer(Long id, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         ApplicationLoadBalancerRuleVO rule = _lbDao.findById(id);
 
@@ -537,9 +547,15 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Unable to find load balancer " + id);
         }
         _accountMgr.checkAccess(caller, null, true, rule);
+
         if (customId != null) {
             rule.setUuid(customId);
         }
+
+        if (forDisplay != null) {
+            rule.setDisplay(forDisplay);
+        }
+
         _lbDao.update(id, rule);
 
         return _lbDao.findById(id);

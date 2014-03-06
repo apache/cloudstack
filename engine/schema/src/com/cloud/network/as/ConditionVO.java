@@ -78,7 +78,7 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
         this.relationalOperator = relationalOperator;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public Date getCreated() {
@@ -122,7 +122,7 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public Date getRemoved() {
@@ -133,4 +133,5 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Condition;
     }
+
 }

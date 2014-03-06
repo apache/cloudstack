@@ -42,4 +42,6 @@ public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdenti
     public Date getRemoved();
 
     public boolean isPassive();
+
+    boolean isDisplay();
 }

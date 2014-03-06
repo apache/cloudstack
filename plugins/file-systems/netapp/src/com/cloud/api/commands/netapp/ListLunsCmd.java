@@ -40,7 +40,8 @@ import com.cloud.netapp.LunVO;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 
-@APICommand(name = "listLunsOnFiler", description = "List LUN", responseObject = ListLunsCmdResponse.class)
+@APICommand(name = "listLunsOnFiler", description = "List LUN", responseObject = ListLunsCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLunsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());
     private static final String s_name = "listlunresponse";

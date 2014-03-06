@@ -38,7 +38,8 @@ import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listLdapUsers", responseObject = LdapUserResponse.class, description = "Lists all LDAP Users", since = "4.2.0")
+@APICommand(name = "listLdapUsers", responseObject = LdapUserResponse.class, description = "Lists all LDAP Users", since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapListUsersCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(LdapListUsersCmd.class.getName());

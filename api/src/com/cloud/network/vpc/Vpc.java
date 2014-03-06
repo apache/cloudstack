@@ -72,4 +72,5 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
      */
     boolean isRestartRequired();
 
+    boolean isDisplay();
 }

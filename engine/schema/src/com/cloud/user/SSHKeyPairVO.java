@@ -120,5 +120,4 @@ public class SSHKeyPairVO implements SSHKeyPair {
     public IAMEntityType getEntityType() {
         return IAMEntityType.SSHKeyPair;
     }
-
 }

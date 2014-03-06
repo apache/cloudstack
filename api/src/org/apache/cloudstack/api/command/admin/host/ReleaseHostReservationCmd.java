@@ -32,7 +32,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseHostReservation", description = "Releases host reservation.", responseObject = SuccessResponse.class)
+@APICommand(name = "releaseHostReservation", description = "Releases host reservation.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseHostReservationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseHostReservationCmd.class.getName());
 

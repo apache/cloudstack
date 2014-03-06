@@ -39,7 +39,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class, entityType = { IAMEntityType.AutoScalePolicy })
+@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class, entityType = {IAMEntityType.AutoScalePolicy},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScalePolicyCmd.class.getName());
 
@@ -79,7 +80,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale policy");
         }

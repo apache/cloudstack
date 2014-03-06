@@ -28,7 +28,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class, entityType = { IAMEntityType.Account })
+@APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class, entityType = {IAMEntityType.Account},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
 

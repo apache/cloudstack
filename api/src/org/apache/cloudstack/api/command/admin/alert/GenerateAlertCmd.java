@@ -31,7 +31,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = "generateAlert", description = "Generates an alert", responseObject = SuccessResponse.class, since = "4.3")
+@APICommand(name = "generateAlert", description = "Generates an alert", responseObject = SuccessResponse.class, since = "4.3",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GenerateAlertCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(GenerateAlertCmd.class.getName());

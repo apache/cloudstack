@@ -41,7 +41,6 @@ public class QemuImgFile {
 
     public QemuImgFile(String fileName, PhysicalDiskFormat format) {
         this.fileName = fileName;
-        this.size = size;
         this.format = format;
     }
 

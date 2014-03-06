@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
@@ -27,7 +28,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVpnGateway", description = "Updates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, since = "4.4")
+@APICommand(name = "updateVpnGateway", description = "Updates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, since = "4.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVpnGatewayCmd.class.getName());
 
@@ -39,11 +41,18 @@ public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnGatewayResponse.class, required = true, description = "id of customer gateway")
     private Long id;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     public Long getId() {
         return id;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     @Override
@@ -75,7 +84,7 @@ public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        Site2SiteVpnGateway result = _s2sVpnService.updateVpnGateway(id, this.getCustomId());
+        Site2SiteVpnGateway result = _s2sVpnService.updateVpnGateway(id, this.getCustomId(), getDisplay());
         Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
         response.setResponseName(getCommandName());
     }

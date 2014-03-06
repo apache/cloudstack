@@ -34,9 +34,11 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Restricted,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListZonesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListZonesCmd.class.getName());
+
     private static final String s_name = "listzonesresponse";
 
     /////////////////////////////////////////////////////

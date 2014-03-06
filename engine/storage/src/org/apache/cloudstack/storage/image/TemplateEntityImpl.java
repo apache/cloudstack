@@ -288,8 +288,6 @@ public class TemplateEntityImpl implements TemplateEntity {
 
     @Override
     public IAMEntityType getEntityType() {
-        // TODO Auto-generated method stub
-        return null;
+        return IAMEntityType.VirtualMachineTemplate;
     }
-
 }
