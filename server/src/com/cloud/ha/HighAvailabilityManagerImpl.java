@@ -393,8 +393,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        HaWorkVO work =
-            new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1, vm.getUpdated());
+        if (hostId == null) {
+            hostId = vm.getLastHostId();
+        }
+
+        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled,
+                hostId != null ? hostId : 0L, vm.getState(), maxRetries + 1, vm.getUpdated());
         _haDao.persist(work);
 
         if (s_logger.isInfoEnabled()) {
@@ -962,7 +966,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
             final VMInstanceVO vm = _instanceDao.findById(vo.getId());
             if (vm.isHaEnabled()) {
-                if (vm.getState() == State.Stopped)
+                if (vm.getState() != State.Stopped)
                     s_logger.warn("Sanity check failed. postStateTransitionEvent reports transited to Stopped but VM " + vm + " is still at state " + vm.getState());
 
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
@@ -970,7 +974,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     @Override
                     protected void runInContext() {
                         try {
-                            scheduleRestart(vm, true);
+                            scheduleRestart(vm, false);
                         } catch (Exception e) {
                             s_logger.warn("Unexpected exception when scheduling a HA restart", e);
                         }
