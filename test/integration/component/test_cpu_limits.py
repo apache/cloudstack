@@ -30,10 +30,11 @@ from marvin.integration.lib.base import (
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        find_suitable_host,
+                                        findSuitableHostForMigration,
                                         get_resource_type
                                         )
 from marvin.integration.lib.utils import cleanup_resources
+from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 
 class Services:
@@ -251,7 +252,9 @@ class TestCPULimits(cloudstackTestCase):
         self.assertEqual(resource_count, expected_resource_count,
                          "Resource count should match with the expected resource count")
 
-        host = find_suitable_host(self.apiclient, self.vm)
+        host = findSuitableHostForMigration(self.apiclient, self.vm.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
         self.debug("Migrating instance: %s to host: %s" % (self.vm.name, host.name))
         try:
             self.vm.migrate(self.apiclient, host.id)
@@ -570,7 +573,9 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         self.assertEqual(resource_count, expected_resource_count,
             "Initial resource count should with the expected resource count")
 
-        host = find_suitable_host(self.apiclient, vm)
+        host = findSuitableHostForMigration(self.apiclient, vm.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
         self.debug("Migrating instance: %s to host: %s" %
                    (vm.name, host.name))
         try:
@@ -725,7 +730,9 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.assertEqual(resource_count_after_delete, expected_resource_count,
                 "Resource count should be less than before after deleting the instance")
 
-            host = find_suitable_host(self.apiclient, vm_2)
+            host = findSuitableHostForMigration(self.apiclient, vm_2.id)
+            if host is None:
+                self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
             self.debug("Migrating instance: %s to host: %s" % (vm_2.name,
                                                                host.name))
             try:

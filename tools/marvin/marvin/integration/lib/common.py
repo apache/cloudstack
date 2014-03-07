@@ -712,18 +712,23 @@ def update_resource_count(apiclient, domainid, accountid=None,
                               )
         return
 
-def find_suitable_host(apiclient, vm):
-        """Returns a suitable host for VM migration"""
+def findSuitableHostForMigration(apiclient, vmid):
+    """Returns a suitable host for VM migration"""
+    suitableHost = None
+    try:
+        hosts = Host.listForMigration(apiclient, virtualmachineid=vmid,
+                )
+    except Exception as e:
+        raise Exception("Exception while getting hosts list suitable for migration: %s" % e)
 
-        hosts = Host.list(apiclient,
-                          virtualmachineid=vm.id,
-                          listall=True)
+    suitablehosts = []
+    if isinstance(hosts, list) and len(hosts) > 0:
+        suitablehosts = [host for host in hosts if (str(host.resourcestate).lower() == "enabled"\
+                and str(host.state).lower() == "up")]
+        if len(suitablehosts)>0:
+            suitableHost = suitablehosts[0]
 
-        if isinstance(hosts, list):
-            assert len(hosts) > 0, "List host should return valid response"
-        else:
-            raise Exception("Exception: List host should return valid response")
-        return hosts[0]
+    return suitableHost
 
 def get_resource_type(resource_id):
         """Returns resource type"""
