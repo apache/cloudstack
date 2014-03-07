@@ -19,11 +19,12 @@ package com.cloud.agent.resource.virtualnetwork;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.routing.FinishAggregationCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -41,7 +42,6 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.routing.StartAggregationCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
@@ -84,7 +84,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     NetworkElementCommand _currentCmd;
     int _count;
     String _file;
-    boolean _aggregated = false;
 
     String ROUTERIP = "169.254.3.4";
     String ROUTERGUESTIP = "10.200.1.1";
@@ -138,8 +137,8 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     }
 
     private void verifyFile(NetworkElementCommand cmd, String path, String filename, String content) {
-        if (cmd instanceof FinishAggregationCommand) {
-            verifyFile((FinishAggregationCommand)cmd, path, filename, content);
+        if (cmd instanceof AggregationControlCommand) {
+            verifyFile((AggregationControlCommand)cmd, path, filename, content);
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             verifyFile((LoadBalancerConfigCommand)cmd, path, filename, content);
         }
@@ -190,10 +189,8 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             verifyArgs((IpAssocCommand)cmd, script, args);
         }
 
-        if (cmd instanceof StartAggregationCommand) {
-            return;
-        } else if (cmd instanceof FinishAggregationCommand) {
-            verifyArgs((FinishAggregationCommand)cmd, script, args);
+        if (cmd instanceof AggregationControlCommand) {
+            verifyArgs((AggregationControlCommand)cmd, script, args);
         }
     }
 
@@ -948,7 +945,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     @Test
     public void testAggregationCommands() {
         List<NetworkElementCommand> cmds = new LinkedList<>();
-        StartAggregationCommand startCmd = new StartAggregationCommand(ROUTERNAME, ROUTERIP, ROUTERGUESTIP);
+        AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, ROUTERNAME, ROUTERIP, ROUTERGUESTIP);
         cmds.add(startCmd);
         cmds.add(generateIpAssocCommand());
         cmds.add(generateIpAssocVpcCommand());
@@ -979,26 +976,22 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         cmds.add(generateSavePasswordCommand());
         cmds.add(generateVmDataCommand());
 
-        FinishAggregationCommand finishCmd = new FinishAggregationCommand(ROUTERNAME, ROUTERIP, ROUTERGUESTIP);
+        AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, ROUTERNAME, ROUTERIP, ROUTERGUESTIP);
         cmds.add(finishCmd);
 
         for (NetworkElementCommand cmd : cmds) {
             Answer answer = _resource.executeRequest(cmd);
-            if (!(cmd instanceof FinishAggregationCommand)) {
-                assertTrue(answer.getResult());
-            } else {
-
-            }
+            assertTrue(answer.getResult());
         }
     }
 
-    private void verifyArgs(FinishAggregationCommand cmd, String script, String args) {
+    private void verifyArgs(AggregationControlCommand cmd, String script, String args) {
         assertEquals(script, VRScripts.VR_CFG);
         assertTrue(args.startsWith("-c /var/cache/cloud/VR-"));
         assertTrue(args.endsWith(".cfg"));
     }
 
-    protected void verifyFile(FinishAggregationCommand cmd, String path, String filename, String content) {
+    protected void verifyFile(AggregationControlCommand cmd, String path, String filename, String content) {
         assertEquals(path, "/var/cache/cloud/");
         assertTrue(filename.startsWith("VR-"));
         assertTrue(filename.endsWith(".cfg"));

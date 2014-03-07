@@ -15,17 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.agent.api.routing;
+package com.cloud.network.element;
 
-public class FinishAggregationCommand extends NetworkElementCommand{
-    protected FinishAggregationCommand() {
-        super();
-    }
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 
-    public FinishAggregationCommand(String name, String ip, String guestIp) {
-        super();
-        this.setAccessDetail(NetworkElementCommand.ROUTER_NAME, name);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_IP, ip);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestIp);
-    }
+public interface AggregatedCommandExecutor {
+    public boolean prepareAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
+    public boolean completeAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
+    public boolean cleanupAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
 }

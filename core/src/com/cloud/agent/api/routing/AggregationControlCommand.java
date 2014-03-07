@@ -17,15 +17,28 @@
 
 package com.cloud.agent.api.routing;
 
-public class StartAggregationCommand extends NetworkElementCommand{
-    protected StartAggregationCommand() {
+public class AggregationControlCommand extends NetworkElementCommand{
+    public enum Action {
+        Start,
+        Finish,
+        Cleanup,
+    }
+
+    private Action action;
+
+    protected AggregationControlCommand() {
         super();
     }
 
-    public StartAggregationCommand(String name, String ip, String guestIp) {
+    public AggregationControlCommand(Action action, String name, String ip, String guestIp) {
         super();
+        this.action = action;
         this.setAccessDetail(NetworkElementCommand.ROUTER_NAME, name);
         this.setAccessDetail(NetworkElementCommand.ROUTER_IP, ip);
         this.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestIp);
+    }
+
+    public Action getAction() {
+        return action;
     }
 }
