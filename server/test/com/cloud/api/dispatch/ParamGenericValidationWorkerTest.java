@@ -16,15 +16,14 @@
 // under the License.
 package com.cloud.api.dispatch;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -33,6 +32,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,8 +42,9 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-
-import org.apache.log4j.Logger;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 
 public class ParamGenericValidationWorkerTest {
 
@@ -55,9 +58,9 @@ public class ParamGenericValidationWorkerTest {
         final ParamGenericValidationWorker genValidationWorker = new ParamGenericValidationWorker();
 
         // We create a mock logger to verify the result
-        ParamGenericValidationWorker.s_logger = new Logger(""){
+        ParamGenericValidationWorker.s_logger = new Logger("") {
             @Override
-            public void warn(final Object msg){
+            public void warn(final Object msg) {
                 loggerOutput = msg.toString();
             }
         };
@@ -74,8 +77,15 @@ public class ParamGenericValidationWorkerTest {
         params.put(ApiConstants.COMMAND, "");
         params.put("addedParam", "");
 
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        CallContext.register(user, account);
         // Execute
-        driveTest(cmd, params);
+        try {
+            driveTest(cmd, params);
+        } finally {
+            CallContext.unregister();
+        }
 
         // Assert
         assertEquals("There should be no errors since there are no unknown parameters for this command class", null, loggerOutput);
@@ -91,8 +101,16 @@ public class ParamGenericValidationWorkerTest {
         params.put("addedParam", "");
         params.put(unknownParamKey, "");
 
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        CallContext.register(user, account);
+
         // Execute
-        driveTest(cmd, params);
+        try {
+            driveTest(cmd, params);
+        } finally {
+            CallContext.unregister();
+        }
 
         // Assert
         assertTrue("There should be error msg, since there is one unknown parameter", loggerOutput.contains(unknownParamKey));
@@ -102,6 +120,7 @@ public class ParamGenericValidationWorkerTest {
     @Test
     public void testHandleWithoutAuthorization() throws ResourceAllocationException {
         final short type = Account.ACCOUNT_TYPE_NORMAL;
+
         driveAuthTest(type);
 
         // Assert
@@ -112,25 +131,33 @@ public class ParamGenericValidationWorkerTest {
     @Test
     public void testHandleWithAuthorization() throws ResourceAllocationException {
         final short type = Account.ACCOUNT_TYPE_ADMIN;
-        driveAuthTest(type);
 
+        driveAuthTest(type);
         // Assert
         assertEquals("There should be no errors since parameters have authorization", null, loggerOutput);
     }
 
     protected void driveAuthTest(final short type) {
+
         // Prepare
         final BaseCmd cmd = new FakeCmdWithRoleAdmin();
         final Account account = mock(Account.class);
         ((FakeCmdWithRoleAdmin)cmd).account = account;
         when(account.getType()).thenReturn(type);
+        User user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        CallContext.register(user, account);
+
         final Map<String, String> params = new HashMap<String, String>();
         params.put(ApiConstants.COMMAND, "");
         params.put("addedParam", "");
         params.put("paramWithRole", "");
 
         // Execute
-        driveTest(cmd, params);
+        try {
+            driveTest(cmd, params);
+        } finally {
+            CallContext.unregister();
+        }
     }
 }
 
@@ -142,11 +169,6 @@ class FakeCmd extends BaseCmd {
     private String addedParam;
 
     public Account account;
-
-    @Override
-    protected Account getCurrentContextAccount() {
-        return account;
-    }
 
     //
     // Dummy methods for mere correct compilation

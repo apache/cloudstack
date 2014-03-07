@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.user.User;
 
 /**
  * queryAsyncJobResult API command.
@@ -92,37 +89,4 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public Object getJob() {
         return job;
     }
-
-    protected long saveStartedEvent() {
-        return saveStartedEvent(getEventType(), "Executing job for " + getEventDescription(), getStartEventId());
-    }
-
-    protected long saveStartedEvent(String eventType, String description, Long startEventId) {
-        CallContext ctx = CallContext.current();
-        Long userId = ctx.getCallingUserId();
-        userId = (userId == null) ? User.UID_SYSTEM : userId;
-        Long startEvent = startEventId;
-        if (startEvent == null) {
-            startEvent = 0L;
-        }
-        return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description,
-                isDisplayResourceEnabled(), startEvent);
-    }
-
-    protected long saveCompletedEvent(String level, String description) {
-        return saveCompletedEvent(level, getEventType(), description, getStartEventId());
-    }
-
-    protected long saveCompletedEvent(String level, String eventType, String description, Long startEventId) {
-        CallContext ctx = CallContext.current();
-        Long userId = ctx.getCallingUserId();
-        userId = (userId == null) ? User.UID_SYSTEM : userId;
-        Long startEvent = startEventId;
-        if (startEvent == null) {
-            startEvent = 0L;
-        }
-        return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description,
-                isDisplayResourceEnabled(), startEvent);
-    }
-
 }

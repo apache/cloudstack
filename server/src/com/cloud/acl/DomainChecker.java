@@ -19,12 +19,10 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.api.BaseCmd;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -104,7 +102,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
-                if (BaseCmd.isRootAdmin(caller.getType()) || (owner.getId() == caller.getId())) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || (owner.getId() == caller.getId())) {
                     return true;
                 }
                 //special handling for the project case
@@ -121,7 +119,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
                 if (accessType != null && accessType == AccessType.ModifyEntry) {
-                    if (!BaseCmd.isRootAdmin(caller.getType()) && owner.getId() != caller.getId()) {
+                    if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");

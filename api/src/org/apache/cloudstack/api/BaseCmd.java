@@ -38,16 +38,12 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
-import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
@@ -65,7 +61,6 @@ import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
-import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
@@ -88,35 +83,27 @@ import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
-
-    public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
-    public static final int PROGRESS_INSTANCE_CREATED = 1;
-
     public static final String RESPONSE_TYPE_XML = "xml";
     public static final String RESPONSE_TYPE_JSON = "json";
-
-    public enum CommandType {
+    public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
+    public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
+    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    protected static final Map<Class<?>, List<Field>> fieldsForCmdClass = new HashMap<Class<?>, List<Field>>();
+    public static enum HTTPMethod {
+        GET, POST, PUT, DELETE
+    }
+    public static enum CommandType {
         BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
-    public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
-    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-
-    protected static final Map<Class<?>, List<Field>> fieldsForCmdClass = new HashMap<Class<?>, List<Field>>();
-
     private Object _responseObject;
     private Map<String, String> fullUrlParams;
-
-    public enum HTTPMethod {
-        GET, POST, PUT, DELETE
-    }
-
     private HTTPMethod httpMethod;
-
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
+
 
     @Inject
     public ConfigurationService _configService;
@@ -174,7 +161,6 @@ public abstract class BaseCmd {
     public NetworkACLService _networkACLService;
     @Inject
     public Site2SiteVpnService _s2sVpnService;
-
     @Inject
     public QueryService _queryService;
     @Inject
@@ -282,10 +268,6 @@ public abstract class BaseCmd {
         _responseObject = responseObject;
     }
 
-    public ManagementService getMgmtServiceRef() {
-        return _mgr;
-    }
-
     public static String getDateString(final Date date) {
         if (date == null) {
             return "";
@@ -318,10 +300,6 @@ public abstract class BaseCmd {
         return filteredFields;
     }
 
-    protected Account getCurrentContextAccount() {
-        return CallContext.current().getCallingAccount();
-    }
-
     /**
      * This method doesn't return all the @{link Parameter}, but only the ones exposed
      * and allowed for current @{link RoleType}. This method will get the fields for a given
@@ -334,7 +312,7 @@ public abstract class BaseCmd {
     public List<Field> getParamFields() {
         final List<Field> allFields = getAllFieldsForClass(this.getClass());
         final List<Field> validFields = new ArrayList<Field>();
-        final Account caller = getCurrentContextAccount();
+        final Account caller = CallContext.current().getCallingAccount();
 
         for (final Field field : allFields) {
             final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
@@ -362,72 +340,12 @@ public abstract class BaseCmd {
         return validFields;
     }
 
-    protected long getInstanceIdFromJobSuccessResult(final String result) {
-        s_logger.debug("getInstanceIdFromJobSuccessResult not overridden in subclass " + this.getClass().getName());
-        return 0;
-    }
-
-    public static boolean isAdmin(final short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
-    public static boolean isRootAdmin(final short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN));
-    }
-
     public void setFullUrlParams(final Map<String, String> map) {
         fullUrlParams = map;
     }
 
     public Map<String, String> getFullUrlParams() {
         return fullUrlParams;
-    }
-
-    public Long finalyzeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
-        if (accountName != null) {
-            if (domainId == null) {
-                throw new InvalidParameterValueException("Account must be specified with domainId parameter");
-            }
-
-            final Domain domain = _domainService.getDomain(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id");
-            }
-
-            final Account account = _accountService.getActiveAccountByName(accountName, domainId);
-            if (account != null && account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
-                if (!enabledOnly || account.getState() == Account.State.enabled) {
-                    return account.getId();
-                } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() +
-                        " as it's no longer active");
-                }
-            } else {
-                // idList is not used anywhere, so removed it now
-                //List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                //idList.add(new IdentityProxy("domain", domainId, "domainId"));
-                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id");
-            }
-        }
-
-        if (projectId != null) {
-            final Project project = _projectService.getProject(projectId);
-            if (project != null) {
-                if (!enabledOnly || project.getState() == Project.State.Active) {
-                    return project.getProjectAccountId();
-                } else {
-                    final PermissionDeniedException ex =
-                        new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
-                            " as it's no longer active");
-                    ex.addProxyObject(project.getUuid(), "projectId");
-                    throw ex;
-                }
-            } else {
-                throw new InvalidParameterValueException("Unable to find project by id");
-            }
-        }
-        return null;
     }
 
     /**
