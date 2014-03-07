@@ -1091,6 +1091,7 @@ public class VirtualRoutingResource {
                 List<ConfigItem> cfg = generateCommandCfg(command);
                 if (cfg == null) {
                     s_logger.warn("Unknown commands for VirtualRoutingResource, but continue: " + cmd.toString());
+                    continue;
                 }
 
                 for (ConfigItem c : cfg) {
