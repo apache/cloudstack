@@ -659,8 +659,24 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private Runnable getHeartbeatTask() {
         return new ManagedContextRunnable() {
+
             @Override
             protected void runInContext() {
+                GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerHeartbeat");
+                try {
+                    if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                        try {
+                            reallyRun();
+                        } finally {
+                            scanLock.unlock();
+                        }
+                    }
+                } finally {
+                    scanLock.releaseRef();
+                }
+            }
+
+            protected void reallyRun() {
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
