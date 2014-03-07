@@ -17,22 +17,28 @@
 
 package org.apache.cloudstack.api;
 
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -74,6 +80,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
@@ -97,7 +104,9 @@ public abstract class BaseCmd {
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
     private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
-    private Object _responseObject = null;
+    protected static final Map<Class<?>, List<Field>> fieldsForCmdClass = new HashMap<Class<?>, List<Field>>();
+
+    private Object _responseObject;
     private Map<String, String> fullUrlParams;
 
     public enum HTTPMethod {
@@ -205,7 +214,7 @@ public abstract class BaseCmd {
         return httpMethod;
     }
 
-    public void setHttpMethod(String method) {
+    public void setHttpMethod(final String method) {
         if (method != null) {
             if (method.equalsIgnoreCase("GET"))
                 httpMethod = HTTPMethod.GET;
@@ -227,11 +236,35 @@ public abstract class BaseCmd {
         return responseType;
     }
 
-    public void setResponseType(String responseType) {
+    public void setResponseType(final String responseType) {
         this.responseType = responseType;
     }
 
+    /**
+     * For some reason this method does not return the actual command name, but more a name that
+     * is used to create the response. So you can expect for a XCmd a value like xcmdresponse. Anyways
+     * this methods is used in too many places so for now instead of changing it we just create another
+     * method {@link BaseCmd#getActualCommandName()} that returns the value from {@link APICommand#name()}
+     *
+     * @return
+     */
     public abstract String getCommandName();
+
+
+    /**
+     * Gets the CommandName based on the class annotations: the value from {@link APICommand#name()}
+     *
+     * @return the value from {@link APICommand#name()}
+     */
+    public String getActualCommandName() {
+        String cmdName = null;
+        if (this.getClass().getAnnotation(APICommand.class) != null) {
+            cmdName = this.getClass().getAnnotation(APICommand.class).name();
+        } else {
+            cmdName = this.getClass().getName();
+        }
+       return cmdName;
+    }
 
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
@@ -245,7 +278,7 @@ public abstract class BaseCmd {
         return _responseObject;
     }
 
-    public void setResponseObject(Object responseObject) {
+    public void setResponseObject(final Object responseObject) {
         _responseObject = responseObject;
     }
 
@@ -253,7 +286,7 @@ public abstract class BaseCmd {
         return _mgr;
     }
 
-    public static String getDateString(Date date) {
+    public static String getDateString(final Date date) {
         if (date == null) {
             return "";
         }
@@ -264,101 +297,86 @@ public abstract class BaseCmd {
         return formattedString;
     }
 
-    // FIXME: move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public Map<String, Object> unpackParams(Map<String, String> params) {
-        Map<String, Object> lowercaseParams = new HashMap<String, Object>();
-        for (String key : params.keySet()) {
-            int arrayStartIndex = key.indexOf('[');
-            int arrayStartLastIndex = key.lastIndexOf('[');
-            if (arrayStartIndex != arrayStartLastIndex) {
-                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                    "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+    protected List<Field> getAllFieldsForClass(final Class<?> clazz) {
+        List<Field> filteredFields = fieldsForCmdClass.get(clazz);
+
+        // If list of fields was not cached yet
+        if (filteredFields == null) {
+            final List<Field> allFields = ReflectUtil.getAllFieldsForClass(this.getClass(), BaseCmd.class);
+            filteredFields = new ArrayList<Field>();
+
+            for (final Field field : allFields) {
+                final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
+                if ((parameterAnnotation != null) && parameterAnnotation.expose()) {
+                    filteredFields.add(field);
+                }
             }
 
-            if (arrayStartIndex > 0) {
-                int arrayEndIndex = key.indexOf(']');
-                int arrayEndLastIndex = key.lastIndexOf(']');
-                if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
-                    // malformed parameter
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-                }
-
-                // Now that we have an array object, check for a field name in the case of a complex object
-                int fieldIndex = key.indexOf('.');
-                String fieldName = null;
-                if (fieldIndex < arrayEndIndex) {
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-                } else {
-                    fieldName = key.substring(fieldIndex + 1);
-                }
-
-                // parse the parameter name as the text before the first '[' character
-                String paramName = key.substring(0, arrayStartIndex);
-                paramName = paramName.toLowerCase();
-
-                Map<Integer, Map> mapArray = null;
-                Map<String, Object> mapValue = null;
-                String indexStr = key.substring(arrayStartIndex + 1, arrayEndIndex);
-                int index = 0;
-                boolean parsedIndex = false;
-                try {
-                    if (indexStr != null) {
-                        index = Integer.parseInt(indexStr);
-                        parsedIndex = true;
-                    }
-                } catch (NumberFormatException nfe) {
-                    s_logger.warn("Invalid parameter " + key + " received, unable to parse object array, returning an error.");
-                }
-
-                if (!parsedIndex) {
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-                }
-
-                Object value = lowercaseParams.get(paramName);
-                if (value == null) {
-                    // for now, assume object array with sub fields
-                    mapArray = new HashMap<Integer, Map>();
-                    mapValue = new HashMap<String, Object>();
-                    mapArray.put(Integer.valueOf(index), mapValue);
-                } else if (value instanceof Map) {
-                    mapArray = (HashMap)value;
-                    mapValue = mapArray.get(Integer.valueOf(index));
-                    if (mapValue == null) {
-                        mapValue = new HashMap<String, Object>();
-                        mapArray.put(Integer.valueOf(index), mapValue);
-                    }
-                }
-
-                // we are ready to store the value for a particular field into the map for this object
-                mapValue.put(fieldName, params.get(key));
-
-                lowercaseParams.put(paramName, mapArray);
-            } else {
-                lowercaseParams.put(key.toLowerCase(), params.get(key));
-            }
+            // Cache the prepared list for future use
+            fieldsForCmdClass.put(clazz, filteredFields);
         }
-        return lowercaseParams;
+        return filteredFields;
     }
 
-    protected long getInstanceIdFromJobSuccessResult(String result) {
+    protected Account getCurrentContextAccount() {
+        return CallContext.current().getCallingAccount();
+    }
+
+    /**
+     * This method doesn't return all the @{link Parameter}, but only the ones exposed
+     * and allowed for current @{link RoleType}. This method will get the fields for a given
+     * Cmd class only once and never again, so in case of a dynamic update the result would
+     * be obsolete (this might be a plugin update. It is agreed upon that we will not do
+     * upgrades dynamically but in case we come back on that decision we need to revisit this)
+     *
+     * @return
+     */
+    public List<Field> getParamFields() {
+        final List<Field> allFields = getAllFieldsForClass(this.getClass());
+        final List<Field> validFields = new ArrayList<Field>();
+        final Account caller = getCurrentContextAccount();
+
+        for (final Field field : allFields) {
+            final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
+
+            //TODO: Annotate @Validate on API Cmd classes, FIXME how to process Validate
+            final RoleType[] allowedRoles = parameterAnnotation.authorized();
+            boolean roleIsAllowed = true;
+            if (allowedRoles.length > 0) {
+                roleIsAllowed = false;
+                for (final RoleType allowedRole : allowedRoles) {
+                    if (allowedRole.getValue() == caller.getType()) {
+                        roleIsAllowed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (roleIsAllowed) {
+                validFields.add(field);
+            } else {
+                s_logger.debug("Ignoring paremeter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+            }
+        }
+
+        return validFields;
+    }
+
+    protected long getInstanceIdFromJobSuccessResult(final String result) {
         s_logger.debug("getInstanceIdFromJobSuccessResult not overridden in subclass " + this.getClass().getName());
         return 0;
     }
 
-    public static boolean isAdmin(short accountType) {
+    public static boolean isAdmin(final short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
             (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
-    public static boolean isRootAdmin(short accountType) {
+    public static boolean isRootAdmin(final short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN));
     }
 
-    public void setFullUrlParams(Map<String, String> map) {
+    public void setFullUrlParams(final Map<String, String> map) {
         fullUrlParams = map;
     }
 
@@ -366,18 +384,18 @@ public abstract class BaseCmd {
         return fullUrlParams;
     }
 
-    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+    public Long finalyzeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
             }
 
-            Domain domain = _domainService.getDomain(domainId);
+            final Domain domain = _domainService.getDomain(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find domain by id");
             }
 
-            Account account = _accountService.getActiveAccountByName(accountName, domainId);
+            final Account account = _accountService.getActiveAccountByName(accountName, domainId);
             if (account != null && account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
@@ -394,12 +412,12 @@ public abstract class BaseCmd {
         }
 
         if (projectId != null) {
-            Project project = _projectService.getProject(projectId);
+            final Project project = _projectService.getProject(projectId);
             if (project != null) {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    PermissionDeniedException ex =
+                    final PermissionDeniedException ex =
                         new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
                             " as it's no longer active");
                     ex.addProxyObject(project.getUuid(), "projectId");
@@ -410,6 +428,13 @@ public abstract class BaseCmd {
             }
         }
         return null;
+    }
+
+    /**
+     * To be overwritten by any class who needs specific validation
+     */
+    public void validateSpecificParameters(final Map<String, String> params){
+        // To be overwritten by any class who needs specific validation
     }
 
     /**

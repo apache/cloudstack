@@ -105,7 +105,6 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
-import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -4195,7 +4194,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         for(DomainRouterVO router: routers){
             if(!checkRouterVersion(router)){
                     s_logger.debug("Upgrading template for router: "+router.getId());
-                    ApiDispatcher.getInstance();
                     Map<String, String> params = new HashMap<String, String>();
                     params.put("ctxUserId", "1");
                     params.put("ctxAccountId", "" + router.getAccountId());
