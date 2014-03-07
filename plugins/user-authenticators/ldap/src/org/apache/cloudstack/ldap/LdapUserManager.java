@@ -25,6 +25,8 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.*;
 
+import org.apache.commons.lang.StringUtils;
+
 public class LdapUserManager {
 
     @Inject
@@ -181,6 +183,10 @@ public class LdapUserManager {
 	controls.setSearchScope(_ldapConfiguration.getScope());
 	controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
-	return context.search(_ldapConfiguration.getBaseDn(), generateSearchFilter(username), controls);
+        String basedn = _ldapConfiguration.getBaseDn();
+        if (StringUtils.isBlank(basedn)) {
+            throw new IllegalArgumentException("ldap basedn is not configured");
+        }
+        return context.search(basedn, generateSearchFilter(username), controls);
     }
 }
