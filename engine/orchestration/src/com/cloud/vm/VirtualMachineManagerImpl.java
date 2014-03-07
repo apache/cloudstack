@@ -1233,62 +1233,65 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachine vm = profile.getVirtualMachine();
         State state = vm.getState();
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
-        if (state == State.Starting) {
-            Step step = work.getStep();
-            if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
-                s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
-                return false;
-            }
+        try {
+            if (state == State.Starting) {
+                Step step = work.getStep();
+                if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
+                    s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
+                    return false;
+                }
 
-            if (step == Step.Started || step == Step.Starting || step == Step.Release) {
+                if (step == Step.Started || step == Step.Starting || step == Step.Release) {
+                    if (vm.getHostId() != null) {
+                        if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                            s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
+                            return false;
+                        }
+                    }
+                }
+
+                if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Starting) {
+                    s_logger.debug("Cleanup is not needed for vm " + vm + "; work state is incorrect: " + step);
+                    return true;
+                }
+            } else if (state == State.Stopping) {
                 if (vm.getHostId() != null) {
                     if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
-                        s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
+                        s_logger.warn("Failed to stop vm " + vm + " in " + State.Stopping + " state as a part of cleanup process");
                         return false;
                     }
                 }
+            } else if (state == State.Migrating) {
+                if (vm.getHostId() != null) {
+                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                        s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
+                        return false;
+                    }
+                }
+                if (vm.getLastHostId() != null) {
+                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                        s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
+                        return false;
+                    }
+                }
+            } else if (state == State.Running) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Running + " state as a part of cleanup process");
+                    return false;
+                }
+            }
+        } finally {
+            try {
+                _networkMgr.release(profile, cleanUpEvenIfUnableToStop);
+                s_logger.debug("Successfully released network resources for the vm " + vm);
+            } catch (Exception e) {
+                s_logger.warn("Unable to release some network resources.", e);
             }
 
-            if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Starting) {
-                s_logger.debug("Cleanup is not needed for vm " + vm + "; work state is incorrect: " + step);
-                return true;
-            }
-        } else if (state == State.Stopping) {
-            if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
-                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Stopping + " state as a part of cleanup process");
-                    return false;
-                }
-            }
-        } else if (state == State.Migrating) {
-            if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
-                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
-                    return false;
-                }
-            }
-            if (vm.getLastHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
-                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
-                    return false;
-                }
-            }
-        } else if (state == State.Running) {
-            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
-                s_logger.warn("Failed to stop vm " + vm + " in " + State.Running + " state as a part of cleanup process");
-                return false;
-            }
+            volumeMgr.release(profile);
+            s_logger.debug("Successfully cleanued up resources for the vm " + vm + " in " + state + " state");
         }
 
-        try {
-            _networkMgr.release(profile, cleanUpEvenIfUnableToStop);
-            s_logger.debug("Successfully released network resources for the vm " + vm);
-        } catch (Exception e) {
-            s_logger.warn("Unable to release some network resources.", e);
-        }
-
-        volumeMgr.release(profile);
-        s_logger.debug("Successfully cleanued up resources for the vm " + vm + " in " + state + " state");
         return true;
     }
 
