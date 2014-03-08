@@ -913,8 +913,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         work.setDateTaken(null);
                     }
                 } catch (Exception e) {
-                    s_logger.error("Terminating " + work, e);
-                    work.setStep(Step.Error);
+                    s_logger.warn("Encountered unhandled exception during HA process, reschedule retry", e);
+
+                    long nextTime = (System.currentTimeMillis() >> 10) + _restartRetryInterval;
+
+                    s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
+                    work.setTimeToTry(nextTime);
+                    work.setServerId(null);
+                    work.setDateTaken(null);
                 }
                 _haDao.update(work.getId(), work);
             } catch (final Throwable th) {
