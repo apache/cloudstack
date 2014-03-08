@@ -25,6 +25,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.network.RemoteAccessVpn;
 
 @Entity
@@ -69,19 +71,19 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     protected boolean display = true;
 
     public RemoteAccessVpnVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange, String presharedKey) {
         this.accountId = accountId;
-        this.serverAddressId = publicIpId;
+        serverAddressId = publicIpId;
         this.ipRange = ipRange;
-        this.ipsecPresharedKey = presharedKey;
+        ipsecPresharedKey = presharedKey;
         this.localIp = localIp;
         this.domainId = domainId;
         this.networkId = networkId;
-        this.state = State.Added;
-        this.uuid = UUID.randomUUID().toString();
+        state = State.Added;
+        uuid = UUID.randomUUID().toString();
         this.vpcId = vpcId;
     }
 
@@ -163,5 +165,10 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.RemoteAccessVpn;
     }
 }

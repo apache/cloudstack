@@ -269,10 +269,6 @@ public interface ManagementService {
      */
     String generateRandomPassword();
 
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
-
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId);
-
     /**
      * Search registered key pairs for the logged in user.
      *

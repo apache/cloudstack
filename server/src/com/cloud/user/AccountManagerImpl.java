@@ -2326,4 +2326,52 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserAccount getUserByApiKey(String apiKey) {
         return _userAccountDao.getUserByApiKey(apiKey);
     }
+
+    @Override
+    public Long finalyzeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
+        if (accountName != null) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("Account must be specified with domainId parameter");
+            }
+
+            final Domain domain = _domainMgr.getDomain(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain by id");
+            }
+
+            final Account account = getActiveAccountByName(accountName, domainId);
+            if (account != null && account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+                if (!enabledOnly || account.getState() == Account.State.enabled) {
+                    return account.getId();
+                } else {
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() +
+                            " as it's no longer active");
+                }
+            } else {
+                // idList is not used anywhere, so removed it now
+                // List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                // idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id");
+            }
+        }
+
+        if (projectId != null) {
+            final Project project = _projectMgr.getProject(projectId);
+            if (project != null) {
+                if (!enabledOnly || project.getState() == Project.State.Active) {
+                    return project.getProjectAccountId();
+                } else {
+                    final PermissionDeniedException ex =
+                            new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
+                                    " as it's no longer active");
+                    ex.addProxyObject(project.getUuid(), "projectId");
+                    throw ex;
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find project by id");
+            }
+        }
+        return null;
+    }
+
 }

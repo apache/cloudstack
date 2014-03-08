@@ -73,6 +73,10 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "the max iops of the disk offering")
     private Long maxIops;
 
+    @SerializedName(ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE)
+    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    private Integer hypervisorSnapshotReserve;
+
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the tags for the disk offering")
     private String tags;
@@ -208,6 +212,14 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setMaxIops(Long maxIops) {
         this.maxIops = maxIops;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
+    }
+
+    public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
+        this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
 
     public String getCacheMode() {

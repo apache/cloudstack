@@ -20,6 +20,9 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -32,7 +35,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -275,7 +277,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     @Override
     public String getEventDescription() {
         Network network = _networkService.getNetwork(networkId);
-        return ("Creating firewall rule for network: " + network + " for protocol:" + this.getProtocol());
+        return ("Creating firewall rule for network: " + network + " for protocol:" + getProtocol());
     }
 
     @Override
@@ -352,6 +354,11 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         } else {
             return true;
         }
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.FirewallRule;
     }
 
 }

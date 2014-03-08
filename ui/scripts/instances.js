@@ -172,10 +172,10 @@
 
             advSearchFields: {
                 name: {
-                    label: 'Name'
+                    label: 'label.name'
                 },
                 zoneid: {
-                    label: 'Zone',
+                    label: 'label.zone',
                     select: function(args) {
                         $.ajax({
                             url: createURL('listZones'),
@@ -199,7 +199,7 @@
                 },
 
                 domainid: {
-                    label: 'Domain',
+                    label: 'label.domain',
                     select: function(args) {
                         if (isAdmin() || isDomainAdmin()) {
                             $.ajax({
@@ -241,7 +241,7 @@
                     }
                 },
                 account: {
-                    label: 'Account',
+                    label: 'label.account',
                     isHidden: function(args) {
                         if (isAdmin() || isDomainAdmin())
                             return false;
@@ -251,10 +251,10 @@
                 },
 
                 tagKey: {
-                    label: 'Tag Key'
+                    label: 'label.tag.key'
                 },
                 tagValue: {
-                    label: 'Tag Value'
+                    label: 'label.tag.value'
                 }
             },
 
@@ -464,7 +464,7 @@
                             },
                             complete: function(args) {
                                 if (args.password != null) {
-                                    return 'Password of the VM is ' + args.password;
+                                    return 'label.vm.password' + ' ' + args.password;
                                 }
 
                                 return false;
@@ -478,7 +478,7 @@
                         label: 'label.action.stop.instance',
                         compactLabel: 'label.stop',
                         createForm: {
-                            title: 'Stop instance',
+                            title: 'notification.stop.instance',
                             desc: 'message.action.stop.instance',
                             fields: {
                                 forced: {
@@ -764,7 +764,7 @@
                                                 var networks = json.listnetworksresponse.network;
                                                 var items = [{
                                                     id: -1,
-                                                    description: 'Please select a tier'
+                                                    description: 'message.select.tier'
                                                 }];
                                                 $(networks).each(function() {
                                                     items.push({
@@ -1434,7 +1434,7 @@
                             	var description = '';                            	
                             	var vmObj = args.jsonObj;                            	
                             	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
-                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                            		description = 'message.read.admin.guide.scaling.up';
                             	}                             
                                 return description;                  	                
                             },

@@ -2640,63 +2640,127 @@ div.detail-group.actions td {
   margin-right: -14px;
 }
 
-#navigation ul li.last.active,
-#navigation ul li.last:hover {
-}
-
 /*Navigation icons*/
 #navigation ul li.dashboard span.icon,
 #navigation ul li.dashboard-user span.icon {
   background-position: -14px -18px;
 }
 
+#navigation ul li.dashboard:hover span.icon,
+#navigation ul li.dashboard-user:hover span.icon span.icon,
+#navigation ul li.dashboard.active span.icon,
+#navigation ul li.dashboard-user.active span.icon span.icon {
+  background-position: -23px -687px;
+}
+
 #navigation ul li.instances span.icon {
-  background-position: -73px -23px;
+  background-position: -73px -18px;
+}
+
+#navigation ul li.instances.active span.icon,
+#navigation ul li.instances:hover span.icon {
+  background-position: -82px -686px;
 }
 
 #navigation ul li.affinityGroups span.icon {
   background-position: -73px -87px;
 }
 
+#navigation ul li.affinityGroups.active span.icon,
+#navigation ul li.affinityGroups:hover span.icon {
+  background-position: -82px -755px;
+}
+
 #navigation ul li.storage span.icon {
-  background-position: -127px -23px;
+  background-position: -127px -19px;
+}
+
+#navigation ul li.storage.active span.icon,
+#navigation ul li.storage:hover span.icon {
+  background-position: -137px -687px;
 }
 
 #navigation ul li.network span.icon {
-  background-position: -180px -23px;
+  background-position: -180px -20px;
+}
+
+#navigation ul li.network.active span.icon,
+#navigation ul li.network:hover span.icon {
+  background-position: -189px -690px;
 }
 
 #navigation ul li.templates span.icon {
-  background-position: -233px -23px;
+  background-position: -233px -21px;
+}
+
+#navigation ul li.templates.active span.icon,
+#navigation ul li.templates:hover span.icon {
+  background-position: -242px -690px;
 }
 
 #navigation ul li.projects span.icon {
-  background-position: -294px -23px;
+  background-position: -294px -21px;
+}
+
+#navigation ul li.projects.active span.icon,
+#navigation ul li.projects:hover span.icon {
+  background-position: -303px -690px;
 }
 
 #navigation ul li.events span.icon {
   background-position: -351px -23px;
 }
 
+#navigation ul li.events.active span.icon,
+#navigation ul li.events:hover span.icon {
+  background-position: -359px -692px;
+}
+
 #navigation ul li.configuration span.icon {
-  background-position: -400px -24px;
+  background-position: -401px -21px;
+}
+
+#navigation ul li.configuration.active span.icon,
+#navigation ul li.configuration:hover span.icon {
+  background-position: -410px -690px;
 }
 
 #navigation ul li.global-settings span.icon {
   background-image: url(../images/sprites.png);
-  background-position: -141px -241px;
+  background-position: -143px -240px;
+}
+
+#navigation ul li.global-settings.active span.icon,
+#navigation ul li.global-settings:hover span.icon {
+  background-image: url(../images/sprites.png);
+  background-position: -366px -239px;
 }
 
 #navigation ul li.accounts span.icon {
-  background-position: -458px -24px;
+  background-position: -458px -19px;
+}
+
+#navigation ul li.accounts.active span.icon,
+#navigation ul li.accounts:hover span.icon {
+  background-position: -467px -688px;
 }
 
 #navigation ul li.system span.icon {
-  background-position: -565px -24px;
+  background-position: -569px -24px;
+}
+
+#navigation ul li.system.active span.icon,
+#navigation ul li.system:hover span.icon {
+  background-position: -578px -692px;
 }
 
 #navigation ul li.domains span.icon {
-  background-position: -519px -24px;
+  background-position: -520px -21px;
+}
+
+#navigation ul li.domains.active span.icon,
+#navigation ul li.domains:hover span.icon {
+  background-position: -529px -690px;
 }
 
 #navigation ul li.plugins span.icon {
@@ -2704,7 +2768,12 @@ div.detail-group.actions td {
 }
 
 #navigation ul li.regions span.icon {
-  background: url(../images/sprites.png) no-repeat -141px -381px;
+  background: url(../images/sprites.png) no-repeat -141px -379px;
+}
+
+#navigation ul li.regions.active span.icon,
+#navigation ul li.regions:hover span.icon {
+  background: url(../images/sprites.png) no-repeat -365px -377px;
 }
 
 /*Browser*/
@@ -4474,7 +4543,6 @@ Dialogs*/
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
   border: 1px solid #FF7070;
-  border-left-width: 20px;
   background: #FFEFEF;
 }
 
@@ -5982,11 +6050,24 @@ label.error {
   border-radius: 4px;
 }
 
+.multi-wizard.instance-wizard .section.custom-iops {
+  position: relative;
+  background: #F4F4F4;
+  padding: 7px;
+  border-radius: 4px;
+}
+
 .multi-wizard.instance-wizard .section.custom-size input[type=radio] {
   float: left;
 }
 
 .multi-wizard.instance-wizard .section.custom-size input[type=text] {
+  float: left;
+  width: 28px;
+  margin: 6px -1px 0 8px;
+}
+
+.multi-wizard.instance-wizard .section.custom-iops input[type=text] {
   float: left;
   width: 28px;
   margin: 6px -1px 0 8px;
@@ -6007,11 +6088,23 @@ label.error {
   height: 235px;
 }
 
+.instance-wizard .step.service-offering.custom-iops .select-container {
+  height: 235px;
+}
+
 .instance-wizard .step.service-offering .custom-size {
   display: none;
 }
 
+.instance-wizard .step.service-offering .custom-iops {
+  display: none;
+}
+
 .instance-wizard .step.service-offering.custom-size .custom-size {
+  display: block;
+}
+
+.instance-wizard .step.service-offering.custom-iops .custom-iops {
   display: block;
 }
 
@@ -6021,11 +6114,26 @@ label.error {
   margin-bottom: 13px;
 }
 
+.instance-wizard .step.service-offering .custom-iops .field {
+  width: 30%;
+  float: left;
+  margin-bottom: 13px;
+}
+
 .instance-wizard .step.service-offering .custom-size .field label {
   text-indent: 20px;
 }
 
+.instance-wizard .step.service-offering .custom-iops .field label {
+  text-indent: 20px;
+}
+
 .instance-wizard .step.service-offering .custom-size .field input {
+  width: 88%;
+  margin-left: 26px;
+}
+
+.instance-wizard .step.service-offering .custom-iops .field input {
   width: 88%;
   margin-left: 26px;
 }
@@ -7585,7 +7693,6 @@ label.error {
 }
 
 #navigation ul li.last.active {
-  height: 52px;
 }
 
 .detail-group table tbody {

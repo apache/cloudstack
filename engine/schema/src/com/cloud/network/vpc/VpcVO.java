@@ -26,6 +26,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -80,7 +82,7 @@ public class VpcVO implements Vpc {
     protected boolean display = true;
 
     public VpcVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr, String networkDomain) {
@@ -90,10 +92,10 @@ public class VpcVO implements Vpc {
         this.accountId = accountId;
         this.domainId = domainId;
         this.cidr = cidr;
-        this.uuid = UUID.randomUUID().toString();
-        this.state = State.Enabled;
+        uuid = UUID.randomUUID().toString();
+        state = State.Enabled;
         this.networkDomain = networkDomain;
-        this.vpcOfferingId = vpcOffId;
+        vpcOfferingId = vpcOffId;
     }
 
     @Override
@@ -193,5 +195,10 @@ public class VpcVO implements Vpc {
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Vpc;
     }
 }

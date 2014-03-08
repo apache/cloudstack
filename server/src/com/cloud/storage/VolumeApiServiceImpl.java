@@ -1824,6 +1824,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return extractUrl;
     }
 
+    @Override
+    public boolean isDisplayResourceEnabled(Long id) {
+        Volume volume = _volumeDao.findById(id);
+        if (volume == null) {
+            return true; // bad id given, default to true
+        }
+        return volume.isDisplayVolume();
+    }
+
     private String getFormatForPool(StoragePool pool) {
         ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
 

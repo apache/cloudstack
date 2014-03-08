@@ -314,7 +314,7 @@
                                                 return vm.state == 'Running';
                                             }).length) {
                                                 clearInterval(poll);
-                                                message('System VMs ready.');
+                                                message('message.systems.vms.ready');
                                                 setTimeout(pollBuiltinTemplates, 500);
                                             }
                                         }
@@ -325,7 +325,7 @@
 
                         // Wait for builtin template to be present -- otherwise VMs cannot launch
                         var pollBuiltinTemplates = function() {
-                            message('Waiting for builtin templates to load...');
+                            message('message.waiting.for.builtin.templates.to.load');
                             var poll = setInterval(function() {
                                 $.ajax({
                                     url: createURL('listTemplates'),
@@ -341,7 +341,7 @@
 
                                         if (builtinTemplates.length) {
                                             clearInterval(poll);
-                                            message('Your CloudStack is ready!');
+                                            message('message.your.cloudstack.is.ready');
                                             setTimeout(success, 1000);
                                         }
                                     }

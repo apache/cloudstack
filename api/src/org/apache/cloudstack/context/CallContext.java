@@ -55,6 +55,7 @@ public class CallContext {
     private String eventDescription;
     private String eventDetails;
     private String eventType;
+    private boolean isEventDisplayEnabled = true; // default to true unless specifically set
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -301,6 +302,18 @@ public class CallContext {
 
     public void setEventDescription(String eventDescription) {
         this.eventDescription = eventDescription;
+    }
+
+    /**
+     * Whether to display the event to the end user.
+     * @return true - if the event is to be displayed to the end user, false otherwise.
+     */
+    public boolean isEventDisplayEnabled() {
+        return isEventDisplayEnabled;
+    }
+
+    public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
+        isEventDisplayEnabled = eventDisplayEnabled;
     }
 
     public static void setActionEventInfo(String eventType, String description) {

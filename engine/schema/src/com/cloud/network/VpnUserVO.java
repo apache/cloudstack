@@ -27,6 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.Encrypt;
 
 @Entity
@@ -58,16 +60,16 @@ public class VpnUserVO implements VpnUser {
     private String uuid;
 
     public VpnUserVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public VpnUserVO(long accountId, long domainId, String userName, String password) {
         this.accountId = accountId;
         this.domainId = domainId;
-        this.username = userName;
+        username = userName;
         this.password = password;
-        this.state = State.Add;
-        this.uuid = UUID.randomUUID().toString();
+        state = State.Add;
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -86,7 +88,7 @@ public class VpnUserVO implements VpnUser {
     }
 
     public void setUsername(String userName) {
-        this.username = userName;
+        username = userName;
     }
 
     @Override
@@ -119,10 +121,15 @@ public class VpnUserVO implements VpnUser {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VpnUser;
     }
 }

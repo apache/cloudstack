@@ -18,6 +18,7 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -252,11 +253,11 @@ public class LoadBalanceRuleHandler {
                 NetworkOffering controlOffering = offerings.get(0);
                 Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
-                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(2);
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();
                 guestNic.setDefaultNic(true);
-                networks.put(controlConfig, null);
-                networks.put(guestNetwork, guestNic);
+                networks.put(controlConfig, new ArrayList<NicProfile>());
+                networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 

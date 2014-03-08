@@ -30,6 +30,8 @@ import javax.persistence.Table;
 
 import com.google.gson.annotations.Expose;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 
@@ -93,12 +95,12 @@ public class SnapshotVO implements Snapshot {
     String uuid;
 
     public SnapshotVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size,
             HypervisorType hypervisorType) {
-        this.dataCenterId = dcId;
+        dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.volumeId = volumeId;
@@ -107,10 +109,10 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.state = State.Allocated;
+        state = State.Allocated;
         this.hypervisorType = hypervisorType;
-        this.version = "2.2";
-        this.uuid = UUID.randomUUID().toString();
+        version = "2.2";
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -229,10 +231,15 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Snapshot;
     }
 }

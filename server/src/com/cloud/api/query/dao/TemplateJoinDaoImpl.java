@@ -24,15 +24,13 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -44,6 +42,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -59,6 +58,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private AccountService _accountService;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -98,7 +99,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     private String getTemplateStatus(TemplateJoinVO template) {
         boolean isAdmin = false;
         Account caller = CallContext.current().getCallingAccount();
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 
@@ -307,7 +308,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 

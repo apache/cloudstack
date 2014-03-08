@@ -1093,11 +1093,11 @@
                                             isBoolean: true
                                         },
                                         isFeatured: {
-                                            label: "label.featured",
+                                            label: 'label.featured',
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }
@@ -1688,7 +1688,7 @@
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }

@@ -458,6 +458,14 @@
                                             $step.removeClass('custom-size');
                                         }
 
+                                        var customIops = item[args.customIopsFlag];
+
+                                        if (customIops) {
+                                            $step.addClass('custom-iops');
+                                        } else {
+                                            $step.removeClass('custom-iops');
+                                        }
+
                                         return true;
                                     });
 

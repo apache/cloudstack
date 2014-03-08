@@ -280,7 +280,7 @@ public class AgentRoutingResource extends AgentStorageResource {
         HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
 
         for (String vmName : _runningVms.keySet()) {
-            report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName(), null));
+            report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName()));
         }
 
         return report;

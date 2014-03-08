@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 
 @Entity
@@ -74,21 +76,21 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     GlobalLoadBalancerRule.State state;
 
     public GlobalLoadBalancerRuleVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm, String persistence, String serviceType, int regionId,
             long accountId, long domainId, State state) {
         this.name = name;
         this.description = description;
-        this.region = regionId;
+        region = regionId;
         this.algorithm = algorithm;
         this.gslbDomain = gslbDomain;
         this.persistence = persistence;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceType = serviceType;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.state = state;
     }
 
@@ -163,7 +165,7 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -186,5 +188,10 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     @Override
     public GlobalLoadBalancerRule.State getState() {
         return state;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.GlobalLoadBalancerRule;
     }
 }

@@ -26,6 +26,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -92,7 +94,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikeLifetime = ikeLifetime;
         this.espLifetime = espLifetime;
         this.dpd = dpd;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
     }
@@ -205,5 +207,10 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Site2SiteCustomerGateway;
     }
 }

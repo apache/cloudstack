@@ -3301,16 +3301,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, startEventId);
-    }
-
-    @Override
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, description, startEventId);
-    }
-
-    @Override
     @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
         if (cmd.getPrivateKey() != null && cmd.getAlias() != null) {

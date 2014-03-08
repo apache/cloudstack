@@ -18,6 +18,7 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,8 +42,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -57,6 +56,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -105,7 +105,6 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiAsyncJobDispatcher;
-import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -1569,10 +1568,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 final int count = routerCount - routers.size();
                 final DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                    final LinkedHashMap<Network, NicProfile> networks =
-                            createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                    LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork, new Pair<Boolean, PublicIp>(
+                            publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-                    final DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
+                    DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId, null, networks, false, null);
 
                     if (router != null) {
                         _routerDao.addRouterToGuestNetwork(router, guestNetwork);
@@ -1610,7 +1609,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected DomainRouterVO deployRouter(final Account owner, final DeployDestination dest, final DeploymentPlan plan, final Map<Param, Object> params, final boolean isRedundant,
-            final VirtualRouterProvider vrProvider, final long svcOffId, final Long vpcId, final LinkedHashMap<Network, NicProfile> networks, final boolean startRouter,
+            final VirtualRouterProvider vrProvider, final long svcOffId, final Long vpcId, final LinkedHashMap<Network, List<? extends NicProfile>> networks, final boolean startRouter,
             final List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientServerCapacityException,
             InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
@@ -1750,7 +1749,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return hypervisors;
     }
 
-    protected LinkedHashMap<Network, NicProfile> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan, final Network guestNetwork,
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final Account owner, final boolean isRedundant, final DeploymentPlan plan, final Network guestNetwork,
             final Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         boolean setupPublicNetwork = false;
@@ -1759,8 +1758,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
         //Form networks
-        final LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
-
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         //1) Guest network
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
@@ -1816,17 +1814,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 gatewayNic.setDefaultNic(true);
             }
 
-            networks.put(guestNetwork, gatewayNic);
+            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
             hasGuestNetwork = true;
         }
 
         //2) Control network
         s_logger.debug("Adding nic for Virtual Router in Control network ");
-        final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
-        final NetworkOffering controlOffering = offerings.get(0);
-        final Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        networks.put(controlConfig, null);
-
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+        NetworkOffering controlOffering = offerings.get(0);
+        Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
         //3) Public network
         if (setupPublicNetwork) {
             final PublicIp sourceNatIp = publicNetwork.second();
@@ -1861,7 +1858,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
-            networks.put(publicNetworks.get(0), defaultNic);
+            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
 
         return networks;
@@ -2738,12 +2735,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             final Commands cmds = new Commands(Command.OnError.Stop);
             createApplyVpnCommands(true, vpn, router, cmds);
 
-            try {
-                _agentMgr.send(router.getHostId(), cmds);
-            } catch (final OperationTimedoutException e) {
-                s_logger.debug("Failed to start remote access VPN: ", e);
-                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+            if (!sendCommandsToRouter(router, cmds)) {
+                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId());
             }
+
             Answer answer = cmds.getAnswer("users");
             if (!answer.getResult()) {
                 s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " +
@@ -4199,7 +4194,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         for(DomainRouterVO router: routers){
             if(!checkRouterVersion(router)){
                     s_logger.debug("Upgrading template for router: "+router.getId());
-                    ApiDispatcher.getInstance();
                     Map<String, String> params = new HashMap<String, String>();
                     params.put("ctxUserId", "1");
                     params.put("ctxAccountId", "" + router.getAccountId());

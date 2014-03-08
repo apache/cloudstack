@@ -18,6 +18,8 @@ package com.cloud.network.addr;
 
 import java.util.Date;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.dc.VlanVO;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.IPAddressVO;
@@ -235,5 +237,10 @@ public class PublicIp implements PublicIpAddress {
     @Override
     public boolean isDisplay() {
         return _addr.isDisplay();
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.PublicIpAddress;
     }
 }

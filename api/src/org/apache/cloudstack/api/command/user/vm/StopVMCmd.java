@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
@@ -23,7 +24,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -36,7 +36,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StopVMCmd extends BaseAsyncCmd {
+public class StopVMCmd extends BaseAsyncVMCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
     private static final String s_name = "stopvirtualmachineresponse";

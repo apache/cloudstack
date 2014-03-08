@@ -75,4 +75,10 @@ public interface EntityManager {
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
 
     public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
+
+    public static final String MESSAGE_REMOVE_ENTITY_EVENT = "Message.RemoveEntity.Event";
+
+    public static final String MESSAGE_GRANT_ENTITY_EVENT = "Message.GrantEntity.Event";
+    public static final String MESSAGE_REVOKE_ENTITY_EVENT = "Message.RevokeEntity.Event";
+    public static final String MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT = "Message.AddDomainWideEntity.Event";
 }

@@ -30,6 +30,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -167,7 +168,7 @@ public class NetworkVO implements Network {
     Long networkACLId;
 
     public NetworkVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -193,8 +194,8 @@ public class NetworkVO implements Network {
         } else {
             this.state = state;
         }
-        this.id = -1;
-        this.uuid = UUID.randomUUID().toString();
+        id = -1;
+        uuid = UUID.randomUUID().toString();
     }
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText,
@@ -216,19 +217,19 @@ public class NetworkVO implements Network {
             aclType,
             specifyIpRanges,
             vpcId);
-        this.gateway = that.getGateway();
-        this.cidr = that.getCidr();
-        this.networkCidr = that.getNetworkCidr();
-        this.broadcastUri = that.getBroadcastUri();
-        this.broadcastDomainType = that.getBroadcastDomainType();
+        gateway = that.getGateway();
+        cidr = that.getCidr();
+        networkCidr = that.getNetworkCidr();
+        broadcastUri = that.getBroadcastUri();
+        broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
-        this.state = that.getState();
+        state = that.getState();
         if (state == null) {
             state = State.Allocated;
         }
-        this.uuid = UUID.randomUUID().toString();
-        this.ip6Gateway = that.getIp6Gateway();
-        this.ip6Cidr = that.getIp6Cidr();
+        uuid = UUID.randomUUID().toString();
+        ip6Gateway = that.getIp6Gateway();
+        ip6Cidr = that.getIp6Cidr();
     }
 
     /**
@@ -260,7 +261,7 @@ public class NetworkVO implements Network {
         this.displayText = displayText;
         this.aclType = aclType;
         this.networkDomain = networkDomain;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
         this.specifyIpRanges = specifyIpRanges;
         this.vpcId = vpcId;
@@ -436,7 +437,7 @@ public class NetworkVO implements Network {
     }
 
     public void setDns1(String dns) {
-        this.dns1 = dns;
+        dns1 = dns;
     }
 
     public String getDns2() {
@@ -444,7 +445,7 @@ public class NetworkVO implements Network {
     }
 
     public void setDns2(String dns) {
-        this.dns2 = dns;
+        dns2 = dns;
     }
 
     @Override
@@ -492,19 +493,19 @@ public class NetworkVO implements Network {
             return false;
         }
         NetworkVO that = (NetworkVO)obj;
-        if (this.trafficType != that.trafficType) {
+        if (trafficType != that.trafficType) {
             return false;
         }
 
-        if ((this.cidr == null && that.cidr != null) || (this.cidr != null && that.cidr == null)) {
+        if ((cidr == null && that.cidr != null) || (cidr != null && that.cidr == null)) {
             return false;
         }
 
-        if (this.cidr == null && that.cidr == null) {
+        if (cidr == null && that.cidr == null) {
             return true;
         }
 
-        return NetUtils.isNetworkAWithinNetworkB(this.cidr, that.cidr);
+        return NetUtils.isNetworkAWithinNetworkB(cidr, that.cidr);
     }
 
     @Override
@@ -516,7 +517,7 @@ public class NetworkVO implements Network {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -582,5 +583,10 @@ public class NetworkVO implements Network {
     @Override
     public Long getNetworkACLId() {
         return networkACLId;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Network;
     }
 }

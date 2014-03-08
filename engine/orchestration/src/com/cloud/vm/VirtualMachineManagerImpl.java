@@ -80,6 +80,8 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
@@ -152,6 +154,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -340,6 +343,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60",
             "Cluster Delta sync interval in seconds",
             false);
+    static final ConfigKey<Integer> ClusterVMMetaDataSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmmetadata.sync.interval", "180", "Cluster VM metadata sync interval in seconds",
+            false);
 
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
             Boolean.class, "vm.job.enabled", "true",
@@ -368,8 +373,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(String vmInstanceName, final VirtualMachineTemplate template, ServiceOffering serviceOffering,
-            final Pair<? extends DiskOffering, Long> rootDiskOffering, LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
-            final LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan, HypervisorType hyperType)
+            final DiskOfferingInfo rootDiskOfferingInfo, LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
+            final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan, HypervisorType hyperType)
                     throws InsufficientCapacityException {
 
         VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
@@ -408,11 +413,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
 
                         if (template.getFormat() == ImageFormat.ISO) {
-                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vmFinal, template, owner);
+                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(), vmFinal,
+                                    template, owner);
                         } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                             // Do nothing
                         } else {
-                            volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), template, vmFinal, owner);
+                            volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                                    rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                         }
 
                         for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
@@ -428,8 +435,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
-            LinkedHashMap<? extends Network, ? extends NicProfile> networks, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOffering, Long>(serviceOffering, null), null, networks, plan, hyperType);
+            LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException {
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), null, networks, plan, hyperType);
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
@@ -2521,7 +2528,35 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return commands;
     }
 
-    public void deltaSync(Map<String, Ternary<String, State, String>> newStates) {
+    // this is XenServer specific
+    public void syncVMMetaData(Map<String, String> vmMetadatum) {
+        if (vmMetadatum == null || vmMetadatum.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : vmMetadatum.entrySet()) {
+            String name = entry.getKey();
+            String platform = entry.getValue();
+            if (platform == null || platform.isEmpty()) {
+                continue;
+            }
+            VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
+            if (vm != null && vm.getType() == VirtualMachine.Type.User) {
+                // track platform info
+                UserVmVO userVm = _userVmDao.findById(vm.getId());
+                _userVmDao.loadDetails(userVm);
+                userVm.setDetail("platform",  platform);
+                String pvdriver = "xenserver56";
+                if ( platform.contains("device_id")) {
+                    pvdriver = "xenserver61";
+                }
+                userVm.setDetail("hypervisortoolsversion", pvdriver);
+                _userVmDao.saveDetails(userVm);
+            }
+        }
+    }
+
+
+    public void deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
@@ -2556,7 +2591,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public void fullSync(final long clusterId, Map<String, Ternary<String, State, String>> newStates) {
+    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         if (newStates == null)
             return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
@@ -2686,24 +2721,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     }
 
-    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Ternary<String, State, String>> newStates) {
+    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
         if (newStates == null) {
             return map;
         }
         boolean is_alien_vm = true;
         long alien_vm_count = -1;
-        for (Map.Entry<String, Ternary<String, State, String>> entry : newStates.entrySet()) {
+        for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
             is_alien_vm = true;
             String name = entry.getKey();
             VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
             if (vm != null) {
-                map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue().second(), entry.getValue().first(), entry.getValue().third()));
+                map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue().second(), entry.getValue().first()));
                 is_alien_vm = false;
             }
             // alien VMs
             if (is_alien_vm) {
-                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, entry.getValue().second(), entry.getValue().first(), entry.getValue().third()));
+                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, entry.getValue().second(), entry.getValue().first()));
                 s_logger.warn("Found an alien VM " + entry.getKey());
             }
         }
@@ -2783,15 +2818,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() +
                     ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" +
                             vm.getHostId() + "] stopped due to storage failure.");
-        }
-        // track platform info
-        if (info.platform != null && !info.platform.isEmpty()) {
-            if (vm.getType() == VirtualMachine.Type.User) {
-                UserVmVO userVm = _userVmDao.findById(vm.getId());
-                _userVmDao.loadDetails(userVm);
-                userVm.setDetail("platform", info.platform);
-                _userVmDao.saveDetails(userVm);
-            }
         }
 
         if (trackExternalChange) {
@@ -3004,14 +3030,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        if (!VmJobEnabled.value()) {
-            for (final Answer answer : answers) {
-                if (answer instanceof ClusterSyncAnswer) {
+        for (final Answer answer : answers) {
+            if (answer instanceof ClusterSyncAnswer) {
+                if (!VmJobEnabled.value()) {
                     ClusterSyncAnswer hs = (ClusterSyncAnswer)answer;
-                    if (!hs.isExceuted()) {
+                    if (!hs.isExecuted()) {
                         deltaSync(hs.getNewStates());
                         hs.setExecuted();
                     }
+                }
+            } else if ( answer instanceof ClusterVMMetaDataSyncAnswer) {
+                ClusterVMMetaDataSyncAnswer cvms = (ClusterVMMetaDataSyncAnswer)answer;
+                if (!cvms.isExecuted()) {
+                    syncVMMetaData(cvms.getVMMetaDatum());
+                    cvms.setExecuted();
                 }
             }
         }
@@ -3046,7 +3078,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
                     }
                 }
-
                 if(VmJobEnabled.value()) {
                     if (ping.getHostVmStateReport() != null) {
                         _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport());
@@ -3101,11 +3132,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             if (!VmJobEnabled.value()) {
                 StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
-                HashMap<String, Ternary<String, State, String>> allStates = startup.getClusterVMStateChanges();
+                HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
                 if (allStates != null) {
                     fullSync(clusterId, allStates);
                 }
-
                 // initiate the cron job
                 ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
                 try {
@@ -3114,6 +3144,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (AgentUnavailableException e) {
                     s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
                 }
+            }
+            // initiate the cron job
+            ClusterVMMetaDataSyncCommand syncVMMetaDataCmd = new ClusterVMMetaDataSyncCommand(ClusterVMMetaDataSyncInterval.value(), clusterId);
+            try {
+                long seq_no = _agentMgr.send(agentId, new Commands(syncVMMetaDataCmd), this);
+                s_logger.debug("Cluster VM metadata sync started with jobid " + seq_no);
+            } catch (AgentUnavailableException e) {
+                s_logger.fatal("The Cluster VM metadata sync process failed for cluster id " + clusterId + " with ", e);
             }
         } else { // for others KVM and VMWare
             if (!VmJobEnabled.value()) {
@@ -3185,32 +3223,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public State state;
         public String hostUuid;
         public VMInstanceVO vm;
-        public String platform;
 
         @SuppressWarnings("unchecked")
-        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host, String platform) {
+        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
             this.name = name;
             this.state = state;
             this.vm = vm;
             hostUuid = host;
-            this.platform = platform;
-
-        }
-
-        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            this(name, vm, state, host, null);
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state) {
-            this(name, vm, state, null, null);
+            this(name, vm, state, null);
         }
 
         public String getHostUuid() {
             return hostUuid;
-        }
-
-        public String getPlatform() {
-            return platform;
         }
     }
 

@@ -685,67 +685,82 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException,
+    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
             ConcurrentOperationException {
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
                 int deviceId = 0;
-
-                boolean[] deviceIds = new boolean[networks.size()];
-                Arrays.fill(deviceIds, false);
-
-                List<NicProfile> nics = new ArrayList<NicProfile>(networks.size());
-                NicProfile defaultNic = null;
-
-                for (Map.Entry<? extends Network, ? extends NicProfile> network : networks.entrySet()) {
-                    Network config = network.getKey();
-                    NicProfile requested = network.getValue();
-
-                    Boolean isDefaultNic = false;
-                    if (vm != null && (requested != null && requested.isDefaultNic())) {
-                        isDefaultNic = true;
+                int size = 0;
+                for (Network ntwk : networks.keySet()) {
+                    List<? extends NicProfile> profiles = networks.get(ntwk);
+                    if (profiles != null && !profiles.isEmpty()) {
+                        size = size + profiles.size();
+                    } else {
+                        size = size + 1;
                     }
-
-                    while (deviceIds[deviceId] && deviceId < deviceIds.length) {
-                        deviceId++;
-                    }
-
-                    Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
-
-                    NicProfile vmNic = vmNicPair.first();
-                    if (vmNic == null) {
-                        continue;
-                    }
-
-                    deviceId = vmNicPair.second();
-
-                    int devId = vmNic.getDeviceId();
-                    if (devId > deviceIds.length) {
-                        throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
-                    }
-                    if (deviceIds[devId]) {
-                        throw new IllegalArgumentException("Conflicting device id for two different nics: " + vmNic);
-                    }
-
-                    deviceIds[devId] = true;
-
-                    if (vmNic.isDefaultNic()) {
-                        if (defaultNic != null) {
-                            throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vmNic);
-                        }
-                        defaultNic = vmNic;
-                    }
-
-                    nics.add(vmNic);
-                    vm.addNic(vmNic);
-
                 }
 
-                if (nics.size() != networks.size()) {
-                    s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
-                    throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
+                boolean[] deviceIds = new boolean[size];
+                Arrays.fill(deviceIds, false);
+
+                List<NicProfile> nics = new ArrayList<NicProfile>(size);
+                NicProfile defaultNic = null;
+
+                for (Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
+                    Network config = network.getKey();
+                    List<? extends NicProfile> requestedProfiles = network.getValue();
+                    if (requestedProfiles == null) {
+                        requestedProfiles = new ArrayList<NicProfile>();
+                    }
+                    if (requestedProfiles.isEmpty()) {
+                        requestedProfiles.add(null);
+                    }
+
+                    for (NicProfile requested : requestedProfiles) {
+                        Boolean isDefaultNic = false;
+                        if (vm != null && (requested != null && requested.isDefaultNic())) {
+                            isDefaultNic = true;
+                        }
+
+                        while (deviceIds[deviceId] && deviceId < deviceIds.length) {
+                            deviceId++;
+                        }
+
+                        Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
+
+                        NicProfile vmNic = vmNicPair.first();
+                        if (vmNic == null) {
+                            continue;
+                        }
+
+                        deviceId = vmNicPair.second();
+
+                        int devId = vmNic.getDeviceId();
+                        if (devId > deviceIds.length) {
+                            throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
+                        }
+                        if (deviceIds[devId]) {
+                            throw new IllegalArgumentException("Conflicting device id for two different nics: " + vmNic);
+                        }
+
+                        deviceIds[devId] = true;
+
+                        if (vmNic.isDefaultNic()) {
+                            if (defaultNic != null) {
+                                throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vmNic);
+                            }
+                            defaultNic = vmNic;
+                        }
+
+                        nics.add(vmNic);
+                        vm.addNic(vmNic);
+                    }
+                }
+                if (nics.size() != size) {
+                    s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested nics " + size);
+                    throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + size);
                 }
 
                 if (nics.size() == 1) {
@@ -768,12 +783,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             requested.setMode(network.getMode());
         }
         NicProfile profile = guru.allocate(network, requested, vm);
-        if (isDefaultNic != null) {
-            profile.setDefaultNic(isDefaultNic);
-        }
-
         if (profile == null) {
             return null;
+        }
+
+        if (isDefaultNic != null) {
+            profile.setDefaultNic(isDefaultNic);
         }
 
         if (requested != null && requested.getMode() == null) {
@@ -2478,8 +2493,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (dc.getNetworkType() == NetworkType.Basic) {
             List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
             NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
-            final LinkedHashMap<Network, NicProfile> profiles = new LinkedHashMap<Network, NicProfile>();
-            profiles.put(network, null);
+            final LinkedHashMap<Network, List<? extends NicProfile>> profiles = new LinkedHashMap<Network, List<? extends NicProfile>>();
+            profiles.put(network, new ArrayList<NicProfile>());
 
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override

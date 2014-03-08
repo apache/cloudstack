@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -64,7 +66,7 @@ public class StaticRouteVO implements StaticRoute {
     Date created;
 
     protected StaticRouteVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -78,11 +80,11 @@ public class StaticRouteVO implements StaticRoute {
         super();
         this.vpcGatewayId = vpcGatewayId;
         this.cidr = cidr;
-        this.state = State.Staged;
+        state = State.Staged;
         this.vpcId = vpcId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -107,7 +109,7 @@ public class StaticRouteVO implements StaticRoute {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
@@ -134,5 +136,10 @@ public class StaticRouteVO implements StaticRoute {
         StringBuilder buf = new StringBuilder("StaticRoute[");
         buf.append(uuid).append("|").append(cidr).append("|").append(vpcGatewayId).append("]");
         return buf.toString();
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.StaticRoute;
     }
 }

@@ -22,18 +22,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.Ternary;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
 public class XenServerPoolVms {
     private static final Logger s_logger = Logger.getLogger(XenServerPoolVms.class);
-    private final Map<String/* clusterId */, HashMap<String/* vm name */, Ternary<String/* host uuid */, State/* vm state */, String/* PV driver version*/>>> _clusterVms =
-        new ConcurrentHashMap<String, HashMap<String, Ternary<String, State, String>>>();
+    private final Map<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _clusterVms =
+        new ConcurrentHashMap<String, HashMap<String, Pair<String, State>>>();
 
-    public HashMap<String, Ternary<String, State, String>> getClusterVmState(String clusterId) {
-        HashMap<String, Ternary<String, State, String>> _vms = _clusterVms.get(clusterId);
+    public HashMap<String, Pair<String, State>> getClusterVmState(String clusterId) {
+        HashMap<String, Pair<String, State>> _vms = _clusterVms.get(clusterId);
         if (_vms == null) {
-            HashMap<String, Ternary<String, State, String>> vmStates = new HashMap<String, Ternary<String, State, String>>();
+            HashMap<String, Pair<String, State>> vmStates = new HashMap<String, Pair<String, State>>();
             _clusterVms.put(clusterId, vmStates);
             return vmStates;
         } else
@@ -41,50 +41,45 @@ public class XenServerPoolVms {
     }
 
     public void clear(String clusterId) {
-        HashMap<String, Ternary<String, State, String>> _vms = getClusterVmState(clusterId);
+        HashMap<String, Pair<String, State>> _vms = getClusterVmState(clusterId);
         _vms.clear();
     }
 
     public State getState(String clusterId, String name) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
-        Ternary<String, State, String> pv = vms.get(name);
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
+        Pair<String, State> pv = vms.get(name);
         return pv == null ? State.Stopped : pv.second(); // if a VM is absent on the cluster, it is effectively in stopped state.
     }
 
-    public Ternary<String, State, String> get(String clusterId, String name) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
+    public Pair<String, State> get(String clusterId, String name) {
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
         return vms.get(name);
     }
 
-    public void put(String clusterId, String hostUuid, String name, State state, String platform) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
-        vms.put(name, new Ternary<String, State, String>(hostUuid, state, platform));
-    }
-
     public void put(String clusterId, String hostUuid, String name, State state) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
-        vms.put(name, new Ternary<String, State, String>(hostUuid, state, null));
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
+        vms.put(name, new Pair<String, State>(hostUuid, state));
     }
 
     public void remove(String clusterId, String hostUuid, String name) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
         vms.remove(name);
     }
 
-    public void putAll(String clusterId, HashMap<String, Ternary<String, State, String>> newVms) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
+    public void putAll(String clusterId, HashMap<String, Pair<String, State>> newVms) {
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
         vms.putAll(newVms);
     }
 
     public int size(String clusterId) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
+        HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
         return vms.size();
     }
 
     @Override
     public String toString() {
         StringBuilder sbuf = new StringBuilder("PoolVms=");
-        for (HashMap<String/* vm name */, Ternary<String/* host uuid */, State/* vm state */, String>> clusterVM : _clusterVms.values()) {
+        for (HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>> clusterVM : _clusterVms.values()) {
             for (String vmname : clusterVM.keySet()) {
                 sbuf.append(vmname).append("-").append(clusterVM.get(vmname).second()).append(",");
             }

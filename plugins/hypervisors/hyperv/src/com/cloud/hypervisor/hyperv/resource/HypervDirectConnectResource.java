@@ -358,7 +358,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         for (Map<String, String> vmMap : vmList) {
             String name = (String)vmMap.keySet().toArray()[0];
-            vmStates.put(name, new HostVmStateReportEntry(PowerState.valueOf(vmMap.get(name)), _guid, null));
+            vmStates.put(name, new HostVmStateReportEntry(PowerState.valueOf(vmMap.get(name)), _guid));
         }
         return vmStates;
     }

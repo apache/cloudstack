@@ -29,6 +29,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -76,6 +78,9 @@ public class EventVO implements Event {
     @Column(name = "archived")
     private boolean archived;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     @Transient
     private int totalSize;
 
@@ -84,7 +89,7 @@ public class EventVO implements Event {
     public static final String LEVEL_ERROR = "ERROR";
 
     public EventVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -193,7 +198,7 @@ public class EventVO implements Event {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -208,4 +213,18 @@ public class EventVO implements Event {
     public void setArchived(Boolean archived) {
         this.archived = archived;
     }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.Event;
+    }
+
 }

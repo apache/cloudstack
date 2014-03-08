@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -4482,10 +4483,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
+            LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
             NicProfile profile = new NicProfile();
             profile.setDefaultNic(true);
-            networks.put(networkList.get(0), profile);
+            networks.put(networkList.get(0), new ArrayList<NicProfile>(Arrays.asList(profile)));
 
             VirtualMachine vmi = _itMgr.findById(vm.getId());
             VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
@@ -4589,7 +4590,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 // add the new nics
-                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
                 int toggle = 0;
                 for (NetworkVO appNet : applicableNetworks) {
                     NicProfile defaultNic = new NicProfile();
@@ -4597,7 +4598,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         defaultNic.setDefaultNic(true);
                         toggle++;
                     }
-                    networks.put(appNet, defaultNic);
+                    networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
                 }
                 VirtualMachine vmi = _itMgr.findById(vm.getId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
@@ -4827,5 +4828,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //check permissions
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         return vm.getUserData();
+    }
+
+    @Override
+    public boolean isDisplayResourceEnabled(Long vmId) {
+        UserVm vm = _vmDao.findById(vmId);
+        if (vm != null) {
+            return vm.isDisplayVm();
+        }
+
+        return true; // no info then default to true
     }
 }

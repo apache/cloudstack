@@ -84,7 +84,7 @@ public class ActionEventUtils {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
 
-        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, description, null);
+        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, null);
 
         return event.getId();
     }
@@ -92,67 +92,75 @@ public class ActionEventUtils {
     /*
      * Save event after scheduling an async job
      */
-    public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, long startEventId) {
+    public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, boolean eventDisplayEnabled, long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description);
 
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, description, startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, startEventId);
 
         return event.getId();
     }
 
     public static void startNestedActionEvent(String eventType, String eventDescription) {
         CallContext.setActionEventInfo(eventType, eventDescription);
-        onStartedActionEventFromContext(eventType, eventDescription);
+        onStartedActionEventFromContext(eventType, eventDescription, true);
     }
 
-    public static void onStartedActionEventFromContext(String eventType, String eventDescription) {
+    public static void onStartedActionEventFromContext(String eventType, String eventDescription, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
         long accountId = ctx.getCallingAccountId();
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
-            ActionEventUtils.onStartedActionEvent(userId, accountId, eventType, eventDescription, startEventId);
+            ActionEventUtils.onStartedActionEvent(userId, accountId, eventType, eventDescription, eventDisplayEnabled, startEventId);
     }
 
     /*
      * Save event after starting execution of an async job
      */
-    public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, long startEventId) {
+    public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, boolean eventDisplayEnabled, long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description);
 
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, description, startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, startEventId);
+
         return event.getId();
     }
 
     public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
 
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
-
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, description, startEventId);
-
-        return event.getId();
+        return onCompletedActionEvent(userId, accountId, level, type, true, description, startEventId);
     }
 
-    public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, String description) {
+    public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, long startEventId) {
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
+
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, startEventId);
+
+        return event.getId();
+
+    }
+
+    public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description);
 
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, description, null);
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, null);
 
         return event.getId();
     }
 
-    private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type, Event.State state, String description,
-        Long startEventId) {
+    private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type,
+                                            Event.State state, boolean eventDisplayEnabled, String description, Long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
         event.setState(state);
         event.setDescription(description);
+        event.setDisplay(eventDisplayEnabled);
+
         if (domainId != null) {
             event.setDomainId(domainId);
         } else {

@@ -26,6 +26,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -36,7 +38,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     public NicSecondaryIpVO(long nicId, String ipaddr, long vmId, long accountId, long domainId, long networkId) {
         this.nicId = nicId;
         this.vmId = vmId;
-        this.ip4Address = ipaddr;
+        ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
@@ -123,5 +125,10 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     @Override
     public long getVmId() {
         return vmId;
+    }
+
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.NicSecondaryIp;
     }
 }
