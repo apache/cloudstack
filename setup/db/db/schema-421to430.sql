@@ -110,6 +110,10 @@ CREATE TABLE `cloud`.`async_job_join_map` (
   INDEX `i_async_job_join_map__expiration`(`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+#realhostip changes, before changing table and adding default value
+UPDATE `cloud`.`configuration` SET value = CONCAT("*.",(SELECT `temptable`.`value` FROM (SELECT * FROM `cloud`.`configuration` WHERE `name`="consoleproxy.url.domain") AS `temptable` WHERE `temptable`.`name`="consoleproxy.url.domain")) WHERE `name`="consoleproxy.url.domain";
+UPDATE `cloud`.`configuration` SET `value` = CONCAT("*.",(SELECT `temptable`.`value` FROM (SELECT * FROM `cloud`.`configuration` WHERE `name`="secstorage.ssl.cert.domain") AS `temptable` WHERE `temptable`.`name`="secstorage.ssl.cert.domain")) WHERE `name`="secstorage.ssl.cert.domain";
+
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `default_value` VARCHAR(4095) COMMENT 'Default value for a configuration parameter';
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `updated` datetime COMMENT 'Time this was updated by the server. null means this row is obsolete.';
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `scope` VARCHAR(255) DEFAULT NULL COMMENT 'Can this parameter be scoped';
