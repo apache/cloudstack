@@ -693,7 +693,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
                 } else if (nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                     sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                    errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                 } else {
                     if (podId != null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
