@@ -115,6 +115,18 @@ class Services:
                         "ispublic": True,
                         "isextractable": True,
 
+                },
+                "VMware": {
+                        "displaytext": "Public Template - VMware",
+                        "name": "Public template -VMware",
+                        "ostype": "CentOS 5.3 (64-bit)",
+                        "url": "http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova",
+                        "hypervisor": "vmware",
+                        "format": "ova",
+                        "isfeatured": True,
+                        "ispublic": True,
+                        "isextractable": True,
+
                 }
             },
             "template": {
@@ -503,8 +515,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                     "VM created with IsVolatile=False doesn't have same ip after restore. Got : %s Expected : %s"
                                     %(vm_without_reset.nic[0].ipaddress, self.vm_without_reset.nic[0].ipaddress)
                                 )
-
-	    return
+        return
 
     @attr(tags=["advanced", "basic"])
     def test_04_reoccuring_snapshot_rules(self):
