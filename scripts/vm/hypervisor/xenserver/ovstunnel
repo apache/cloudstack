@@ -224,6 +224,7 @@ def create_tunnel(session, args):
     gre_key = args.pop("key")
     src_host = args.pop("from")
     dst_host = args.pop("to")
+    network_uuid = args.pop("cloudstack-network-id")
 
     logging.debug("Entering create_tunnel")
 
@@ -318,6 +319,7 @@ def create_tunnel(session, args):
 
             # add flow rule to send the traffic from tunnel ports to L2 switching table only
             lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0, actions='resubmit(,1)')
+            lib.do_cmd([lib.VSCTL_PATH, "set", "interface", name, "options:cloudstack-network-id=%s" % network_uuid])
 
         return "SUCCESS:%s" % name
     except:

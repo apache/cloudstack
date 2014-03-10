@@ -1388,23 +1388,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private Answer execute(OvsSetupBridgeCommand cmd) {
-        findOrCreateTunnelNetwork(cmd.getKey());
+        findOrCreateTunnelNetwork(cmd.getBridgeName());
         configureTunnelNetwork(cmd.getNetworkId(), cmd.getHostId(),
-                cmd.getKey());
+                cmd.getBridgeName());
         s_logger.debug("OVS Bridge configured");
         return new Answer(cmd, true, null);
     }
 
     private Answer execute(OvsDestroyBridgeCommand cmd) {
-        destroyTunnelNetwork(cmd.getKey());
+        destroyTunnelNetwork(cmd.getBridgeName());
         s_logger.debug("OVS Bridge destroyed");
         return new Answer(cmd, true, null);
     }
 
-    private synchronized void destroyTunnelNetwork(int key) {
+    private synchronized void destroyTunnelNetwork(String bridge) {
         try {
-            findOrCreateTunnelNetwork(key);
-            String bridge = "OVSTunnel" + key;
+            findOrCreateTunnelNetwork(bridge);
             Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
             cmd.add("destroy_ovs_bridge");
             cmd.add("--bridge", bridge);
@@ -1423,9 +1422,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private synchronized boolean findOrCreateTunnelNetwork(long key) {
+    private synchronized boolean findOrCreateTunnelNetwork(String nwName) {
         try {
-            String nwName = "OVSTunnel" + key;
             if (checkNetwork(nwName)) {
                 return true;
             }
@@ -1443,10 +1441,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private synchronized boolean configureTunnelNetwork(long networkId,
-            long hostId, int key) {
+            long hostId, String nwName) {
         try {
-            findOrCreateTunnelNetwork(key);
-            String nwName = "OVSTunnel" + key;
+            findOrCreateTunnelNetwork(nwName);
             String configuredHosts = Script
                     .runSimpleBashScript("ovs-vsctl get bridge " + nwName
                             + " other_config:ovs_host_setup");
@@ -1463,7 +1460,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (!configured) {
                 Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
                 cmd.add("setup_ovs_bridge");
-                cmd.add("--key", String.valueOf(key));
+                cmd.add("--key", nwName);
                 cmd.add("--cs_host_id", ((Long)hostId).toString());
                 cmd.add("--bridge", nwName);
                 String result = cmd.execute();
@@ -1481,16 +1478,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
-        String bridge = "OVSTunnel" + cmd.getKey();
+        String bridge = cmd.getNetworkName();
         try {
-            if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+            if (!findOrCreateTunnelNetwork(bridge)) {
                 s_logger.debug("Error during bridge setup");
                 return new OvsCreateTunnelAnswer(cmd, false,
                         "Cannot create network", bridge);
             }
 
             configureTunnelNetwork(cmd.getNetworkId(), cmd.getFrom(),
-                    cmd.getKey());
+                    cmd.getNetworkName());
             Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
             command.add("create_tunnel");
             command.add("--bridge", bridge);
@@ -1515,16 +1512,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private Answer execute(OvsDestroyTunnelCommand cmd) {
         try {
-            if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+            if (!findOrCreateTunnelNetwork(cmd.getBridgeName())) {
                 s_logger.warn("Unable to find tunnel network for GRE key:"
-                        + cmd.getKey());
+                        + cmd.getBridgeName());
                 return new Answer(cmd, false, "No network found");
             }
 
-            String bridge = "OVSTunnel" + cmd.getKey();
             Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
             command.add("destroy_tunnel");
-            command.add("--bridge", bridge);
+            command.add("--bridge", cmd.getBridgeName());
             command.add("--iface_name", cmd.getInPortName());
             String result = command.execute();
             if (result == null) {
