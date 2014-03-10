@@ -23,6 +23,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -82,6 +84,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     EntityManager _entityMgr;
     @Inject
     VpcService _vpcSvc;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay) {
@@ -210,7 +214,13 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if (_networkDao.update(network.getId(), network)) {
             s_logger.debug("Updated network: " + network.getId() + " with Network ACL Id: " + acl.getId() + ", Applying ACL items");
             //Apply ACL to network
-            return applyACLToNetwork(network.getId());
+            Boolean result = applyACLToNetwork(network.getId());
+            if (result) {
+                // public message on message bus, so that network elements implementing distributed routing capability
+                // can act on the event
+                _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
+            }
+            return result;
         }
         return false;
     }
