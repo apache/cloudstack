@@ -706,7 +706,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
-            throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize");
+            throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize. "
+                                                     + "Volume " + volume.getUuid() + " state is:" + volume.getState());
         }
 
         /*
