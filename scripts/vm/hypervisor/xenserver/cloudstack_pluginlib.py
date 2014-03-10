@@ -21,7 +21,7 @@ import ConfigParser
 import logging
 import os
 import subprocess
-import json
+import simplejson as json
 
 from time import localtime, asctime
 
@@ -181,7 +181,7 @@ def _build_flow_expr(**kwargs):
     proto = 'proto' in kwargs and ",%s" % kwargs['proto'] or ''
     ip = ('nw_src' in kwargs or 'nw_dst' in kwargs) and ',ip' or ''
     flow = (flow + in_port + dl_type + dl_src + dl_dst +
-            (ip or proto) + nw_src + nw_dst)
+            (ip or proto) + nw_src + nw_dst + table)
     return flow
 
 

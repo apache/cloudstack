@@ -75,7 +75,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkElement.class, ConnectivityProvider.class,
@@ -203,23 +202,6 @@ StaticNatServiceProvider, IpDeployer {
 
         if (nic.getTrafficType() != Networks.TrafficType.Guest) {
             return false;
-        }
-
-        List<UserVmVO> userVms = _userVmDao.listByAccountIdAndHostId(vm.getVirtualMachine().getAccountId(),
-                vm.getVirtualMachine().getHostId());
-        if (vm.getType() == VirtualMachine.Type.User) {
-            if (userVms.size() > 1) {
-                return true;
-            }
-
-            List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
-            for (DomainRouterVO router : routers) {
-                if (router.getHostId().equals(vm.getVirtualMachine().getHostId())) {
-                    return true;
-                }
-            }
-        } else if (vm.getType() == VirtualMachine.Type.DomainRouter && userVms.size() != 0) {
-            return true;
         }
 
         HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());

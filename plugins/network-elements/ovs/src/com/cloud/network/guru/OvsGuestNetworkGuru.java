@@ -154,7 +154,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
             String keyStr = BroadcastDomainType.getValue(implemented.getBroadcastUri());
             Long vpcid= network.getVpcId();
-            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vpcid.toString()+keyStr));
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vpcid.toString() + "." + keyStr));
         }
 
         return implemented;

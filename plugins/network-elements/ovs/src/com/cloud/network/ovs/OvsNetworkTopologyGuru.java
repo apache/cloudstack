@@ -38,6 +38,11 @@ public interface OvsNetworkTopologyGuru extends Manager {
     public  List<Long> getVpcOnHost(long hostId);
 
     /**
+     * get the list of all active Vm id's in a network
+     */
+    public List<Long> getAllActiveVmsInNetwork(long networkId);
+
+    /**
      * get the list of all active Vm id's in the VPC for all ther tiers
      */
     public List<Long> getAllActiveVmsInVpc(long vpcId);
@@ -46,4 +51,9 @@ public interface OvsNetworkTopologyGuru extends Manager {
      * get the list of all Vm id's in the VPC for all the tiers that are running on the host
      */
     public List<Long> getActiveVmsInVpcOnHost(long vpcId, long hostId);
+
+    /**
+     * get the list of all Vm id's in the network that are running on the host
+     */
+    public List<Long> getActiveVmsInNetworkOnHost(long vpcId, long hostId);
 }

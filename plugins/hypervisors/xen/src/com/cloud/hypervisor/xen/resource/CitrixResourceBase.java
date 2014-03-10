@@ -999,7 +999,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * This method creates a XenServer network and configures it for being used as a L2-in-L3 tunneled network
      */
-    private synchronized Network configureTunnelNetwork(Connection conn, long networkId, long hostId, String bridgeName) {
+    private synchronized Network configureTunnelNetwork(Connection conn, Long networkId, long hostId, String bridgeName) {
         try {
             Network nw = findOrCreateTunnelNetwork(conn, bridgeName);
             String nwName = bridgeName;
@@ -1038,7 +1038,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 String[] res = result.split(":");
                 if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
                     //TODO: Should make this error not fatal?
-                    throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge + " for network ID:" + networkId + " - " + res);
+                    throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge );
                 }
             }
             return nw;
@@ -1090,7 +1090,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 _isOvs = true;
                 return setupvSwitchNetwork(conn);
             } else {
-                return findOrCreateTunnelNetwork(conn, getOvsTunnelNetworkName(BroadcastDomainType.getValue(uri)));
+                return findOrCreateTunnelNetwork(conn, getOvsTunnelNetworkName(uri.getAuthority()));
             }
         } else if (type == BroadcastDomainType.Storage) {
             if (uri == null) {
@@ -1114,7 +1114,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private String getOvsTunnelNetworkName(String broadcastUri) {
         if (broadcastUri.contains(".")) {
-            String[] parts = broadcastUri.split(".");
+            String[] parts = broadcastUri.split("\\.");
             return "OVS-DR-VPC-Bridge"+parts[0];
          } else {
             try {
@@ -5266,7 +5266,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             String bridge = nw.getBridge(conn);
-            String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge", bridge, "in_port", cmd.getInPortName());
+            String result = callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", cmd.getInPortName());
+
             if (result.equalsIgnoreCase("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
@@ -5282,7 +5283,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         try {
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
-                    cmd.getBridgeName(), "host-id", ((Long)cmd.getHostId()).toString());
+                    cmd.getBridgeName(), "host-id", ((Long)cmd.getHostId()).toString(), "config",
+                    cmd.getjsonVpcConfig());
             if (result.equalsIgnoreCase("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
