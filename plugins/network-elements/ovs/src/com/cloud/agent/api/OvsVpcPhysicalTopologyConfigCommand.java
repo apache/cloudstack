@@ -20,8 +20,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * This command represents view of how a VPC is laid out (on which hosts, which VM is on which host etc)
- * on the physical infrastructure.
+ * This command represents physical view of how a VPC is laid out on the physical infrastructure.
+ *   - on which hypervisor hosts VPC spans (host is running in at least one VM from the VPC)
+ *   - information of tiers, so we can figure how one VM can talk to a different VM in same tier or different tier
+ *   - information on all the VM's in the VPC.
+ *   - information of NIC's of each VM in the VPC
  */
 public class OvsVpcPhysicalTopologyConfigCommand extends Command {
 

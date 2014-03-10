@@ -137,8 +137,8 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
 
     logging.debug("About to manually create the bridge:%s" % bridge)
     # create a bridge with the same name as the xapi network
-    res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge,
-                                     "--", "set", "bridge", bridge])
+    res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge])
+
     logging.debug("Bridge has been manually created:%s" % res)
     # TODO: Make sure xs-network-uuid is set into external_ids
     lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge,
@@ -149,12 +149,8 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         result = "FAILURE:%s" % res
     else:
         # Verify the bridge actually exists, with the gre_key properly set
-        res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
-                                          bridge, "other_config:gre_key"])
-        if key in res:
-            result = "SUCCESS:%s" % bridge
-        else:
-            result = "FAILURE:%s" % res
+        res = lib.do_cmd([lib.VSCTL_PATH, "list", "bridge", bridge])
+
         # Finally note in the xenapi network object that the network has
         # been configured
         xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
@@ -190,6 +186,8 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
 
         # add a default rule in egress table to forward packet to L3 lookup table
         lib.add_flow(bridge, priority=0, table=5, actions='drop')
+
+        result = "SUCCESS: successfully setup bridge with flow rules"
 
     logging.debug("Setup_ovs_bridge completed with result:%s" % result)
     return result
