@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.element;
 
+import com.cloud.host.dao.HostDao;
+import com.cloud.vm.dao.UserVmDao;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +75,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkElement.class, ConnectivityProvider.class,
         SourceNatServiceProvider.class, StaticNatServiceProvider.class,
@@ -93,6 +97,10 @@ StaticNatServiceProvider, IpDeployer {
     DomainRouterDao _routerDao;
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
+    @Inject
+    UserVmDao _userVmDao;
+    @Inject
+    HostDao _hostDao;
 
     private static final Logger s_logger = Logger.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -171,7 +179,12 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
 
-        _ovsTunnelMgr.vmCheckAndCreateTunnel(vm, network, dest);
+        if (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return false;
+        }
+
+        // prepare the tunnel network on the host, in order for VM to get launched
+        _ovsTunnelMgr.checkAndPrepareHostForTunnelNetwork(network, dest.getHost());
 
         return true;
     }
@@ -192,7 +205,25 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
 
-        _ovsTunnelMgr.checkAndDestroyTunnel(vm.getVirtualMachine(), network);
+        List<UserVmVO> userVms = _userVmDao.listByAccountIdAndHostId(vm.getVirtualMachine().getAccountId(),
+                vm.getVirtualMachine().getHostId());
+        if (vm.getType() == VirtualMachine.Type.User) {
+            if (userVms.size() > 1) {
+                return true;
+            }
+
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+            for (DomainRouterVO router : routers) {
+                if (router.getHostId().equals(vm.getVirtualMachine().getHostId())) {
+                    return true;
+                }
+            }
+        } else if (vm.getType() == VirtualMachine.Type.DomainRouter && userVms.size() != 0) {
+            return true;
+        }
+
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        _ovsTunnelMgr.checkAndRemoveHostFromTunnelNetwork(network, host);
         return true;
     }
 

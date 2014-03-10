@@ -14,36 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
 
+package com.cloud.network.ovs.dao;
 
-public class OvsDestroyTunnelCommand extends Command {
-
-    Long networkId;
-    String networkName;
-    String inPortName;
-
-    public OvsDestroyTunnelCommand(Long networkId, String networkName,
-            String inPortName) {
-        this.networkId = networkId;
-        this.inPortName = inPortName;
-        this.networkName = networkName;
-    }
-
-    public Long getNetworkId() {
-        return networkId;
-    }
-
-    public String getInPortName() {
-        return inPortName;
-    }
-
-    public String getBridgeName() {
-        return networkName;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
+public interface OvsTunnel {
+    public enum State {
+        Created, Established, Failed
     }
 }

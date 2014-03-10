@@ -16,24 +16,34 @@
 // under the License.
 package com.cloud.network.ovs;
 
-import com.cloud.host.Host;
-import com.cloud.network.Network;
 import com.cloud.utils.component.Manager;
 
-public interface OvsTunnelManager extends Manager {
+import java.util.List;
 
-    boolean isOvsTunnelEnabled();
-
-    /**
-     *  create a bridge on the host if not already created for the network and establish full tunnel mesh with
-     *  the rest of the hosts on which network spans
-     */
-    public void checkAndPrepareHostForTunnelNetwork(Network nw, Host host);
+public interface OvsNetworkTopologyGuru extends Manager {
 
     /**
-     * remove the bridge and tunnels to the hosts on which network spans if there are no other VM's
-     * belonging to the network are running on the host
+     * get the list of hypervisor hosts id's on which VM's belonging to the network currently spans
      */
-    public void checkAndRemoveHostFromTunnelNetwork(Network nw, Host host);
+    public  List<Long> getNetworkSpanedHosts(long networkId);
 
+    /**
+     * get the list of hypervisor hosts id's on which VM's belonging to a VPC spans
+     */
+    public  List<Long> getVpcSpannedHosts(long vpId);
+
+    /**
+     * get the list of VPC id's of the vpc's for which one or more VM's from the VPC are running on the host
+     */
+    public  List<Long> getVpcOnHost(long hostId);
+
+    /**
+     * get the list of all active Vm id's in the VPC for all ther tiers
+     */
+    public List<Long> getAllActiveVmsInVpc(long vpcId);
+
+    /**
+     * get the list of all Vm id's in the VPC for all the tiers that are running on the host
+     */
+    public List<Long> getActiveVmsInVpcOnHost(long vpcId, long hostId);
 }
