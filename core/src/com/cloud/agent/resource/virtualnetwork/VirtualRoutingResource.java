@@ -77,6 +77,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -123,6 +125,7 @@ public class VirtualRoutingResource {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
     private Map <String, Queue> _vrAggregateCommandsSet;
+    protected Map<String, Lock> _vrLockMap = new HashMap<String, Lock>();
 
     private String _name;
     private int _sleep;
@@ -137,13 +140,22 @@ public class VirtualRoutingResource {
 
     public Answer executeRequest(final NetworkElementCommand cmd) {
         boolean aggregated = false;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        Lock lock;
+        if (_vrLockMap.containsKey(routerName)) {
+            lock = _vrLockMap.get(routerName);
+        } else {
+            lock = new ReentrantLock();
+            _vrLockMap.put(routerName, lock);
+        }
+        lock.lock();
+
         try {
             ExecutionResult rc = _vrDeployer.prepareCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to prepare VR command due to " + rc.getDetails());
                 return new Answer(cmd, false, rc.getDetails());
             }
-            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
             assert cmd.getRouterAccessIp() != null : "Why there is no access IP for VR?";
 
@@ -174,6 +186,7 @@ public class VirtualRoutingResource {
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
+            lock.unlock();
             if (!aggregated) {
                 ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
                 if (!rc.isSuccess()) {
