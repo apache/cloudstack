@@ -312,7 +312,7 @@ class jsonLoader(object):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
                                       in self.__dict__.iteritems()))
 
-def configure_bridge_for_topology(bridge, this_host_id, json_config):
+def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
     vpconfig = jsonLoader(json.loads(json_config)).vpc
 
     if vpconfig is None:
@@ -372,4 +372,76 @@ def configure_bridge_for_topology(bridge, this_host_id, json_config):
                 # set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
                 add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
 
-    return "SUCCESS: successfully configured bridge as per the VPC toplogy"
+    return "SUCCESS: successfully configured bridge as per the VPC topology"
+
+def get_acl(vpcconfig, required_acl_id):
+    acls = vpcconfig.acls
+    for acl in acls:
+        if acl.id == required_acl_id:
+            return acl
+    return None
+
+def configure_ovs_bridge_for_routing_policies(bridge, json_config):
+    vpconfig = jsonLoader(json.loads(json_config)).vpc
+
+    if vpconfig is None:
+        logging.debug("WARNING:Can't find VPC info in json config file")
+        return "FAILURE:IMPROPER_JSON_CONFG_FILE"
+
+    # First flush current egress ACL's before re-applying the ACL's
+    del_flows(bridge, table=3)
+
+    egress_rules_added = False
+    ingress_rules_added = False
+
+    tiers = vpconfig.tiers
+    for tier in tiers:
+        tier_cidr = tier.cidr
+        acl = get_acl(vpconfig, tier.aclid)
+        acl_items = acl.aclitems
+
+        for acl_item in acl_items:
+            number = acl_item.number
+            action = acl_item.action
+            direction = acl_item.direction
+            source_port_start = acl_item.sourceportstart
+            source_port_end = acl_item.sourceportend
+            protocol = acl_item.protocol
+            source_cidrs = acl_item.sourcecidrs
+            acl_priority = 1000 + number
+            for source_cidr in source_cidrs:
+                if direction is "ingress":
+                    ingress_rules_added = True
+                    # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
+                    # source_cidr and destination ip is in tier_cidr
+                    port = source_port_start
+                    while (port < source_port_end):
+                        if action is "deny":
+                            add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                     nw_proto=protocol, actions='drop')
+                        if action is "allow":
+                            add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                     nw_proto=protocol, actions='resubmit(,1)')
+                        port = port + 1
+
+                elif direction in "egress":
+                    egress_rules_added = True
+                    # add flow rule to do action (allow/deny) for flows where destination IP of the packet is in
+                    # source_cidr and source ip is in tier_cidr
+                    port = source_port_start
+                    while (port < source_port_end):
+                        if action is "deny":
+                            add_flow(bridge, priority= acl_priority, table=5, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                     nw_proto=protocol, actions='drop')
+                        if action is "allow":
+                            add_flow(bridge, priority= acl_priority, table=5, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                     nw_proto=protocol, actions='resubmit(,1)')
+                        port = port + 1
+
+    if egress_rules_added is False:
+        # add a default rule in egress table to forward packet to L3 lookup table
+        add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
+
+    if ingress_rules_added is False:
+        # add a default rule in egress table drop packets
+        add_flow(bridge, priority=0, table=5, actions='drop')

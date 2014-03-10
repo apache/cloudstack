@@ -184,7 +184,7 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         # add a default rule in L3 lookup table to forward packet to L2 lookup table
         lib.add_flow(bridge, priority=0, table=4, actions='resubmit(,1)')
 
-        # add a default rule in egress table to forward packet to L3 lookup table
+        # add a default rule in ingress table to drop in bound packets
         lib.add_flow(bridge, priority=0, table=5, actions='drop')
 
         result = "SUCCESS: successfully setup bridge with flow rules"
@@ -391,7 +391,14 @@ def configure_ovs_bridge_for_network_topology(session, args):
     json_config = args.pop("config")
     this_host_id = args.pop("host-id")
 
-    return lib.configure_bridge_for_topology(bridge, this_host_id, json_config)
+    return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config)
+
+@echo
+def configure_ovs_bridge_for_routing_policies(session, args):
+    bridge = args.pop("bridge")
+    json_config = args.pop("config")
+
+    return lib.configure_ovs_bridge_for_router_policies(bridge, json_config)
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,
@@ -401,4 +408,5 @@ if __name__ == "__main__":
                            "is_xcp": is_xcp,
                            "getLabel": getLabel,
                            "setup_ovs_bridge_for_distributed_routing": setup_ovs_bridge_for_distributed_routing,
-                           "configure_ovs_bridge_for_network_topology": configure_ovs_bridge_for_network_topology})
+                           "configure_ovs_bridge_for_network_topology": configure_ovs_bridge_for_network_topology,
+                           "configure_ovs_bridge_for_routing_policies": "configure_ovs_bridge_for_routing_policies"})
