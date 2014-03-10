@@ -25,11 +25,10 @@
 """
 
 #Import Local Modules
-import marvin
 from marvin.codes import (PASS,
                           RECURRING)
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 
 from marvin.integration.lib.base import (ServiceOffering,
                                          Account,
@@ -51,7 +50,6 @@ from marvin.integration.lib.utils import (validateList,
                                           cleanup_resources)
 
 import time
-from datetime import datetime, timedelta
 
 class Services:
     """Test Base Image Updation
@@ -113,6 +111,18 @@ class Services:
                         "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2",
                         "hypervisor": "kvm",
                         "format": "qcow2",
+                        "isfeatured": True,
+                        "ispublic": True,
+                        "isextractable": True,
+
+                },
+                "VMware": {
+                        "displaytext": "Public Template - VMware",
+                        "name": "Public template -VMware",
+                        "ostype": "CentOS 5.3 (64-bit)",
+                        "url": "http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova",
+                        "hypervisor": "vmware",
+                        "format": "ova",
                         "isfeatured": True,
                         "ispublic": True,
                         "isextractable": True,
@@ -503,8 +513,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                     "VM created with IsVolatile=False doesn't have same ip after restore. Got : %s Expected : %s"
                                     %(vm_without_reset.nic[0].ipaddress, self.vm_without_reset.nic[0].ipaddress)
                                 )
-
-	    return
+        return
 
     @attr(tags=["advanced", "basic"])
     def test_04_reoccuring_snapshot_rules(self):
