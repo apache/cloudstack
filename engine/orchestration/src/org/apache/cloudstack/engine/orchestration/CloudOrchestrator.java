@@ -188,7 +188,7 @@ public class CloudOrchestrator implements OrchestrationService {
         rootDiskOfferingInfo.setDiskOffering(offering);
         rootDiskOfferingInfo.setSize(rootDiskSize);
 
-        if (offering.isCustomizedIops()) {
+        if (offering.isCustomizedIops() != null && offering.isCustomizedIops()) {
             Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
 
             if (userVmDetails != null) {

@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.network;
 
+import java.util.Map;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplianceService {
 
@@ -27,13 +30,14 @@ public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplian
      * @param router
      * @param network
      * @param isRedundant
+     * @param params TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException;
+    boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, Map<VirtualMachineProfile.Param, Object> params)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param router

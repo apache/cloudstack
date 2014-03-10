@@ -233,6 +233,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
     private boolean _sslEnabled = true;
+    private String _consoleProxyUrlDomain;
 
     // global load picture at zone basis
     private SystemVmLoadScanner<Long> _loadScanner;
@@ -384,9 +385,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         assert (ksVo != null);
 
         if (_staticPublicIp == null) {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _consoleProxyUrlDomain);
         } else {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, _consoleProxyUrlDomain);
         }
     }
 
@@ -1189,6 +1190,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
+        }
+
+        _consoleProxyUrlDomain = configs.get(Config.ConsoleProxyUrlDomain.key());
+        if( _sslEnabled && (_consoleProxyUrlDomain == null || _consoleProxyUrlDomain.isEmpty())) {
+            s_logger.warn("Empty console proxy domain, explicitly disabling SSL");
+            _sslEnabled = false;
         }
 
         value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());

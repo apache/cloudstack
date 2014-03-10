@@ -53,6 +53,7 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -517,6 +518,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
+                // Extract the uuid before params are processed and id reflects internal db id
+                objectUuid = params.get("id");
                 dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(cmdObj, params));
             }
 
@@ -528,10 +531,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (caller != null) {
                 params.put("ctxAccountId", String.valueOf(caller.getId()));
             }
+            if(objectUuid != null){
+                params.put("uuid", objectUuid);
+            }
 
             long startEventId = ctx.getStartEventId();
             asyncCmd.setStartEventId(startEventId);
 
+            if(EventTypes.getEntityForEvent(asyncCmd.getEventType()) != null){
+                ctx.putContextParameter(EventTypes.getEntityForEvent(asyncCmd.getEventType()), objectUuid);
+            }
             // save the scheduled event
             final Long eventId =
                 ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
@@ -577,7 +586,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd) &&
                 !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
                 !(cmdObj instanceof ListZonesByCmd)) {
-                buildAsyncListResponse((BaseListCmd)cmdObj, caller);
+                buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
 
             SerializationContext.current().setUuidTranslation(true);

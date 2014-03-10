@@ -191,7 +191,8 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
 
     #SSH to the machine
     ssh = SshClient(hostip, port, username, password)
-    if str(hypervisor).lower() == 'vmware':
+    if (str(hypervisor).lower() == 'vmware'
+		or str(hypervisor).lower() == 'hyperv'):
         ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
     else:
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "

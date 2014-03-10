@@ -324,7 +324,8 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET'):
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',
+                    customcpunumber=None, customcpuspeed=None, custommemory=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -411,6 +412,17 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
+
+        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":""}]
+
+        if customcpunumber:
+            cmd.details[0]["cpuNumber"] = customcpunumber
+
+        if customcpuspeed:
+            cmd.details[0]["cpuSpeed"] = customcpuspeed
+
+        if custommemory:
+            cmd.details[0]["memory"] = custommemory
 
         if group:
             cmd.group = group
@@ -635,6 +647,21 @@ class VirtualMachine:
             cmd.affinitygroupnames = affinitygroupnames
 
         return apiclient.updateVMAffinityGroup(cmd)
+
+    def scale(self, apiclient, serviceOfferingId,
+            customcpunumber=None, customcpuspeed=None, custommemory=None):
+        """Change service offering of the instance"""
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.serviceofferingid = serviceOfferingId
+        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":""}]
+        if customcpunumber:
+            cmd.details[0]["cpuNumber"] = customcpunumber
+        if customcpuspeed:
+            cmd.details[0]["cpuSpeed"] = customcpuspeed
+        if custommemory:
+            cmd.details[0]["memory"] = custommemory
+        return apiclient.scaleVirtualMachine(cmd)
 
 
 class Volume:

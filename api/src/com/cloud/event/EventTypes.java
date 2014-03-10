@@ -493,10 +493,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_REBOOT, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPDATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPGRADE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_DYNAMIC_SCALE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESETPASSWORD, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_RESETSSHKEY, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MIGRATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class.getName());
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class.getName());
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class.getName());
@@ -544,9 +547,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class.getName());
 
         // Account events
+        entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_CREATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DELETE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_UPDATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class.getName());
 
         // UserVO Events

@@ -37,9 +37,9 @@ import org.apache.log4j.Logger;
  */
 public class ParamGenericValidationWorker implements DispatchWorker {
 
-    protected static Logger s_logger = Logger.getLogger(ParamGenericValidationWorker.class.getName());
+    static Logger s_logger = Logger.getLogger(ParamGenericValidationWorker.class.getName());
 
-    protected static List<String> defaultParamNames = new ArrayList<String>();
+    protected static final List<String> defaultParamNames = new ArrayList<String>();
 
     static {
         defaultParamNames.add(ApiConstants.CTX_START_EVENT_ID);

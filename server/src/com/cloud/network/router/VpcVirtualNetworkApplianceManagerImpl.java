@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.Command.OnError;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -246,9 +247,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException {
-
+    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, Map<VirtualMachineProfile.Param, Object> params)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
             return false;
@@ -257,15 +257,22 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //Add router to the Guest network
         boolean result = true;
         try {
+
+            // 1) add nic to the router
             _routerDao.addRouterToGuestNetwork(router, network);
 
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
-            //setup guest network
+            //2) setup guest network
             if (guestNic != null) {
                 result = setupVpcGuestNetwork(network, router, true, guestNic);
             } else {
                 s_logger.warn("Failed to add router " + router + " to guest network " + network);
                 result = false;
+            }
+            //3) apply networking rules
+            if (result && params.get(Param.ReProgramGuestNetworks) != null
+                    && (Boolean) params.get(Param.ReProgramGuestNetworks) == true) {
+                sendNetworkRulesToRouter(router.getId(), network.getId());
             }
         } catch (Exception ex) {
             s_logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
@@ -883,6 +890,25 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
             }
         }
+    }
+
+
+    protected boolean sendNetworkRulesToRouter(long routerId, long networkId)
+            throws ResourceUnavailableException {
+        DomainRouterVO router = _routerDao.findById(routerId);
+        Commands cmds = new Commands(OnError.Continue);
+
+        VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
+        if (vrProvider == null) {
+            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
+        }
+        Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+        if (provider == null) {
+            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
+        }
+
+        finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
+        return sendCommandsToRouter(router, cmds);
     }
 
     @Override
