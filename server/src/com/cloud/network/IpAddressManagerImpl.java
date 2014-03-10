@@ -733,7 +733,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                         fetchFromDedicatedRange = false;
                         sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                        errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());
+                        errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                         addrs = _ipAddressDao.lockRows(sc, filter, true);
                     }
                 }
