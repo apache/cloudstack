@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.ReflectUtil;
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -186,10 +188,12 @@ public class ActionEventUtils {
         String entityType = null;
         String entityUuid = null;
         CallContext context = CallContext.current();
+        String vmEntityName = ReflectUtil.getEntityName(VirtualMachine.class);
+        String vmuuid = (String) context.getContextParameter(vmEntityName);
         Class entityKey = getEntityKey(eventType);
         if (entityKey != null)
         {
-            //FIXME - Remove this
+            //FIXME - Remove this since it should be covered by the else if condition below.
             entityUuid = (String)context.getContextParameter(entityKey);
             if (entityUuid != null)
                 entityType = entityKey.getName();
@@ -220,6 +224,8 @@ public class ActionEventUtils {
         eventDescription.put("status", state.toString());
         eventDescription.put("entity", entityType);
         eventDescription.put("entityuuid", entityUuid);
+        //Put all the first class entities that are touched during the action. For now atleast put in the vmid.
+        eventDescription.put(vmEntityName, vmuuid);
         eventDescription.put("description", description);
 
         String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());

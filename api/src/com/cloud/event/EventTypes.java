@@ -483,6 +483,7 @@ public class EventTypes {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
         // current ActionEvent annotation semantics
+        // TODO #2 - The map should be from event type to class.
 
         entityEventDetails = new HashMap<String, String>();
 
