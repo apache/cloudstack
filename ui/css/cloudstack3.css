@@ -3080,7 +3080,7 @@ div.toolbar div.button.refresh span {
 
 div.toolbar div.button.add span,
 .detail-group .button.add span.icon {
-  padding: 0px 0 0px 18px;
+  padding: 0px 0 3px 18px;
   background: url(../images/icons.png) no-repeat -626px -209px;
   /*+placement:shift 0px 0px;*/
   position: relative;
