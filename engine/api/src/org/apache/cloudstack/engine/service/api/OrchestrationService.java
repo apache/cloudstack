@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.vm.NicProfile;
 
 @Path("orchestration")
@@ -56,6 +57,7 @@ public interface OrchestrationService {
      * @param rootDiskTags tags for the root disk
      * @param networks networks that this VM should join
      * @param rootDiskSize size the root disk in case of templates.
+     * @param dataDiskTemplateDiskOfferingMap disk offerings in case of data disk templates
      * @return VirtualMachineEntity
      */
     @POST
@@ -65,7 +67,7 @@ public interface OrchestrationService {
         @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
         @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
-        @QueryParam("root-disk-size") Long rootDiskSize) throws InsufficientCapacityException;
+        @QueryParam("root-disk-size") Long rootDiskSize, @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap) throws InsufficientCapacityException;
 
     @POST
     VirtualMachineEntity createVirtualMachineFromScratch(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("iso-id") String isoId,

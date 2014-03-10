@@ -190,6 +190,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
+    @Parameter(name = ApiConstants.DATADISKTEMPLATE_TO_DISKOFFERING_LIST, type = CommandType.MAP, since = "4.4", description = "datadisk template to disk-offering mapping;" +
+            " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
+    private Map dataDiskTemplateToDiskOfferingList;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -393,6 +397,37 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
+    public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
+        if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
+            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+        }
+        HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
+        if (dataDiskTemplateToDiskOfferingList != null && !dataDiskTemplateToDiskOfferingList.isEmpty()) {
+            Collection dataDiskTemplatesCollection = dataDiskTemplateToDiskOfferingList.values();
+            Iterator iter = dataDiskTemplatesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> dataDiskTemplates = (HashMap<String, String>)iter.next();
+                Long dataDiskTemplateId;
+                DiskOffering dataDiskOffering = null;
+                VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                if (dataDiskTemplate == null) {
+                    dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                    if (dataDiskTemplate == null)
+                        throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
+                }
+                dataDiskTemplateId = dataDiskTemplate.getId();
+                dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                if (dataDiskOffering == null) {
+                    dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                    if (dataDiskOffering == null)
+                        throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+                }
+                dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
+            }
+        }
+        return dataDiskTemplateToDiskOfferingMap;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -585,13 +620,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                 } else {
                     vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName, diskOfferingId,
                             size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
-                            getDetails(), getCustomId());
+                            getDetails(), getCustomId(), getDataDiskTemplateToDiskOfferingMap());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
                             displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
-                            getAffinityGroupIdList(), getDetails(), getCustomId());
+                            getAffinityGroupIdList(), getDetails(), getCustomId(), getDataDiskTemplateToDiskOfferingMap());
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
@@ -599,7 +634,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                     }
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size, group,
                             getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), getDetails(),
-                            getCustomId());
+                            getCustomId(), getDataDiskTemplateToDiskOfferingMap());
                 }
             }
 

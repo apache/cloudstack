@@ -183,6 +183,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -2274,7 +2275,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
             Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
             String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
-            Map<String, String> customParametes, String customId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
+            Map<String, String> customParametes, String customId, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
             StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2318,7 +2319,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod,
-                userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParametes, customId);
+                userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParametes, customId, datadiskTemplateToDiskOfferringMap);
 
     }
 
@@ -2327,7 +2328,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
             HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
-            List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId) throws InsufficientCapacityException, ConcurrentOperationException,
+            List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap) throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2425,7 +2426,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod,
-                userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParameters, customId);
+                userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParameters, customId, datadiskTemplateToDiskOfferringMap);
     }
 
     @Override
@@ -2433,7 +2434,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
             String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList,
-            Map<String, String> customParametrs, String customId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
+            Map<String, String> customParametrs, String customId, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
             StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2517,7 +2518,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, httpmethod, userData,
-                sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayvm, keyboard, affinityGroupIdList, customParametrs, customId);
+                sshKeyPair, hypervisor, caller, requestedIps, defaultIps, displayvm, keyboard, affinityGroupIdList, customParametrs, customId, datadiskTemplateToDiskOfferringMap);
     }
 
     public void checkNameForRFCCompliance(String name) {
@@ -2531,7 +2532,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate tmplt, String hostName, String displayName, Account owner,
             Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData,
             String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard,
-            List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId) throws InsufficientCapacityException, ResourceUnavailableException,
+            List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferringMap) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, owner);
@@ -2601,6 +2602,32 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
+
+        if (dataDiskTemplateToDiskOfferringMap != null && !dataDiskTemplateToDiskOfferringMap.isEmpty()) {
+            for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : dataDiskTemplateToDiskOfferringMap.entrySet()) {
+                VMTemplateVO dataDiskTemplate = _templateDao.findById(datadiskTemplateToDiskOffering.getKey());
+                DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
+
+                if (dataDiskTemplate == null || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) &&
+                        (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
+                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
+                }
+                if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
+                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template " + datadiskTemplateToDiskOffering.getKey()
+                            + " doesn't belong to template " + template.getId());
+                }
+                if (dataDiskOffering == null) {
+                    throw new InvalidParameterValueException("Invalid disk offering id specified" + datadiskTemplateToDiskOffering.getValue());
+                }
+                _templateDao.loadDetails(dataDiskTemplate);
+                if (dataDiskOffering.isCustomized()) {
+                    throw new InvalidParameterValueException("Invalid disk offering id specified" + datadiskTemplateToDiskOffering.getValue() + ". Custom Disk offerings are not" +
+                            " supported for Datadisk templates");
+                }
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
+            }
+        }
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -2785,7 +2812,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, hypervisor, caller, isDisplayVm, keyboard, accountId,
-                offering, isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters);
+                offering, isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dataDiskTemplateToDiskOfferringMap);
 
         // Assign instance to the group
         try {
@@ -2845,7 +2872,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final Long diskOfferingId, final Long diskSize, final String userData, final HypervisorType hypervisor, final Account caller, final Boolean isDisplayVm,
             final String keyboard, final long accountId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey,
             final LinkedHashMap<String, NicProfile> networkNicMap, final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType,
-            final Map<String, String> customParameters) throws InsufficientCapacityException {
+            final Map<String, String> customParameters, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException {
         return Transaction.execute(new TransactionCallbackWithException<UserVmVO, InsufficientCapacityException>() {
             @Override
             public UserVmVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
@@ -2954,7 +2981,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             networkNicMap, plan);
                 } else {
                     _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisor.name(),
-                            offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize);
+                            offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize, dataDiskTemplateToDiskOfferingMap);
                 }
 
                 if (s_logger.isDebugEnabled()) {

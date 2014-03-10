@@ -456,7 +456,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                 assert (vmMo != null);
 
-                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0); // TO-DO: Support for base template containing multiple disks
+                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
                 s_logger.info("Move volume out of volume-wrapper VM ");
                 String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
                 String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
@@ -471,7 +471,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.destroy();
 
                 String srcFile = dsMo.getDatastorePath(vmdkName, true);
-                dsMo.deleteFile(srcFile, dcMo.getMor(), true);
+                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+                    dsMo.deleteFolder(srcFile, dcMo.getMor());
+                }
             }
             // restoreVM - move the new ROOT disk into corresponding VM folder
             String vmInternalCSName = volume.getVmName();
