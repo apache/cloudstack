@@ -64,6 +64,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
     private Long id;
 
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class,
+               description="the IDs of the virtual machines, mutually exclusive with id")
+    private List<Long> ids;
+
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine")
     private String name;
 
@@ -133,6 +137,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 
     public String getName() {

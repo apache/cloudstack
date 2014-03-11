@@ -728,11 +728,22 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
+        List<Long> ids = null;
+        if (cmd.getId() != null) {
+            if (cmd.getIds() != null && !cmd.getIds().isEmpty()) {
+                throw new InvalidParameterValueException("Specify either id or ids but not both parameters");
+            }
+            ids = new ArrayList<Long>();
+            ids.add(cmd.getId());
+        } else {
+            ids = cmd.getIds();
+        }
+
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         // Criteria c = new Criteria(null, Boolean.FALSE, cmd.getStartIndex(),
         // cmd.getPageSizeVal()); //version without default sorting
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.ID, ids);
         c.addCriteria(Criteria.NAME, cmd.getName());
         c.addCriteria(Criteria.STATE, cmd.getState());
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
@@ -805,7 +816,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object display = c.getCriteria(Criteria.DISPLAY);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
@@ -889,7 +900,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (id != null) {
-            sc.setParameters("id", id);
+            List<?> idList = (id instanceof List<?> ? (List<?>)id : null);
+            if (idList != null && !idList.isEmpty()) {
+                sc.setParameters("idIN", idList.toArray());
+            }
         }
 
         if (templateId != null) {
