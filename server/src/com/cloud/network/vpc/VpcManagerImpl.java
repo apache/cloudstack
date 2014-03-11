@@ -2189,7 +2189,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain,
         Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-        Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        Boolean isDisplayNetworkEnabled, boolean strechedL2Subnet) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
 

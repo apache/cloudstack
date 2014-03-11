@@ -70,11 +70,11 @@ public interface NetworkOrchestrationService {
     static final ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
         "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
-    List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean strechedL2Subnet)
         throws ConcurrentOperationException;
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
-        boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
+        boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled, boolean strechedL2Subnet)
         throws ConcurrentOperationException;
 
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
@@ -129,7 +129,7 @@ public interface NetworkOrchestrationService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
         Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-        Boolean displayNetworkEnabled, String isolatedPvlan) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+        Boolean displayNetworkEnabled, String isolatedPvlan, boolean strechedL2Subnet) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 

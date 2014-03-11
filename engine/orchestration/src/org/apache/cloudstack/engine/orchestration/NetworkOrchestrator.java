@@ -589,16 +589,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    public List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean strechedL2Subnet)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true);
+        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true, strechedL2Subnet);
     }
 
     @Override
     @DB
     public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final Network predefined, final DeploymentPlan plan, final String name,
             final String displayText, boolean errorIfAlreadySetup, final Long domainId, final ACLType aclType, final Boolean subdomainAccess, final Long vpcId,
-            final Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException {
+            final Boolean isDisplayNetworkEnabled, final boolean strechedL2Subnet) throws ConcurrentOperationException {
 
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -659,6 +659,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
                                 .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
+                        vo.setStrechedL2Network(strechedL2Subnet);
                         networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                                 finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
@@ -1628,7 +1629,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @DB
     public Network createGuestNetwork(long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, Boolean subdomainAccess,
-            final Long vpcId, final String ip6Gateway, final String ip6Cidr, final Boolean isDisplayNetworkEnabled, final String isolatedPvlan)
+            final Long vpcId, final String ip6Gateway, final String ip6Cidr, final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, boolean strechedL2Subnet)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1895,7 +1896,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccessFinal, vpcId,
-                        isDisplayNetworkEnabled);
+                        isDisplayNetworkEnabled, false);
 
                 Network network = null;
                 if (networks == null || networks.isEmpty()) {

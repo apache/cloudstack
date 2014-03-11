@@ -2188,6 +2188,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        response.setStrechedL2Subnet(network.isStrechedL2Network());
         response.setObjectName("network");
         return response;
     }

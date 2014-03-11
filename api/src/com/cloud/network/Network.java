@@ -338,4 +338,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Long getNetworkACLId();
 
     void setNetworkACLId(Long networkACLId);
+
+    boolean isStrechedL2Network();
 }

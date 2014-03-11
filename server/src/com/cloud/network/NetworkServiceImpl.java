@@ -1251,7 +1251,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, name, displayText, caller, physicalNetworkId, zoneId, domainId,
                 isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, isolatedPvlan, ntwkOff, pNtwk, aclType, owner, cidr,
-                createVlan);
+                createVlan, ntwkOff.getSupportsStrechedL2());
 
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.getIsPersistent()) {
@@ -1284,7 +1284,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             final String vlanId, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
             final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway,
             final String ip6Cidr, final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk,
-            final ACLType aclType, final Account ownerFinal, final String cidr, final boolean createVlan) throws InsufficientCapacityException, ResourceAllocationException {
+            final ACLType aclType, final Account ownerFinal, final String cidr, final boolean createVlan,
+            final boolean strechedL2Subnet) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             return Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1329,7 +1330,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
-                                aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
+                                aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork, strechedL2Subnet);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1339,7 +1340,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
-                                aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan);
+                                aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, strechedL2Subnet);
                     }
 
                     if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
