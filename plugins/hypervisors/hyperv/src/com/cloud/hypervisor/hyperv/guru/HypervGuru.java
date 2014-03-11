@@ -53,7 +53,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject HypervManager _hypervMgr;
     @Inject NetworkDao _networkDao;
     @Inject NetworkModel _networkMgr;
-
+    int MaxNicSupported = 8;
     @Override
     public final HypervisorType getHypervisorType() {
         return HypervisorType.Hyperv;
@@ -85,7 +85,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                 NicTO[] nics = to.getNics();
 
                 // reserve extra NICs
-                NicTO[] expandedNics = new NicTO[nics.length +  _hypervMgr.getRouterExtraPublicNics()];
+                NicTO[] expandedNics = new NicTO[MaxNicSupported];
                 int i = 0;
                 int deviceId = -1;
                 for(i = 0; i < nics.length; i++) {
@@ -97,8 +97,9 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
 
                 long networkId = publicNicProfile.getNetworkId();
                 NetworkVO network = _networkDao.findById(networkId);
-
-                for(; i < nics.length + _hypervMgr.getRouterExtraPublicNics(); i++) {
+                // for Hyperv Hot Nic plug is not supported and it will support upto 8 nics.
+                // creating the VR with extra nics (actual nics(3) + extra nics) will be 8
+                for(; i < MaxNicSupported; i++) {
                     NicTO nicTo = new NicTO();
                     nicTo.setDeviceId(deviceId++);
                     nicTo.setBroadcastType(publicNicProfile.getBroadcastType());

@@ -83,6 +83,7 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -98,6 +99,7 @@ import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
@@ -105,6 +107,7 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatAnswer;
@@ -119,9 +122,12 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -135,6 +141,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
@@ -148,7 +155,7 @@ import com.cloud.vm.VirtualMachineName;
  * Implementation of dummy resource to be returned from discoverer.
  **/
 @Local(value = ServerResource.class)
-public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource {
+public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     public static final int DEFAULT_AGENT_PORT = 8250;
     public static final String HOST_VM_STATE_REPORT_COMMAND = "org.apache.cloudstack.HostVmStateReportCommand";
     private static final Logger s_logger = Logger.getLogger(HypervDirectConnectResource.class.getName());
@@ -178,6 +185,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private static HypervManager s_hypervMgr;
     @Inject
     HypervManager _hypervMgr;
+    protected VirtualRoutingResource _vrResource;
 
     @PostConstruct
     void init() {
@@ -421,8 +429,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             s_logger.error(errMsg, e);
             return null;
         }
-
-        if (clazz == CheckSshCommand.class) {
+        if (cmd instanceof NetworkElementCommand) {
+        return _vrResource.executeRequest((NetworkElementCommand)cmd);
+        }if (clazz == CheckSshCommand.class) {
             answer = execute((CheckSshCommand)cmd);
         } else if (clazz == GetDomRVersionCmd.class) {
             answer = execute((GetDomRVersionCmd)cmd);
@@ -499,6 +508,203 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         return answer;
     }
+
+    @Override
+    public ExecutionResult executeInVR(String routerIP, String script, String args) {
+        Pair<Boolean, String> result;
+
+        //TODO: Password should be masked, cannot output to log directly
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on VR: " + routerIP + ", script: " + script + " with args: " + args);
+        }
+
+        try {
+            result = SshHelper.sshExecute(routerIP, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args);
+        } catch (Exception e) {
+            String msg = "Command failed due to " + e ;
+            s_logger.error(msg);
+            result = new Pair<Boolean, String>(false, msg);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(script + " execution result: " + result.first().toString());
+        }
+        return new ExecutionResult(result.first(), result.second());
+    }
+
+    @Override
+    public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
+        File keyFile = getSystemVMKeyFile();
+        try {
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(), fileName, null);
+        } catch (Exception e) {
+            s_logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
+            return new ExecutionResult(false, e.getMessage());
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    @Override
+    public ExecutionResult prepareCommand(NetworkElementCommand cmd) {
+        //Update IP used to access router
+        cmd.setRouterAccessIp(getRouterSshControlIp(cmd));
+        assert cmd.getRouterAccessIp() != null;
+
+        if (cmd instanceof IpAssocVpcCommand) {
+            return prepareNetworkElementCommand((IpAssocVpcCommand)cmd);
+        } else if (cmd instanceof IpAssocCommand) {
+            return prepareNetworkElementCommand((IpAssocCommand)cmd);
+        } else if (cmd instanceof SetSourceNatCommand) {
+            return prepareNetworkElementCommand((SetSourceNatCommand)cmd);
+        } else if (cmd instanceof SetupGuestNetworkCommand) {
+            return prepareNetworkElementCommand((SetupGuestNetworkCommand)cmd);
+        } else if (cmd instanceof SetNetworkACLCommand) {
+            return prepareNetworkElementCommand((SetNetworkACLCommand)cmd);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
+        try {
+
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+            String controlIp = getRouterSshControlIp(cmd);
+
+            for (IpAddressTO ip : ips) {
+                /**
+                 * TODO support other networks
+                 */
+                URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
+                if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+                    throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + ip.getBroadcastUri());
+                }
+                int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+                int publicNicInfo = -1;
+                publicNicInfo = getVmNics(routerName, vlanId);
+
+                boolean addVif = false;
+                if (ip.isAdd() && publicNicInfo == -1) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Plug new NIC to associate" + controlIp + " to " + ip.getPublicIp());
+                    }
+                    addVif = true;
+                }
+
+                if (addVif) {
+                    Pair<Integer, String> nicdevice = findRouterFreeEthDeviceIndex(controlIp);
+                    publicNicInfo = nicdevice.first();
+                    if (publicNicInfo > 0) {
+                        modifyNicVlan(routerName, vlanId, nicdevice.second());
+                        // After modifying the vnic on VR, check the VR VNics config in the host and get the device position
+                        publicNicInfo = getVmNics(routerName, vlanId);
+                        // As a new nic got activated in the VR. add the entry in the NIC's table.
+                        networkUsage(controlIp, "addVif", "eth" + publicNicInfo);
+                    }
+                    else {
+                        // we didn't find any eth device available in VR to configure the ip range with new VLAN
+                        String msg = "No Nic is available on DomR VIF to associate/disassociate IP with.";
+                        s_logger.error(msg);
+                        throw new InternalErrorException(msg);
+                    }
+                    ip.setNicDevId(publicNicInfo);
+                    ip.setNewNic(addVif);
+                } else {
+                    ip.setNicDevId(publicNicInfo);
+                }
+            }
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
+            return new ExecutionResult(false, e.toString());
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    protected ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
+        NicTO nic = cmd.getNic();
+        String routerIp = getRouterSshControlIp(cmd);
+        String domrName =
+                cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+
+        try {
+            int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp,
+                    nic.getMac());
+            nic.setDeviceId(ethDeviceNum);
+        } catch (Exception e) {
+            String msg = "Prepare SetupGuestNetwork failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new ExecutionResult(false, msg);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+
+    private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+
+        try {
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            for (IpAddressTO ip : ips) {
+
+                int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, ip.getVifMacAddress());
+                if (ethDeviceNum < 0) {
+                    if (ip.isAdd()) {
+                        throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+                    } else {
+                        s_logger.debug("VIF to deassociate IP with does not exist, return success");
+                        continue;
+                    }
+                }
+
+                ip.setNicDevId(ethDeviceNum);
+            }
+        } catch (Exception e) {
+            s_logger.error("Prepare Ip Assoc failure on applying one ip due to exception:  ", e);
+            return new ExecutionResult(false, e.toString());
+        }
+
+        return new ExecutionResult(true, null);
+    }
+
+    protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+        IpAddressTO pubIp = cmd.getIpAddress();
+
+        try {
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
+            pubIp.setNicDevId(ethDeviceNum);
+        } catch (Exception e) {
+            String msg = "Prepare Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new ExecutionResult(false, e.toString());
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    private ExecutionResult prepareNetworkElementCommand(SetNetworkACLCommand cmd) {
+        NicTO nic = cmd.getNic();
+        String routerName =
+                cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+
+        try {
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp,
+                    nic.getMac());
+            nic.setDeviceId(ethDeviceNum);
+        } catch (Exception e) {
+            String msg = "Prepare SetNetworkACL failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new ExecutionResult(false, msg);
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    @Override
+    public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
+        return new ExecutionResult(true, null);
+    }
+
     protected Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         String controlIp = getRouterSshControlIp(cmd);
         StringBuffer argsBuf = new StringBuffer();
@@ -1926,6 +2132,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             _configureCalled = true;
         }
 
+        _vrResource = new VirtualRoutingResource(this);
+        if (!_vrResource.configure(name, new HashMap<String, Object>())) {
+            throw new ConfigurationException("Unable to configure VirtualRoutingResource");
+        }
         return true;
     }
 
