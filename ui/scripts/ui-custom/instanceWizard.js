@@ -460,7 +460,7 @@
 
                                         var customIops = item[args.customIopsFlag];
 
-                                        if (customIops) {
+                                        if (customIops && args.canShowCustomIops) {
                                             $step.addClass('custom-iops');
                                         } else {
                                             $step.removeClass('custom-iops');
@@ -554,6 +554,14 @@
                                         } else {
                                             $step.find('.section.custom-size').hide();
                                             $step.removeClass('custom-disk-size');
+                                        }
+
+                                        var customIops = item[args.customIopsDoFlag];
+
+                                        if (customIops) {
+                                            $step.addClass('custom-iops-do');
+                                        } else {
+                                            $step.removeClass('custom-iops-do');
                                         }
 
                                         return true;

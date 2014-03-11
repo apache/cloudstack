@@ -482,41 +482,50 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             String minIops = (String)map.get("minIops");
             String maxIops = (String)map.get("maxIops");
 
-            if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
-                throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
-            }
+            verifyMinAndMaxIops(minIops, maxIops);
 
-            long lMinIops;
+            minIops = (String)map.get("minIopsDo");
+            maxIops = (String)map.get("maxIopsDo");
 
-            try {
-                if (minIops != null) {
-                    lMinIops = Long.valueOf(minIops);
-                }
-                else {
-                    lMinIops = 0;
-                }
-            }
-            catch (NumberFormatException ex) {
-                throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
-            }
+            verifyMinAndMaxIops(minIops, maxIops);
+        }
+    }
 
-            long lMaxIops;
+    private void verifyMinAndMaxIops(String minIops, String maxIops) {
+        if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
+            throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
+        }
 
-            try {
-                if (maxIops != null) {
-                    lMaxIops = Long.valueOf(maxIops);
-                }
-                else {
-                    lMaxIops = 0;
-                }
-            }
-            catch (NumberFormatException ex) {
-                throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
-            }
+        long lMinIops;
 
-            if (lMinIops > lMaxIops) {
-                throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
+        try {
+            if (minIops != null) {
+                lMinIops = Long.valueOf(minIops);
             }
+            else {
+                lMinIops = 0;
+            }
+        }
+        catch (NumberFormatException ex) {
+            throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
+        }
+
+        long lMaxIops;
+
+        try {
+            if (maxIops != null) {
+                lMaxIops = Long.valueOf(maxIops);
+            }
+            else {
+                lMaxIops = 0;
+            }
+        }
+        catch (NumberFormatException ex) {
+            throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
+        }
+
+        if (lMinIops > lMaxIops) {
+            throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
         }
     }
 

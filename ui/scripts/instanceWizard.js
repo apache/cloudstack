@@ -292,6 +292,9 @@
                     selectedHypervisor = args.currentData.hypervisorid;
                 }
 
+                // if the user is leveraging a template, then we can show custom IOPS, if applicable
+                var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
+
                 $.ajax({
                     url: createURL("listServiceOfferings&issystem=false"),
                     dataType: "json",
@@ -299,6 +302,7 @@
                     success: function(json) {
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
+                            canShowCustomIops: canShowCustomIopsForServiceOffering,
                             customFlag: 'iscustomized',
                         	//customFlag: 'offerha', //for testing only
                         	customIopsFlag: 'iscustomizediops',
@@ -322,6 +326,7 @@
                         args.response.success({
                             required: isRequred,
                             customFlag: 'iscustomized', // Field determines if custom slider is shown
+                            customIopsDoFlag: 'iscustomizediops',
                             data: {
                                 diskOfferings: diskOfferingObjs
                             }
@@ -656,6 +661,20 @@
                 	$.extend(deployVmData, {
                 		size : args.data.size
                 	});
+                }
+
+                if (selectedDiskOfferingObj.iscustomizediops == true) {
+	                if (args.$wizard.find('input[name=disk-min-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].minIopsDo' : args.$wizard.find('input[name=disk-min-iops-do]').val()
+	            	    });
+	                }
+
+	                if (args.$wizard.find('input[name=disk-max-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].maxIopsDo' : args.$wizard.find('input[name=disk-max-iops-do]').val()
+	            	    });
+	                }
                 }
             }
 
