@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.util.UUID;
 
 /**
  * This command represents logical view of VM's connectivity in VPC.

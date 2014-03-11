@@ -27,6 +27,7 @@ import os
 import sys
 import subprocess
 import time
+import simplejson as json
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 
 from time import localtime as _localtime, asctime as _asctime
@@ -70,6 +71,58 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
                    "other_config:ovs-host-setup=%s" % conf_hosts])
 
     logging.debug("Setup_ovs_bridge completed with result:%s" % result)
+    return result
+
+@echo
+def setup_ovs_bridge_for_distributed_routing(bridge, cs_host_id):
+
+    res = lib.check_switch()
+    if res != "SUCCESS":
+        return "FAILURE:%s" % res
+
+    logging.debug("About to manually create the bridge:%s" % bridge)
+    res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge])
+    logging.debug("Bridge has been manually created:%s" % res)
+
+    # Non empty result means something went wrong
+    if res:
+        result = "FAILURE:%s" % res
+    else:
+        # Verify the bridge actually exists
+        res = lib.do_cmd([lib.VSCTL_PATH, "list", "bridge", bridge])
+
+        res = lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs_vpc_distributed_vr_network=True"])
+        conf_hosts = lib.do_cmd([lib.VSCTL_PATH, "get","bridge", bridge,"other:ovs-host-setup"])
+        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
+                   "other_config:ovs-host-setup=%s" % conf_hosts])
+
+        # add a default flow rule to send broadcast and multi-cast packets to L2 flooding table
+        lib.add_flow(bridge, priority=1000, dl_dst='ff:ff:ff:ff:ff:ff', table=0, actions='resubmit(,2)')
+        lib.add_flow(bridge, priority=1000, nw_dst='224.0.0.0/24', table=0, actions='resubmit(,2)')
+
+        # add a default flow rule to send uni-cast traffic to L2 lookup table
+        lib.add_flow(bridge, priority=0, table=0, actions='resubmit(,1)')
+
+        # add a default rule to send unknown mac address to L2 flooding table
+        lib.add_flow(bridge, priority=0, table=1, actions='resubmit(,2)')
+
+        # add a default rule in L2 flood table to drop packet
+        lib.add_flow(bridge, priority=0, table=2, actions='drop')
+
+        # add a default rule in egress table to forward packet to L3 lookup table
+        lib.add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
+
+        # add a default rule in L3 lookup table to forward packet to L2 lookup table
+        lib.add_flow(bridge, priority=0, table=4, actions='resubmit(,1)')
+
+        # add a default rule in ingress table to drop in bound packets
+        lib.add_flow(bridge, priority=0, table=5, actions='drop')
+
+        result = "SUCCESS: successfully setup bridge with flow rules"
+
+        logging.debug("Setup_ovs_bridge completed with result:%s" % result)
+
     return result
 
 def destroy_ovs_bridge(bridge):
@@ -163,12 +216,30 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         # Ensure no trailing LF
         if tun_ofport.endswith('\n'):
             tun_ofport = tun_ofport[:-1]
-        # add flow entryies for dropping broadcast coming in from gre tunnel
-        lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
+
+        ovs_tunnel_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other_config:is-ovs-tun-network"])
+        ovs_vpc_distributed_vr_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge,
+                                                     "other_config:is-ovs_vpc_distributed_vr_network"])
+
+        if ovs_tunnel_network == 'True':
+            # add flow entryies for dropping broadcast coming in from gre tunnel
+            lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
                          dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
-        lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
+            lib.add_flow(bridge, priority=1000, in_port=tun_ofport,
                      nw_dst='224.0.0.0/24', actions='drop')
-        drop_flow_setup = True
+            drop_flow_setup = True
+
+        if ovs_vpc_distributed_vr_network == 'True':
+            # add flow rules for dropping broadcast coming in from tunnel ports
+            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
+                         dl_dst='ff:ff:ff:ff:ff:ff', actions='drop')
+            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0,
+                     nw_dst='224.0.0.0/24', actions='drop')
+
+            # add flow rule to send the traffic from tunnel ports to L2 switching table only
+            lib.add_flow(bridge, priority=1000, in_port=tun_ofport, table=0, actions='resubmit(,1)')
+            lib.do_cmd([lib.VSCTL_PATH, "set", "interface", name, "options:cloudstack-network-id=%s" % network_uuid])
+
         logging.debug("Broadcast drop rules added")
 #        return "SUCCESS:%s" % name
         return 'true'
@@ -210,6 +281,7 @@ if __name__ == '__main__':
     parser.add_option("--src_host", dest="src_host")
     parser.add_option("--dst_host", dest="dst_host")
     parser.add_option("--iface_name", dest="iface_name")
+    parser.ad_option("--config", dest="config")
     (option, args) = parser.parse_args()
     if len(args) == 0:
         logging.debug("No command to execute")
@@ -223,6 +295,12 @@ if __name__ == '__main__':
         create_tunnel(option.bridge, option.remote_ip, option.key, option.src_host, option.dst_host)
     elif cmd == "destroy_tunnel":
         destroy_tunnel(option.bridge, option.iface_name)
+    elif cmd == "setup_ovs_bridge_for_distributed_routing":
+        setup_ovs_bridge_for_distributed_routing(bridge, cs_host_id)
+    elif cmd == "configure_ovs_bridge_for_network_topology":
+        configure_bridge_for_network_topology(brdige, cs_host_id, config)
+    elif cmd == "configure_ovs_bridge_for_routing_policies":
+        configure_ovs_bridge_for_routing_policies(bridge, config)
     else:
         logging.debug("Unknown command: " + cmd)
         sys.exit(1)

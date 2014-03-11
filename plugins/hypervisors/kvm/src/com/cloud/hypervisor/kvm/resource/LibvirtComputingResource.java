@@ -78,6 +78,8 @@ import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceAnswer;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -1360,6 +1362,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((OvsCreateTunnelCommand)cmd);
             } else if (cmd instanceof OvsDestroyTunnelCommand) {
                 return execute((OvsDestroyTunnelCommand)cmd);
+            } else if (cmd instanceof OvsVpcPhysicalTopologyConfigCommand) {
+                return execute((OvsVpcPhysicalTopologyConfigCommand) cmd);
+            } else if (cmd instanceof OvsVpcRoutingPolicyConfigCommand) {
+                return execute((OvsVpcRoutingPolicyConfigCommand) cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1399,6 +1405,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         destroyTunnelNetwork(cmd.getBridgeName());
         s_logger.debug("OVS Bridge destroyed");
         return new Answer(cmd, true, null);
+    }
+
+    public Answer execute(OvsVpcPhysicalTopologyConfigCommand cmd) {
+
+        String bridge = cmd.getBridgeName();
+        try {
+            Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+            command.add("configure_ovs_bridge_for_network_topology");
+            command.add("--bridge", bridge);
+            command.add("--config", cmd.getVpcConfigInJson());
+
+            String result = command.execute();
+            if (result.equalsIgnoreCase("SUCCESS")) {
+                return new Answer(cmd, true, result);
+            } else {
+                return new Answer(cmd, false, result);
+            }
+        } catch  (Exception e) {
+            s_logger.warn("caught exception while updating host with latest routing polcies", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
+    }
+
+    public Answer execute(OvsVpcRoutingPolicyConfigCommand cmd) {
+
+        try {
+            Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+            command.add("configure_ovs_bridge_for_routing_policies");
+            command.add("--bridge", cmd.getBridgeName());
+            command.add("--config", cmd.getVpcConfigInJson());
+
+            String result = command.execute();
+            if (result.equalsIgnoreCase("SUCCESS")) {
+                return new Answer(cmd, true, result);
+            } else {
+                return new Answer(cmd, false, result);
+            }
+        } catch  (Exception e) {
+            s_logger.warn("caught exception while updating host with latest VPC topology", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
     }
 
     private synchronized void destroyTunnelNetwork(String bridge) {
