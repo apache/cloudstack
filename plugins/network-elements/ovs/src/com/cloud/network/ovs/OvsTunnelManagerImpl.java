@@ -16,11 +16,25 @@
 // under the License.
 package com.cloud.network.ovs;
 
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.OvsCreateTunnelAnswer;
+import com.cloud.agent.api.OvsCreateTunnelCommand;
+import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsDestroyTunnelCommand;
+import com.cloud.agent.api.OvsFetchInterfaceAnswer;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
+import com.cloud.agent.api.OvsSetupBridgeCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.*;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.Nic;
@@ -63,7 +77,6 @@ import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
 import com.cloud.network.ovs.dao.OvsTunnel;
-import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
