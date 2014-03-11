@@ -14762,9 +14762,9 @@
                                         return 'label.action.remove.host';
                                     }
                                 },
-                                preFilter: function (args) {
-                                    if (isAdmin()) {
-                                        args.$form.find('.form-item[rel=isForced]').css('display', 'inline-block');
+                                preFilter: function(args) { //bug to fix: preFilter is not picked up from here                              
+                                	if (!isAdmin()) {
+                                        args.$form.find('.form-item[rel=isForced]').hide();
                                     }
                                 },
                                 createForm: {
@@ -14774,25 +14774,33 @@
                                         isForced: {
                                             label: 'force.remove',
                                             isBoolean: true,
-                                            isHidden: true
+                                            isHidden: false
                                         }
                                     }
                                 },
                                 action: function (args) {
-                                    var array1 =[];
-                                    //if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") //uncomment after Brian fix it to include $form in args
-                                    array1.push("&forced=" + (args.data.isForced == "on"));
+                                    var data = {
+                                    	id: args.context.hosts[0].id
+                                    };                                    
+                                    if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") {
+                                    	$.extend(data, {
+                                    		forced: (args.data.isForced == "on")
+                                    	});                                    	
+                                    }
                                     
                                     $.ajax({
-                                        url: createURL("deleteHost&id=" + args.context.hosts[0].id + array1.join("")),
-                                        dataType: "json",
-                                        async: true,
+                                        url: createURL("deleteHost"),
+                                        data: data,
                                         success: function (json) {
                                             //{ "deletehostresponse" : { "success" : "true"}  }
                                             args.response.success({
                                                 data: {
                                                 }
                                             });
+                                            
+                                            if (args.context.hosts[0].hypervisor == "XenServer"){
+                                            	cloudStack.dialog.notice({ message: _s("The host has been deleted. Please eject the host from XenServer Pool") })
+                                            }                                            
                                         }
                                     });
                                 },
