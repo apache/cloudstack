@@ -28,7 +28,7 @@ import email
 import socket
 import urlparse
 import datetime
-from marvin.cloudstackAPI import cloudstackAPIClient, listHosts
+from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters
 from marvin.sshClient import SshClient
 from marvin.codes import (FAIL,
                           PASS,
@@ -429,3 +429,25 @@ def verifyElementInList(inp, toverify, responsevar=None,  pos=0):
     else:
         return [FAIL, MATCH_NOT_FOUND]
 
+def verifyRouterState(apiclient, routerid, allowedstates):
+    """List the router and verify that its state is in allowed states
+    @output: List, containing [Result, Reason]
+             Ist Argument ('Result'): FAIL: If router state is not
+                                                in allowed states
+                                          PASS: If router state is in
+                                                allowed states"""
+
+    try:
+        cmd = listRouters.listRoutersCmd()
+        cmd.id = routerid
+        cmd.listall = True
+        routers = apiclient.listRouters(cmd)
+    except Exception as e:
+        return [FAIL, e]
+    listvalidationresult = validateList(routers)
+    if listvalidationresult[0] == FAIL:
+        return [FAIL, listvalidationresult[2]]
+    if routers[0].redundantstate not in allowedstates:
+        return [FAIL, "Redundant state of the router should be in %s but is %s" %
+            (allowedstates, routers[0].redundantstate)]
+    return [PASS, None]

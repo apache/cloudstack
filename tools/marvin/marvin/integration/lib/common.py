@@ -65,13 +65,17 @@ from marvin.integration.lib.base import (Configurations,
                                          Host,
                                          PublicIPAddress,
                                          NetworkOffering,
-                                         Network)
+                                         Network,
+                                         FireWallRule,
+                                         NATRule,
+                                         StaticNATRule)
 from marvin.integration.lib.utils import (get_process_status,
                                           xsplit,
                                           validateList)
 
 from marvin.sshClient import SshClient
-from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, BASIC_ZONE, FAIL
+from marvin.codes import (PASS, ISOLATED_NETWORK, VPC_NETWORK,
+                          BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE)
 import random
 
 #Import System modules
@@ -994,8 +998,39 @@ def verifyComputeOfferingCreation(apiclient, computeofferingid):
     serviceOfferings = None
     try:
         serviceOfferings = apiclient.listServiceOfferings(cmd)
-    except Exception as e:
+    except Exception:
        return FAIL
     if not (isinstance(serviceOfferings, list) and len(serviceOfferings) > 0):
        return FAIL
     return PASS
+
+def createNetworkRulesForVM(apiclient, virtualmachine, ruletype,
+                            account, networkruledata):
+    """Acquire IP, create Firewall and NAT/StaticNAT rule
+        (associating it with given vm) for that IP"""
+
+    try:
+        public_ip = PublicIPAddress.create(
+                apiclient,accountid=account.name,
+                zoneid=virtualmachine.zoneid,domainid=account.domainid,
+                networkid=virtualmachine.nic[0].networkid)
+
+        FireWallRule.create(
+            apiclient,ipaddressid=public_ip.ipaddress.id,
+            protocol='TCP', cidrlist=[networkruledata["fwrule"]["cidr"]],
+            startport=networkruledata["fwrule"]["startport"],
+            endport=networkruledata["fwrule"]["endport"]
+            )
+
+        if ruletype == NAT_RULE:
+            # Create NAT rule
+            NATRule.create(apiclient, virtualmachine,
+                                 networkruledata["natrule"],ipaddressid=public_ip.ipaddress.id,
+                                 networkid=virtualmachine.nic[0].networkid)
+        elif ruletype == STATIC_NAT_RULE:
+            # Enable Static NAT for VM
+            StaticNATRule.enable(apiclient,public_ip.ipaddress.id,
+                                     virtualmachine.id, networkid=virtualmachine.nic[0].networkid)
+    except Exception as e:
+        [FAIL, e]
+    return [PASS, public_ip]
