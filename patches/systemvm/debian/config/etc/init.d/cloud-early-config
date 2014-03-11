@@ -1029,6 +1029,16 @@ EOF
   sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
   #answer all local domain queries
   sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+
+  command -v dhcp_release > /dev/null 2>&1
+  no_dhcp_release=$?
+  if [ $no_dhcp_release -eq 0 ]
+  then
+      echo 1 > /var/cache/cloud/dnsmasq_managed_lease
+      sed -i -e "/^leasefile-ro/d" /etc/dnsmasq.conf
+  else
+      echo 0 > /var/cache/cloud/dnsmasq_managed_lease
+  fi
 }
 
 
