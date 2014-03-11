@@ -591,8 +591,9 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
             accessType = AccessType.UseEntry;
         }
+        String accessTypeStr = (accessType != null) ? accessType.toString() : null;
         return _iamSrv.addIAMPermissionToIAMPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action,
-                accessType.toString(), perm, recursive);
+                accessTypeStr, perm, recursive);
     }
 
     @DB

@@ -35,6 +35,7 @@ import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -73,7 +74,14 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             return true;
         }
 
-        String entityType = entity.getEntityType().toString();
+        if (entity == null) {
+            throw new InvalidParameterValueException("Entity and action cannot be both NULL in checkAccess!");
+        }
+
+        String entityType = null;
+        if (entity.getEntityType() != null) {
+            entityType = entity.getEntityType().toString();
+        }
 
         if (accessType == null) {
             accessType = AccessType.UseEntry;

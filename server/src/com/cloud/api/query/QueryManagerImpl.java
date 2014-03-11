@@ -3314,17 +3314,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (resourceIdStr != null) {
             resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
         }
+        if (resourceId == null) {
+            throw new InvalidParameterValueException("Cannot find resource with resourceId " + resourceIdStr + " and of resource type " + resourceType);
+        }
         List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
         ResourceDetail requestedDetail = null;
 
-            if (key == null) {
+        if (key == null) {
             detailList = _resourceMetaDataMgr.getDetailsList(resourceId, resourceType, forDisplay);
-            } else {
+        } else {
             requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
             if (forDisplay != null && requestedDetail.isDisplay() != forDisplay) {
                 requestedDetail = null;
             }
-            }
+        }
 
         List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         if (requestedDetail != null) {
