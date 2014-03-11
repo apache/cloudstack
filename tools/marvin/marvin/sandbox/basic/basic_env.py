@@ -52,9 +52,9 @@ def describeResources(config):
     sgprovider.broadcastdomainrange = 'Pod'
     sgprovider.name = 'SecurityGroupProvider'
     
-    pn = physical_network()
+    pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
-    pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+    pn.traffictypes = [trafficType("Guest"), trafficType("Management")]
     pn.isolationmethods = ["L3"]
     pn.providers.append(sgprovider)
     
@@ -119,16 +119,10 @@ def describeResources(config):
     [zs.globalConfig.append(cfg) for cfg in getGlobalSettings(config)]
 
     ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = 'TestClient'
-    testClientLogger.file = '/var/log/testclient.log'
+    testLogger = logger()
+    testLogger.logFolderPath = '/tmp/'
+    zs.logger = testLogger
 
-    testCaseLogger = logger()
-    testCaseLogger.name = 'TestCase'
-    testCaseLogger.file = '/var/log/testcase.log'
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
     return zs
 
 

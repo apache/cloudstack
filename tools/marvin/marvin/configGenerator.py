@@ -61,7 +61,7 @@ class cloudstackConfiguration(object):
         self.mgtSvr = []
         self.dbSvr = None
         self.globalConfig = []
-        self.logger = []
+        self.logger = None
         self.TestData = None
 
 

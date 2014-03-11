@@ -54,22 +54,22 @@ def describeResources(config):
     lbprovider = provider()
     lbprovider.name = 'InternalLbVm'
     
-    pn = physical_network()
+    pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
     pn.vlan = config.get('cloudstack', 'pnet.vlan')
     pn.tags = ["cloud-simulator-public"]
-    pn.traffictypes = [traffictype("Guest"),
-            traffictype("Management", {"simulator" : "cloud-simulator-mgmt"}),
-            traffictype("Public", {"simulator":"cloud-simulator-public"})]
+    pn.traffictypes = [trafficType("Guest"),
+            trafficType("Management", {"simulator" : "cloud-simulator-mgmt"}),
+            trafficType("Public", {"simulator":"cloud-simulator-public"})]
     pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
     pn.providers.append(lbprovider)
 
-    pn2 = physical_network()
+    pn2 = physicalNetwork()
     pn2.name = "Sandbox-pnet2"
     pn2.vlan = config.get('cloudstack', 'pnet2.vlan')
     pn2.tags = ["cloud-simulator-guest"]
-    pn2.traffictypes = [traffictype('Guest', {'simulator': 'cloud-simulator-guest'})]
+    pn2.traffictypes = [trafficType('Guest', {'simulator': 'cloud-simulator-guest'})]
     pn2.isolationmethods = ["VLAN"]
     pn2.providers.append(vpcprovider)
     pn2.providers.append(lbprovider)
@@ -137,16 +137,11 @@ def describeResources(config):
     [zs.globalConfig.append(cfg) for cfg in getGlobalSettings(config)]
 
     ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = 'TestClient'
-    testClientLogger.file = 'testclient.log'
+    testLogger = logger()
+    testLogger.logFolderPath = '/tmp/'
+    zs.logger = testLogger
 
-    testCaseLogger = logger()
-    testCaseLogger.name = 'TestCase'
-    testCaseLogger.file = 'testcase.log'
 
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
     return zs
 
 
