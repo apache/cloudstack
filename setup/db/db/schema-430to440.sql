@@ -26,6 +26,7 @@ ALTER TABLE `cloud`.`disk_offering` ADD `cache_mode` VARCHAR( 16 ) DEFAULT 'none
 
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='150' WHERE hypervisor_version='6.1.0';
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='500' WHERE hypervisor_version='6.2.0';
+UPDATE `cloud`.`hypervisor_capabilities` set storage_motion_supported='1' WHERE hypervisor_version='6.2' AND hypervisor_type="Hyperv";
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS

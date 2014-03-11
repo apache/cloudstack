@@ -36,7 +36,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        private static string CreatedClassName = "Msvm_StorageAllocationSettingData";
+        public static string CreatedClassName = "Msvm_StorageAllocationSettingData";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;

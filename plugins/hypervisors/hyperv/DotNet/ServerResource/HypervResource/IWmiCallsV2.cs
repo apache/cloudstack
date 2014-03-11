@@ -40,6 +40,8 @@ namespace HypervResource
         void DestroyVm(dynamic jsonObj);
         void DestroyVm(string displayName);
         void MigrateVm(string vmName, string destination);
+        void MigrateVolume(string vmName, string volume, string destination);
+        void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool);
         void DetachDisk(string displayName, string diskFileName);
         ComputerSystem GetComputerSystem(string displayName);
         ComputerSystem.ComputerSystemCollection GetComputerSystemCollection();
