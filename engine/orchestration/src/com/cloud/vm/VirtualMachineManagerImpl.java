@@ -40,8 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -70,6 +68,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -80,8 +79,8 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
-import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
+import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
@@ -608,13 +607,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) {
-        start(vmUuid, params, null);
+        start(vmUuid, params, null, null);
     }
 
     @Override
-    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner) {
         try {
-            advanceStart(vmUuid, params, planToDeploy, null);
+            advanceStart(vmUuid, params, planToDeploy, planner);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         } catch (InsufficientCapacityException e) {
@@ -779,7 +778,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _workJobDao.expunge(placeHolder.getId());
             }
         } else {
-            Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy);
+            Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy, planner);
 
             try {
                 VirtualMachine vm = outcome.get();
@@ -4451,7 +4450,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     //
     public Outcome<VirtualMachine> startVmThroughJobQueue(final String vmUuid,
             final Map<VirtualMachineProfile.Param, Object> params,
-            final DeploymentPlan planToDeploy) {
+            final DeploymentPlan planToDeploy, final DeploymentPlanner planner) {
 
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
@@ -4488,6 +4487,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         // save work context info (there are some duplications)
                         VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
                         workInfo.setPlan(planToDeploy);
+                        if (planner != null) {
+                            workInfo.setDeploymentPlanner(planner.getName());
+                        }
                         workInfo.setParams(params);
                         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
@@ -5123,7 +5125,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert (vm != null);
 
-        orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), null);
+        orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 

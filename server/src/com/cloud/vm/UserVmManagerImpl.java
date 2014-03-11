@@ -115,7 +115,9 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.domain.DomainVO;
@@ -396,7 +398,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected ProjectManager _projectMgr;
     @Inject
     protected ResourceManager _resourceMgr;
-
     @Inject
     protected NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -415,17 +416,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
-
     @Inject
     SecondaryStorageVmDao _secondaryDao;
     @Inject
     VmDiskStatisticsDao _vmDiskStatsDao;
-
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected VMSnapshotManager _vmSnapshotMgr;
-
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
@@ -450,6 +448,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     UserVmDetailsDao _uservmDetailsDao;
     @Inject
     UUIDManager _uuidMgr;
+    @Inject
+    DeploymentPlanningManager _planningMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -1975,7 +1975,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId(), cmd.getHostId(), null).first();
+        return startVirtualMachine(cmd.getId(), cmd.getHostId(), null, cmd.getDeploymentPlanner()).first();
     }
 
     @Override
@@ -2974,10 +2974,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        return startVirtualMachine(cmd, null);
+        return startVirtualMachine(cmd, null, cmd.getDeploymentPlanner());
     }
 
-    protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams) throws ResourceUnavailableException,
+    protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams, String deploymentPlannerToUse) throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
 
         long vmId = cmd.getEntityId();
@@ -2986,7 +2986,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
         try {
-            vmParamPair = startVirtualMachine(vmId, hostId, additonalParams);
+            vmParamPair = startVirtualMachine(vmId, hostId, additonalParams, deploymentPlannerToUse);
             vm = vmParamPair.first();
         } finally {
             updateVmStateForFailedVmCreation(vm.getId(), hostId);
@@ -3232,7 +3232,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
         Account callerAccount = CallContext.current().getCallingAccount();
@@ -3324,18 +3324,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
 
-        // Get serviceOffering for Virtual Machine
-        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
-        String plannerName = offering.getDeploymentPlanner();
-        if (plannerName == null) {
-            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                plannerName = "BareMetalPlanner";
-            } else {
-                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        DeploymentPlanner planner = null;
+        if (deploymentPlannerToUse != null) {
+            // if set to null, the deployment planner would be later figured out either from global config var, or from
+            // the service offering
+            planner = _planningMgr.getDeploymentPlannerByName(deploymentPlannerToUse);
+            if (planner == null) {
+                throw new InvalidParameterValueException("Can't find a planner by name " + deploymentPlannerToUse);
             }
         }
 
-        String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), Long.toString(callerUser.getId()));
+        String reservationId = vmEntity.reserve(planner, plan, new ExcludeList(), Long.toString(callerUser.getId()));
         vmEntity.deploy(reservationId, Long.toString(callerUser.getId()), params);
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);

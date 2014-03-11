@@ -16,18 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.cloudstack.api.BaseAsyncVMCmd;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -61,6 +61,9 @@ public class StartVMCmd extends BaseAsyncVMCmd {
                since = "3.0.1")
     private Long hostId;
 
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
+    private String deploymentPlanner;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -84,6 +87,10 @@ public class StartVMCmd extends BaseAsyncVMCmd {
 
     public static String getResultObjectName() {
         return "virtualmachine";
+    }
+
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
     }
 
     @Override

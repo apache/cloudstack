@@ -31,8 +31,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -51,6 +49,7 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -284,12 +283,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
                 }
             }
-            for (DeploymentPlanner plannerInList : _planners) {
-                if (plannerName.equals(plannerInList.getName())) {
-                    planner = plannerInList;
-                    break;
-                }
-            }
+            planner = getDeploymentPlannerByName(plannerName);
         }
 
         int cpu_requested = offering.getCpu() * offering.getSpeed();
@@ -450,7 +444,6 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         if (planner != null && planner.canHandle(vmProfile, plan, avoids)) {
             while (true) {
-
                 if (planner instanceof DeploymentClusterPlanner) {
 
                     ExcludeList plannerAvoidInput =
@@ -500,6 +493,21 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         return dest;
+    }
+
+    @Override
+    public DeploymentPlanner getDeploymentPlannerByName(String plannerName) {
+        if (plannerName != null) {
+            for (DeploymentPlanner plannerInList : _planners) {
+                if (plannerName != null) {
+                }
+                if (plannerName.equalsIgnoreCase(plannerInList.getName())) {
+                    return plannerInList;
+                }
+            }
+        }
+
+        return null;
     }
 
     private void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
@@ -1345,7 +1353,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     @DB
     @Override
-    public String finalizeReservation(final DeployDestination plannedDestination, final VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
+    public String finalizeReservation(final DeployDestination plannedDestination, final VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, final DeploymentPlanner planner)
         throws InsufficientServerCapacityException, AffinityConflictException {
 
         final VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -1374,6 +1382,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     VMReservationVO vmReservation =
                         new VMReservationVO(vm.getId(), plannedDestination.getDataCenter().getId(), plannedDestination.getPod().getId(), plannedDestination.getCluster()
                             .getId(), plannedDestination.getHost().getId());
+                    if (planner != null) {
+                        vmReservation.setDeploymentPlanner(planner.getName());
+                    }
                     Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
 
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {

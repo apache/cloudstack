@@ -53,7 +53,6 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -120,7 +119,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -1371,7 +1369,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private boolean startNewVM(final long vmId) {
         try {
             CallContext.current().setEventDetails("Vm Id: " + vmId);
-            _userVmManager.startVirtualMachine(vmId, null, null);
+            _userVmManager.startVirtualMachine(vmId, null, null, null);
         } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
