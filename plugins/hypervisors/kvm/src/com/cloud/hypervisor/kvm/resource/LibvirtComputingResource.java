@@ -1804,8 +1804,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 try {
                     Connect conn = LibvirtConnection.getConnection();
                     StorageVol v = conn.storageVolLookupByPath(path);
+                    int flags = 0;
 
-                    int flags = 1;
+                    if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW) {
+                        flags = 1;
+                    }
                     if (shrinkOk) {
                         flags = 4;
                     }
