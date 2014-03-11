@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.iam;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -111,6 +114,11 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicIpAliasVO;
@@ -190,6 +198,11 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+
+        // populate group <-> account association if not present for CS admin
+        // and system accounts
+        populateIAMGroupAdminAccountMap();
+
         _messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
@@ -336,6 +349,88 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         });
 
         return super.configure(name, params);
+    }
+
+    private void populateIAMGroupAdminAccountMap() {
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+                String searchQuery = "Select id from `cloud`.`iam_group_account_map` where account_id = ? and removed is null";
+                ResultSet rs = null;
+                PreparedStatement acctQuery = null;
+                PreparedStatement acctInsert = null;
+                // find if the system account is present in the map
+                try {
+                    acctQuery = txn.prepareAutoCloseStatement(searchQuery);
+                    acctQuery.setLong(1, Account.ACCOUNT_ID_SYSTEM);
+
+                    rs = acctQuery.executeQuery();
+                    if (!rs.next()) {
+                        acctInsert = txn
+                                .prepareAutoCloseStatement("INSERT INTO `cloud`.`iam_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
+                        // insert entry in iam_group_account_map table
+                        acctInsert.setLong(1, Account.ACCOUNT_TYPE_ADMIN + 1);
+                        acctInsert.setLong(2, Account.ACCOUNT_ID_SYSTEM);
+                        acctInsert.executeUpdate();
+                    }
+                } catch (SQLException ex) {
+                    String msg = "Unable to populate iam_group_account_map for SYSTEM account." + ex.getMessage();
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg, ex);
+                } finally {
+                    try {
+                        if (acctInsert != null) {
+                            acctInsert.close();
+                        }
+                        if (rs != null) {
+                            rs.close();
+                        }
+                        if (acctQuery != null) {
+                            acctQuery.close();
+                        }
+                    } catch (SQLException e) {
+                    }
+                }
+
+                // find if the admin account is present in the map
+                try {
+                    acctQuery = txn.prepareAutoCloseStatement(searchQuery);
+                    acctQuery.setLong(1, Account.ACCOUNT_ID_SYSTEM + 1);
+
+                    rs = acctQuery.executeQuery();
+                    if (!rs.next()) {
+                        acctInsert = txn
+                                .prepareAutoCloseStatement("INSERT INTO `cloud`.`iam_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
+                        // insert entry in iam_group_account_map table
+                        acctInsert.setLong(1, Account.ACCOUNT_TYPE_ADMIN + 1);
+                        acctInsert.setLong(2, Account.ACCOUNT_ID_SYSTEM + 1);
+                        acctInsert.executeUpdate();
+                    }
+                } catch (SQLException ex) {
+                    String msg = "Unable to populate iam_group_account_map for Admin account." + ex.getMessage();
+                    s_logger.error(msg);
+                    throw new CloudRuntimeException(msg, ex);
+                } finally {
+                    try {
+                        if (acctInsert != null) {
+                            acctInsert.close();
+                        }
+                        if (rs != null) {
+                            rs.close();
+                        }
+                        if (acctQuery != null) {
+                            acctQuery.close();
+                        }
+                    } catch (SQLException e) {
+                    }
+                }
+
+            }
+        });
+
     }
 
     private void addDomainWideResourceAccess(Map<String, Object> params) {
