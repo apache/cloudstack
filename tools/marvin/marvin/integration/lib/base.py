@@ -3081,6 +3081,21 @@ class VpcOffering:
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]
         cmd.supportedServices = services["supportedservices"]
+        if "serviceProviderList" in services:
+            for service, provider in services["serviceProviderList"].items():
+                cmd.serviceproviderlist.append({
+                                            'service': service,
+                                            'provider': provider
+                                           })
+        if "serviceCapabilityList" in services:
+            cmd.servicecapabilitylist = []
+            for service, capability in services["serviceCapabilityList"].items():
+                for ctype, value in capability.items():
+                    cmd.servicecapabilitylist.append({
+                                            'service': service,
+                                            'capabilitytype': ctype,
+                                            'capabilityvalue': value
+                                           })
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):

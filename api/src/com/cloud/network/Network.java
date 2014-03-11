@@ -57,7 +57,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
-        public static final Service Connectivity = new Service("Connectivity", Capability.RegionLevelVpc);
+        public static final Service Connectivity = new Service("Connectivity", Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
 
         private final String name;
         private final Capability[] caps;
