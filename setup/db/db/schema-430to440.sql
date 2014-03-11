@@ -742,3 +742,6 @@ UPDATE `cloud`.`guest_os` SET `created` = now();
 ALTER TABLE `cloud`.`vm_reservation` ADD COLUMN `deployment_planner` varchar(40) DEFAULT NULL COMMENT 'Preferred deployment planner for the vm';
 ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_distributed_router boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN uses_distributed_router  boolean default false;
+
+INSERT INTO `cloud`.`storage_pool_details` (pool_id,name,value,display) SELECT storage_pool.id,data_center_details.name,data_center_details.value,data_center_details.display FROM `cloud`.`storage_pool` JOIN `cloud`.`data_center_details` ON data_center_details.dc_id=storage_pool.data_center_id WHERE data_center_details.name = "storage.overprovisioning.factor";
+DELETE FROM `cloud`.`data_center_details` WHERE name="storage.overprovisioning.factor";
