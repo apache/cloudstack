@@ -45,7 +45,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -181,14 +180,14 @@ public class CloudOrchestrator implements OrchestrationService {
         // Else, a disk offering is optional, and if present will be used to create the data disk
 
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
-        LinkedHashMap<DiskOfferingVO, Long> dataDiskOfferings = new LinkedHashMap<DiskOfferingVO, Long>();
+        List<DiskOfferingInfo> dataDiskOfferings = new ArrayList<DiskOfferingInfo>();
 
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+        ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
-        rootDiskOfferingInfo.setDiskOffering(offering);
+        rootDiskOfferingInfo.setDiskOffering(computeOffering);
         rootDiskOfferingInfo.setSize(rootDiskSize);
 
-        if (offering.isCustomizedIops() != null && offering.isCustomizedIops()) {
+        if (computeOffering.isCustomizedIops() != null && computeOffering.isCustomizedIops()) {
             Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
 
             if (userVmDetails != null) {
@@ -213,10 +212,28 @@ public class CloudOrchestrator implements OrchestrationService {
                 }
                 _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
             }
-            dataDiskOfferings.put(diskOffering, size);
+
+            DiskOfferingInfo dataDiskOfferingInfo = new DiskOfferingInfo();
+
+            dataDiskOfferingInfo.setDiskOffering(diskOffering);
+            dataDiskOfferingInfo.setSize(size);
+
+            if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
+                Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+
+                if (userVmDetails != null) {
+                    String minIops = userVmDetails.get("minIopsDo");
+                    String maxIops = userVmDetails.get("maxIopsDo");
+
+                    dataDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
+                    dataDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
+                }
+            }
+
+            dataDiskOfferings.add(dataDiskOfferingInfo);
         }
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), offering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
             hypervisorType);
 
         return vmEntity;
@@ -234,13 +251,12 @@ public class CloudOrchestrator implements OrchestrationService {
         //load vm instance and offerings and call virtualMachineManagerImpl
         VMInstanceVO vm = _vmDao.findByUuid(id);
 
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+        ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
 
-        rootDiskOfferingInfo.setDiskOffering(offering);
+        rootDiskOfferingInfo.setDiskOffering(computeOffering);
 
-        LinkedHashMap<DiskOffering, Long> dataDiskOfferings = new LinkedHashMap<DiskOffering, Long>();
         Long diskOfferingId = vm.getDiskOfferingId();
         if (diskOfferingId == null) {
             throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
@@ -261,6 +277,18 @@ public class CloudOrchestrator implements OrchestrationService {
         rootDiskOfferingInfo.setDiskOffering(diskOffering);
         rootDiskOfferingInfo.setSize(size);
 
+        if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
+            Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+
+            if (userVmDetails != null) {
+                String minIops = userVmDetails.get("minIopsDo");
+                String maxIops = userVmDetails.get("maxIopsDo");
+
+                rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
+                rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
+            }
+        }
+
         LinkedHashMap<Network, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<Network, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {
             NetworkVO network = _networkDao.findByUuid(uuid);
@@ -271,7 +299,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), offering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan, hypervisorType);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), computeOffering, rootDiskOfferingInfo, new ArrayList<DiskOfferingInfo>(), networkIpMap, plan, hypervisorType);
 
         return vmEntity;
     }

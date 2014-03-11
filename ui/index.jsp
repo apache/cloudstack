@@ -221,7 +221,7 @@
                                         <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
                                     </div>
                                 </div>
-                                <!-- Custom iops slider -->
+                                <!-- Custom iops -->
                                 <div class="section custom-iops">
                                     <div class="field">
                                         <label><fmt:message key="label.disk.iops.min"/></label>
@@ -258,6 +258,17 @@
 
                                     <input type="text" class="required digits" name="size" value="1" />
                                     <label class="size">GB</label>
+                                </div>
+                                <!-- Custom iops -->
+                                <div class="section custom-iops-do">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops-do" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops-do" />
+                                    </div>
                                 </div>
                             </div>
                         </div>

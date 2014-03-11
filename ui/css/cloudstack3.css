@@ -6057,6 +6057,13 @@ label.error {
   border-radius: 4px;
 }
 
+.multi-wizard.instance-wizard .section.custom-iops-do {
+  position: relative;
+  background: #F4F4F4;
+  padding: 7px;
+  border-radius: 4px;
+}
+
 .multi-wizard.instance-wizard .section.custom-size input[type=radio] {
   float: left;
 }
@@ -6073,11 +6080,44 @@ label.error {
   margin: 6px -1px 0 8px;
 }
 
+.multi-wizard.instance-wizard .section.custom-iops-do input[type=text] {
+  float: left;
+  width: 28px;
+  margin: 6px -1px 0 8px;
+}
+
 .multi-wizard.instance-wizard .section.custom-size label.error {
   position: absolute;
   top: 29px;
   left: 242px;
   font-size: 10px;
+}
+
+.instance-wizard .step.data-disk-offering.custom-iops-do .select-container {
+  height: 235px;
+}
+
+.instance-wizard .step.data-disk-offering .custom-iops-do {
+  display: none;
+}
+
+.instance-wizard .step.data-disk-offering.custom-iops-do .custom-iops-do {
+  display: block;
+}
+
+.instance-wizard .step.data-disk-offering .custom-iops-do .field {
+  width: 30%;
+  float: left;
+  margin-bottom: 13px;
+}
+
+.instance-wizard .step.data-disk-offering .custom-iops-do .field label {
+  text-indent: 20px;
+}
+
+.instance-wizard .step.data-disk-offering .custom-iops-do .field input {
+  width: 88%;
+  margin-left: 26px;
 }
 
 /*** Compute offering*/

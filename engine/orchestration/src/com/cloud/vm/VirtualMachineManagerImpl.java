@@ -154,7 +154,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -376,7 +375,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(String vmInstanceName, final VirtualMachineTemplate template, ServiceOffering serviceOffering,
-            final DiskOfferingInfo rootDiskOfferingInfo, LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
+            final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan, HypervisorType hyperType)
                     throws InsufficientCapacityException {
 
@@ -393,8 +392,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
         final VMInstanceVO vmFinal = _vmDao.persist(vm);
-        final LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferingsFinal =
-                dataDiskOfferings == null ? new LinkedHashMap<DiskOffering, Long>() : dataDiskOfferings;
 
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
 
@@ -416,8 +413,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
 
                         if (template.getFormat() == ImageFormat.ISO) {
-                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(), vmFinal,
-                                    template, owner);
+                            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                                    rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner);
                         } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                             // Do nothing
                         } else {
@@ -425,8 +422,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                     rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                         }
 
-                        for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
-                            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), offering.getKey(), offering.getValue(), vmFinal, template, owner);
+                        if (dataDiskOfferings != null) {
+                            for (DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
+                                volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                                        dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), vmFinal, template, owner);
+                            }
                         }
                     }
                 });
@@ -439,7 +439,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
             LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), null, networks, plan, hyperType);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), new ArrayList<DiskOfferingInfo>(), networks, plan, hyperType);
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {

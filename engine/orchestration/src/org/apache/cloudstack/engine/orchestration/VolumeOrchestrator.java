@@ -569,14 +569,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, VirtualMachine vm, VirtualMachineTemplate template, Account owner) {
+    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
             size = (size * 1024 * 1024 * 1024);
         }
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, offering.getMinIops(), offering.getMaxIops(),
-                null);
+
+        minIops = minIops != null ? minIops : offering.getMinIops();
+        maxIops = maxIops != null ? maxIops : offering.getMaxIops();
+
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, minIops, maxIops, null);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -1151,7 +1154,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 StoragePoolVO storagePool = _storagePoolDao.findById(destPool.getId());
 
-                if (newVol.getVolumeType() == Type.DATADISK && storagePool.isManaged()) {
+                if (storagePool.isManaged()) {
                     long hostId = vm.getVirtualMachine().getHostId();
                     Host host = _hostDao.findById(hostId);
 
