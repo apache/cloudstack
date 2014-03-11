@@ -241,8 +241,16 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Service, Set<Provider>>();
         Set<Provider> providerSet = new HashSet<Provider>();
         providerSet.add(provider);
-        final Service[] services = {Service.Connectivity, Service.Dhcp, Service.NetworkACL, Service.StaticNat, Service.SourceNat};
+        final Service[] services = {Service.Connectivity, Service.Dhcp, Service.NetworkACL, Service.StaticNat, Service.SourceNat, Service.Lb};
         for (Service svc : services) {
+            if (svc == Service.Lb) {
+                if(offeringName.equals(vpcRouterOfferingName)) {
+                    Set<Provider> lbProviderSet = new HashSet<Provider>();
+                    lbProviderSet.add(Provider.InternalLbVm);
+                    serviceProviderMap.put(svc, lbProviderSet);
+                }
+                continue;
+            }
             serviceProviderMap.put(svc, providerSet);
         }
         ConfigurationManager configMgr = (ConfigurationManager)_configService;
@@ -251,6 +259,9 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
                         Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false);
 
         voffer.setState(NetworkOffering.State.Enabled);
+        if (offeringName.equals(vpcRouterOfferingName)) {
+            voffer.setInternalLb(true);
+        }
         long id = voffer.getId();
         _networkOfferingDao.update(id, voffer);
         return _networkOfferingDao.findById(id);
@@ -277,8 +288,15 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         services.add(Service.StaticNat.getName());
         services.add(Service.SourceNat.getName());
         services.add(Service.Gateway.getName());
+        services.add(Service.Lb.getName());
 
         for (String svc: services) {
+            if (svc.equals(Service.Lb.getName())) {
+                List<String> lbProviderSet = new ArrayList<String>();
+                lbProviderSet.add(Provider.InternalLbVm.getName());
+                serviceProviderMap.put(svc, lbProviderSet);
+                continue;
+            }
             serviceProviderMap.put(svc, providerSet);
         }
         vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null, null);
@@ -333,14 +351,19 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         }
 
         _controller = new ModelController(this, _api, _vmDao, _networksDao, _nicDao, _vlanDao, _ipAddressDao);
-
-        _routerOffering = locateNetworkOffering(routerOfferingName, routerOfferingDisplayText,
-                Provider.JuniperContrailRouter);
-        _routerPublicOffering = locatePublicNetworkOffering(routerPublicOfferingName, routerPublicOfferingDisplayText,
-                Provider.JuniperContrailRouter);
-        _vpcRouterOffering = locateNetworkOffering(vpcRouterOfferingName, vpcRouterOfferingDisplayText,
-                Provider.JuniperContrailVpcRouter);
-        _vpcOffering = locateVpcOffering();
+        try {
+            _routerOffering = locateNetworkOffering(routerOfferingName, routerOfferingDisplayText,
+                    Provider.JuniperContrailRouter);
+            _routerPublicOffering = locatePublicNetworkOffering(routerPublicOfferingName, routerPublicOfferingDisplayText,
+                    Provider.JuniperContrailRouter);
+            _vpcRouterOffering = locateNetworkOffering(vpcRouterOfferingName, vpcRouterOfferingDisplayText,
+                    Provider.JuniperContrailVpcRouter);
+            _vpcOffering = locateVpcOffering();
+        }catch (Exception ex) {
+            s_logger.debug("Exception in locating network offerings: " + ex);
+            ex.printStackTrace();
+            throw new ConfigurationException();
+        }
 
         _eventHandler.subscribe();
 
@@ -532,7 +555,8 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         List<PhysicalNetworkVO> net_list = _physicalNetworkDao.listByZone(network.getDataCenterId());
         for (PhysicalNetworkVO phys : net_list) {
             if(_physProviderDao.findByServiceProvider(phys.getId(), Provider.JuniperContrailRouter.getName()) != null ||
-                    _physProviderDao.findByServiceProvider(phys.getId(), Provider.JuniperContrailVpcRouter.getName()) != null) {
+                    _physProviderDao.findByServiceProvider(phys.getId(), Provider.JuniperContrailVpcRouter.getName()) != null ||
+                    _physProviderDao.findByServiceProvider(phys.getId(), Provider.InternalLbVm.getName()) != null) {
                 return true;
             }
         }

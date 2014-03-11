@@ -1277,7 +1277,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     continue;
                 } else {
                     NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                    //throw only if networks have different offerings with public lb support
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb() &&
+                                   guestNtwkOff.getId() != otherOff.getId()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " + "by network " + network + " in VPC " + vpc);
                     }
                 }
