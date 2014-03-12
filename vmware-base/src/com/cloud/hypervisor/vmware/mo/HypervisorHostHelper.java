@@ -51,6 +51,7 @@ import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.OvfCreateDescriptorParams;
 import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.OvfCreateImportSpecParams;
@@ -65,12 +66,14 @@ import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineImportSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
+import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
@@ -102,6 +105,7 @@ public class HypervisorHostHelper {
     // make vmware-base loosely coupled with cloud-specific stuff, duplicate VLAN.UNTAGGED constant here
     private static final String UNTAGGED_VLAN_NAME = "untagged";
     private static final String VMDK_PACK_DIR = "ova";
+    private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -1241,14 +1245,24 @@ public class HypervisorHostHelper {
             files.add(absFile);
         }
 
-        boolean lookForFirstDisk = true;
+        int osDiskSeqNumber = 0;
+        VirtualMachineConfigSpec config = importSpec.getConfigSpec();
+        String paramVal = getOVFParamValue(config);
+        if (paramVal != null && !paramVal.isEmpty()) {
+            try {
+                osDiskSeqNumber = getOsDiskFromOvfConf(config, paramVal);
+            } catch (Exception e) {
+                osDiskSeqNumber = 0;
+            }
+        }
+
         Boolean osDisk = true;
-        List<VirtualDeviceConfigSpec> deviceConfigList = importSpec.getConfigSpec().getDeviceChange();
+        List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
         for (VirtualDeviceConfigSpec deviceSpec : deviceConfigList) {
             VirtualDevice device = deviceSpec.getDevice();
             if (device instanceof VirtualDisk) {
                 sizeKb = ((VirtualDisk)device).getCapacityInKB();
-                if (lookForFirstDisk && diskCount == 0) {
+                if (diskCount == osDiskSeqNumber) {
                     osDisk = true;
                     diskCount++;
                 }
@@ -1257,6 +1271,71 @@ public class HypervisorHostHelper {
             }
         }
         return ovfVolumeInfos;
+    }
+
+    public static int getOsDiskFromOvfConf(VirtualMachineConfigSpec config, String deviceLocation) {
+        List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
+        int controllerKey = 0;
+        int deviceSeqNumber = 0;
+        int controllerNumber = 0;
+        int deviceNodeNumber = 0;
+        int controllerCount = 0;
+        String[] virtualNodeInfo = deviceLocation.split(":");
+        if (deviceLocation.startsWith("scsi")) {
+
+            controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(4)); // get substring excluding prefix scsi
+            deviceNodeNumber = Integer.parseInt(virtualNodeInfo[1]);
+
+            for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+                VirtualDevice device = deviceConfig.getDevice();
+                if (device instanceof VirtualSCSIController) {
+                    if (controllerNumber == controllerCount) { //((VirtualSCSIController)device).getBusNumber()) {
+                        controllerKey = device.getKey();
+                        break;
+                    }
+                    controllerCount++;
+                }
+            }
+        } else {
+            controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(3)); // get substring excluding prefix ide
+            deviceNodeNumber = Integer.parseInt(virtualNodeInfo[1]);
+            controllerCount = 0;
+
+            for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+                VirtualDevice device = deviceConfig.getDevice();
+                if (device instanceof VirtualIDEController) {
+                    if (controllerNumber == controllerCount) { //((VirtualIDEController)device).getBusNumber()) {
+                        // Only 2 IDE controllers supported and they will have bus numbers 0 and 1
+                        controllerKey = device.getKey();
+                        break;
+                    }
+                    controllerCount++;
+                }
+            }
+        }
+        // Get devices on this controller at specific device node.
+        for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+            VirtualDevice device = deviceConfig.getDevice();
+            if (device instanceof VirtualDisk) {
+                if (controllerKey == device.getControllerKey() && deviceNodeNumber == device.getUnitNumber()) {
+                    break;
+                }
+                deviceSeqNumber++;
+            }
+        }
+        return deviceSeqNumber;
+    }
+
+    public static String getOVFParamValue(VirtualMachineConfigSpec config) {
+        String paramVal = "";
+        List<OptionValue> options = config.getExtraConfig();
+        for (OptionValue option : options) {
+            if (OVA_OPTION_KEY_BOOTDISK.equalsIgnoreCase(option.getKey())) {
+                paramVal = (String)option.getValue();
+                break;
+            }
+        }
+        return paramVal;
     }
 
     public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String dir, long size, ManagedObjectReference morDs) throws Exception {
