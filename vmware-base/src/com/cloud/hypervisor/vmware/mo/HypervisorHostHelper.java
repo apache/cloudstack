@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -56,12 +57,15 @@ import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
+import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualMachineImportSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
@@ -74,6 +78,7 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
 import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
@@ -92,6 +97,7 @@ public class HypervisorHostHelper {
 
     // make vmware-base loosely coupled with cloud-specific stuff, duplicate VLAN.UNTAGGED constant here
     private static final String UNTAGGED_VLAN_NAME = "untagged";
+    private static final String VMDK_PACK_DIR = "ova";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -1172,6 +1178,81 @@ public class HypervisorHostHelper {
             return true;
         }
         return false;
+    }
+
+    public static List<Ternary<String, Long, Boolean>> readOVF(VmwareHypervisorHost host, String ovfFilePath, DatastoreMO dsMo, ManagedObjectReference morRp,
+            ManagedObjectReference morHost) throws Exception {
+
+        assert (morRp != null);
+
+        String importEntityName = UUID.randomUUID().toString();
+        OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();
+        importSpecParams.setHostSystem(morHost);
+        importSpecParams.setLocale("US");
+        importSpecParams.setEntityName(importEntityName);
+        importSpecParams.setDeploymentOption("");
+
+        String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
+        VmwareContext context = host.getContext();
+        OvfCreateImportSpecResult ovfImportResult =
+                context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
+
+        if (ovfImportResult == null) {
+            String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        if(!ovfImportResult.getError().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+            }
+            throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
+        }
+
+        if (!ovfImportResult.getWarning().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+            }
+        }
+
+        VirtualMachineImportSpec importSpec = new VirtualMachineImportSpec();
+        importSpec = (VirtualMachineImportSpec)ovfImportResult.getImportSpec();
+        if (importSpec == null) {
+            String msg = "createImportSpec() failed to create import specification for OVF template at " + ovfFilePath;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        File ovfFile = new File(ovfFilePath);
+        int diskCount = 0;
+        long sizeKb = 0;
+        List<Ternary<String, Long, Boolean>> ovfVolumeInfos = new ArrayList<Ternary<String, Long, Boolean>>();
+        Ternary<String, Long, Boolean> ovfVolumeInfo = null;
+        List<String> files = new ArrayList<String>();
+        String absFile = null;
+
+        for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
+            absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
+            files.add(absFile);
+        }
+
+        boolean lookForFirstDisk = true;
+        Boolean osDisk = true;
+        List<VirtualDeviceConfigSpec> deviceConfigList = importSpec.getConfigSpec().getDeviceChange();
+        for (VirtualDeviceConfigSpec deviceSpec : deviceConfigList) {
+            VirtualDevice device = deviceSpec.getDevice();
+            if (device instanceof VirtualDisk) {
+                sizeKb = ((VirtualDisk)device).getCapacityInKB();
+                if (lookForFirstDisk && diskCount == 0) {
+                    osDisk = true;
+                    diskCount++;
+                }
+                ovfVolumeInfo = new Ternary<String, Long, Boolean>(files.get(diskCount), sizeKb, osDisk);
+                ovfVolumeInfos.add(ovfVolumeInfo);
+            }
+        }
+        return ovfVolumeInfos;
     }
 
     public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
