@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.vmware.mo;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidParameterException;
@@ -50,8 +51,11 @@ import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OvfCreateDescriptorParams;
+import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
+import com.vmware.vim25.OvfFile;
 import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
@@ -1253,6 +1257,47 @@ public class HypervisorHostHelper {
             }
         }
         return ovfVolumeInfos;
+    }
+
+    public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String dir, long size, ManagedObjectReference morDs) throws Exception {
+        VmwareContext context = host.getContext();
+        VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
+        if (workerVmMo == null)
+            throw new Exception("Unable to find just-created worker VM");
+
+        String[] disks = {dir + File.separator + diskFileName};
+        boolean bSuccess = false;
+        try {
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+
+            deviceConfigSpec.setDevice(device);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            workerVmMo.configureVm(vmConfigSpec);
+            bSuccess = true;
+            OvfFile ovfFile = new OvfFile();
+            ovfFile.setPath(diskFileName);
+            ovfFile.setDeviceId("1000");
+            ovfFile.setSize(size);
+            // write OVF descriptor file
+            OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
+            ovfDescParams.getOvfFiles().add(ovfFile);
+            ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
+            OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
+
+            String ovfPath = dir + File.separator + ovfName + ".ovf";
+            FileWriter out = new FileWriter(ovfPath);
+            out.write(ovfCreateDescriptorResult.getOvfDescriptor());
+            out.close();
+        } finally {
+            if (!bSuccess) {
+                workerVmMo.detachAllDisks();
+                workerVmMo.destroy();
+            }
+        }
     }
 
     public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
