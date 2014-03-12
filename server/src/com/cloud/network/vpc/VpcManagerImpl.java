@@ -2289,6 +2289,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.KVM);
         hTypes.add(HypervisorType.Simulator);
         hTypes.add(HypervisorType.LXC);
+        hTypes.add(HypervisorType.Hyperv);
         return hTypes;
     }
 

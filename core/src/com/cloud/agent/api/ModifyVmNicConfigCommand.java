@@ -21,6 +21,7 @@ public class ModifyVmNicConfigCommand extends Command {
     String vmName;
     int vlan;
     String macAddress;
+    int index;
     protected ModifyVmNicConfigCommand() {
     }
 
@@ -28,6 +29,12 @@ public class ModifyVmNicConfigCommand extends Command {
         this.vmName = vmName;
         this.vlan = vlan;
         this.macAddress = macAddress;
+    }
+
+    public ModifyVmNicConfigCommand(String vmName, int vlan, int position) {
+        this.vmName = vmName;
+        this.vlan = vlan;
+        this.index = position;
     }
 
     public String getVmName() {
