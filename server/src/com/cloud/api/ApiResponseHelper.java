@@ -30,6 +30,8 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -64,6 +66,7 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -145,7 +148,6 @@ import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -263,6 +265,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -3137,6 +3140,23 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor guestOSHypervisor) {
+        GuestOsMappingResponse response = new GuestOsMappingResponse();
+        response.setId(guestOSHypervisor.getUuid());
+        response.setHypervisor(guestOSHypervisor.getHypervisorType());
+        response.setHypervisorVersion(guestOSHypervisor.getHypervisorVersion());
+        response.setOsNameForHypervisor((guestOSHypervisor.getGuestOsName()));
+        GuestOS guestOs = ApiDBUtils.findGuestOSById(guestOSHypervisor.getGuestOsId());
+        if (guestOs != null) {
+            response.setOsStdName(guestOs.getDisplayName());
+            response.setOsTypeId(guestOs.getUuid());
+        }
+
+        response.setObjectName("guestosmapping");
+        return response;
+    }
+
+    @Override
     public SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule snapshotSchedule) {
         SnapshotScheduleResponse response = new SnapshotScheduleResponse();
         response.setId(snapshotSchedule.getUuid());
@@ -3698,4 +3718,5 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setResponses(responses);
         return response;
     }
+
 }

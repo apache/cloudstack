@@ -51,5 +51,7 @@ public enum ApiCommandJobType {
     InternalLbVm,
     DedicatedGuestVlanRange,
     IAMPolicy,
-    IAMGroup
+    IAMGroup,
+    GuestOs,
+    GuestOsMapping
 }

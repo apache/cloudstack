@@ -611,3 +611,13 @@ CREATE TABLE `cloud`.`vgpu_types` (
   CONSTRAINT `fk_vgpu_types__gpu_group_id` FOREIGN KEY (`gpu_group_id`) REFERENCES `host_gpu_groups` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB CHARSET=utf8;
 
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `hypervisor_version` varchar(32) NOT NULL DEFAULT 'default' COMMENT 'Hypervisor version for this mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `uuid` varchar(40) COMMENT 'UUID of the mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD CONSTRAINT `uc_guest_os_hypervisor__uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `created` datetime COMMENT 'Time when mapping was created';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `removed` datetime COMMENT 'Time when mapping was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os_hypervisor` SET `uuid` = UUID();
+UPDATE `cloud`.`guest_os_hypervisor` SET `created` = now();
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `created` datetime COMMENT 'Time when Guest OS was created in system';
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when Guest OS was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os` SET `created` = now();
