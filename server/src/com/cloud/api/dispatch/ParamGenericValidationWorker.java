@@ -42,6 +42,7 @@ public class ParamGenericValidationWorker implements DispatchWorker {
     protected static final List<String> defaultParamNames = new ArrayList<String>();
 
     static {
+        defaultParamNames.add(ApiConstants.ACCOUNT_ID);
         defaultParamNames.add(ApiConstants.CTX_START_EVENT_ID);
         defaultParamNames.add(ApiConstants.COMMAND);
         defaultParamNames.add(ApiConstants.CMD_EVENT_TYPE);
@@ -62,6 +63,8 @@ public class ParamGenericValidationWorker implements DispatchWorker {
         defaultParamNames.add(ApiConstants.CTX_ACCOUNT_ID);
         defaultParamNames.add(ApiConstants.CTX_START_EVENT_ID);
         defaultParamNames.add(ApiConstants.CTX_USER_ID);
+        defaultParamNames.add(ApiConstants.UUID);
+        defaultParamNames.add(ApiConstants.ID);
         defaultParamNames.add("_");
     }
 
