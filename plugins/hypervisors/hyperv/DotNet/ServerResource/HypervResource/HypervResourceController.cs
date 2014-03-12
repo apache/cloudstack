@@ -992,6 +992,7 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 logger.Info(CloudStackTypes.PlugNicCommand + cmd.ToString());
+
                 object ansContent = new
                 {
                     result = true,
@@ -1299,9 +1300,16 @@ namespace HypervResource
                 String vmName = cmd.vmName;
                 uint vlan = (uint)cmd.vlan;
                 string macAddress = cmd.macAddress;
-                wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
-
-                result = true;
+                uint pos = cmd.index;
+                if (macAddress != null)
+                {
+                    wmiCallsV2.ModifyVmVLan(vmName, vlan, macAddress);
+                }
+                else if (pos > 1)
+                {
+                    wmiCallsV2.ModifyVmVLan(vmName, vlan, pos);
+                }
+                    result = true;
 
                 object ansContent = new
                 {

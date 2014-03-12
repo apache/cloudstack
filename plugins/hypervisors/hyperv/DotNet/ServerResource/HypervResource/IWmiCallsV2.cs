@@ -70,5 +70,6 @@ namespace HypervResource
         void SetState(ComputerSystem vm, ushort requiredState);
         Dictionary<String, VmState> GetVmSync(String privateIpAddress);
         void ModifyVmVLan(string vmName, uint vlanid, string mac);
+        void ModifyVmVLan(string vmName, uint vlanid, uint pos);
     }
 }

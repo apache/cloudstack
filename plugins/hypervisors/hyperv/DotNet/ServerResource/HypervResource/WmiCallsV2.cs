@@ -229,6 +229,7 @@ namespace HypervResource
             string errMsg = vmName;
             var diskDrives = vmInfo.disks;
             var bootArgs = vmInfo.bootArgs;
+            string defaultvlan = "4094"; 
 
             // assert
             errMsg = vmName + ": missing disk information, array empty or missing, agent expects *at least* one disk for a VM";
@@ -391,6 +392,8 @@ namespace HypervResource
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
                     string broadcastUri = nic.broadcastUri;
+                    string nicIp = nic.ip;
+                    string nicNetmask = nic.netmask;
                     if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")))
                     {
                         if (broadcastUri != null && broadcastUri.StartsWith("storage"))
@@ -414,6 +417,10 @@ namespace HypervResource
                             logger.Error(errMsg, ex);
                             throw ex;
                         }
+                    }
+                    if(nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255") ) {
+                        // this is the extra nic added to VR.
+                        vlan = defaultvlan;
                     }
 
                     if (nicCount == 2)
@@ -914,7 +921,6 @@ namespace HypervResource
             return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
         }
 
-
         // Modify the systemvm nic's VLAN id
         public void ModifyVmVLan(string vmName, uint vlanid, String mac)
         {
@@ -937,6 +943,24 @@ namespace HypervResource
 
             EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
+
+            //Assign configuration to new NIC
+            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
+            vlanSettings.LateBoundObject["OperationMode"] = 1;
+            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
+                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+        }
+
+        // Modify the systemvm nic's VLAN id
+        public void ModifyVmVLan(string vmName, uint vlanid, uint pos)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
+            // Obtain controller for Hyper-V virtualisation subsystem
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+
+            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
+            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[pos]);
 
             //Assign configuration to new NIC
             vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
