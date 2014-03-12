@@ -34,6 +34,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -100,7 +101,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof CreateEntityDownloadURLCommand) {
                 answer = execute((CreateEntityDownloadURLCommand)cmd);
-            } else {
+            } else if(cmd instanceof AnalyzeTemplateCommand) {
+                answer = execute((AnalyzeTemplateCommand)cmd);
+            }
+            else {
                 answer = _resource.defaultAction(cmd);
             }
 
@@ -174,6 +178,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(AnalyzeTemplateCommand cmd) {
+        _storageMgr.execute(this, cmd);
+        return _resource.defaultAction(cmd);
     }
 
     @Override

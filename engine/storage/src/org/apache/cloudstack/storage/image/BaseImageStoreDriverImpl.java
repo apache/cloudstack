@@ -39,6 +39,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
@@ -182,7 +184,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-
+            analyseTemplate(obj);
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
@@ -270,5 +272,60 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    }
+
+    private void analyseTemplate(DataObject data) {
+        CommandResult result = new CommandResult();
+        DataStore store = data.getDataStore();
+        TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), data.getId());
+        try {
+            AnalyzeTemplateCommand cmd = new AnalyzeTemplateCommand(data.getTO());
+            EndPoint ep = _epSelector.select(data);
+            Answer answer = null;
+            if (ep == null) {
+                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else {/*
+                (AnalyzeTemplateAnswer)answer = ep.sendMessage(cmd);
+                if (answer != null && !answer.getResult()) {
+                    result.setResult(answer.getDetails());
+                    // Registered template may have data disks - Creating DataDisk template entries for each of these disks
+                    if (answer.getNewDataList() != null && !answer.getNewDataList().isEmpty()) {
+                        List<TemplateObjectTO> dataDiskTemplates = answer.getNewDataList();
+                        VMTemplateVO rootTemplate = _templateDao.findById(data.getId());
+                        int diskNumber = 1;
+                        for (TemplateObjectTO dataDiskTemplate : dataDiskTemplates) {
+                            if (dataDiskTemplate.isBootable()) // Root disk
+                                continue;
+                            long id = _templateDao.getNextInSequence(Long.class, "id");
+                            VMTemplateVO template = new VMTemplateVO(id, rootTemplate.getName() + "-DataDiskTemplate-" + diskNumber, rootTemplate.getFormat(), false,
+                                    false, rootTemplate.isExtractable(), TemplateType.DATADISK, rootTemplate.getUrl(), rootTemplate.requiresHvm(), rootTemplate.getBits(),
+                                    rootTemplate.getAccountId(), rootTemplate.getChecksum(), rootTemplate.getDisplayText() + "-DataDiskTemplate", false, 0, false,
+                                    rootTemplate.getHypervisorType(), null, null, false, false);
+                            template = _templateDao.persist(template);
+                            template.setSize(dataDiskTemplate.getSize());
+                            _templateDao.update(template.getId(), template);
+
+                            TemplateDataStoreVO templateStore = new TemplateDataStoreVO(store.getId(), template.getId(), null, 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+                                    null, null, null, dataDiskTemplate.getInstallPath(), tmpltStoreVO.getDownloadUrl());
+                            templateStore.setSize(dataDiskTemplate.getSize());
+                            templateStore.setDataStoreRole(tmpltStoreVO.getDataStoreRole());
+                            templateStore.setPhysicalSize(dataDiskTemplate.getPhysicalSize());
+                            _templateStoreDao.persist(templateStore);
+
+                            List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                            details.add(new VMTemplateDetailVO(rootTemplate.getId(), "child-datadisk-template", template.getUuid(), true));
+                            details.add(new VMTemplateDetailVO(template.getId(), "parent-vm-template", rootTemplate.getUuid(), true));
+                            _templateDetailsDao.saveDetails(details);
+                            diskNumber++;
+                        }
+                    }
+                }
+            */}
+        } catch (Exception ex) {
+            s_logger.debug("Unable to analyze " + data.getType().toString() + ": " + data.getId(), ex);
+            result.setResult(ex.toString());
+        }
     }
 }

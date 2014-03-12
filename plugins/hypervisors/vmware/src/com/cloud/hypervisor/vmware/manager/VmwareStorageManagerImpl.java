@@ -61,6 +61,8 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.AnalyzeTemplateAnswer;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -80,6 +82,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.storage.resource.VmwareStorageLayoutHelper;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1493,5 +1496,72 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private static String getVolumeRelativeDirInSecStroage(long volumeId) {
         return "volumes/" + volumeId;
+    }
+
+    @Override
+    public Answer execute(VmwareHostService hostService, AnalyzeTemplateCommand cmd) {
+        List<TemplateObjectTO> templateList = new ArrayList<TemplateObjectTO>();
+        DataTO srcData = cmd.getData();
+        TemplateObjectTO template = (TemplateObjectTO)srcData;
+        DataStoreTO srcStore = srcData.getDataStore();
+        if (!(srcStore instanceof NfsTO)) {
+            return new AnalyzeTemplateAnswer("unsupported protocol");
+        }
+        NfsTO nfsImageStore = (NfsTO)srcStore;
+        String secondaryStorageUrl = nfsImageStore.getUrl();
+        assert (secondaryStorageUrl != null);
+
+        String templateUrl = secondaryStorageUrl + "/" + srcData.getPath();
+        Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
+
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            ManagedObjectReference morRp = hyperHost.getHyperHostOwnerResourcePool();
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, srcStore.getUuid());
+            assert (morDs != null);
+            DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
+            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
+            s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+
+            String srcOVAFileName = VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templateInfo.first(), templateInfo.second(),
+                        ImageFormat.OVA.getFileExtension());
+
+            String srcFileName = getOVFFilePath(srcOVAFileName);
+            if (srcFileName == null) {
+                Script command = new Script("tar", 0, s_logger);
+                command.add("--no-same-owner");
+                command.add("-xf", srcOVAFileName);
+                command.setWorkDir(secondaryMountPoint + "/" + templateInfo.first());
+                s_logger.info("Executing command: " + command.toString());
+                String result = command.execute();
+                if (result != null) {
+                    String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
+
+            srcFileName = getOVFFilePath(srcOVAFileName);
+            if (srcFileName == null) {
+                String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            // readOVF(hyperHost, srcFileName, datastoreMo, morRp, hyperHost.getMor());
+
+            // Temp answer
+            TemplateObjectTO dataDiskTemplate = new TemplateObjectTO();
+            dataDiskTemplate.setPath("temp-path");
+            dataDiskTemplate.setPhysicalSize(1L);
+            dataDiskTemplate.setIsBootable(false);
+            templateList.add(dataDiskTemplate);
+        } catch (Exception e) {
+            String msg = "Analyze template failed due to " + e.getMessage();
+            s_logger.error(msg);
+            return new AnalyzeTemplateAnswer(msg);
+        }
+        return new AnalyzeTemplateAnswer(templateList);
     }
 }

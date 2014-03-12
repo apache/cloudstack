@@ -41,6 +41,7 @@ public class TemplateObjectTO implements DataTO {
     private Long size;
     private Long physicalSize;
     private Hypervisor.HypervisorType hypervisorType;
+    private boolean bootable;
 
     public TemplateObjectTO() {
 
@@ -202,6 +203,14 @@ public class TemplateObjectTO implements DataTO {
 
     public Long getPhysicalSize() {
         return physicalSize;
+    }
+
+    public void setIsBootable(boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public boolean isBootable() {
+        return bootable;
     }
 
     public void setPhysicalSize(Long physicalSize) {
