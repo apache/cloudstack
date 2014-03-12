@@ -61,7 +61,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name="cidr")
+    @Column(name = "cidr", length = 2048)
     String sourceCidrs;
 
     @Column(name="uuid")
@@ -75,7 +75,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     Action action;
 
     public NetworkACLItemVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol,
@@ -85,11 +85,11 @@ public class NetworkACLItemVO implements NetworkACLItem {
         this.sourcePortEnd = portEnd;
         this.protocol = protocol;
         this.aclId = aclId;
-        this.state = State.Staged;
+        state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         setSourceCidrList(sourceCidrs);
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.trafficType = trafficType;
         this.action = action;
         this.number = number;
@@ -181,7 +181,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
