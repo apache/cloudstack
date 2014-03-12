@@ -1264,8 +1264,8 @@ public class HypervisorHostHelper {
                 sizeKb = ((VirtualDisk)device).getCapacityInKB();
                 if (diskCount == osDiskSeqNumber) {
                     osDisk = true;
-                    diskCount++;
                 }
+                diskCount++;
                 ovfVolumeInfo = new Ternary<String, Long, Boolean>(files.get(diskCount), sizeKb, osDisk);
                 ovfVolumeInfos.add(ovfVolumeInfo);
             }
