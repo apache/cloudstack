@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,10 +25,12 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.utils.DateUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStateSync {
@@ -36,6 +39,9 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject MessageBus _messageBus;
     @Inject VMInstanceDao _instanceDao;
     @Inject VirtualMachineManager _vmMgr;
+
+    protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advanced", "60",
+            "Interval to send application level pings to make sure the connection is still working", false);
 
     public VirtualMachinePowerStateSyncImpl() {
     }
@@ -96,15 +102,41 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         }
 
         if (vmsThatAreMissingReport.size() > 0) {
-            for (VMInstanceVO instance : vmsThatAreMissingReport) {
-                if (_instanceDao.updatePowerState(instance.getId(), hostId, VirtualMachine.PowerState.PowerReportMissing)) {
-                    if (s_logger.isDebugEnabled())
-                        s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + instance.getId() + ", power state: PowerReportMissing ");
+            Date currentTime = DateUtil.currentGMTTime();
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Run missing VM report. current time: " + currentTime.getTime());
 
-                    _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, instance.getId());
+            // 2 times of sync-update interval for graceful period
+            long milliSecondsGracefullPeriod = PingInterval.value() * 2000;
+
+            for (VMInstanceVO instance : vmsThatAreMissingReport) {
+
+                Date vmStateUpdateTime = instance.getUpdateTime();
+                if (vmStateUpdateTime == null) {
+                    s_logger.warn("VM state was updated but update time is null?! vm id: " + instance.getId());
+                    vmStateUpdateTime = currentTime;
+                }
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Detected missing VM. host: " + hostId + ", vm id: " + instance.getId() +
+                            ", power state: PowerReportMissing, last state update: " + vmStateUpdateTime.getTime());
+
+                long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
+
+                if (milliSecondsSinceLastStateUpdate > milliSecondsGracefullPeriod) {
+                    s_logger.debug("vm id: " + instance.getId() + " - time since last state update(" + milliSecondsSinceLastStateUpdate + "ms) has passed graceful period");
+
+                    if (_instanceDao.updatePowerState(instance.getId(), hostId, VirtualMachine.PowerState.PowerReportMissing)) {
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + instance.getId() + ", power state: PowerReportMissing ");
+
+                        _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, instance.getId());
+                    } else {
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("VM power state does not change, skip DB writing. vm id: " + instance.getId());
+                    }
                 } else {
-                    if (s_logger.isDebugEnabled())
-                        s_logger.debug("VM power state does not change, skip DB writing. vm id: " + instance.getId());
+                    s_logger.debug("vm id: " + instance.getId() + " - time since last state update(" + milliSecondsSinceLastStateUpdate + "ms) has not passed graceful period yet");
                 }
             }
         }

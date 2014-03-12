@@ -41,7 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -2681,7 +2680,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo != null) {
-
                 State state = null;
                 synchronized (_vms) {
                     state = _vms.get(cmd.getVmName());
