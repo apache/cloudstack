@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -597,7 +598,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
         File keyFile = getSystemVMKeyFile();
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(), fileName, null);
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(Charset.forName("UTF-8")), fileName, null);
         } catch (Exception e) {
             s_logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
             return new ExecutionResult(false, e.getMessage());
@@ -1262,7 +1263,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(), routerIp.replace('.', '_') +
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(Charset.forName("UTF-8")), routerIp.replace('.', '_') +
                 ".cfg", null);
 
             try {
@@ -1459,7 +1460,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         String json = new Gson().toJson(data);
         s_logger.debug("VM data JSON IS:" + json);
 
-        json = Base64.encodeBase64String(json.getBytes());
+        json = Base64.encodeBase64String(json.getBytes(Charset.forName("UTF-8")));
 
         String args = "-d " + json;
 
