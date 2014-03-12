@@ -1240,8 +1240,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // 1) GuestType is Shared
         boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced
                 && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
-                		|| (ntwkOff.getGuestType() == GuestType.Isolated &&
-                		!areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
+                    || (ntwkOff.getGuestType() == GuestType.Isolated &&
+                        !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
 
         if (!createVlan) {
             // Only support advance shared network in IPv6, which means createVlan is a must
