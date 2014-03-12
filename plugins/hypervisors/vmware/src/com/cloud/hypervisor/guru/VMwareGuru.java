@@ -41,6 +41,7 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
@@ -374,6 +375,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
                     needDelegation = true;
                 }
+            }
+        } else if (cmd instanceof AnalyzeTemplateCommand) {
+            DataTO srcData = ((AnalyzeTemplateCommand)cmd).getData();
+            if ((HypervisorType.VMware == srcData.getHypervisorType())) {
+                needDelegation = true;
             }
         }
 

@@ -202,6 +202,8 @@ import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.storage.AnalyzeTemplateAnswer;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -454,6 +456,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetStorageStatsCommand)cmd);
             } else if (clz == PrimaryStorageDownloadCommand.class) {
                 answer = execute((PrimaryStorageDownloadCommand)cmd);
+            } else if (clz == AnalyzeTemplateCommand.class) {
+                answer = execute((AnalyzeTemplateCommand)cmd);
             } else if (clz == GetVncPortCommand.class) {
                 answer = execute((GetVncPortCommand)cmd);
             } else if (clz == SetupCommand.class) {
@@ -4155,6 +4159,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "PrimaryStorageDownloadCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new PrimaryStorageDownloadAnswer(msg);
+        }
+    }
+
+    @Override
+    public AnalyzeTemplateAnswer execute(AnalyzeTemplateCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource AnalyzeTemplateCommand: " + _gson.toJson(cmd));
+        }
+
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            return (AnalyzeTemplateAnswer)mgr.getStorageManager().execute(this, cmd);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+
+            String msg = "AnalyzeTemplateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new AnalyzeTemplateAnswer(msg);
         }
     }
 

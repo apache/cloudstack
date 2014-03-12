@@ -55,6 +55,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
+        nfsTO.setUuid(nfsStore.getUuid());
         return nfsTO;
     }
 

@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public final class AnalyzeTemplateCommand extends Command {
+public final class AnalyzeTemplateCommand extends AbstractDownloadCommand {
     private DataTO data;
 
     public AnalyzeTemplateCommand(DataTO data) {
@@ -37,7 +36,7 @@ public final class AnalyzeTemplateCommand extends Command {
     }
 
     public DataTO getData() {
-        return this.data;
+        return data;
     }
 
 }

@@ -188,6 +188,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
             primaryTO.setRole(getRole());
             primaryTO.setType(getProtocol());
             primaryTO.setUri(getUri());
+            primaryTO.setUuid(getUuid());
             return primaryTO;
         }
         return to;

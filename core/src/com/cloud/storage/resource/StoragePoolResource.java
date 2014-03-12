@@ -17,6 +17,8 @@
 package com.cloud.storage.resource;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.AnalyzeTemplateAnswer;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -35,4 +37,6 @@ public interface StoragePoolResource {
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);
 
     CreateAnswer execute(CreateCommand cmd);
+
+    AnalyzeTemplateAnswer execute(AnalyzeTemplateCommand cmd);
 }

@@ -55,23 +55,25 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.storage.AnalyzeTemplateAnswer;
+import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.storage.AnalyzeTemplateAnswer;
-import com.cloud.agent.api.storage.AnalyzeTemplateCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -123,6 +125,20 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         command.add("-cf", name + ".ova");
         command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
         command.add(name + "-disk0.vmdk");
+
+        s_logger.info("Package OVA with commmand: " + command.toString());
+        command.execute();
+    }
+
+    public void createOvaAnalyze(String path, String ovfName, String diskName) {
+        Script commandSync = new Script(true, "sync", 0, s_logger);
+        commandSync.execute();
+
+        Script command = new Script(false, "tar", 0, s_logger);
+        command.setWorkDir(path);
+        command.add("-cf", ovfName + ".ova");
+        command.add(ovfName + ".ovf");
+        command.add(diskName + ".vmdk");
 
         s_logger.info("Package OVA with commmand: " + command.toString());
         command.execute();
@@ -1518,9 +1534,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             ManagedObjectReference morRp = hyperHost.getHyperHostOwnerResourcePool();
-            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, srcStore.getUuid());
-            assert (morDs != null);
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            ClusterMO cluster = new ClusterMO(context, morCluster);
+            List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
+            HostMO host = new HostMO(context, lstHosts.get(0).first());
+            HostDatastoreSystemMO hostDatastoreSystem = host.getHostDatastoreSystemMO();
+            List<ManagedObjectReference> morDsList = hostDatastoreSystem.getDatastores();
+            ManagedObjectReference morDs = hostDatastoreSystem.getDatastores().get(0);
             DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
+
             String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
             s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
@@ -1549,14 +1571,52 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 throw new Exception(msg);
             }
 
-            // readOVF(hyperHost, srcFileName, datastoreMo, morRp, hyperHost.getMor());
+            List<Ternary<String, Long, Boolean>> templateDetails = HypervisorHostHelper.readOVF(hyperHost, srcFileName, datastoreMo, morRp, hyperHost.getMor());
+            int diskCount = 1;
+            for (Ternary<String, Long, Boolean> templateDetail : templateDetails) {
+                if(templateDetail.third())
+                    continue;
+                String installPath = templateInfo.first() + diskCount;
+                String installFullPathVMDK = secondaryMountPoint + "/" + installPath;
+                synchronized (installPath.intern()) {
+                    Script command = new Script(false, "mkdir", _timeout, s_logger);
+                    command.add("-p");
+                    command.add(installFullPathVMDK);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "unable to prepare template directory: " + installPath + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
 
-            // Temp answer
-            TemplateObjectTO dataDiskTemplate = new TemplateObjectTO();
-            dataDiskTemplate.setPath("temp-path");
-            dataDiskTemplate.setPhysicalSize(1L);
-            dataDiskTemplate.setIsBootable(false);
-            templateList.add(dataDiskTemplate);
+                synchronized (installPath.intern()) {
+                    Script command = new Script(false, "mv", _timeout, s_logger);
+                    command.add(templateDetail.first());
+                    command.add(installFullPathVMDK);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "unable to move vmdk" + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+
+                int index = templateDetail.first().lastIndexOf(File.separator);
+                String vmdkName = templateDetail.first().substring(index+1);
+                int vmdkIndex = vmdkName.indexOf(".");
+                String ovfName = vmdkName.substring(0, vmdkIndex);
+
+                HypervisorHostHelper.createOvfFile(hyperHost, vmdkName, ovfName, installFullPathVMDK, templateDetail.second(), morDs);
+                createOvaAnalyze(installFullPathVMDK, templateDetail.first().substring(0, index+1), templateDetail.first());
+
+                TemplateObjectTO dataDiskTemplate = new TemplateObjectTO();
+                dataDiskTemplate.setPath(templateDetail.first());
+                dataDiskTemplate.setPhysicalSize(templateDetail.second());
+                dataDiskTemplate.setIsBootable(templateDetail.third());
+                templateList.add(dataDiskTemplate);
+                diskCount++;
+            }
         } catch (Exception e) {
             String msg = "Analyze template failed due to " + e.getMessage();
             s_logger.error(msg);
