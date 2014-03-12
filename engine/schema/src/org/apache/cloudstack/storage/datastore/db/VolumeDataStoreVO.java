@@ -350,7 +350,12 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public void setRefCnt(Long refCnt) {
-        this.refCnt = refCnt;
+        if (refCnt > 0) {
+            refCnt--;
+        }
+        else {
+            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+        }
     }
 
     public void incrRefCnt() {
