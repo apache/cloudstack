@@ -2643,9 +2643,10 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                     networkId = network.getId();
                     zoneId = network.getDataCenterId();
                 }
-            } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
-                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId
-                        + " with type: " + network.getGuestType());
+            } else if (network.getGuestType() == null ||
+                    (network.getGuestType() == Network.GuestType.Isolated
+                    && _ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat))) {
+                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
             }
         }
 
