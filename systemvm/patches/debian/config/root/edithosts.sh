@@ -95,7 +95,7 @@ wait_for_dnsmasq () {
   return 1
 }
 
-if [ $dnsmasq_managed_lease ]
+if [ $dnsmasq_managed_lease -eq 1 ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
@@ -212,7 +212,7 @@ pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
   # use SIGHUP to avoid service outage if dhcp_release is available.
-  if [ $dnsmasq_managed_lease ]
+  if [ $dnsmasq_managed_lease -eq 1 ]
   then
     kill -HUP $pid
   else
