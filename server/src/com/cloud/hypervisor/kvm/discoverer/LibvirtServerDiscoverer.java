@@ -51,7 +51,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -64,8 +63,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private String _kvmPrivateNic;
     private String _kvmPublicNic;
     private String _kvmGuestNic;
-    @Inject
-    ResourceManager _resourceMgr;
     @Inject
     AgentManager _agentMgr;
 

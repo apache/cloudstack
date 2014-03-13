@@ -43,12 +43,9 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
@@ -58,13 +55,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.hyperv.resource.HypervDirectConnectResource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -78,27 +73,14 @@ import com.cloud.storage.StorageLayer;
 @Local(value = Discoverer.class)
 public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
-
-    private String _instance;
-    private String _mountParent;
-    private int _timeout;
     Random _rand = new Random(System.currentTimeMillis());
 
     Map<String, String> _storageMounts = new HashMap<String, String>();
     StorageLayer _storage;
 
     @Inject
-    private HostDao _hostDao = null;
-    @Inject
-    private ClusterDao _clusterDao;
-    @Inject
-    private ClusterDetailsDao _clusterDetailsDao;
-    @Inject
-    private ResourceManager _resourceMgr;
-    @Inject
     private HostPodDao _podDao;
-    @Inject
-    private DataCenterDao _dcDao;
+
 
     // TODO: AgentManager and AlertManager not being used to transmit info,
     // may want to reconsider.

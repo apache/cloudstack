@@ -23,8 +23,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -37,6 +35,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -435,8 +434,8 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
-        return Boolean.FALSE;
+    public boolean isDynamicallyScalable() {
+        return false;
     }
 
     @Override

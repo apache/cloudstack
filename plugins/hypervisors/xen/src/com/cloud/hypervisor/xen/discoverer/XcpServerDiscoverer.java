@@ -34,13 +34,6 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types.SessionAuthenticationFailed;
-import com.xensource.xenapi.Types.XenAPIException;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -57,7 +50,6 @@ import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
@@ -85,7 +77,6 @@ import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.Xenserver625Resource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -99,6 +90,12 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types.SessionAuthenticationFailed;
+import com.xensource.xenapi.Types.XenAPIException;
 
 @Local(value = Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -122,11 +119,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     VMTemplateDao _tmpltDao;
     @Inject
-    ResourceManager _resourceMgr;
-    @Inject
     HostPodDao _podDao;
-    @Inject
-    DataCenterDao _dcDao;
 
     protected XcpServerDiscoverer() {
     }

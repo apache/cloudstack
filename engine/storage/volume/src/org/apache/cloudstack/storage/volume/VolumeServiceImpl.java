@@ -26,9 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -41,7 +38,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -61,8 +57,10 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
@@ -75,8 +73,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
@@ -625,15 +623,15 @@ public class VolumeServiceImpl implements VolumeService {
                     if (templatePoolRef != null) {
                         long templatePoolRefId = templatePoolRef.getId();
                         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, 1200);
-                        if (templatePoolRef == null) {
-                            s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
-                        }
-
                         try {
-                            templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
-                            templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
-                            _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
-                        } finally {
+                            if (templatePoolRef == null) {
+                                s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
+                            } else {
+                                templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+                                templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                                _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
+                            }
+                        }finally {
                             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
                         }
                     }

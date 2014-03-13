@@ -449,7 +449,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _stopTimeout;
 
     // TODO vmsync {
-    protected static HashMap<DomainInfo.DomainState, State> s_statesTable;
+    protected static final HashMap<DomainInfo.DomainState, State> s_statesTable;
     static {
         s_statesTable = new HashMap<DomainInfo.DomainState, State>();
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF, State.Stopped);
@@ -461,7 +461,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     // TODO vmsync }
 
-    protected static HashMap<DomainInfo.DomainState, PowerState> s_powerStatesTable;
+    protected static final HashMap<DomainInfo.DomainState, PowerState> s_powerStatesTable;
     static {
         s_powerStatesTable = new HashMap<DomainInfo.DomainState, PowerState>();
         s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF, PowerState.PowerOff);
