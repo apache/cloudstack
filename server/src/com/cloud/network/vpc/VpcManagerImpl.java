@@ -424,14 +424,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<VpcOfferingServiceMapVO> map = _vpcOffSvcMapDao.listByVpcOffId(vpcOffId);
 
         for (VpcOfferingServiceMapVO instance : map) {
-            String service = instance.getService();
+            Service service = Service.getService(instance.getService());
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(Service.getService(service), providers);
+            serviceProviderMap.put(service, providers);
         }
 
         return serviceProviderMap;
@@ -2186,6 +2186,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.VMware);
         hTypes.add(HypervisorType.KVM);
         hTypes.add(HypervisorType.Simulator);
+        hTypes.add(HypervisorType.LXC);
         return hTypes;
     }
 

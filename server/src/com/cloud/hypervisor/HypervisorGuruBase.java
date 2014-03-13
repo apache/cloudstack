@@ -25,8 +25,12 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.gpu.GPU;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -55,6 +59,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     NicSecondaryIpDao _nicSecIpDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
     protected HypervisorGuruBase() {
         super();
@@ -125,6 +133,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
         }
+
+        // Set GPU details
+        ServiceOfferingDetailsVO offeringDetail = null;
+        if ((offeringDetail  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), offeringDetail.getValue()));
+        }
+
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)

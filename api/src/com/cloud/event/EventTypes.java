@@ -50,6 +50,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -440,8 +442,8 @@ public class EventTypes {
 
     public static final String EVENT_HOST_RESERVATION_RELEASE = "HOST.RESERVATION.RELEASE";
     // Dedicated guest vlan range
-    public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
-    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
+    public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE = "GUESTVLANRANGE.DEDICATE";
+    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE = "GUESTVLANRANGE.RELEASE";
 
     public static final String EVENT_PORTABLE_IP_RANGE_CREATE = "PORTABLE.IP.RANGE.CREATE";
     public static final String EVENT_PORTABLE_IP_RANGE_DELETE = "PORTABLE.IP.RANGE.DELETE";
@@ -479,10 +481,19 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.DELETE";
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
+    //Guest OS related events
+    public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
+    public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
+    public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
+    public static final String EVENT_GUEST_OS_MAPPING_ADD = "GUEST.OS.MAPPING.ADD";
+    public static final String EVENT_GUEST_OS_MAPPING_REMOVE = "GUEST.OS.MAPPING.REMOVE";
+    public static final String EVENT_GUEST_OS_MAPPING_UPDATE = "GUEST.OS.MAPPING.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
         // current ActionEvent annotation semantics
+        // TODO #2 - The map should be from event type to class.
 
         entityEventDetails = new HashMap<String, String>();
 
@@ -493,10 +504,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_REBOOT, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPDATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPGRADE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_DYNAMIC_SCALE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESETPASSWORD, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_RESETSSHKEY, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MIGRATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class.getName());
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class.getName());
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class.getName());
@@ -544,9 +558,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class.getName());
 
         // Account events
+        entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_CREATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DELETE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_UPDATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class.getName());
 
         // UserVO Events
@@ -661,13 +677,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SECURITY_GROUP_REMOVE, SecurityGroup.class.getName());
 
         // Host
-        entityEventDetails.put(EVENT_HOST_RECONNECT,  Host.class.getName());
+        entityEventDetails.put(EVENT_HOST_RECONNECT, Host.class.getName());
 
         // Maintenance
-        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,  Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class.getName());
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class.getName());
@@ -762,8 +778,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TAGS_DELETE, "tag");
 
         // external network device events
-        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_ADD,  "NvpController");
-        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_DELETE,  "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_ADD, "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_DELETE, "NvpController");
         entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_CONFIGURE, "NvpController");
 
         // AutoScale
@@ -789,6 +805,14 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER, "OpenDaylightController");
+
+        //Guest OS
+        entityEventDetails.put(EVENT_GUEST_OS_ADD, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_REMOVE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_UPDATE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_ADD, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_REMOVE, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_UPDATE, GuestOSHypervisor.class.getName());
     }
 
     public static String getEntityForEvent(String eventName) {

@@ -139,7 +139,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

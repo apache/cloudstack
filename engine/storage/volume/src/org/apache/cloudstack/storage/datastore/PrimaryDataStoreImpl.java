@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -67,6 +68,7 @@ import com.cloud.utils.storage.encoding.EncodingType;
 
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreImpl.class);
+
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
     @Inject
@@ -86,6 +88,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Inject
     private VolumeDao volumeDao;
+    private Map<String, String> _details;
 
     public PrimaryDataStoreImpl() {
 
@@ -133,6 +136,16 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Override
     public long getId() {
         return pdsv.getId();
+    }
+
+    @Override
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return _details;
     }
 
     @Override
@@ -223,9 +236,14 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public boolean isManaged() {
+        return pdsv.isManaged();
+    }
+
+    @Override
     public DataObject create(DataObject obj) {
         // create template on primary storage
-        if (obj.getType() == DataObjectType.TEMPLATE) {
+        if (obj.getType() == DataObjectType.TEMPLATE && !isManaged()) {
             try {
                 String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;

@@ -30,11 +30,12 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
 					                    wait_for_cleanup,
-                                        find_suitable_host,
+                                        findSuitableHostForMigration,
                                         get_resource_type,
                                         update_resource_count
                                         )
 from marvin.integration.lib.utils import cleanup_resources
+from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
     """Test memory resource limit services
@@ -388,7 +389,9 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count, expected_resource_count,
                          "Resource count should match with the expected resource count")
 
-            host = find_suitable_host(self.apiclient, vm)
+            host = findSuitableHostForMigration(self.apiclient, vm.id)
+            if host is None:
+                self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
             self.debug("Migrating instance: %s to host: %s" %
                                                         (vm.name, host.name))
             try:

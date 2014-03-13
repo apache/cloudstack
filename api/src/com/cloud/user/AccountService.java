@@ -113,4 +113,6 @@ public interface AccountService {
 
     //TO be implemented, to check accessibility for an entity owned by domain
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
+
+    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 }

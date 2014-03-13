@@ -86,6 +86,11 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
+    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");

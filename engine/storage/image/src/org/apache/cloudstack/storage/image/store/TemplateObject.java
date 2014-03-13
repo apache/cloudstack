@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -299,6 +300,20 @@ public class TemplateObject implements TemplateInfo {
         if (dataStore == null) {
             return null;
         }
+
+        // managed primary data stores should not have an install path
+        if (dataStore instanceof PrimaryDataStore) {
+            PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
+
+            Map<String, String> details = primaryDataStore.getDetails();
+
+            boolean managed = details != null && Boolean.parseBoolean(details.get(PrimaryDataStore.MANAGED));
+
+            if (managed) {
+                return null;
+            }
+        }
+
         DataObjectInStore obj = objectInStoreMgr.findObject(this, dataStore);
         return obj.getInstallPath();
     }

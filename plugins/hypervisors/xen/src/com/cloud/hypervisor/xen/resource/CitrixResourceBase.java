@@ -56,11 +56,13 @@ import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Console;
+import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostCpu;
 import com.xensource.xenapi.HostMetrics;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PGPU;
 import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
@@ -73,6 +75,8 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VBDMetrics;
 import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VGPU;
+import com.xensource.xenapi.VGPUType;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
@@ -99,6 +103,8 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
+import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
@@ -106,6 +112,8 @@ import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -199,6 +207,7 @@ import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
@@ -431,6 +440,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetHostStatsCommand)cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand)cmd);
+        } else if (clazz == GetGPUStatsCommand.class) {
+            return execute((GetGPUStatsCommand) cmd);
         } else if (clazz == GetVmDiskStatsCommand.class) {
             return execute((GetVmDiskStatsCommand)cmd);
         } else if (clazz == CheckHealthCommand.class) {
@@ -511,6 +522,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((UpdateHostPasswordCommand)cmd);
         } else if (cmd instanceof ClusterSyncCommand) {
             return execute((ClusterSyncCommand)cmd);
+        } else if (cmd instanceof ClusterVMMetaDataSyncCommand) {
+            return execute((ClusterVMMetaDataSyncCommand)cmd);
         } else if (clazz == CheckNetworkCommand.class) {
             return execute((CheckNetworkCommand)cmd);
         } else if (clazz == PlugNicCommand.class) {
@@ -1284,6 +1297,65 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return dynamicMinRam;
     }
 
+    private HashMap<String, HashMap<String, Long>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
+        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+        Host host = Host.getByUuid(conn, _host.uuid);
+        Set<PGPU> pgpus = host.getPGPUs(conn);
+        Iterator<PGPU> iter = pgpus.iterator();
+        while (iter.hasNext()) {
+            PGPU pgpu = iter.next();
+            GPUGroup gpuGroup = pgpu.getGPUGroup(conn);
+            Set<VGPUType> enabledVGPUTypes = gpuGroup.getEnabledVGPUTypes(conn);
+            String groupName = gpuGroup.getNameLabel(conn);
+            HashMap<String, Long> gpuCapacity = new HashMap<String, Long>();
+            if (groupDetails.get(groupName) != null) {
+                gpuCapacity = groupDetails.get(groupName);
+            }
+            // Get remaining capacity of all the enabled VGPU in a PGPU
+            if(enabledVGPUTypes != null) {
+                Iterator<VGPUType> it = enabledVGPUTypes.iterator();
+                while (it.hasNext()) {
+                    VGPUType type = it.next();
+                    String modelName = type.getModelName(conn);
+                    Long remainingCapacity = pgpu.getRemainingCapacity(conn, type);
+                    if (gpuCapacity.get(modelName) != null) {
+                        long newRemainingCapacity = gpuCapacity.get(modelName) + remainingCapacity;
+                        gpuCapacity.put(modelName, newRemainingCapacity);
+                    } else {
+                        gpuCapacity.put(modelName, remainingCapacity);
+                    }
+                }
+            }
+            groupDetails.put(groupName, gpuCapacity);
+        }
+        return groupDetails;
+    }
+
+    protected void createVGPU(Connection conn, StartCommand cmd, VM vm, GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
+        Set<GPUGroup> groups = GPUGroup.getByNameLabel(conn, gpuDevice.getGpuGroup());
+        assert groups.size() == 1 : "Should only have 1 group but found " + groups.size();
+        GPUGroup gpuGroup = groups.iterator().next();
+
+        Set<VGPUType> vgpuTypes = gpuGroup.getEnabledVGPUTypes(conn);
+        Iterator<VGPUType> iter = vgpuTypes.iterator();
+        VGPUType vgpuType = null;
+        while (iter.hasNext()) {
+            VGPUType entry = iter.next();
+            if (entry.getModelName(conn).equals(gpuDevice.getVgpuType())) {
+                vgpuType = entry;
+            }
+        }
+        String device = "0"; // Only allow device = "0" for now, as XenServer supports just a single vGPU per VM.
+        Map<String, String> other_config = new HashMap<String, String>();
+        VGPU.create(conn, vm, gpuGroup, device, other_config, vgpuType);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Created VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] for VM " + cmd.getVirtualMachine().getName());
+        }
+        // Calculate and set remaining GPU capacity in the host.
+        cmd.getVirtualMachine().getGpuDevice().setGroupDetails(getGPUGroupDetails(conn));
+    }
+
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
@@ -1432,14 +1504,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     platform.put("cores-per-socket", coresPerSocket);
                     vm.setPlatform(conn, platform);
                 }
-
-                String xentoolsversion = details.get("hypervisortoolsversion");
-                if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
-                    Map<String, String> platform = vm.getPlatform(conn);
-                    platform.remove("device_id");
-                    vm.setPlatform(conn, platform);
-                }
-
+            }
+            String xentoolsversion = details.get("hypervisortoolsversion");
+            if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
+                Map<String, String> platform = vm.getPlatform(conn);
+                platform.remove("device_id");
+                vm.setPlatform(conn, platform);
             }
         }
     }
@@ -1719,6 +1789,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Host host = Host.getByUuid(conn, _host.uuid);
             vm = createVmFromTemplate(conn, vmSpec, host);
 
+            GPUDeviceTO gpuDevice = vmSpec.getGpuDevice();
+            if (gpuDevice != null) {
+                s_logger.debug("Creating VGPU for of VGPU type: " + gpuDevice.getVgpuType() + " in GPU group "
+                        + gpuDevice.getGpuGroup() + " for VM " + vmName );
+                createVGPU(conn, cmd, vm, gpuDevice);
+            }
+
             for (DiskTO disk : vmSpec.getDisks()) {
                 VDI newVdi = prepareManagedDisk(conn, disk, vmName);
 
@@ -1869,18 +1946,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return prepareManagedStorage(conn, details, null, vdiNameLabel);
     }
 
-    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+    protected SR prepareManagedSr(Connection conn, Map<String, String> details) {
         String iScsiName = details.get(DiskTO.IQN);
         String storageHost = details.get(DiskTO.STORAGE_HOST);
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
-        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
 
-        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+        return getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+    }
+
+    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+        SR sr = prepareManagedSr(conn, details);
 
         VDI vdi = getVDIbyUuid(conn, path, false);
 
         if (vdi == null) {
+            Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+
             vdi = createVdi(sr, vdiNameLabel, volumeSize);
         }
 
@@ -2238,6 +2320,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return hostStats;
     }
 
+    protected GetGPUStatsAnswer execute(GetGPUStatsCommand cmd) {
+        Connection conn = getConnection();
+        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+        try {
+            groupDetails = getGPUGroupDetails(conn);
+        } catch (Exception e) {
+            String msg = "Unable to get GPU stats" + e.toString();
+            s_logger.warn(msg, e);
+        }
+        return new GetGPUStatsAnswer(cmd, groupDetails);
+    }
+
     protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
         Connection conn = getConnection();
         List<String> vmNames = cmd.getVmNames();
@@ -2354,9 +2448,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 double diskReadKBs = 0;
                 double diskWriteKBs = 0;
                 for (VBD vbd : vm.getVBDs(conn)) {
-                    VBDMetrics record = vbd.getMetrics(conn);
-                    diskReadKBs += record.getIoReadKbs(conn);
-                    diskWriteKBs += record.getIoWriteKbs(conn);
+                    VBDMetrics vbdmetrics = vbd.getMetrics(conn);
+                    if (!isRefNull(vbdmetrics)) {
+                        try {
+                            diskReadKBs += vbdmetrics.getIoReadKbs(conn);
+                            diskWriteKBs += vbdmetrics.getIoWriteKbs(conn);
+                        }  catch (Types.HandleInvalid e) {
+                            s_logger.debug("vbdmetrics doesn't exist ");
+                        }
+                    }
                 }
                 if (stats == null) {
                     stats = new VmStatsEntry();
@@ -2533,7 +2633,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             VmPowerState ps = record.powerState;
             Host host = record.residentOn;
-            String xstoolsversion = getVMXenToolsVersion(record.platform);
             String host_uuid = null;
             if (!isRefNull(host)) {
                 try {
@@ -2549,7 +2648,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (host_uuid.equalsIgnoreCase(_host.uuid)) {
                     vmStates.put(
                             record.nameLabel,
-                            new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion)
+                            new HostVmStateReportEntry(convertPowerState(ps), host_uuid)
                             );
                 }
             }
@@ -2559,8 +2658,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     // TODO vmsync {
-    protected HashMap<String, Ternary<String, State, String>> getAllVms(Connection conn) {
-        final HashMap<String, Ternary<String, State, String>> vmStates = new HashMap<String, Ternary<String, State, String>>();
+    protected HashMap<String, Pair<String, State>> getAllVms(Connection conn) {
+        final HashMap<String, Pair<String, State>> vmStates = new HashMap<String, Pair<String, State>>();
         Map<VM, VM.Record> vm_map = null;
         for (int i = 0; i < 2; i++) {
             try {
@@ -2590,7 +2689,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.trace("VM " + record.nameLabel + ": powerstate = " + ps + "; vm state=" + state.toString());
             }
             Host host = record.residentOn;
-            String platformstring = StringUtils.mapToString(record.platform);
             String host_uuid = null;
             if (!isRefNull(host)) {
                 try {
@@ -2602,7 +2700,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (XmlRpcException e) {
                     s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 }
-                vmStates.put(record.nameLabel, new Ternary<String, State, String>(host_uuid, state, platformstring));
+                vmStates.put(record.nameLabel, new Pair<String, State>(host_uuid, state));
             }
         }
 
@@ -3555,6 +3653,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                     try {
                         if (vm.getPowerState(conn) == VmPowerState.HALTED) {
+                            Set<VGPU> vGPUs = null;
+                            // Get updated GPU details
+                            try {
+                                vGPUs = vm.getVGPUs(conn);
+                            } catch (XenAPIException e2) {
+                                s_logger.debug("VM " + vmName + " does not have GPU support.");
+                            }
+                            if (vGPUs != null && !vGPUs.isEmpty()) {
+                                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                                cmd.setGpuDevice(new GPUDeviceTO(null, null, groupDetails));
+                            }
+
                             Set<VIF> vifs = vm.getVIFs(conn);
                             List<Network> networks = new ArrayList<Network>();
                             for (VIF vif : vifs) {
@@ -3595,11 +3705,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new StopAnswer(cmd, msg, platformstring, false);
         }
         return new StopAnswer(cmd, "Stop VM failed", platformstring, false);
-    }
-
-    /*Override by subclass*/
-    protected String getVMXenToolsVersion(Map<String, String> platform) {
-        return "xenserver56";
     }
 
     private List<VDI> getVdis(Connection conn, VM vm) {
@@ -4475,7 +4580,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             Host.Record hostr = poolr.master.getRecord(conn);
             if (_host.uuid.equals(hostr.uuid)) {
-                HashMap<String, Ternary<String, State, String>> allStates = fullClusterSync(conn);
+                HashMap<String, Pair<String, State>> allStates = fullClusterSync(conn);
                 cmd.setClusterVMStateChanges(allStates);
             }
         } catch (Throwable e) {
@@ -5392,6 +5497,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (_privateNetworkName != null) {
                 details.put("private.network.device", _privateNetworkName);
+            }
+
+            try {
+                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                cmd.setGpuGroupDetails(groupDetails);
+            } catch (Exception e) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("GPU device not found in host " + hr.hostname);
+                }
             }
 
             cmd.setHostDetails(details);
@@ -7047,11 +7161,49 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("Check for master failed, failing the Cluster sync command");
             return new Answer(cmd);
         }
-        HashMap<String, Ternary<String, State, String>> newStates = deltaClusterSync(conn);
+        HashMap<String, Pair<String, State>> newStates = deltaClusterSync(conn);
         return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
     }
 
-    protected HashMap<String, Ternary<String, State, String>> fullClusterSync(Connection conn) {
+
+    protected ClusterVMMetaDataSyncAnswer execute(final ClusterVMMetaDataSyncCommand cmd) {
+        Connection conn = getConnection();
+        //check if this is master
+        Pool pool;
+        try {
+            pool = Pool.getByUuid(conn, _host.pool);
+            Pool.Record poolr = pool.getRecord(conn);
+            Host.Record hostr = poolr.master.getRecord(conn);
+            if (!_host.uuid.equals(hostr.uuid)) {
+                return new ClusterVMMetaDataSyncAnswer(cmd.getClusterId(), null);
+            }
+        } catch (Throwable e) {
+            s_logger.warn("Check for master failed, failing the Cluster sync VMMetaData command");
+            return new ClusterVMMetaDataSyncAnswer(cmd.getClusterId(), null);
+        }
+        HashMap<String, String> vmMetadatum = clusterVMMetaDataSync(conn);
+        return new ClusterVMMetaDataSyncAnswer(cmd.getClusterId(), vmMetadatum);
+    }
+
+    protected HashMap<String, String> clusterVMMetaDataSync(Connection conn) {
+        final HashMap<String, String> vmMetaDatum = new HashMap<String, String>();
+        try {
+            Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
+            for (VM.Record record: vm_map.values()) {
+                if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
+                    continue; // Skip DOM0
+                }
+                vmMetaDatum.put(record.nameLabel, StringUtils.mapToString(record.platform));
+            }
+        } catch (final Throwable e) {
+            String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+        return vmMetaDatum;
+    }
+
+    protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
         synchronized (_cluster.intern()) {
             s_vms.clear(_cluster);
         }
@@ -7069,7 +7221,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (!isRefNull(host)) {
                     host_uuid = host.getUuid(conn);
                     synchronized (_cluster.intern()) {
-                        s_vms.put(_cluster, host_uuid, vm_name, state, null);
+                        s_vms.put(_cluster, host_uuid, vm_name, state);
                     }
                 }
                 if (s_logger.isTraceEnabled()) {
@@ -7084,44 +7236,32 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return s_vms.getClusterVmState(_cluster);
     }
 
-    protected HashMap<String, Ternary<String, State, String>> deltaClusterSync(Connection conn) {
-        final HashMap<String, Ternary<String, State, String>> changes = new HashMap<String, Ternary<String, State, String>>();
+    protected HashMap<String, Pair<String, State>> deltaClusterSync(Connection conn) {
+        final HashMap<String, Pair<String, State>> changes = new HashMap<String, Pair<String, State>>();
 
         synchronized (_cluster.intern()) {
-            HashMap<String, Ternary<String, State, String>> newStates = getAllVms(conn);
+            HashMap<String, Pair<String, State>> newStates = getAllVms(conn);
             if (newStates == null) {
                 s_logger.warn("Unable to get the vm states so no state sync at this point.");
                 return null;
             }
-            HashMap<String, Ternary<String, State, String>> oldStates = new HashMap<String, Ternary<String, State, String>>(s_vms.size(_cluster));
+            HashMap<String, Pair<String, State>> oldStates = new HashMap<String, Pair<String, State>>(s_vms.size(_cluster));
             oldStates.putAll(s_vms.getClusterVmState(_cluster));
 
-            for (final Map.Entry<String, Ternary<String, State, String>> entry : newStates.entrySet()) {
+            for (final Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
                 final String vm = entry.getKey();
-                String platform = entry.getValue().third();
                 State newState = entry.getValue().second();
                 String host_uuid = entry.getValue().first();
-                final Ternary<String, State, String> oldState = oldStates.remove(vm);
+                final Pair<String, State> oldState = oldStates.remove(vm);
 
-                // check if platform changed
-                if (platform != null && oldState != null) {
-                    if (!platform.equals(oldState.third()) && newState != State.Stopped && newState != State.Stopping) {
-                        s_logger.warn("Detecting a change in platform for " + vm);
-                        changes.put(vm, new Ternary<String, State, String>(host_uuid, newState, platform));
-
-                        s_logger.debug("11. The VM " + vm + " is in " + newState + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState, platform);
-                        continue;
-                    }
-                }
                 //check if host is changed
                 if (host_uuid != null && oldState != null) {
                     if (!host_uuid.equals(oldState.first()) && newState != State.Stopped && newState != State.Stopping) {
                         s_logger.warn("Detecting a change in host for " + vm);
-                        changes.put(vm, new Ternary<String, State, String>(host_uuid, newState, platform));
+                        changes.put(vm, new Pair<String, State>(host_uuid, newState));
 
                         s_logger.debug("11. The VM " + vm + " is in " + newState + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                        s_vms.put(_cluster, host_uuid, vm, newState);
                         continue;
                     }
                 }
@@ -7139,42 +7279,42 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     continue;
                 }
                 if (oldState == null) {
-                    s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                    s_vms.put(_cluster, host_uuid, vm, newState);
                     s_logger.warn("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
-                    changes.put(vm, new Ternary<String, State, String>(host_uuid, newState, platform));
+                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 } else if (oldState.second() == State.Starting) {
                     if (newState == State.Running) {
                         s_logger.debug("12. The VM " + vm + " is in " + State.Running + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                        s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Stopped) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in starting the vm.");
                     }
                 } else if (oldState.second() == State.Migrating) {
                     if (newState == State.Running) {
                         s_logger.debug("Detected that an migrating VM is now running: " + vm);
-                        s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                        s_vms.put(_cluster, host_uuid, vm, newState);
                     }
                 } else if (oldState.second() == State.Stopping) {
                     if (newState == State.Stopped) {
                         s_logger.debug("13. The VM " + vm + " is in " + State.Stopped + " state");
-                        s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                        s_vms.put(_cluster, host_uuid, vm, newState);
                     } else if (newState == State.Running) {
                         s_logger.warn("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
                     }
                 } else if (oldState.second() != newState) {
                     s_logger.debug("14. The VM " + vm + " is in " + newState + " state was " + oldState.second());
-                    s_vms.put(_cluster, host_uuid, vm, newState, platform);
+                    s_vms.put(_cluster, host_uuid, vm, newState);
                     if (newState == State.Stopped) {
                         /*
                          * if (s_vmsKilled.remove(vm)) { s_logger.debug("VM " + vm + " has been killed for storage. ");
                          * newState = State.Error; }
                          */
                     }
-                    changes.put(vm, new Ternary<String, State, String>(host_uuid, newState, null));
+                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 }
             }
 
-            for (final Map.Entry<String, Ternary<String, State, String>> entry : oldStates.entrySet()) {
+            for (final Map.Entry<String, Pair<String, State>> entry : oldStates.entrySet()) {
                 final String vm = entry.getKey();
                 final State oldState = entry.getValue().second();
                 String host_uuid = entry.getValue().first();
@@ -7196,7 +7336,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else {
                     State newState = State.Stopped;
                     s_logger.warn("The VM is now missing marking it as Stopped " + vm);
-                    changes.put(vm, new Ternary<String, State, String>(host_uuid, newState, null));
+                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 }
             }
         }

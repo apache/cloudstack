@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;

@@ -60,7 +60,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiDispatcher;
+import com.cloud.api.dispatch.DispatchChainFactory;
+import com.cloud.api.dispatch.DispatchTask;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -128,6 +129,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
     private ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
 
+    @Inject
+    protected DispatchChainFactory dispatchChainFactory = null;
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -367,7 +370,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          * For ex. if projectId is given as a string instead of an long value, this
          * will be throwing an error.
          */
-        ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
+        dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(new DeployVMCmd(), deployParams));
 
         AutoScaleVmProfileVO profileVO =
             new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),

@@ -410,7 +410,7 @@
                 listView: {
                     actions: {
                         add: {
-                            label: 'Add Isolated Network',
+                            label: 'label.add.isolated.network',
 
                             preFilter: function(args) {
                                 if (advZoneObjs != null && advZoneObjs.length > 0) {
@@ -766,13 +766,13 @@
                             label: 'label.cidr'
                         },
                         ip6cidr: {
-                            label: 'IPv6 CIDR'
+                            label: 'label.ipv6.CIDR'
                         }
                     },
 
                     advSearchFields: {
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -796,7 +796,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -839,7 +839,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -848,10 +848,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -875,7 +875,7 @@
                     },
 
                     detailView: {
-                        name: 'Guest network details',
+                        name: 'label.guest.network.details',
                         viewAll: {
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
@@ -1245,7 +1245,7 @@
                                     },
                                     
                                     ispersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent',
                                         converter: cloudStack.converters.toBooleanText
 
                                     },
@@ -1263,7 +1263,7 @@
                                     },
                                     
                                     broadcasturi: {
-                                    	label: 'broadcasturi'
+                                    	label: 'label.broadcasturi'
                                     },
                                     
                                     networkofferingid: {
@@ -1323,20 +1323,20 @@
                                     },
 
                                     networkcidr: {
-                                        label: 'Network CIDR'
+                                        label: 'label.network.cidr'
                                     },
 
                                     ip6gateway: {
-                                        label: 'IPv6 Gateway'
+                                        label: 'label.ipv6.gateway'
                                     },
 
                                     ip6cidr: {
-                                        label: 'IPv6 CIDR'
+                                        label: 'label.ipv6.CIDR'
                                     },
 
 
                                     reservediprange: {
-                                        label: 'Reserved IP Range'
+                                        label: 'label.reserved.ip.range'
                                     },
 
 
@@ -1688,7 +1688,7 @@
                                                 }
                                             },
                                             'autoScale': {
-                                                label: 'AutoScale',
+                                                label: 'label.autoscale',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
@@ -2785,7 +2785,7 @@
                                         label: 'label.zone'
                                     },
                                     vlanname: {
-                                        label: 'label.vlan'
+                                        label: 'label.vlan.only'
                                     }
                                 }],
 
@@ -3479,7 +3479,7 @@
                                             },
 
                                             'health-check': {
-                                                label: 'Health Check',
+                                                label: 'label.health.check',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'Configure',
@@ -3489,7 +3489,7 @@
                                             },
 
                                             'autoScale': {
-                                                label: 'AutoScale',
+                                                label: 'label.autoscale',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
@@ -4475,10 +4475,10 @@
 
                     advSearchFields: {
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -5013,10 +5013,10 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -5040,7 +5040,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -5083,7 +5083,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -5092,10 +5092,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -5186,7 +5186,7 @@
                                         label: 'label.DNS.domain.for.guest.networks'
                                     },
                                     publicLoadBalancerProvider: {
-                                        label: 'Public Load Balancer Provider',
+                                        label: 'label.public.load.balancer.provider',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
@@ -5429,7 +5429,7 @@
                                         label: 'label.state'
                                     },
                                     ispersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent',
                                         converter: cloudStack.converters.toBooleanText
 
                                     },
@@ -5604,8 +5604,8 @@
                                         }
                                     },
                                     cidrlist: {
-                                        label: 'CIDR list',
-                                        desc: 'Please enter a comma separated list of CIDRs if more than one',
+                                        label: 'label.CIDR.list',
+                                        desc: 'message.enter.seperated.list.multiple.cidrs',
                                         validation: {
                                             required: true
                                         }
@@ -5619,7 +5619,7 @@
                                     },
                                     cidrlist: {
                                         label: 'label.CIDR.list',
-                                        desc: 'Please enter a comma separated list of CIDRs if more than one',
+                                        desc: 'message.enter.seperated.list.multiple.cidrs',
                                         docID: 'helpVPNGatewayCIDRList',
                                         validation: {
                                             required: true

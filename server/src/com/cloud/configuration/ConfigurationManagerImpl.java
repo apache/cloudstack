@@ -36,6 +36,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -83,7 +85,6 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -130,6 +131,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -2017,15 +2019,54 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(), localStorageRequired,
                 offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(),
-                cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
+                cmd.isCustomizedIops(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(),
+                cmd.getHypervisorSnapshotReserve());
     }
 
     protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vmType, String name, Integer cpu, Integer ramSize, Integer speed,
             String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag,
-            Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
+            Integer networkRate, String deploymentPlanner, Map<String, String> details, Boolean isCustomizedIops, Long minIops, Long maxIops,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, Integer hypervisorSnapshotReserve) {
         tags = StringUtils.cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired,
                 false, tags, isSystem, vmType, domainId, hostTag, deploymentPlanner);
+
+        if (isCustomizedIops != null) {
+            bytesReadRate = null;
+            bytesWriteRate = null;
+            iopsReadRate = null;
+            iopsWriteRate = null;
+
+            if (isCustomizedIops) {
+                minIops = null;
+                maxIops = null;
+            } else {
+                if (minIops == null && maxIops == null) {
+                    minIops = 0L;
+                    maxIops = 0L;
+                } else {
+                    if (minIops == null || minIops <= 0) {
+                        throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
+                    }
+
+                    if (maxIops == null) {
+                        maxIops = 0L;
+                    }
+
+                    if (minIops > maxIops) {
+                        throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
+                    }
+                }
+            }
+        } else {
+            minIops = null;
+            maxIops = null;
+        }
+
+        offering.setCustomizedIops(isCustomizedIops);
+        offering.setMinIops(minIops);
+        offering.setMaxIops(maxIops);
+
         if ((bytesReadRate != null) && (bytesReadRate > 0))
             offering.setBytesReadRate(bytesReadRate);
         if ((bytesWriteRate != null) && (bytesWriteRate > 0))
@@ -2035,13 +2076,62 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if ((iopsWriteRate != null) && (iopsWriteRate > 0))
             offering.setIopsWriteRate(iopsWriteRate);
 
-        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+        if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
+            throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
+        }
+
+        offering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+
+        List<ServiceOfferingDetailsVO> detailsVO = null;
             if (details != null) {
-                List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+            // Check if the user has passed the gpu-type before passing the VGPU type
+            if (!details.containsKey(GPU.Keys.pciDevice.toString()) && details.containsKey(GPU.Keys.vgpuType.toString())) {
+                throw new InvalidParameterValueException("Please specify the gpu type");
+            }
+            detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
                 for (Entry<String, String> detailEntry : details.entrySet()) {
+                String value = null;
+                if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
+                    for (GPU.Type type : GPU.Type.values()) {
+                        if (detailEntry.getValue().equals(type.toString())) {
+                            value = detailEntry.getValue();
+                        }
+                    }
+                    if (value == null) {
+                        throw new InvalidParameterValueException("Please specify valid gpu type");
+                    }
+                }
+                if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
+                    if (details.get(GPU.Keys.pciDevice.toString()).equals(GPU.Type.GPU_Passthrough.toString())) {
+                        throw new InvalidParameterValueException("vgpuTypes are supported only with vGPU pciDevice");
+                    }
+                    if (detailEntry.getValue() == null) {
+                        throw new InvalidParameterValueException("With vGPU as pciDevice, vGPUType value cannot be null");
+                    }
+                    for (GPU.vGPUType entry : GPU.vGPUType.values()) {
+                        if (detailEntry.getValue().equals(entry.getType())) {
+                            value = entry.getType();
+                        }
+                    }
+                    if (value == null || detailEntry.getValue().equals(GPU.vGPUType.passthrough.getType())) {
+                        throw new InvalidParameterValueException("Please specify valid vGPU type");
+                    }
+                }
                     detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
                 }
+            // If pciDevice type is passed, put the default VGPU type as 'passthrough'
+            if (details.containsKey(GPU.Keys.pciDevice.toString())
+                    && !details.containsKey(GPU.Keys.vgpuType.toString())) {
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(),
+                        GPU.Keys.vgpuType.toString(), GPU.vGPUType.passthrough.getType(), true));
+            }
+        }
 
+        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+            if (detailsVO != null && !detailsVO.isEmpty()) {
+                for (int index = 0; index < detailsVO.size(); index++) {
+                    detailsVO.get(index).setResourceId(offering.getId());
+                }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -2536,7 +2626,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     networkId = network.getId();
                     zoneId = network.getDataCenterId();
                 }
-            } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
+            } else if (network.getGuestType() == null ||
+                    (network.getGuestType() == Network.GuestType.Isolated
+                    && _ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat))) {
                 throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
             }
         }

@@ -94,4 +94,6 @@ public interface VolumeApiService {
      *
      */
     String extractVolume(ExtractVolumeCmd cmd);
+
+    boolean isDisplayResourceEnabled(Long id);
 }

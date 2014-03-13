@@ -511,7 +511,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-        sb.and("displayEvent", sb.entity().getDisplayEvent(), SearchCriteria.Op.EQ);
+        sb.and("displayEvent", sb.entity().getDisplay(), SearchCriteria.Op.EQ);
         sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();
@@ -754,6 +754,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Filter searchFilter = new Filter(UserVmJoinVO.class, "id", true, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
 
+        List<Long> ids = null;
+        if (cmd.getId() != null) {
+            if (cmd.getIds() != null && !cmd.getIds().isEmpty()) {
+                throw new InvalidParameterValueException("Specify either id or ids but not both parameters");
+            }
+            ids = new ArrayList<Long>();
+            ids.add(cmd.getId());
+        } else {
+            ids = cmd.getIds();
+        }
+
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
@@ -794,7 +805,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
@@ -877,8 +888,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("display", display);
         }
 
-        if (id != null) {
-            sc.setParameters("id", id);
+        if (ids != null) {
+            List<?> idList = (ids instanceof List<?> ? (List<?>)ids : null);
+            if (idList != null && !idList.isEmpty()) {
+                sc.setParameters("idIN", idList.toArray());
+            }
         }
 
         if (templateId != null) {

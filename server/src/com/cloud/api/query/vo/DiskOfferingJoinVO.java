@@ -70,6 +70,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "max_iops")
     private Long maxIops;
 
+    @Column(name = "hv_ss_reserve")
+    private Integer hypervisorSnapshotReserve;
+
     @Column(name = "sort_key")
     int sortKey;
 
@@ -165,8 +168,8 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return maxIops;
     }
 
-    public void setMaxIops(Long maxIops) {
-        this.maxIops = maxIops;
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 
     public String getCacheMode() {

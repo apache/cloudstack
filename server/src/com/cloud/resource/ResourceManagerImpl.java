@@ -30,11 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -51,10 +46,14 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainAnswer;
@@ -64,6 +63,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.Capacity;
@@ -97,6 +97,11 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.gpu.GPU.vGPUType;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
@@ -137,11 +142,14 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
@@ -158,6 +166,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
 
 @Component
 @Local({ResourceManager.class, ResourceService.class})
@@ -192,6 +201,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HostTagsDao _hostTagsDao;
     @Inject
     private GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -243,6 +256,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
 
     private GenericSearchBuilder<HostVO, String> _hypervisorsInDC;
+
+    private SearchBuilder<HostGpuGroupsVO> _gpuAvailability;
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -827,6 +842,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // delete host details
         _hostDetailsDao.deleteDetails(hostId);
 
+                // if host is GPU enabled, delete GPU entries
+                _hostGpuGroupsDao.deleteGpuEntries(hostId);
+
         host.setGuid(null);
         Long clusterId = host.getClusterId();
         host.setClusterId(null);
@@ -1328,6 +1346,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _hypervisorsInDC.and("id", _hypervisorsInDC.entity().getId(), SearchCriteria.Op.NEQ);
         _hypervisorsInDC.and("type", _hypervisorsInDC.entity().getType(), SearchCriteria.Op.EQ);
         _hypervisorsInDC.done();
+
+        _gpuAvailability = _hostGpuGroupsDao.createSearchBuilder();
+        _gpuAvailability.and("hostId", _gpuAvailability.entity().getHostId(), Op.EQ);
+        SearchBuilder<VGPUTypesVO> join1 = _vgpuTypesDao.createSearchBuilder();
+        join1.and("vgpuType", join1.entity().getVgpuType(), Op.EQ);
+        join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GT);
+        _gpuAvailability.join("groupId", join1, _gpuAvailability.entity().getId(), join1.entity().getGpuGroupId(), JoinBuilder.JoinType.INNER);
+        _gpuAvailability.done();
 
         return true;
     }
@@ -1958,6 +1984,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
+        host.setGpuGroups(ssCmd.getGpuGroupDetails());
         return host;
     }
 
@@ -2471,6 +2498,66 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
+    }
+
+    @Override
+    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType) {
+        if (vgpuType == null) {
+            vgpuType = vGPUType.passthrough.getType();
+        }
+        Filter searchFilter = new Filter(VGPUTypesVO.class, "remainingCapacity", false, null, null);
+        SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
+        sc.setParameters("hostId", hostId);
+        sc.setJoinParameters("groupId", "vgpuType", vgpuType);
+        sc.setJoinParameters("groupId", "remainingCapacity", 0);
+        return _hostGpuGroupsDao.customSearch(sc, searchFilter);
+    }
+
+    @Override
+    public boolean isGPUDeviceAvailable(long hostId, String vgpuType) {
+        if(!listAvailableGPUDevice(hostId, vgpuType).isEmpty()) {
+            return true;
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host ID: "+ hostId +" does not have GPU device available");
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public GPUDeviceTO getGPUDevice(long hostId, String vgpuType) {
+        HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, vgpuType).get(0);
+        return new GPUDeviceTO(gpuDevice.getGroupName(), vgpuType, null);
+    }
+
+    @Override
+    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, Long>> groupDetails) {
+        // Update GPU group capacity
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        _hostGpuGroupsDao.persist(hostId, new ArrayList<String>(groupDetails.keySet()));
+        _vgpuTypesDao.persist(hostId, groupDetails);
+        txn.commit();
+    }
+
+    @Override
+    public HashMap<String, HashMap<String, Long>> getGPUStatistics(HostVO host) {
+        Answer answer = _agentMgr.easySend(host.getId(), new GetGPUStatsCommand(host.getGuid(), host.getName()));
+        if (answer != null && (answer instanceof UnsupportedAnswer)) {
+            return null;
+        }
+        if (answer == null || !answer.getResult()) {
+            String msg = "Unable to obtain GPU stats for host " + host.getName();
+            s_logger.warn(msg);
+            return null;
+        } else {
+            // now construct the result object
+            if (answer instanceof GetGPUStatsAnswer) {
+                return ((GetGPUStatsAnswer)answer).getGroupDetails();
+            }
+        }
+        return null;
     }
 
     @Override

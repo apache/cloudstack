@@ -1042,6 +1042,16 @@ EOF
   sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
   #answer all local domain queries
   sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+
+  command -v dhcp_release > /dev/null 2>&1
+  no_dhcp_release=$?
+  if [ $no_dhcp_release -eq 0 ]
+  then
+      echo 1 > /var/cache/cloud/dnsmasq_managed_lease
+      sed -i -e "/^leasefile-ro/d" /etc/dnsmasq.conf
+  else
+      echo 0 > /var/cache/cloud/dnsmasq_managed_lease
+  fi
 }
 
 
@@ -1221,10 +1231,6 @@ start() {
   patch_log4j
   parse_cmd_line
   change_password
-  if [ "$hyp" == "hyperv" ]; then
-    # eject the systemvm.iso
-      eject
-  fi
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
@@ -1259,6 +1265,10 @@ start() {
          setup_default;
           ;;
   esac
+    if [ "$hyp" == "hyperv" ]; then
+    # eject the systemvm.iso
+     eject
+  fi
   return 0
 }
 

@@ -297,7 +297,7 @@ var addGuestNetworkDialog = {
                     docID: 'helpGuestNetworkZoneVLANID'
                 },
                 isolatedpvlanId: {
-                    label: 'Secondary Isolated VLAN ID'
+                    label: 'label.secondary.isolated.vlan.id'
                 },
 
                 scope: {
@@ -319,24 +319,24 @@ var addGuestNetworkDialog = {
                         if (selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) {
                             array1.push({
                                 id: 'zone-wide',
-                                description: 'All'
+                                description: 'ui.listView.filters.all'
                             });
                         } else {
                             array1.push({
                                 id: 'zone-wide',
-                                description: 'All'
+                                description: 'ui.listView.filters.all'
                             });
                             array1.push({
                                 id: 'domain-specific',
-                                description: 'Domain'
+                                description: 'label.domain'
                             });
                             array1.push({
                                 id: 'account-specific',
-                                description: 'Account'
+                                description: 'label.account'
                             });
                             array1.push({
                                 id: 'project-specific',
-                                description: 'Project'
+                                description: 'label.project'
                             });
                         }
                         args.response.success({
@@ -584,37 +584,37 @@ var addGuestNetworkDialog = {
 
                 //IPv4 (begin)
                 ip4gateway: {
-                    label: 'IPv4 Gateway',
+                    label: 'label.ipv4.gateway',
                     docID: 'helpGuestNetworkZoneGateway'
                 },
                 ip4Netmask: {
-                    label: 'IPv4 Netmask',
+                    label: 'label.ipv4.netmask',
                     docID: 'helpGuestNetworkZoneNetmask'
                 },
                 startipv4: {
-                    label: 'IPv4 Start IP',
+                    label: 'label.ipv4.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP'
                 },
                 endipv4: {
-                    label: 'IPv4 End IP',
+                    label: 'label.ipv4.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP'
                 },
                 //IPv4 (end)
 
                 //IPv6 (begin)
                 ip6gateway: {
-                    label: 'IPv6 Gateway',
+                    label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway'
                 },
                 ip6cidr: {
-                    label: 'IPv6 CIDR'
+                    label: 'label.ipv6.CIDR'
                 },
                 startipv6: {
-                    label: 'IPv6 Start IP',
+                    label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP'
                 },
                 endipv6: {
-                    label: 'IPv6 End IP',
+                    label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP'
                 },
                 //IPv6 (end)

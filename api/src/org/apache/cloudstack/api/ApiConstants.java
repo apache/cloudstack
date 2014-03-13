@@ -23,7 +23,8 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
-    public static final String API_KEY = "userapikey";
+    public static final String API_KEY = "apikey";
+    public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String AVAILABLE = "available";
     public static final String BITS = "bits";
@@ -49,10 +50,16 @@ public class ApiConstants {
     public static final String CLUSTER_ID = "clusterid";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
+    public static final String COMMAND = "command";
+    public static final String CMD_EVENT_TYPE = "cmdeventtype";
     public static final String COMPONENT = "component";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CREATED = "created";
+    public static final String CTX_ACCOUNT_ID = "ctxaccountid";
+    public static final String CTX_USER_ID = "ctxuserid";
+    public static final String CTXSTARTEVENTID = "ctxstarteventid";
+    public static final String CTX_START_EVENT_ID = "ctxStartEventId";
     public static final String CUSTOMIZED = "customized";
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String CUSTOM_ID = "customid";
@@ -79,6 +86,7 @@ public class ApiConstants {
     public static final String IP6_DNS2 = "ip6dns2";
     public static final String DOMAIN = "domain";
     public static final String DOMAIN_ID = "domainid";
+    public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";
     public static final String EMAIL = "email";
     public static final String END_DATE = "enddate";
@@ -86,6 +94,7 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
+    public static final String EXPIRES = "expires";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
@@ -162,6 +171,8 @@ public class ApiConstants {
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_TYPE_ID = "ostypeid";
+    public static final String OS_DISPLAY_NAME = "osdisplayname";
+    public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
     public static final String PARAMS = "params";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
@@ -209,8 +220,11 @@ public class ApiConstants {
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
+    public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SIGNATURE = "signature";
+    public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
@@ -277,6 +291,7 @@ public class ApiConstants {
     public static final String NETWORKRATE = "networkrate";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
+    public static final String HTTPMETHOD = "httpmethod";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
     public static final String HOST_CPU_NUM = "hostcpunum";
     public static final String HOST_MEM_CAPACITY = "hostmemcapacity";
@@ -568,6 +583,11 @@ public class ApiConstants {
     public static final String PASSIVE = "passive";
     public static final String VERSION = "version";
     public static final String START = "start";
+    public static final String GPUGROUP = "gpugroup";
+    public static final String GPUGROUPNAME = "gpugroupname";
+    public static final String VGPU = "vgpu";
+    public static final String VGPUTYPE = "vgputype";
+    public static final String REMAININGCAPACITY = "remainingcapacity";
 
 
     public enum HostDetails {

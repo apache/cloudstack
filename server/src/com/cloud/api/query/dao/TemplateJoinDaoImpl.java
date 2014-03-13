@@ -61,7 +61,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     @Inject
     private ConfigurationDao  _configDao;
     @Inject
-    public AccountService _accountService;
+    private AccountService _accountService;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -97,7 +97,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         // select distinct pair (template_id, zone_id)
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
-
 
     private String getTemplateStatus(TemplateJoinVO template) {
         String templateStatus = null;

@@ -38,6 +38,8 @@ import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
@@ -125,6 +127,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Inject
     protected HostDetailsDao _detailsDao;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected HostTagsDao _hostTagsDao;
     @Inject
@@ -775,6 +781,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _hostTagsDao.persist(host.getId(), hostTags);
     }
 
+    protected void saveGpuRecords(HostVO host) {
+        HashMap<String, HashMap<String, Long>> groupDetails = host.getGpuGroupDetails();
+        if (groupDetails != null) {
+            // Create/Update GPU group entries
+            _hostGpuGroupsDao.persist(host.getId(), new ArrayList<String>(groupDetails.keySet()));
+            // Create/Update VGPU types entries
+            _vgpuTypesDao.persist(host.getId(), groupDetails);
+        }
+    }
+
     @Override
     @DB
     public HostVO persist(HostVO host) {
@@ -797,6 +813,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         loadDetails(dbHost);
         saveHostTags(host);
         loadHostTags(dbHost);
+        saveGpuRecords(host);
 
         txn.commit();
 
@@ -816,6 +833,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         saveDetails(host);
         saveHostTags(host);
+        saveGpuRecords(host);
 
         txn.commit();
 

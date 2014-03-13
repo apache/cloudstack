@@ -72,7 +72,7 @@
 
             $(window).trigger('cloudStack.createForm.makeFields', {
                 $form: $form,
-                fields: fields
+                fields: args.form.fields
             });
 
             var ret = function() {

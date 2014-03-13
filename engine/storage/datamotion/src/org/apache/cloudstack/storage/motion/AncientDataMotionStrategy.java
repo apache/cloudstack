@@ -46,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -94,14 +95,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
         DataTO srcTO = srcData.getTO();
-        DataTO destTO = destData.getTO();
         DataStoreTO srcStoreTO = srcTO.getDataStore();
-        DataStoreTO destStoreTO = destTO.getDataStore();
+
         if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache) {
             //||
             //    (srcStoreTO instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO)srcStoreTO).getPoolType() == StoragePoolType.NetworkFilesystem)) {
             return false;
         }
+
+        DataTO destTO = destData.getTO();
+        DataStoreTO destStoreTO = destTO.getDataStore();
 
         if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
@@ -147,7 +150,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return selectedScope;
     }
 
-    protected Answer copyObject(DataObject srcData, DataObject destData) {
+    protected Answer copyObject(DataObject srcData, DataObject destData, Host destHost) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         Answer answer = null;
@@ -160,7 +163,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
-            EndPoint ep = selector.select(srcForCopy, destData);
+            EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
                 s_logger.error(errMsg);
@@ -191,6 +194,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             throw new CloudRuntimeException(e.toString());
         }
+    }
+
+    protected Answer copyObject(DataObject srcData, DataObject destData) {
+        return copyObject(srcData, destData, null);
     }
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot, Scope scope) {
@@ -392,8 +399,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return answer;
     }
 
+    // Note: destHost is currently only used if the copyObject method is invoked
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
         try {
@@ -416,7 +424,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
                 answer = copySnapshot(srcData, destData);
             } else {
-                answer = copyObject(srcData, destData);
+                answer = copyObject(srcData, destData, destHost);
             }
 
             if (answer != null && !answer.getResult()) {
@@ -430,6 +438,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         result.setResult(errMsg);
         callback.complete(result);
         return null;
+    }
+
+    @Override
+    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        return copyAsync(srcData, destData, null, callback);
     }
 
     @DB

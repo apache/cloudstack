@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
@@ -27,7 +28,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,7 +43,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class DestroyVMCmd extends BaseAsyncCmd {
+public class DestroyVMCmd extends BaseAsyncVMCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
     private static final String s_name = "destroyvirtualmachineresponse";

@@ -384,12 +384,22 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
+    }
+
+    @Override
+    public boolean isDisplayResourceEnabled(){
+        Boolean display = getDisplayVm();
+        if(display == null){
+            return true;
+        } else {
+            return display;
+        }
     }
 
     @Override
@@ -455,11 +465,61 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
+    // this is an opportunity to verify that parameters that came in via the Details Map are OK
+    // for example, minIops and maxIops should either both be specified or neither be specified and,
+    // if specified, minIops should be <= maxIops
+    private void verifyDetails() {
+        Map<String, String> map = getDetails();
+
+        if (map != null) {
+            String minIops = (String)map.get("minIops");
+            String maxIops = (String)map.get("maxIops");
+
+            if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
+                throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
+            }
+
+            long lMinIops;
+
+            try {
+                if (minIops != null) {
+                    lMinIops = Long.valueOf(minIops);
+                }
+                else {
+                    lMinIops = 0;
+                }
+            }
+            catch (NumberFormatException ex) {
+                throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
+            }
+
+            long lMaxIops;
+
+            try {
+                if (maxIops != null) {
+                    lMaxIops = Long.valueOf(maxIops);
+                }
+                else {
+                    lMaxIops = 0;
+                }
+            }
+            catch (NumberFormatException ex) {
+                throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
+            }
+
+            if (lMinIops > lMaxIops) {
+                throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
+            }
+        }
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
         try {
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
+
+            verifyDetails();
 
             DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone == null) {

@@ -44,11 +44,11 @@
                 };
                 var fields = {
                     account: {
-                        label: 'Account',
+                        label: 'label.account',
                         defaultValue: data.account
                     },
                     domainid: {
-                        label: 'Domain',
+                        label: 'label.domain',
                         defaultValue: data.domainid,
                         select: function (args) {
                             $.ajax({
@@ -753,7 +753,7 @@
                                             },
                                             
                                             releaseFromAccount: {
-                                                label: 'Release from Account',
+                                                label: 'label.release.account',
                                                 action: function (args) {
                                                     $.ajax({
                                                         url: createURL('releasePublicIpRange'),
@@ -763,7 +763,7 @@
                                                         success: function (json) {
                                                             args.response.success({
                                                                 notification: {
-                                                                    label: 'release from account',
+                                                                    label: 'label.release.account.lowercase',
                                                                     poll: function (args) {
                                                                         args.complete();
                                                                     }
@@ -778,15 +778,15 @@
                                             },
                                             
                                             addAccount: {
-                                                label: 'Add Account',
+                                                label: 'label.add.account',
                                                 createForm: {
-                                                    title: 'Add Account',
+                                                    title: 'label.add.account',
                                                     fields: {
                                                         account: {
-                                                            label: 'Account'
+                                                            label: 'label.account'
                                                         },
                                                         domainid: {
-                                                            label: 'Domain',
+                                                            label: 'label.domain',
                                                             select: function (args) {
                                                                 $.ajax({
                                                                     url: createURL('listDomains'),
@@ -821,7 +821,7 @@
                                                         success: function (json) {
                                                             args.response.success({
                                                                 notification: {
-                                                                    label: 'Add Account',
+                                                                    label: 'label.add.account',
                                                                     poll: function (args) {
                                                                         args.complete();
                                                                     }
@@ -902,15 +902,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -1114,15 +1114,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -1277,7 +1277,7 @@
                                         label: 'label.state'
                                     },
                                     vlan: {
-                                        label: 'VLAN/VNI Range(s)',
+                                        label: 'label.vlan.vni.ranges',
                                         isEditable: true
                                     },
                                     tags: {
@@ -1303,15 +1303,15 @@
                                         isEditable: true
                                     },
                                     ovmnetworklabel: {
-                                        label: 'OVM traffic label',
+                                        label: 'label.ovm.traffic.label',
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'LXC Traffic Label',
+                                        label: 'label.lxc.traffic.label',
                                         isEditable: true
                                     },
                                     hypervnetworklabel: {
-                                        label: 'HyperV Traffic Label',
+                                        label: 'label.hyperv.traffic.label',
                                         isEditable: true
                                     }
                                 }],
@@ -1524,13 +1524,13 @@
                                             label: 'label.vnet.id'
                                         },
                                         broadcasturi: {
-                                            label: 'broadcast URI'
+                                            label: 'label.broadcat.uri'
                                         },
                                         cidr: {
-                                            label: 'IPv4 CIDR'
+                                            label: 'label.ipv4.cidr'
                                         },
                                         ip6cidr: {
-                                            label: 'IPv6 CIDR'
+                                            label: 'label.ipv6.cidr'
                                         }
                                         //scope: { label: 'label.scope' }
                                     },
@@ -1593,7 +1593,7 @@
                                     },
                                     
                                     detailView: {
-                                        name: 'Guest network details',
+                                        name: 'label.guest.network.details',
                                         noCompact: true,
                                         viewAll: {
                                             path: '_zone.guestIpRanges',
@@ -1850,7 +1850,7 @@
                                                         label: 'label.vlan.id'
                                                     },
                                                     broadcasturi: {
-                                                        label: 'broadcast URI'
+                                                        label: 'label.broadcat.uri'
                                                     },
                                                     scope: {
                                                         label: 'label.scope'
@@ -1895,18 +1895,18 @@
                                                     },
                                                     
                                                     gateway: {
-                                                        label: 'IPv4 Gateway'
+                                                        label: 'label.ipv4.gateway'
                                                     },
                                                     //netmask: { label: 'label.netmask' },
                                                     cidr: {
-                                                        label: 'IPv4 CIDR'
+                                                        label: 'label.ipv4.cidr'
                                                     },
                                                     
                                                     ip6gateway: {
-                                                        label: 'IPv6 Gateway'
+                                                        label: 'label.ipv6.gateway'
                                                     },
                                                     ip6cidr: {
-                                                        label: 'IPv6 CIDR'
+                                                        label: 'label.ipv6.CIDR'
                                                     },
                                                     
                                                     networkdomaintext: {
@@ -1968,13 +1968,13 @@
                             },
                             
                             dedicatedGuestVlanRanges: {
-                                title: 'Dedicated VLAN/VNI Ranges',
+                                title: 'label.dedicated.vlan.vni.ranges',
                                 listView: {
                                     section: 'dedicatedGuestVlanRanges',
                                     id: 'dedicatedGuestVlanRanges',
                                     fields: {
                                         guestvlanrange: {
-                                            label: 'VLAN/VNI Range(s)'
+                                            label: 'label.vlan.vni.ranges'
                                         },
                                         domain: {
                                             label: 'label.domain'
@@ -1999,17 +1999,17 @@
                                     },
                                     actions: {
                                         add: {
-                                            label: 'Dedicate VLAN/VNI Range',
+                                            label: 'label.dedicate.vlan.vni.range',
                                             messages: {
                                                 notification: function (args) {
-                                                    return 'Dedicate VLAN/VNI Range';
+                                                    return 'label.dedicate.vlan.vni.range';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Dedicate VLAN/VNI Range',
+                                                title: 'label.dedicate.vlan.vni.range',
                                                 fields: {
                                                     vlanrange: {
-                                                        label: 'VLAN/VNI Range',
+                                                        label: 'label.vlan.vni.range',
                                                         /*  select: function(args) {
                                                         var items = [];
                                                         if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
@@ -2083,16 +2083,16 @@
                                     },
                                     
                                     detailView: {
-                                        name: 'VLAN Range details',
+                                        name: 'label.vlan.range.details',
                                         actions: {
                                             remove: {
-                                                label: 'Release dedicated VLAN range',
+                                                label: 'label.release.dedicated.vlan.range',
                                                 messages: {
                                                     confirm: function (args) {
-                                                        return 'Please confirm you want to release dedicated VLAN range';
+                                                        return 'message.confirm.release.dedicate.vlan.range';
                                                     },
                                                     notification: function (args) {
-                                                        return 'Release dedicated VLAN range';
+                                                        return 'label.release.dedicated.vlan.range';
                                                     }
                                                 },
                                                 action: function (args) {
@@ -2124,7 +2124,7 @@
                                                 title: 'label.details',
                                                 fields:[ {
                                                     guestvlanrange: {
-                                                        label: 'VLAN Range(s)'
+                                                        label: 'label.vlan.ranges'
                                                     }
                                                 },
                                                 {
@@ -2417,7 +2417,7 @@
                                                 });
                                     },
                                     detailView: {
-                                        name: 'Virtual applicance details',
+                                        name: 'label.virtual.appliance.details',
                                         actions: {
                                             start: {
                                                 label: 'label.action.start.router',
@@ -2974,16 +2974,16 @@
                                         });
                                     },
                                     detailView: {
-                                        name: 'Virtual applicance details',
+                                        name: 'label.virtual.appliance.details',
                                         actions: {
                                             start: {
-                                                label: 'Start LB VM',
+                                                label: 'label.start.lb.vm',
                                                 messages: {
                                                     confirm: function (args) {
-                                                        return 'Please confirm you want to start LB VM';
+                                                        return 'message.confirm.start.lb.vm';
                                                     },
                                                     notification: function (args) {
-                                                        return 'Start LB VM';
+                                                        return 'label.start.lb.vm';
                                                     }
                                                 },
                                                 action: function (args) {
@@ -3013,10 +3013,10 @@
                                             },
                                             
                                             stop: {
-                                                label: 'Stop LB VM',
+                                                label: 'label.stop.lb.vm',
                                                 createForm: {
-                                                    title: 'Please confirm you want to stop LB VM',
-                                                    desc: 'Stop LB VM',
+                                                    title: 'message.confirm.stop.lb.vm',
+                                                    desc: 'label.stop.lb.vm',
                                                     fields: {
                                                         forced: {
                                                             label: 'force.stop',
@@ -3027,7 +3027,7 @@
                                                 },
                                                 messages: {
                                                     notification: function (args) {
-                                                        return 'Stop LB VM';
+                                                        return 'label.stop.lb.vm';
                                                     }
                                                 },
                                                 action: function (args) {
@@ -3059,9 +3059,9 @@
                                             },
                                             
                                             migrate: {
-                                                label: 'Migrate LB VM',
+                                                label: 'label.migrate.lb.vm',
                                                 createForm: {
-                                                    title: 'Migrate LB VM',
+                                                    title: 'label.migrate.lb.vm',
                                                     fields: {
                                                         hostId: {
                                                             label: 'label.host',
@@ -3097,7 +3097,7 @@
                                                 },
                                                 messages: {
                                                     notification: function (args) {
-                                                        return 'Migrate LB VM';
+                                                        return 'label.migrate.lb.vm';
                                                     }
                                                 },
                                                 action: function (args) {
@@ -3375,7 +3375,7 @@
                     
                     vpcVirtualRouter: {
                         id: 'vpcVirtualRouterProviders',
-                        label: 'VPC Virtual Router',
+                        label: 'label.vpc.virtual.router',
                         isMaximized: true,
                         type: 'detailView',
                         fields: {
@@ -3512,7 +3512,7 @@
                                                 });
                                     },
                                     detailView: {
-                                        name: 'Virtual applicance details',
+                                        name: 'label.virtual.appliance.details',
                                         actions: {
                                             start: {
                                                 label: 'label.action.start.router',
@@ -3828,7 +3828,7 @@
                                                         label: 'label.redundant.state'
                                                     },
                                                     vpcid: {
-                                                        label: 'VPC ID'
+                                                        label: 'label.vpc.id'
                                                     }
                                                 }],
                                                 dataProvider: function (args) {
@@ -3920,7 +3920,7 @@
                     
                     Ovs: {
                         id: "Ovs",
-                        label: "Ovs",
+                        label: "label.ovs",
                         isMaximized: true,
                         type: 'detailView',
                         fields: {
@@ -4122,15 +4122,15 @@
                                         },
                                         
                                         gslbprovider: {
-                                            label: 'GSLB service',
+                                            label: 'label.gslb.service',
                                             isBoolean: true,
                                             isChecked: false
                                         },
                                         gslbproviderpublicip: {
-                                            label: 'GSLB service Public IP'
+                                            label: 'label.gslb.service.public.ip'
                                         },
                                         gslbproviderprivateip: {
-                                            label: 'GSLB service Private IP'
+                                            label: 'label.gslb.service.private.ip'
                                         },
                                         
                                         numretries: {
@@ -4310,7 +4310,7 @@
                     BaremetalDhcpProvider: {
                         type: 'detailView',
                         id: 'BaremetalDhcpProvider',
-                        label: 'Baremetal DHCP Provider',
+                        label: 'label.baremetal.dhcp.provider',
                         viewAll: {
                             label: 'label.devices',
                             path: '_zone.BaremetalDhcpDevices'
@@ -4346,9 +4346,9 @@
                         },
                         actions: {
                             add: {
-                                label: 'Add Baremetal DHCP Device',
+                                label: 'label.add.baremetal.dhcp.device',
                                 createForm: {
-                                    title: 'Add Baremetal DHCP Device',
+                                    title: 'label.add.baremetal.dhcp.device',
                                     fields: {
                                         url: {
                                             label: 'label.url',
@@ -4376,7 +4376,7 @@
                                 },
                                 messages: {
                                     notification: function (args) {
-                                        return 'Add Baremetal DHCP Device';
+                                        return 'label.add.baremetal.dhcp.device';
                                     }
                                 },
                                 notification: {
@@ -4482,7 +4482,7 @@
                     BaremetalPxeProvider: {
                         type: 'detailView',
                         id: 'BaremetalPxeProvider',
-                        label: 'Baremetal PXE Provider',
+                        label: 'label.baremetal.pxe.provider',
                         viewAll: {
                             label: 'label.devices',
                             path: '_zone.BaremetalPxeDevices'
@@ -4518,9 +4518,9 @@
                         },
                         actions: {
                             add: {
-                                label: 'Add Baremetal PXE Device',
+                                label: 'label.baremetal.pxe.device',
                                 createForm: {
-                                    title: 'Add Baremetal PXE Device',
+                                    title: 'label.baremetal.pxe.device',
                                     fields: {
                                         url: {
                                             label: 'label.url',
@@ -4542,7 +4542,7 @@
                                             }
                                         },
                                         tftpdir: {
-                                            label: 'Tftp root directory',
+                                            label: 'label.tftp.root.directory',
                                             validation: {
                                                 required: true
                                             }
@@ -4554,7 +4554,7 @@
                                 },
                                 messages: {
                                     notification: function (args) {
-                                        return 'Add Baremetal PXE Device';
+                                        return 'label.baremetal.pxe.device';
                                     }
                                 },
                                 notification: {
@@ -5474,7 +5474,7 @@
                     // Security groups detail view
                     securityGroups: {
                         id: 'securityGroup-providers',
-                        label: 'Security Groups',
+                        label: 'label.menu.security.groups',
                         type: 'detailView',
                         viewAll: {
                             label: 'label.rules',
@@ -6255,7 +6255,7 @@
                                         });
                                     },
                                     detailView: {
-                                        name: 'Virtual applicance details',
+                                        name: 'label.virtual.appliance.details',
                                         actions: {
                                             start: {
                                                 label: 'label.action.start.router',
@@ -6984,7 +6984,7 @@
             sections: {
                 physicalResources: {
                     type: 'select',
-                    title: 'Physical Resources',
+                    title: 'label.menu.physical.resources',
                     listView: {
                         zones: {
                             id: 'physicalResources',
@@ -7070,24 +7070,24 @@
                                 isMaximized: true,
                                 actions: {
                                     addVmwareDc: {
-                                        label: 'Add VMware datacenter',
-                                        textLabel: 'Add VMware datacenter',
+                                        label: 'label.add.vmware.datacenter',
+                                        textLabel: 'label.add.vmware.datacenter',
                                         messages: {
                                             notification: function (args) {
-                                                return 'Add VMware datacenter';
+                                                return 'label.add.vmware.datacenter';
                                             }
                                         },
                                         createForm: {
-                                            title: 'Add VMware datacenter',
+                                            title: 'label.add.vmware.datacenter',
                                             fields: {
                                                 name: {
-                                                    label: 'DC Name',
+                                                    label: 'label.dc.name',
                                                     validation: {
                                                         required: true
                                                     }
                                                 },
                                                 vcenter: {
-                                                    label: 'vcenter',
+                                                    label: 'label.vcenter',
                                                     validation: {
                                                         required: true
                                                     }
@@ -7143,13 +7143,13 @@
                                     },
                                     
                                     removeVmwareDc: {
-                                        label: 'Remove VMware datacenter',
+                                        label: 'label.remove.vmware.datacenter',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm you want to remove VMware datacenter';
+                                                return 'message.confirm.remove.vmware.datacenter';
                                             },
                                             notification: function (args) {
-                                                return 'Remove VMware datacenter';
+                                                return 'label.remove.vmware.datacenter';
                                             }
                                         },
                                         action: function (args) {
@@ -7246,20 +7246,20 @@
                                     },
                                     
                                     dedicateZone: {
-                                        label: 'Dedicate Zone',
+                                        label: 'label.dedicate.zone',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Do you really want to dedicate this zone to a domain/account? ';
+                                                return 'message.confirm.dedicate.zone';
                                             },
                                             notification: function (args) {
-                                                return 'Zone Dedicated';
+                                                return 'label.zone.dedicated';
                                             }
                                         },
                                         createForm: {
-                                            title: 'Dedicate Zone',
+                                            title: 'label.dedicate.zone',
                                             fields: {
                                                 domainId: {
-                                                    label: 'Domain',
+                                                    label: 'label.domain',
                                                     validation: {
                                                         required: true
                                                     },
@@ -7287,7 +7287,7 @@
                                                     }
                                                 },
                                                 accountId: {
-                                                    label: 'Account',
+                                                    label: 'label.account',
                                                     docID: 'helpAccountForDedication',
                                                     validation: {
                                                         required: false
@@ -7324,13 +7324,13 @@
                                         }
                                     },
                                     releaseDedicatedZone: {
-                                        label: 'Release Dedicated Zone',
+                                        label: 'label.release.dedicated.zone',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Do you want to release this dedicated zone ?';
+                                                return 'message.confirm.release.dedicated.zone';
                                             },
                                             notification: function (args) {
-                                                return 'Zone dedication released';
+                                                return 'message.dedicated.zone.released';
                                             }
                                         },
                                         action: function (args) {
@@ -7470,11 +7470,11 @@
                                                 isEditable: true
                                             },
                                             ip6dns1: {
-                                                label: 'IPv6 DNS1',
+                                                label: 'label.ipv6.dns1',
                                                 isEditable: true
                                             },
                                             ip6dns2: {
-                                                label: 'IPv6 DNS2',
+                                                label: 'label.ipv6.dns2',
                                                 isEditable: true
                                             },
                                             internaldns1: {
@@ -7511,21 +7511,21 @@
                                         },
                                         {
                                             isdedicated: {
-                                                label: 'Dedicated'
+                                                label: 'label.dedicated'
                                             },
                                             domainid: {
-                                                label: 'Domain ID'
+                                                label: 'label.domain.id'
                                             }
                                         },
                                         {
                                             vmwaredcName: {
-                                                label: 'VMware datacenter Name'
+                                                label: 'label.vmware.datacenter.name'
                                             },
                                             vmwaredcVcenter: {
-                                                label: 'VMware datacenter vcenter'
+                                                label: 'label.vmware.datacenter.vcenter'
                                             },
                                             vmwaredcId: {
-                                                label: 'VMware datacenter Id'
+                                                label: 'label.vmware.datacenter.id'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -7678,7 +7678,7 @@
                                             
                                             detailView: {
                                                 noCompact: true,
-                                                name: 'System VM details',
+                                                name: 'label.system.vm.details',
                                                 actions: {
                                                     start: {
                                                         label: 'label.action.start.systemvm',
@@ -7914,7 +7914,7 @@
                                                                 var vmObj = args.jsonObj;
                                                                 //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
                                                                 if (vmObj.state == 'Running') {
-                                                                    description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                                                    description = 'message.read.admin.guide.scaling.up';
                                                                 }
                                                                 return description;
                                                             },
@@ -7977,11 +7977,11 @@
                                                         },
                                                         messages: {
                                                             confirm: function (args) {
-                                                                return 'Do you really want to scale up the system VM ?';
+                                                                return 'message.confirm.scale.up.system.vm';
                                                             },
                                                             notification: function (args) {
                                                                 
-                                                                return 'System VM Scaled Up';
+                                                                return 'label.system.vm.scaled.up';
                                                             }
                                                         },
                                                         notification: {
@@ -8026,8 +8026,8 @@
                                                                 label: 'label.type',
                                                                 converter: function (args) {
                                                                     if (args == "consoleproxy")
-                                                                    return "Console Proxy VM"; else if (args == "secondarystoragevm")
-                                                                    return "Secondary Storage VM"; else
+                                                                    return 'label.console.proxy.vm'; else if (args == "secondarystoragevm")
+                                                                    return 'label.secondary.storage.vm'; else
                                                                     return args;
                                                                 }
                                                             },
@@ -8078,7 +8078,7 @@
                                     
                                     // Granular settings for zone
                                     settings: {
-                                        title: 'Settings',
+                                        title: 'label.settings',
                                         custom: cloudStack.uiCustom.granularSettings({
                                             dataProvider: function (args) {
                                                 $.ajax({
@@ -8741,7 +8741,7 @@
                     routerNoGroup: {
                         id: 'routers',
                         type: 'select',
-                        title: '(no grouping)',
+                        title: 'label.no.grouping',
                         listView: {
                             id: 'routers',
                             label: 'label.virtual.appliances',
@@ -8768,7 +8768,7 @@
                                     }
                                 },
                                 requiresupgrade: {
-                                    label: 'Requires Upgrade',
+                                    label: 'label.requires.upgrade',
                                     converter: cloudStack.converters.toBooleanText
                                 }
                             },
@@ -8830,7 +8830,7 @@
                                         });
                             },
                             detailView: {
-                                name: 'Virtual applicance details',
+                                name: 'label.virtual.appliance.details',
                                 actions: {
                                     start: {
                                         label: 'label.action.start.router',
@@ -8915,13 +8915,13 @@
                                     },
                                     
                                     upgradeRouterToUseNewerTemplate: {
-                                        label: 'Upgrade Router to Use Newer Template',
+                                        label: 'label.upgrade.router.newer.template',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm that you want to upgrade router to use newer template';
+                                                return 'message.confirm.upgrade.router.newer.template';
                                             },
                                             notification: function (args) {
-                                                return 'Upgrade Router to Use Newer Template';
+                                                return 'label.upgrade.router.newer.template';
                                             }
                                         },
                                         action: function (args) {
@@ -9102,7 +9102,7 @@
                                                 var vmObj = args.jsonObj;
                                                 //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
                                                 if (vmObj.state == 'Running') {
-                                                    description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                                    description = 'message.read.admin.guide.scaling.up';
                                                 }
                                                 return description;
                                             },
@@ -9163,11 +9163,11 @@
                                         },
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Do you really want to scale up the Router VM ?';
+                                                return 'message.confirm.scale.up.router.vm';
                                             },
                                             notification: function (args) {
                                                 
-                                                return 'Router VM Scaled Up';
+                                                return 'label.router.vm.scaled.up';
                                             }
                                         },
                                         notification: {
@@ -9243,7 +9243,7 @@
                                                 label: 'label.version'
                                             },
                                             requiresupgrade: {
-                                                label: 'Requires Upgrade',
+                                                label: 'label.requires.upgrade',
                                                 converter: cloudStack.converters.toBooleanText
                                             },
                                             guestnetworkid: {
@@ -9285,7 +9285,7 @@
                                                 label: 'label.redundant.state'
                                             },
                                             vpcid: {
-                                                label: 'VPC ID'
+                                                label: 'label.vpc.id'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9371,7 +9371,7 @@
                     routerGroupByZone: {
                         id: 'routerGroupByZone',
                         type: 'select',
-                        title: 'group by zone',
+                        title: 'label.group.by.zone',
                         listView: {
                             id: 'routerGroupByZone',
                             label: 'label.virtual.appliances',
@@ -9380,15 +9380,15 @@
                                     label: 'label.zone'
                                 },
                                 routerCount: {
-                                    label: 'Total of Virtual Routers'
+                                    label: 'label.total.virtual.routers'
                                 },
                                 routerRequiresUpgrade: {
-                                    label: 'Upgrade is required',
+                                    label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'Yes';
+                                            return 'label.yes';
                                         } else {
-                                            return 'No';
+                                            return 'label.no';
                                         }
                                     }
                                 }
@@ -9422,16 +9422,16 @@
                                 });
                             },
                             detailView: {
-                                name: 'Virtual Routers group by zone',
+                                name: 'label.virtual.routers.group.zone',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
-                                        label: 'Upgrade Router to Use Newer Template',
+                                        label: 'label.upgrade.router.newer.template',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm that you want to upgrade all routers in this zone to use newer template';
+                                                return 'message.confirm.upgrade.routers.newtemplate';
                                             },
                                             notification: function (args) {
-                                                return 'Upgrade Router to Use Newer Template';
+                                                return 'label.upgrade.router.newer.template';
                                             }
                                         },
                                         action: function (args) {
@@ -9459,7 +9459,7 @@
                                 },
                                 tabs: {
                                     details: {
-                                        title: 'Virtual Routers group by zone',
+                                        title: 'label.virtual.routers.group.zone',
                                         fields:[ {
                                             name: {
                                                 label: 'label.zone'
@@ -9467,10 +9467,10 @@
                                         },
                                         {
                                             routerCount: {
-                                                label: 'Total of Virtual Routers'
+                                                label: 'label.total.virtual.routers'
                                             },
                                             routerRequiresUpgrade: {
-                                                label: 'Upgrade is required',
+                                                label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
                                                         return 'Yes';
@@ -9480,7 +9480,7 @@
                                                 }
                                             },                                            
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'Total of Virtual Routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9498,7 +9498,7 @@
                     routerGroupByPod: {
                         id: 'routerGroupByPod',
                         type: 'select',
-                        title: 'group by pod',
+                        title: 'label.group.by.pod',
                         listView: {
                             id: 'routerGroupByPod',
                             label: 'label.virtual.appliances',
@@ -9507,15 +9507,15 @@
                                     label: 'label.pod'
                                 },
                                 routerCount: {
-                                    label: 'Total of Virtual Routers'
+                                    label: 'label.total.virtual.routers'
                                 },
                                 routerRequiresUpgrade: {
-                                    label: 'Upgrade is required',
+                                    label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'Yes';
+                                            return 'label.yes';
                                         } else {
-                                            return 'No';
+                                            return 'label.no';
                                         }
                                     }
                                 }
@@ -9549,16 +9549,16 @@
                                 });
                             },
                             detailView: {
-                                name: 'Virtual Routers group by pod',
+                                name: 'label.virtual.routers.group.pod',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
-                                        label: 'Upgrade Router to Use Newer Template',
+                                        label: 'label.upgrade.router.newer.template',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm that you want to upgrade all routers in this pod to use newer template';
+                                                return 'message.confirm.upgrade.routers.pod.newtemplate';
                                             },
                                             notification: function (args) {
-                                                return 'Upgrade Router to Use Newer Template';
+                                                return 'label.upgrade.router.newer.template';
                                             }
                                         },
                                         action: function (args) {
@@ -9586,7 +9586,7 @@
                                 },
                                 tabs: {
                                     details: {
-                                        title: 'Virtual Routers group by pod',
+                                        title: 'label.virtual.routers.group.pod',
                                         fields:[ {
                                             name: {
                                                 label: 'label.pod'
@@ -9594,20 +9594,20 @@
                                         },
                                         {
                                             routerCount: {
-                                                label: 'Total of Virtual Routers'
+                                                label: 'label.total.virtual.routers'
                                             },
                                             routerRequiresUpgrade: {
-                                                label: 'Upgrade is required',
+                                                label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'Yes';
+                                                        return 'label.yes';
                                                     } else {
-                                                        return 'No';
+                                                        return 'label.no';
                                                     }
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'Total of Virtual Routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             },
                                             zonename: {
                                                 label: 'label.zone'
@@ -9628,7 +9628,7 @@
                     routerGroupByCluster: {
                         id: 'routerGroupByCluster',
                         type: 'select',
-                        title: 'group by cluster',
+                        title: 'label.group.by.cluster',
                         listView: {
                             id: 'routerGroupByCluster',
                             label: 'label.virtual.appliances',
@@ -9637,15 +9637,15 @@
                                     label: 'label.cluster'
                                 },
                                 routerCount: {
-                                    label: 'Total of Virtual Routers'
+                                    label: 'label.total.virtual.routers'
                                 },
                                 routerRequiresUpgrade: {
-                                    label: 'Upgrade is required',
+                                    label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'Yes';
+                                            return 'label.yes';
                                         } else {
-                                            return 'No';
+                                            return 'label.no';
                                         }
                                     }
                                 }
@@ -9679,16 +9679,16 @@
                                 });
                             },
                             detailView: {
-                                name: 'Virtual Routers group by cluster',
+                                name: 'label.virtual.routers.group.cluster',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
-                                        label: 'Upgrade Router to Use Newer Template',
+                                        label: 'label.upgrade.router.newer.template',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm that you want to upgrade all routers in this cluster to use newer template';
+                                                return 'message.confirm.upgrade.routers.cluster.newtemplate';
                                             },
                                             notification: function (args) {
-                                                return 'Upgrade Router to Use Newer Template';
+                                                return 'label.upgrade.router.newer.template';
                                             }
                                         },
                                         action: function (args) {
@@ -9716,7 +9716,7 @@
                                 },
                                 tabs: {
                                     details: {
-                                        title: 'Virtual Routers group by cluster',
+                                        title: 'label.virtual.routers.group.cluster',
                                         fields:[ {
                                             name: {
                                                 label: 'label.cluster'
@@ -9724,26 +9724,26 @@
                                         },
                                         {
                                             routerCount: {
-                                                label: 'Total of Virtual Routers'
+                                                label: 'label.total.virtual.routers'
                                             },
                                             routerRequiresUpgrade: {
-                                                label: 'Upgrade is required',
+                                                label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'Yes';
+                                                        return 'label.yes';
                                                     } else {
-                                                        return 'No';
+                                                        return 'label.no';
                                                     }
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'Total of Virtual Routers that require upgrade'
+                                            	label: 'label.total.virtual.routers that require upgrade'
                                             },
                                             podname: {
                                                 label: 'label.pod'
                                             },
                                             zonename: {
-                                                label: 'zone'
+                                                label: 'label.zone.lower'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9773,15 +9773,15 @@
                                     label: 'label.domain'
                                 },
                                 routerCount: {
-                                    label: 'Total of Virtual Routers'
+                                    label: 'label.total.virtual.routers'
                                 },
                                 routerRequiresUpgrade: {
-                                    label: 'Upgrade is required',
+                                    label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'Yes';
+                                            return 'label.yes';
                                         } else {
-                                            return 'No';
+                                            return 'label.no';
                                         }
                                     }
                                 }
@@ -9876,16 +9876,16 @@
                                 });
                             },
                             detailView: {
-                                name: 'Virtual Routers group by account',
+                                name: 'label.virtual.routers.group.account',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
-                                        label: 'Upgrade Router to Use Newer Template',
+                                        label: 'label.upgrade.router.newer.template',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm that you want to upgrade all routers in this account to use newer template';
+                                                return 'message.confirm.upgrade.routers.account.newtemplate';
                                             },
                                             notification: function (args) {
-                                                return 'Upgrade Router to Use Newer Template';
+                                                return 'label.upgrade.router.newer.template';
                                             }
                                         },
                                         action: function (args) {
@@ -9914,7 +9914,7 @@
                                 },
                                 tabs: {
                                     details: {
-                                        title: 'Virtual Routers group by account',
+                                        title: 'label.virtual.routers.group.account',
                                         fields:[ {
                                             name: {
                                                 label: 'label.account'
@@ -9925,20 +9925,20 @@
                                         },
                                         {
                                             routerCount: {
-                                                label: 'Total of Virtual Routers'
+                                                label: 'label.total.virtual.routers'
                                             },
                                             routerRequiresUpgrade: {
-                                                label: 'Upgrade is required',
+                                                label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'Yes';
+                                                        return 'label.yes';
                                                     } else {
-                                                        return 'No';
+                                                        return 'label.no';
                                                     }
                                                 }
                                             },                                            
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'Total of Virtual Routers that require upgrade'
+                                            	label: 'label.total.virtual.routers that require upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -10041,7 +10041,7 @@
                             label: 'label.zone'
                         },
                         state: {
-                            label: 'VM state',
+                            label: 'label.vm.state',
                             converter: function (str) {
                                 // For localization
                                 return str;
@@ -10091,7 +10091,7 @@
                     },
                     
                     detailView: {
-                        name: 'System VM details',
+                        name: 'label.system.vm.details',
                         actions: {
                             start: {
                                 label: 'label.action.start.systemvm',
@@ -10327,7 +10327,7 @@
                                         var vmObj = args.jsonObj;
                                         //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
                                         if (vmObj.state == 'Running') {
-                                            description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                            description = 'message.read.admin.guide.scaling.up';
                                         }
                                         return description;
                                     },
@@ -10390,11 +10390,11 @@
                                 },
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you really want to scale up the system VM ?';
+                                        return 'message.confirm.scale.up.system.vm';
                                     },
                                     notification: function (args) {
                                         
-                                        return 'System VM Scaled Up';
+                                        return 'label.system.vm.scaled.up';
                                     }
                                 },
                                 notification: {
@@ -10570,15 +10570,15 @@
                                     },
                                     
                                     gslbprovider: {
-                                        label: 'GSLB service',
+                                        label: 'label.gslb.service',
                                         isBoolean: true,
                                         isChecked: false
                                     },
                                     gslbproviderpublicip: {
-                                        label: 'GSLB service Public IP'
+                                        label: 'label.gslb.service.public.ip'
                                     },
                                     gslbproviderprivateip: {
-                                        label: 'GSLB service Private IP'
+                                        label: 'label.gslb.service.private.ip'
                                     },
                                     
                                     numretries: {
@@ -10658,7 +10658,7 @@
                         }
                     },
                     detailView: {
-                        name: 'NetScaler details',
+                        name: 'label.netscaler.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.NetScaler',
@@ -10722,10 +10722,10 @@
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     gslbproviderpublicip: {
-                                        label: 'GSLB service Public IP'
+                                        label: 'label.gslb.service.public.ip'
                                     },
                                     gslbproviderprivateip: {
-                                        label: 'GSLB service Private IP'
+                                        label: 'label.gslb.service.private.ip'
                                     }
                                 }],
                                 dataProvider: function (args) {
@@ -10750,7 +10750,7 @@
             // Baremetal DHCP devices listView
             BaremetalDhcpDevices: {
                 id: 'BaremetalDhcpDevices',
-                title: 'Baremetal DHCP Devices',
+                title: 'label.baremetal.dhcp.devices',
                 listView: {
                     id: 'BaremetalDhcpDevices',
                     fields: {
@@ -10760,9 +10760,9 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add Baremetal DHCP Device',
+                            label: 'label.add.baremetal.dhcp.device',
                             createForm: {
-                                title: 'Add Baremetal DHCP Device',
+                                title: 'label.add.baremetal.dhcp.device',
                                 fields: {
                                     url: {
                                         label: 'label.url',
@@ -10790,7 +10790,7 @@
                             },
                             messages: {
                                 notification: function (args) {
-                                    return 'Add Baremetal DHCP Device';
+                                    return 'label.add.baremetal.dhcp.device';
                                 }
                             },
                             notification: {
@@ -10822,7 +10822,7 @@
             // Baremetal PXE devices listView
             BaremetalPxeDevices: {
                 id: 'BaremetalPxeDevices',
-                title: 'Baremetal PXE Devices',
+                title: 'label.baremetal.pxe.devices',
                 listView: {
                     id: 'BaremetalPxeDevices',
                     fields: {
@@ -10832,9 +10832,9 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add Baremetal PXE Device',
+                            label: 'label.baremetal.pxe.device',
                             createForm: {
-                                title: 'Add Baremetal PXE Device',
+                                title: 'label.baremetal.pxe.device',
                                 fields: {
                                     url: {
                                         label: 'label.url',
@@ -10856,7 +10856,7 @@
                                         }
                                     },
                                     tftpdir: {
-                                        label: 'Tftp root directory',
+                                        label: 'label.tftp.root.directory',
                                         validation: {
                                             required: true
                                         }
@@ -10868,7 +10868,7 @@
                             },
                             messages: {
                                 notification: function (args) {
-                                    return 'Add Baremetal PXE Device';
+                                    return 'label.baremetal.pxe.device';
                                 }
                             },
                             notification: {
@@ -11022,7 +11022,7 @@
                             },
                             messages: {
                                 notification: function (args) {
-                                    return 'Added new F5';
+                                    return 'label.addes.new.f5';
                                 }
                             },
                             notification: {
@@ -11048,7 +11048,7 @@
                         });
                     },
                     detailView: {
-                        name: 'F5 details',
+                        name: 'label.f5.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.F5',
@@ -11286,7 +11286,7 @@
                         });
                     },
                     detailView: {
-                        name: 'SRX details',
+                        name: 'label.srx.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.SRX',
@@ -11530,7 +11530,7 @@
                         });
                     },
                     detailView: {
-                        name: 'Palo Alto details',
+                        name: 'label.palo.alto.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.PA',
@@ -11695,7 +11695,7 @@
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'Added new Nicira Nvp Controller';
+                                    return 'label.added.nicira.nvp.controller';
                                 }
                             },
                             notification: {
@@ -11721,7 +11721,7 @@
                         });
                     },
                     detailView: {
-                        name: 'Nicira Nvp details',
+                        name: 'label.nicira.nvp.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.NiciaNvp',
@@ -11857,7 +11857,7 @@
                             
                             messages: {
                                 notification: function (args) {
-                                    return 'Added new BigSwitch Vns Controller';
+                                    return 'label.added.new.bigswitch.vns.controller';
                                 }
                             },
                             notification: {
@@ -11883,7 +11883,7 @@
                         });
                     },
                     detailView: {
-                        name: 'BigSwitch Vns details',
+                        name: 'label.bigswitch.vns.details',
                         actions: {
                             'remove': {
                                 label: 'label.delete.BigSwitchVns',
@@ -12070,14 +12070,14 @@
                                     },
                                     
                                     isDedicated: {
-                                        label: 'Dedicate',
+                                        label: 'label.dedicate',
                                         isBoolean: true,
                                         isChecked: false,
                                         docID: 'helpDedicateResource'
                                     },
                                     
                                     domainId: {
-                                        label: 'Domain',
+                                        label: 'label.domain',
                                         isHidden: true,
                                         validation: {
                                             required: true
@@ -12108,7 +12108,7 @@
                                     },
                                     
                                     accountId: {
-                                        label: 'Account',
+                                        label: 'label.account',
                                         isHidden: true,
                                         dependsOn: 'isDedicated',
                                         docID: 'helpAccountForDedication',
@@ -12204,7 +12204,7 @@
                     detailView: {
                         viewAll: {
                             path: '_zone.clusters',
-                            label: 'Clusters'
+                            label: 'label.clusters'
                         },
                         tabFilter: function (args) {
                             var hiddenTabs =[];
@@ -12281,20 +12281,20 @@
                             },
                             
                             dedicate: {
-                                label: 'Dedicate Pod',
+                                label: 'label.dedicate.pod',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you really want to dedicate this pod to a domain/account? ';
+                                        return 'message.confirm.dedicate.pod.domain.account';
                                     },
                                     notification: function (args) {
-                                        return 'Pod Dedicated';
+                                        return 'label.pod.dedicated';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Dedicate Pod',
+                                    title: 'label.dedicate.pod',
                                     fields: {
                                         domainId: {
-                                            label: 'Domain',
+                                            label: 'label.domain',
                                             validation: {
                                                 required: true
                                             },
@@ -12322,7 +12322,7 @@
                                             }
                                         },
                                         accountId: {
-                                            label: 'Account',
+                                            label: 'label.account',
                                             docID: 'helpAccountForDedication',
                                             validation: {
                                                 required: false
@@ -12362,13 +12362,13 @@
                                 }
                             },
                             release: {
-                                label: 'Release Dedicated Pod',
+                                label: 'label.release.dedicated.pod',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you want to release this dedicated pod ?';
+                                        return 'message.confirm.release.dedicated.pod';
                                     },
                                     notification: function (args) {
-                                        return 'Pod dedication released';
+                                        return 'message.pod.dedication.released';
                                     }
                                 },
                                 action: function (args) {
@@ -12510,10 +12510,10 @@
                                 }, {
                                     
                                     isdedicated: {
-                                        label: 'Dedicated'
+                                        label: 'label.dedicated'
                                     },
                                     domainid: {
-                                        label: 'Domain ID'
+                                        label: 'label.domain.id'
                                     }
                                 }],
                                 
@@ -12532,12 +12532,12 @@
                                                         var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
                                                         if (podItem.domainid != null) {
                                                             $.extend(item, podItem, {
-                                                                isdedicated: 'Yes'
+                                                                isdedicated: 'label.yes'
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'No'
+                                                        isdedicated: 'label.no'
                                                     });
                                                     
                                                     args.response.success({
@@ -12792,7 +12792,7 @@
                                 },
                                 fields: {
                                     zoneid: {
-                                        label: 'Zone Name',
+                                        label: 'label.zone.name',
                                         docID: 'helpClusterZone',
                                         validation: {
                                             required: true
@@ -12847,7 +12847,7 @@
                                         }
                                     },
                                     podId: {
-                                        label: 'Pod Name',
+                                        label: 'label.pod.name',
                                         docID: 'helpClusterPod',
                                         dependsOn: 'zoneid',
                                         select: function (args) {
@@ -12885,14 +12885,14 @@
                                     },
                                     
                                     isDedicated: {
-                                        label: 'Dedicate',
+                                        label: 'label.dedicate',
                                         isBoolean: true,
                                         isChecked: false,
                                         docID: 'helpDedicateResource'
                                     },
                                     
                                     domainId: {
-                                        label: 'Domain',
+                                        label: 'label.domain',
                                         isHidden: true,
                                         validation: {
                                             required: true
@@ -12923,7 +12923,7 @@
                                     },
                                     
                                     accountId: {
-                                        label: 'Account',
+                                        label: 'label.account',
                                         isHidden: true,
                                         dependsOn: 'isDedicated',
                                         docID: 'helpAccountForDedication',
@@ -12964,7 +12964,7 @@
                                     },
                                     
                                     overridepublictraffic: {
-                                        label: 'Override Public-Traffic',
+                                        label: 'label.override.public.traffic',
                                         isBoolean: true,
                                         isHidden: true,
                                         isChecked: false,
@@ -12973,7 +12973,7 @@
                                     
                                     
                                     vSwitchPublicType: {
-                                        label: 'Public Traffic vSwitch Type',
+                                        label: 'label.public.traffic.vswitch.type',
                                         select: function (args) {
                                             var useNexusDvs = false;
                                             var items =[]
@@ -13026,12 +13026,12 @@
                                     },
                                     
                                     vSwitchPublicName: {
-                                        label: 'Public Traffic vSwitch Name',
+                                        label: 'label.public.traffic.vswitch.name',
                                         isHidden: true
                                     },
                                     
                                     overrideguesttraffic: {
-                                        label: 'Override Guest-Traffic',
+                                        label: 'label.override.guest.traffic',
                                         isBoolean: true,
                                         isHidden: true,
                                         isChecked: false,
@@ -13039,7 +13039,7 @@
                                     },
                                     
                                     vSwitchGuestType: {
-                                        label: 'Guest Traffic vSwitch Type',
+                                        label: 'label.guest.traffic.vswitch.type',
                                         select: function (args) {
                                             var items =[]
                                             
@@ -13094,41 +13094,41 @@
                                     },
                                     
                                     vSwitchGuestName: {
-                                        label: ' Guest Traffic vSwitch Name',
+                                        label: ' label.guest.traffic.vswitch.name',
                                         isHidden: true
                                     },
                                     
                                     
                                     vsmipaddress: {
-                                        label: 'Nexus 1000v IP Address',
+                                        label: 'label.cisco.nexus1000v.ip.address',
                                         validation: {
                                             required: false
                                         },
                                         isHidden: true
                                     },
                                     vsmipaddress_req: {
-                                        label: 'Nexus 1000v IP Address',
+                                        label: 'label.cisco.nexus1000v.ip.address',
                                         validation: {
                                             required: true
                                         },
                                         isHidden: true
                                     },
                                     vsmusername: {
-                                        label: 'Nexus 1000v Username',
+                                        label: 'label.cisco.nexus1000v.username',
                                         validation: {
                                             required: false
                                         },
                                         isHidden: true
                                     },
                                     vsmusername_req: {
-                                        label: 'Nexus 1000v Username',
+                                        label: 'label.cisco.nexus1000v.username',
                                         validation: {
                                             required: true
                                         },
                                         isHidden: true
                                     },
                                     vsmpassword: {
-                                        label: 'Nexus 1000v Password',
+                                        label: 'label.cisco.nexus1000v.password',
                                         validation: {
                                             required: false
                                         },
@@ -13136,7 +13136,7 @@
                                         isHidden: true
                                     },
                                     vsmpassword_req: {
-                                        label: 'Nexus 1000v Password',
+                                        label: 'label.cisco.nexus1000v.password',
                                         validation: {
                                             required: true
                                         },
@@ -13417,20 +13417,20 @@
                             },
                             
                             dedicate: {
-                                label: 'Dedicate Cluster',
+                                label: 'label.dedicate.cluster',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you really want to dedicate this cluster to a domain/account? ';
+                                        return 'message.confirm.dedicate.cluster.domain.account';
                                     },
                                     notification: function (args) {
-                                        return 'Cluster Dedicated';
+                                        return 'message.cluster.dedicated';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Dedicate Cluster',
+                                    title: 'label.dedicate.cluster',
                                     fields: {
                                         domainId: {
-                                            label: 'Domain',
+                                            label: 'label.domain',
                                             validation: {
                                                 required: true
                                             },
@@ -13458,7 +13458,7 @@
                                             }
                                         },
                                         accountId: {
-                                            label: 'Account',
+                                            label: 'label.account',
                                             docID: 'helpAccountForDedication',
                                             validation: {
                                                 required: false
@@ -13494,13 +13494,13 @@
                                 }
                             },
                             release: {
-                                label: 'Release Dedicated Cluster',
+                                label: 'label.release.dedicated.cluster',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you want to release this dedicated cluster ?';
+                                        return 'message.confirm.release.dedicated.cluster';
                                     },
                                     notification: function (args) {
-                                        return 'Cluster dedication released';
+                                        return 'message.cluster.dedication.released';
                                     }
                                 },
                                 action: function (args) {
@@ -13656,10 +13656,10 @@
                                     }
                                 }, {
                                     isdedicated: {
-                                        label: 'Dedicated'
+                                        label: 'label.dedicated'
                                     },
                                     domainid: {
-                                        label: 'Domain ID'
+                                        label: 'label.domain.id'
                                     }
                                 }],
                                 dataProvider: function (args) {
@@ -13678,12 +13678,12 @@
                                                         var clusterItem = json.listdedicatedclustersresponse.dedicatedcluster[0];
                                                         if (clusterItem.domainid != null) {
                                                             $.extend(item, clusterItem, {
-                                                                isdedicated: 'Yes'
+                                                                isdedicated: 'label.yes'
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'No'
+                                                        isdedicated: 'label.no'
                                                     })
                                                 },
                                                 error: function (json) {
@@ -13893,7 +13893,7 @@
                             
                             // Granular settings for cluster
                             settings: {
-                                title: 'Settings',
+                                title: 'label.settings',
                                 custom: cloudStack.uiCustom.granularSettings({
                                     dataProvider: function (args) {
                                         $.ajax({
@@ -14255,14 +14255,14 @@
                                     },
                                     
                                     isDedicated: {
-                                        label: 'Dedicate',
+                                        label: 'label.dedicate',
                                         isBoolean: true,
                                         isChecked: false,
                                         docID: 'helpDedicateResource'
                                     },
                                     
                                     domainId: {
-                                        label: 'Domain',
+                                        label: 'label.domain',
                                         isHidden: true,
                                         validation: {
                                             required: true
@@ -14292,7 +14292,7 @@
                                     },
                                     
                                     accountId: {
-                                        label: 'Account',
+                                        label: 'label.account',
                                         isHidden: true,
                                         dependsOn: 'isDedicated',
                                         docID: 'helpAccountForDedication',
@@ -14532,20 +14532,20 @@
                             },
                             
                             dedicate: {
-                                label: 'Dedicate Host',
+                                label: 'label.dedicate.host',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you really want to dedicate this host to a domain/account? ';
+                                        return 'message.confirm.dedicate.host.domain.account';
                                     },
                                     notification: function (args) {
-                                        return 'Host Dedicated';
+                                        return 'message.host.dedicated';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Dedicate Host',
+                                    title: 'label.dedicate.host',
                                     fields: {
                                         domainId: {
-                                            label: 'Domain',
+                                            label: 'label.domain',
                                             validation: {
                                                 required: true
                                             },
@@ -14573,7 +14573,7 @@
                                             }
                                         },
                                         accountId: {
-                                            label: 'Account',
+                                            label: 'label.account',
                                             docID: 'helpAccountForDedication',
                                             validation: {
                                                 required: false
@@ -14611,13 +14611,13 @@
                                 }
                             },
                             release: {
-                                label: 'Release Dedicated Host',
+                                label: 'label.release.dedicated.host',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Do you want to release this dedicated host ?';
+                                        return 'message.confirm.release.dedicated.host';
                                     },
                                     notification: function (args) {
-                                        return 'Host dedication released';
+                                        return 'message.host.dedication.released';
                                     }
                                 },
                                 action: function (args) {
@@ -14762,9 +14762,9 @@
                                         return 'label.action.remove.host';
                                     }
                                 },
-                                preFilter: function (args) {
-                                    if (isAdmin()) {
-                                        args.$form.find('.form-item[rel=isForced]').css('display', 'inline-block');
+                                preFilter: function(args) { //bug to fix: preFilter is not picked up from here                              
+                                	if (!isAdmin()) {
+                                        args.$form.find('.form-item[rel=isForced]').hide();
                                     }
                                 },
                                 createForm: {
@@ -14774,25 +14774,33 @@
                                         isForced: {
                                             label: 'force.remove',
                                             isBoolean: true,
-                                            isHidden: true
+                                            isHidden: false
                                         }
                                     }
                                 },
                                 action: function (args) {
-                                    var array1 =[];
-                                    //if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") //uncomment after Brian fix it to include $form in args
-                                    array1.push("&forced=" + (args.data.isForced == "on"));
+                                    var data = {
+                                    	id: args.context.hosts[0].id
+                                    };                                    
+                                    if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") {
+                                    	$.extend(data, {
+                                    		forced: (args.data.isForced == "on")
+                                    	});                                    	
+                                    }
                                     
                                     $.ajax({
-                                        url: createURL("deleteHost&id=" + args.context.hosts[0].id + array1.join("")),
-                                        dataType: "json",
-                                        async: true,
+                                        url: createURL("deleteHost"),
+                                        data: data,
                                         success: function (json) {
                                             //{ "deletehostresponse" : { "success" : "true"}  }
                                             args.response.success({
                                                 data: {
                                                 }
                                             });
+                                            
+                                            if (args.context.hosts[0].hypervisor == "XenServer"){
+                                            	cloudStack.dialog.notice({ message: _s("The host has been deleted. Please eject the host from XenServer Pool") })
+                                            }                                            
                                         }
                                     });
                                 },
@@ -14897,15 +14905,15 @@
                                         label: 'label.last.disconnected'
                                         },
                                         cpusockets: {
-                                        	label: 'The Number of CPU Sockets'
+                                        	label: 'label.number.of.cpu.sockets'
                                     }
                                 }, {
                                     
                                     isdedicated: {
-                                        label: 'Dedicated'
+                                        label: 'label.dedicated'
                                     },
                                     domainid: {
-                                        label: 'Domain ID'
+                                        label: 'label.domain.id'
                                     }
                                 }],
                                 
@@ -14925,12 +14933,12 @@
                                                         var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
                                                         if (hostItem.domainid != null) {
                                                             $.extend(item, hostItem, {
-                                                                isdedicated: 'Yes'
+                                                                isdedicated: 'label.yes'
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'No'
+                                                        isdedicated: 'label.no'
                                                     })
                                                 },
                                                 error: function (json) {
@@ -15024,7 +15032,7 @@
                             truncate: true
                         },
                         scope: {
-                            label: 'Scope'
+                            label: 'label.scope'
                         }
                     },
                     
@@ -15387,7 +15395,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15414,7 +15422,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=smbPassword]').css('display', 'inline-block');
@@ -15441,7 +15449,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15467,7 +15475,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.SR.name'+":").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -15566,7 +15574,7 @@
                                                     
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text('label.path'+":").prepend($required);
                                                     
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
@@ -16148,7 +16156,7 @@
                             
                             // Granular settings for storage pool
                             settings: {
-                                title: 'Settings',
+                                title: 'label.settings',
                                 custom: cloudStack.uiCustom.granularSettings({
                                     dataProvider: function (args) {
                                         
@@ -16331,13 +16339,13 @@
                         noCompact: true,
                         actions: {
                             remove: {
-                                label: 'Delete UCS Manager',
+                                label: 'label.delete.ucs.manager',
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Please confirm that you want to delete UCS Manager';
+                                        return 'message.confirm.delete.ucs.manager';
                                     },
                                     notification: function (args) {
-                                        return 'Delete UCS Manager';
+                                        return 'label.delete.ucs.manager';
                                     }
                                 },
                                 action: function (args) {
@@ -16416,19 +16424,19 @@
                             },
                             
                             blades: {
-                                title: 'Blades',
+                                title: 'label.blades',
                                 listView: {
                                     id: 'blades',
                                     hideSearchBar: true,
                                     fields: {
                                         chassis: {
-                                            label: 'Chassis'
+                                            label: 'label.chassis'
                                         },
                                         bladeid: {
-                                            label: 'Blade ID'
+                                            label: 'label.blade.id'
                                         },
                                         profiledn: {
-                                            label: 'Associated Profile'
+                                            label: 'label.associated.profile'
                                         }
                                     },
                                     dataProvider: function (args) {
@@ -16486,13 +16494,13 @@
                                     actions: {
                                         refreshUcsBlades: {
                                             isHeader: true,
-                                            label: 'Refresh Blades',
+                                            label: 'label.refresh.blades',
                                             messages: {
                                                 confirm: function (args) {
-                                                    return 'Please confirm that you want to refresh blades.';
+                                                    return 'message.confirm.refresh.blades';
                                                 },
                                                 notification: function (args) {
-                                                    return 'Refresh Blades';
+                                                    return 'label.refresh.blades';
                                                 }
                                             },
                                             action: function (args) {
@@ -16568,18 +16576,18 @@
                                         },
                                         
                                         associateTemplateToBlade: {
-                                            label: 'Instanciate Template and Associate Profile to Blade',
+                                            label: 'label.instanciate.template.associate.profile.blade',
                                             addRow: 'false',
                                             messages: {
                                                 notification: function (args) {
-                                                    return 'Instanciate Template and Associate Profile to Blade';
+                                                    return 'label.instanciate.template.associate.profile.blade';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Instanciate Template and Associate Profile to Blade',
+                                                title: 'label.instanciate.template.associate.profile.blade',
                                                 fields: {
                                                     templatedn: {
-                                                        label: 'Select Template',
+                                                        label: 'label.select.template',
                                                         select: function (args) {
                                                             var items =[];
                                                             
@@ -16626,7 +16634,7 @@
                                                         }
                                                     },
                                                     profilename: {
-                                                        label: 'Profile'
+                                                        label: 'label.profile'
                                                     }
                                                 }
                                             },
@@ -16702,18 +16710,18 @@
                                         },
                                         
                                         disassociateProfileFromBlade: {
-                                            label: 'Disassociate Profile from Blade',
+                                            label: 'label.disassociate.profile.blade',
                                             addRow: 'false',
                                             messages: {
                                                 notification: function (args) {
-                                                    return 'Disassociate Profile from Blade';
+                                                    return 'label.disassociate.profile.blade';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Disassociate Profile from Blade',
+                                                title: 'label.disassociate.profile.blade',
                                                 fields: {
                                                     deleteprofile: {
-                                                        label: 'Delete Profile',
+                                                        label: 'label.delete.profile',
                                                         isBoolean: true,
                                                         isChecked: true
                                                     }
@@ -16850,7 +16858,7 @@
                                                 label: 'label.name'
                                             },
                                             provider: {
-                                                label: 'Provider',
+                                                label: 'label.provider',
                                                 select: function (args) {
                                                     /*
                                                     UI no longer gets providers from "listStorageProviders&type=image" because:
@@ -17020,7 +17028,7 @@
                                             
                                             //NFS, SMB (begin)
                                             zoneid: {
-                                                label: 'Zone',
+                                                label: 'label.zone',
                                                 docID: 'helpSecondaryStorageZone',
                                                 validation: {
                                                     required: true
@@ -17145,7 +17153,7 @@
                                             },
                                             nfsCacheZoneid: {
                                                 dependsOn: 'createNfsCache',
-                                                label: 'Zone',
+                                                label: 'label.zone',
                                                 validation: {
                                                     required: true
                                                 },
@@ -17413,7 +17421,7 @@
                             },
                             
                             detailView: {
-                                name: 'Secondary storage details',
+                                name: 'label.secondary.storage.details',
                                 isMaximized: true,
                                 actions: { 
                                     remove: {
@@ -17463,7 +17471,7 @@
                                                 label: 'label.protocol'
                                             },
                                             providername: {
-                                                label: 'Provider'
+                                                label: 'label.provider'
                                             },
                                             scope: {
                                                 label: 'label.scope'
@@ -17534,7 +17542,7 @@
                     },
                     cacheStorage: {
                         type: 'select',
-                        title: 'Secondary Staging Store',
+                        title: 'label.secondary.staging.store',
                         listView: {
                             id: 'secondarystorages',
                             section: 'seconary-storage',
@@ -17546,7 +17554,7 @@
                                     label: 'label.url'
                                 },
                                 providername: {
-                                    label: 'Provider'
+                                    label: 'label.provider'
                                 }
                             },
                             
@@ -17582,12 +17590,12 @@
                             
                             actions: {
                                 add: {
-                                    label: 'Add NFS Secondary Staging Store',
+                                    label: 'label.add.nfs.secondary.staging.store',
                                     createForm: {
-                                        title: 'Add NFS Secondary Staging Store',
+                                        title: 'label.add.nfs.secondary.staging.store',
                                         fields: {
                                             zoneid: {
-                                                label: 'Zone',
+                                                label: 'label.zone',
                                                 validation: {
                                                     required: true
                                                 },
@@ -17660,24 +17668,24 @@
                                     },
                                     messages: {
                                         notification: function (args) {
-                                            return 'Add NFS Secondary Staging Store';
+                                            return 'label.add.nfs.secondary.staging.store';
                                         }
                                     }
                                 }
                             },
                             
                             detailView: {
-                                name: 'Secondary Staging Store details',
+                                name: 'label.secondary.staging.store.details',
                                 isMaximized: true,
                                 actions: {
                                     remove: {
-                                        label: 'Delete Secondary Staging Store',
+                                        label: 'label.delete.secondary.staging.store',
                                         messages: {
                                             confirm: function (args) {
-                                                return 'Please confirm you want to delete Secondary Staging Store.';
+                                                return 'message.confirm.delete.secondary.staging.store';
                                             },
                                             notification: function (args) {
-                                                return 'Delete Secondary Staging Store';
+                                                return 'label.delete.secondary.staging.store';
                                             }
                                         },
                                         action: function (args) {
@@ -17796,16 +17804,16 @@
                     section: 'guest-IP-range',
                     fields: {
                         startip: {
-                            label: 'IPv4 Start IP'
+                            label: 'label.ipv4.start.ip'
                         },
                         endip: {
-                            label: 'IPv4 End IP'
+                            label: 'label.ipv4.end.ip'
                         },
                         startipv6: {
-                            label: 'IPv6 Start IP'
+                            label: 'label.ipv6.start.ip'
                         },
                         endipv6: {
-                            label: 'IPv6 End IP'
+                            label: 'label.ipv6.end.ip'
                         }
                     },
                     
@@ -17836,22 +17844,22 @@
                                         label: 'label.netmask'
                                     },
                                     startipv4: {
-                                        label: 'IPv4 Start IP'
+                                        label: 'label.ipv4.start.ip'
                                     },
                                     endipv4: {
-                                        label: 'IPv4 End IP'
+                                        label: 'label.ipv4.end.ip'
                                     },
                                     ip6cidr: {
-                                        label: 'IPv6 CIDR'
+                                        label: 'label.ipv6.CIDR'
                                     },
                                     ip6gateway: {
-                                        label: 'IPv6 Gateway'
+                                        label: 'label.ipv6.gateway'
                                     },
                                     startipv6: {
-                                        label: 'IPv6 Start IP'
+                                        label: 'label.ipv6.start.ip'
                                     },
                                     endipv6: {
-                                        label: 'IPv6 End IP'
+                                        label: 'label.ipv6.end.ip'
                                     }
                                 }
                             },
@@ -19260,8 +19268,8 @@
         }
         
         nspHardcodingArray.push({
-            id: "Ovs",
-            name: "Ovs",
+            id: 'OVS',
+            name: 'OVS',
             state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
         });        
     };

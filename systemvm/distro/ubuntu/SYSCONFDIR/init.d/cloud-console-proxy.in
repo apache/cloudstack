@@ -27,7 +27,7 @@
 
 # set environment variables
 
-SHORTNAME="$0"
+SHORTNAME=`basename $0`
 PIDFILE=@PIDDIR@/"$SHORTNAME".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@CPLOG@

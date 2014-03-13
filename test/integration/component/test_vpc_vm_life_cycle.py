@@ -41,9 +41,10 @@ from marvin.integration.lib.common import (get_domain,
                                            get_free_vlan,
                                            wait_for_cleanup,
                                            list_virtual_machines,
-                                           list_hosts)
+                                           list_hosts,
+                                           findSuitableHostForMigration)
 
-from marvin.codes import PASS
+from marvin.codes import PASS, ERROR_NO_HOST_FOR_MIGRATION
 
 import time
 
@@ -715,34 +716,12 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        vm_list = VirtualMachine.list(self.apiclient, id=self.vm_1.id)
-        self.assertEqual(validateList(vm_list)[0], PASS, "vm list validation failed, vm list is %s" % vm_list)
-
-        vm_hostid = vm_list[0].hostid
-
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != vm_hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -1506,29 +1485,12 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if network rules are coonfigured properly?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -2559,29 +2521,12 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.list(
-                          self.apiclient,
-                          zoneid=self.zone.id,
-                          type='Routing'
-                          )
-
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        if len(hosts) < 2:
-            raise unittest.SkipTest(
-            "No host available for migration. Test requires atleast 2 hosts")
-
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s on Host: %s to Host: %s" % (
                                                         self.vm_1.id,
@@ -3459,27 +3404,12 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
-        self.debug("Checking if the host is available for migration?")
-        hosts = Host.listForMigration(
-                          self.apiclient,
-                          virtualmachineid=self.vm_1.id,
-                          )
-        self.debug("Hosts vm can be migrated to are : %s" %(hosts))
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
-        # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
-        if len(hosts) <= 0:
-            self.skipTest(
-            "No host available for migration. Test requires atleast 2 hosts tagged with host1")
-
-        host = hosts[0]
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
+        host = findSuitableHostForMigration(self.apiclient, self.vm_1.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
 
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                                         self.vm_1.id,

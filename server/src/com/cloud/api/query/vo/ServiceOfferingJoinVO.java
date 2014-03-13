@@ -87,6 +87,18 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "vm_type")
     private String vmType;
 
+    @Column(name = "customized_iops")
+    private Boolean customizedIops;
+
+    @Column(name = "min_iops")
+    private Long minIops;
+
+    @Column(name = "max_iops")
+    private Long maxIops;
+
+    @Column(name = "hv_ss_reserve")
+    private Integer hypervisorSnapshotReserve;
+
     @Column(name = "sort_key")
     int sortKey;
 
@@ -178,6 +190,22 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getDomainPath() {
         return domainPath;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 
     public int getSortKey() {

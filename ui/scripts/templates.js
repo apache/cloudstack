@@ -237,7 +237,7 @@
                                     },
 
                                     xenserverToolsVersion61plus: {
-                                        label: 'XenServer Tools Version 6.1+',
+                                        label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
                                         isChecked: function (args) {
                                             var b = false;
@@ -434,7 +434,7 @@
                                     },
 
                                     isdynamicallyscalable: {
-                                        label: "Dynamically Scalable",
+                                        label: "label.dynamically.scalable",
                                         docID: 'helpRegisterTemplateDynamicallyScalable',
                                         isBoolean: true
                                     },
@@ -951,7 +951,7 @@
                                         label: 'label.hypervisor'
                                     },
                                     xenserverToolsVersion61plus: {
-                                        label: 'XenServer Tools Version 6.1+',
+                                        label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
                                         isEditable: function () {
                                             if (isAdmin())

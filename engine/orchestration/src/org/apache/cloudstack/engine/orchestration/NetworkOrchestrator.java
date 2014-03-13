@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,8 +37,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -49,7 +52,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -131,6 +133,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
@@ -1082,6 +1085,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        for (NetworkElement element : networkElements) {
+            if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+                ((AggregatedCommandExecutor)element).prepareAggregatedExecution(network, dest);
+            }
+        }
+
+        try {
         // reapply all the firewall/staticNat/lb rules
         s_logger.debug("Reprogramming network " + network + " as a part of network implement");
         if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
@@ -1091,6 +1101,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     network.getDataCenterId());
             ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
             throw ex;
+        }
+            for (NetworkElement element : networkElements) {
+                if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+                    if (!((AggregatedCommandExecutor)element).completeAggregatedExecution(network, dest)) {
+                        s_logger.warn("Failed to re-program the network as a part of network " + network + " implement due to aggregated commands execution failure!");
+                        // see DataCenterVO.java
+                        ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
+                                network.getDataCenterId());
+                        ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
+                        throw ex;
+                    }
+                }
+            }
+        } finally {
+            for (NetworkElement element : networkElements) {
+                if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+                    ((AggregatedCommandExecutor)element).cleanupAggregatedExecution(network, dest);
+                }
+            }
         }
     }
 

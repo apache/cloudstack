@@ -189,4 +189,17 @@ public class ReflectUtil {
 
     }
 
+    public static String getEntityName(Class clz){
+        if(clz == null)
+            return null;
+
+        String entityName = clz.getName();
+        int index = entityName.lastIndexOf(".");
+        if (index != -1) {
+            return entityName.substring(index + 1);
+        }else{
+            return entityName;
+        }
+    }
+
 }

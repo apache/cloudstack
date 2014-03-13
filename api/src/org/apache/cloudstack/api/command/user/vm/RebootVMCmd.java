@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
@@ -25,7 +26,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,7 +40,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RebootVMCmd extends BaseAsyncCmd {
+public class RebootVMCmd extends BaseAsyncVMCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";
 

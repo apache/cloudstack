@@ -78,7 +78,9 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -236,6 +238,16 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public ClusterDetailsDao clusterDetailsDao() {
             return Mockito.mock(ClusterDetailsDao.class);
+        }
+
+        @Bean
+        public ResourceManager resourceManager() {
+            return Mockito.mock(ResourceManager.class);
+        }
+
+        @Bean
+        public ServiceOfferingDetailsDao serviceOfferingDetailsDao() {
+            return Mockito.mock(ServiceOfferingDetailsDao.class);
         }
 
         @Bean

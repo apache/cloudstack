@@ -42,7 +42,9 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
@@ -162,6 +164,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());
             userVmResponse.setMemory(userVm.getRamSize());
+            ServiceOfferingDetailsVO serviceOfferingDetail = ApiDBUtils.findServiceOfferingDetail(userVm.getServiceOfferingId(), GPU.Keys.vgpuType.toString());
+            if (serviceOfferingDetail != null) {
+                userVmResponse.setVgpu(serviceOfferingDetail.getValue());
+            }
         }
         userVmResponse.setGuestOsId(userVm.getGuestOsUuid());
         if (details.contains(VMDetails.all) || details.contains(VMDetails.volume)) {

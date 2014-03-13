@@ -51,8 +51,7 @@ class configuration(object):
 class logger(object):
     def __init__(self):
         '''TestCase/TestClient'''
-        self.name = None
-        self.file = None
+        self.logFolderPath = None
 
 
 class cloudstackConfiguration(object):
@@ -61,7 +60,7 @@ class cloudstackConfiguration(object):
         self.mgtSvr = []
         self.dbSvr = None
         self.globalConfig = []
-        self.logger = []
+        self.logger = None
 
 
 class zone(object):

@@ -40,7 +40,7 @@ import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.hypervisor.xen.resource.XenServer610Resource;
-import com.cloud.utils.Ternary;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
@@ -148,13 +148,13 @@ public class XenServerResourceNewBase extends XenServer610Resource {
             return new Answer(cmd);
         }
 
-        HashMap<String, Ternary<String, VirtualMachine.State, String>> newStates = _listener.getChanges();
+        HashMap<String, Pair<String, VirtualMachine.State>> newStates = _listener.getChanges();
         return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
     }
 
     protected class VmEventListener extends Thread {
         boolean _stop = false;
-        HashMap<String, Ternary<String, VirtualMachine.State, String>> _changes = new HashMap<String, Ternary<String, VirtualMachine.State, String>>();
+        HashMap<String, Pair<String, VirtualMachine.State>> _changes = new HashMap<String, Pair<String, VirtualMachine.State>>();
         boolean _isMaster;
         Set<String> _classes;
         String _token = "";
@@ -232,12 +232,12 @@ public class XenServerResourceNewBase extends XenServer610Resource {
 
             // NOTE: For now we only record change when the VM is stopped.  We don't find out any VMs starting for now.
             synchronized (_cluster.intern()) {
-                Ternary<String, VirtualMachine.State, String> oldState = s_vms.get(_cluster, vm);
+                Pair<String, VirtualMachine.State> oldState = s_vms.get(_cluster, vm);
                 if (oldState == null) {
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Unable to find " + vm + " from previous map.  Assuming it was in Stopped state.");
                     }
-                    oldState = new Ternary<String, VirtualMachine.State, String>(null, VirtualMachine.State.Stopped, null);
+                    oldState = new Pair<String, VirtualMachine.State>(null, VirtualMachine.State.Stopped);
                 }
 
                 if (s_logger.isTraceEnabled()) {
@@ -281,7 +281,7 @@ public class XenServerResourceNewBase extends XenServer610Resource {
                     }
                 }
                 if (reportChange) {
-                    Ternary<String, VirtualMachine.State, String> change = _changes.get(vm);
+                    Pair<String, VirtualMachine.State> change = _changes.get(vm);
                     if (hostUuid == null) {
                         // This is really strange code.  It looks like the sync
                         // code wants this to be set, which is extremely weird
@@ -293,7 +293,7 @@ public class XenServerResourceNewBase extends XenServer610Resource {
                         }
                     }
                     if (change == null) {
-                        change = new Ternary<String, VirtualMachine.State, String>(hostUuid, currentState, null);
+                        change = new Pair<String, VirtualMachine.State>(hostUuid, currentState);
                     } else {
                         change.first(hostUuid);
                         change.second(currentState);
@@ -325,13 +325,13 @@ public class XenServerResourceNewBase extends XenServer610Resource {
             return _isMaster;
         }
 
-        public HashMap<String, Ternary<String, VirtualMachine.State, String>> getChanges() {
+        public HashMap<String, Pair<String, VirtualMachine.State>> getChanges() {
             synchronized (_cluster.intern()) {
                 if (_changes.size() == 0) {
                     return null;
                 }
-                HashMap<String, Ternary<String, VirtualMachine.State, String>> diff = _changes;
-                _changes = new HashMap<String, Ternary<String, VirtualMachine.State, String>>();
+                HashMap<String, Pair<String, VirtualMachine.State>> diff = _changes;
+                _changes = new HashMap<String, Pair<String, VirtualMachine.State>>();
                 return diff;
             }
         }

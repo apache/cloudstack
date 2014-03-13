@@ -78,8 +78,8 @@ public class EventVO implements Event {
     @Column(name = "archived")
     private boolean archived;
 
-    @Column(name = "display_event", updatable = true, nullable = false)
-    protected boolean isDisplayEventEnabled = true;
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
 
     @Transient
     private int totalSize;
@@ -214,12 +214,12 @@ public class EventVO implements Event {
         this.archived = archived;
     }
 
-    public boolean isDisplayEventEnabled() {
-        return isDisplayEventEnabled;
+    public boolean isDisplay() {
+        return display;
     }
 
-    public void setDisplayEventEnabled(boolean displayEventEnabled) {
-        isDisplayEventEnabled = displayEventEnabled;
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 
     @Override

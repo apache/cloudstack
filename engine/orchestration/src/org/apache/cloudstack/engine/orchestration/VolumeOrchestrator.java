@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -604,15 +605,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm, Account owner) {
+    public DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm, Account owner) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
             size = (rootDisksize * 1024 * 1024 * 1024);
         }
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, offering.getMinIops(), offering.getMaxIops(),
-                null);
+
+        minIops = minIops != null ? minIops : offering.getMinIops();
+        maxIops = maxIops != null ? maxIops : offering.getMaxIops();
+
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, minIops, maxIops, null);
+
         vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
         if (vm != null) {
             vol.setInstanceId(vm.getId());
@@ -1113,7 +1118,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
                 TemplateInfo templ = tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-                future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
+
+                PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;
+
+                if (primaryDataStore.isManaged()) {
+                    DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
+                    HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
+
+                    // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+                    updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+
+                    long hostId = vm.getVirtualMachine().getHostId();
+
+                    future = volService.createManagedStorageAndVolumeFromTemplateAsync(volume, destPool.getId(), templ, hostId);
+                }
+                else {
+                    future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
+                }
             }
             VolumeApiResult result = null;
             try {

@@ -18,18 +18,18 @@ package com.cloud.agent.api;
 
 import java.util.HashMap;
 
-import com.cloud.utils.Ternary;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
 public class ClusterSyncAnswer extends Answer {
     private long _clusterId;
-    private HashMap<String, Ternary<String, State, String>> _newStates;
+    private HashMap<String, Pair<String, State>> _newStates;
     private boolean _isExecuted = false;
 
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
     //  AgentManagerImpl.notifyAnswersToMonitors
-    public boolean isExceuted() {
+    public boolean isExecuted() {
         return _isExecuted;
     }
 
@@ -37,7 +37,7 @@ public class ClusterSyncAnswer extends Answer {
         _isExecuted = true;
     }
 
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Ternary<String, State, String>> newStates) {
+    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates) {
         _clusterId = clusterId;
         _newStates = newStates;
         result = true;
@@ -47,7 +47,7 @@ public class ClusterSyncAnswer extends Answer {
         return _clusterId;
     }
 
-    public HashMap<String, Ternary<String, State, String>> getNewStates() {
+    public HashMap<String, Pair<String, State>> getNewStates() {
         return _newStates;
     }
 

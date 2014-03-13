@@ -153,10 +153,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public Boolean getDisplayVolume() {
-        if(displayVolume == null){
-            return true;
-        }
-
         return displayVolume;
     }
 
@@ -183,7 +179,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -198,7 +194,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Override
     public boolean isDisplayResourceEnabled(){
-        return getDisplayVolume();
+        Boolean display = getDisplayVolume();
+        if(display == null){
+            return true;
+        } else {
+            return display;
+        }
     }
 
     @Override
@@ -221,7 +222,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
-        CallContext.current().setEventDisplayEnabled(getDisplayVolume());
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);

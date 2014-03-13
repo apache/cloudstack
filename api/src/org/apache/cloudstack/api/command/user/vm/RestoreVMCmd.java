@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
@@ -24,7 +25,6 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,7 +43,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class RestoreVMCmd extends BaseAsyncCmd {
+public class RestoreVMCmd extends BaseAsyncVMCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
@@ -103,5 +103,11 @@ public class RestoreVMCmd extends BaseAsyncCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    // TODO - Remove vmid param and make it "id" in 5.0 so that we dont have two getters
+    @Override
+    public Long getId() {
+        return getVmId();
     }
 }

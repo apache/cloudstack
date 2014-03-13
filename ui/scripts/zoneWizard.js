@@ -1569,7 +1569,7 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>Path:');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>"label.path":');
 
                                 if (protocol == null)
                                     return;
@@ -1635,7 +1635,7 @@
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
                                    
                                     $form.find('[rel=path]').css('display', 'block');                                    
-                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>SR Name-Label:");
+                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>'label.SR.name':");
                                    
                                     $form.find('[rel=smbUsername]').hide();
                                     $form.find('[rel=smbPassword]').hide();
@@ -2123,20 +2123,20 @@
 
                     //SMB (begin)                                            
                     smbUsername: {
-                    	label: 'SMB Username',
+                    	label: 'label.smb.username',
                     	validation: {
                             required: true
                         }
                     },
                     smbPassword: {
-                    	label: 'SMB Password',
+                    	label: 'label.smb.password',
                     	isPassword: true,
                     	validation: {
                             required: true
                         }
                     },
                     smbDomain: {
-                    	label: 'SMB Domain',
+                    	label: 'label.smb.domain',
                     	validation: {
                             required: true
                         }
@@ -2189,7 +2189,7 @@
                     },
 
                     createNfsCache: {
-                        label: 'Create NFS Secondary Staging Store',
+                        label: 'label.create.nfs.secondary.staging.storage',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true

@@ -17,9 +17,9 @@
 package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
@@ -103,7 +104,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
-    private Map<String, String> details;
+    private Map details;
 
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
@@ -116,6 +117,21 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not")
+    private Boolean customizedIops;
+
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the compute offering")
+    private Long minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the compute offering")
+    private Long maxIops;
+
+    @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
+            type = CommandType.INTEGER,
+            required = false,
+            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    private Integer hypervisorSnapshotReserve;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -190,13 +206,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        if (details == null || details.isEmpty()) {
-            return null;
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<String, String>();
+            Collection<?> props = details.values();
+            Iterator<?> iter = props.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                detailsMap.put(detail.get("key"), detail.get("value"));
+            }
         }
-
-        Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
-        return params;
+        return detailsMap;
     }
 
     public Long getBytesReadRate() {
@@ -213,6 +233,22 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 
     /////////////////////////////////////////////////////

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.IAMEntityType;
@@ -24,7 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -38,7 +39,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class AttachVolumeCmd extends BaseAsyncCmd {
+public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
 
@@ -67,6 +68,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
         return deviceId;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
@@ -106,15 +108,6 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VOLUME_ATTACH;
-    }
-
-    @Override
-    public boolean isDisplayResourceEnabled(){
-        Volume volume = _responseGenerator.findVolumeById(getId());
-        if (volume == null) {
-            return true; // bad id given, parent this command to true so ERROR events are tracked
-        }
-        return volume.isDisplayVolume();
     }
 
     @Override

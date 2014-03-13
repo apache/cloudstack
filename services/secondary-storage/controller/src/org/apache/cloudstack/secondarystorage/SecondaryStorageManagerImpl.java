@@ -807,6 +807,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _useSSlCopy = true;
         }
 
+        //default to HTTP in case of missing domain
+        String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        if(_useSSlCopy && (ssvmUrlDomain == null || ssvmUrlDomain.isEmpty())){
+            s_logger.warn("Empty secondary storage url domain, explicitly disabling SSL");
+            _useSSlCopy = false;
+        }
+
         _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
 
         String value = configs.get("secstorage.capacityscan.interval");

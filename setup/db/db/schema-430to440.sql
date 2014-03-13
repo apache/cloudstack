@@ -44,6 +44,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
@@ -75,6 +76,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.customized_iops,
+        disk_offering.min_iops,
+        disk_offering.max_iops,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
@@ -652,7 +657,7 @@ ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL D
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
 
-ALTER TABLE `cloud`.`event` ADD COLUMN `display_event` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
@@ -669,7 +674,7 @@ CREATE VIEW `cloud`.`event_view` AS
         eve.uuid start_uuid,
         event.user_id,
         event.archived,
-        event.display_event,
+        event.display,
         user.username user_name,
         account.id account_id,
         account.uuid account_uuid,
@@ -696,4 +701,32 @@ CREATE VIEW `cloud`.`event_view` AS
         `cloud`.`event` eve ON event.start_id = eve.id;
 
 
+DROP TABLE IF EXISTS `cloud`.`host_gpu_groups`;
+CREATE TABLE `cloud`.`host_gpu_groups` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `group_name` varchar(255) NOT NULL,
+  `host_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_host_gpu_groups__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
 
+DROP TABLE IF EXISTS `cloud`.`vgpu_types`;
+CREATE TABLE `cloud`.`vgpu_types` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `gpu_group_id` bigint(20) unsigned NOT NULL,
+  `vgpu_type` varchar(40) NOT NULL COMMENT 'vgpu type supported by this gpu group',
+  `remaining_vm_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'remaining vgpu can be created with this vgpu_type on the given gpu group',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vgpu_types__gpu_group_id` FOREIGN KEY (`gpu_group_id`) REFERENCES `host_gpu_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
+
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `hypervisor_version` varchar(32) NOT NULL DEFAULT 'default' COMMENT 'Hypervisor version for this mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `uuid` varchar(40) COMMENT 'UUID of the mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD CONSTRAINT `uc_guest_os_hypervisor__uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `created` datetime COMMENT 'Time when mapping was created';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `removed` datetime COMMENT 'Time when mapping was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os_hypervisor` SET `uuid` = UUID();
+UPDATE `cloud`.`guest_os_hypervisor` SET `created` = now();
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `created` datetime COMMENT 'Time when Guest OS was created in system';
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when Guest OS was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os` SET `created` = now();

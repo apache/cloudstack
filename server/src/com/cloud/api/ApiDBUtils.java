@@ -131,6 +131,10 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -221,8 +225,10 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -325,6 +331,7 @@ public class ApiDBUtils {
     static NetworkRuleConfigDao s_networkRuleConfigDao;
     static HostPodDao s_podDao;
     static ServiceOfferingDao s_serviceOfferingDao;
+    static ServiceOfferingDetailsDao s_serviceOfferingDetailsDao;
     static SnapshotDao s_snapshotDao;
     static PrimaryDataStoreDao s_storagePoolDao;
     static VMTemplateDao s_templateDao;
@@ -400,6 +407,8 @@ public class ApiDBUtils {
     static NetworkACLDao s_networkACLDao;
     static AccountService s_accountService;
     static ResourceMetaDataService s_resourceDetailsService;
+    static HostGpuGroupsDao s_hostGpuGroupsDao;
+    static VGPUTypesDao s_vgpuTypesDao;
 
     @Inject
     private ManagementServer ms;
@@ -466,6 +475,8 @@ public class ApiDBUtils {
     private HostPodDao podDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject
     private SnapshotDao snapshotDao;
     @Inject
@@ -616,6 +627,10 @@ public class ApiDBUtils {
     private ConfigurationManager configMgr;
     @Inject
     private ResourceMetaDataService resourceDetailsService;
+    @Inject
+    private HostGpuGroupsDao hostGpuGroupsDao;
+    @Inject
+    private VGPUTypesDao vgpuTypesDao;
 
     @PostConstruct
     void init() {
@@ -649,6 +664,7 @@ public class ApiDBUtils {
         s_networkRuleConfigDao = networkRuleConfigDao;
         s_podDao = podDao;
         s_serviceOfferingDao = serviceOfferingDao;
+        s_serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         s_serviceOfferingJoinDao = serviceOfferingJoinDao;
         s_snapshotDao = snapshotDao;
         s_storagePoolDao = storagePoolDao;
@@ -727,6 +743,8 @@ public class ApiDBUtils {
         s_networkACLDao = networkACLDao;
         s_accountService = accountService;
         s_resourceDetailsService = resourceDetailsService;
+        s_hostGpuGroupsDao = hostGpuGroupsDao;
+        s_vgpuTypesDao = vgpuTypesDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -956,6 +974,10 @@ public class ApiDBUtils {
         return s_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
     }
 
+    public static ServiceOfferingDetailsVO findServiceOfferingDetail(long serviceOfferingId, String key) {
+        return s_serviceOfferingDetailsDao.findDetail(serviceOfferingId, key);
+    }
+
     public static Snapshot findSnapshotById(long snapshotId) {
         SnapshotVO snapshot = s_snapshotDao.findById(snapshotId);
         if (snapshot != null && snapshot.getRemoved() == null && snapshot.getState() == Snapshot.State.BackedUp) {
@@ -1051,6 +1073,14 @@ public class ApiDBUtils {
             }
         }
         return type;
+    }
+
+    public static List<HostGpuGroupsVO> getGpuGroups(long hostId) {
+        return s_hostGpuGroupsDao.listByHostId(hostId);
+    }
+
+    public static List<VGPUTypesVO> getVgpus(long groupId) {
+        return s_vgpuTypesDao.listByGroupId(groupId);
     }
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {

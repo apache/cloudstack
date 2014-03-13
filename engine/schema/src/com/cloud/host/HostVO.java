@@ -17,6 +17,7 @@
 package com.cloud.host;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -152,6 +153,10 @@ public class HostVO implements Host {
     // Call host dao to load it.
     @Transient
     List<String> hostTags;
+
+    // This value is only for saving and current cannot be loaded.
+    @Transient
+    HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
 
     @Override
     public String getStorageIpAddressDeux() {
@@ -311,6 +316,14 @@ public class HostVO implements Host {
 
     public void setHostTags(List<String> hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public  HashMap<String, HashMap<String, Long>> getGpuGroupDetails() {
+        return groupDetails;
+    }
+
+    public void setGpuGroups(HashMap<String, HashMap<String, Long>> groupDetails) {
+        this.groupDetails = groupDetails;
     }
 
     @Column(name = "data_center_id", nullable = false)
