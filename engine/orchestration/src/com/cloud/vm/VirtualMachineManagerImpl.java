@@ -4100,7 +4100,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vmId);
-        if (pendingWorkJobs.size() == 0 || _haMgr.hasPendingHaWork(vmId)) {
+        if (pendingWorkJobs.size() == 0 || !_haMgr.hasPendingHaWork(vmId)) {
             // there is no pending operation job
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm != null) {
