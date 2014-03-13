@@ -1164,7 +1164,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseNetwork, false, network);
+                        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, false,
+                                network);
                     } else {
                         throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if "
                                                                  + "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
@@ -1186,7 +1187,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Network network = _networksDao.findById(networkId);
         if (network != null) {
-            _accountMgr.checkAccess(owner, AccessType.UseNetwork, false, network);
+            _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
         } else {
             s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
@@ -1318,7 +1319,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
-                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseNetwork, false, network);
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseEntry, false,
+                            network);
                 }
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);

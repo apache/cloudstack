@@ -535,7 +535,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
                 if (zone.getNetworkType() == NetworkType.Advanced) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
@@ -578,7 +578,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
                 if (zone.getNetworkType() == NetworkType.Advanced) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }

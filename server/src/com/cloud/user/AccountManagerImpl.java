@@ -91,6 +91,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -490,7 +491,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 domainId = account != null ? account.getDomainId() : -1;
             }
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) &&
-                !(accessType != null && accessType == AccessType.UseNetwork) && !(entity instanceof AffinityGroup)) {
+                !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) && !(entity instanceof AffinityGroup)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {

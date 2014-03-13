@@ -32,7 +32,6 @@ public interface SecurityChecker extends Adapter {
 
     public enum AccessType {
         ModifyProject,
-        UseNetwork,
         OperateEntry,
         UseEntry
     }

@@ -105,7 +105,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     private Long domainId;
 
     //Network information
-    @ACL(accessType = AccessType.UseNetwork)
+    @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 

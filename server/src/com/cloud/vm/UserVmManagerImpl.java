@@ -987,7 +987,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
 
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
@@ -1061,7 +1061,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
 
         boolean nicremoved = false;
 
@@ -2336,7 +2336,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Perform account permission check
                 if (network.getAclType() == ACLType.Account) {
-                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                    _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
                 }
                 networkList.add(network);
             }

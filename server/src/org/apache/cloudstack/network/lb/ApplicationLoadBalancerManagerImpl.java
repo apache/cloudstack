@@ -114,7 +114,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, guestNtwk);
+        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, guestNtwk);
 
         Network sourceIpNtwk = _networkModel.getNetwork(sourceIpNetworkId);
         if (sourceIpNtwk == null) {
