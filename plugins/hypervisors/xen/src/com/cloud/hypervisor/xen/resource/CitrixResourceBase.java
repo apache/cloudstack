@@ -5284,15 +5284,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public Answer execute(OvsVpcPhysicalTopologyConfigCommand cmd) {
         Connection conn = getConnection();
         try {
+            Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
+            String bridgeName = nw.getBridge(conn);;
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
-                    cmd.getBridgeName(), "config", cmd.getVpcConfigInJson());
-            if (result.equalsIgnoreCase("SUCCESS")) {
+                    bridgeName, "config", cmd.getVpcConfigInJson(), "host-id", ((Long)cmd.getHostId()).toString());
+                if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
                 return new Answer(cmd, false, result);
             }
         } catch  (Exception e) {
-            s_logger.warn("caught exception while updating host with latest routing polcies", e);
+            s_logger.warn("caught exception while updating host with latest VPC topology", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -5303,13 +5305,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_routing_policies", "bridge",
                     cmd.getBridgeName(), "host-id", ((Long)cmd.getHostId()).toString(), "config",
                     cmd.getVpcConfigInJson());
-            if (result.equalsIgnoreCase("SUCCESS")) {
+            if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
                 return new Answer(cmd, false, result);
             }
         } catch  (Exception e) {
-            s_logger.warn("caught exception while updating host with latest VPC topology", e);
+            s_logger.warn("caught exception while updating host with latest routing policies", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }

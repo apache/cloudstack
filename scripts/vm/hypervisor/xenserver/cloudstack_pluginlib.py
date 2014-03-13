@@ -239,7 +239,7 @@ def clear_flooding_rules_for_port(bridge, ofport):
 
 def add_flooding_rules_for_port(bridge, in_ofport, out_ofports):
         action = "".join("output:%s," %ofport for ofport in out_ofports)[:-1]
-        add_flow(bridge, priority=1100, in_port=in_ofport, table=1, actions=action)
+        add_flow(bridge, priority=1100, in_port=in_ofport, table=2, actions=action)
 
 def get_ofport_for_vif(vif_name):
     return do_cmd([VSCTL_PATH, "get", "interface", vif_name, "ofport"])
@@ -259,28 +259,30 @@ def get_vif_name_from_macaddress(macaddress):
     return "vif"+vm_domain_id+"."+vif_device_id
 
 def add_mac_lookup_table_entry(bridge, mac_address, out_of_port):
-    add_flow(bridge, priority=1100, dl_dst=mac_address, table=1, actions="output:%s" % out_of_port)
+    action = "output=%s" %out_of_port
+    add_flow(bridge, priority=1100, dl_dst=mac_address, table=1, actions=action)
 
 def delete_mac_lookup_table_entry(bridge, mac_address):
     del_flows(bridge, dl_dst=mac_address, table=1)
 
 def add_ip_lookup_table_entry(bridge, ip, dst_tier_gateway_mac, dst_vm_mac):
-    action_str = "mod_dl_sr:%s" % dst_tier_gateway_mac + ",mod_dl_dst:%s" % dst_vm_mac +",resubmit(,5)"
-    addflow = [OFCTL_PATH, "add-flow", bridge, "table=4", "nw_dst=%s" % ip, "actions=%s" %action_str]
+    action_str = "mod_dl_src:%s" % dst_tier_gateway_mac + ",mod_dl_dst:%s" % dst_vm_mac + ",resubmit(,5)"
+    action_str = "table=4, ip, nw_dst=%s" % ip + ",  actions=%s" %action_str
+    addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
     do_cmd(addflow)
 
 def get_vms_on_host(vpc, host_id):
     all_vms = vpc.vms
     vms_on_host = []
     for vm in all_vms:
-      if vm.hostid == host_id:
+      if str(vm.hostid) == (host_id):
         vms_on_host.append(vm)
     return vms_on_host
 
 def get_network_details(vpc, network_uuid):
     tiers = vpc.tiers
     for tier in tiers:
-      if tier.networkuuid == network_uuid:
+      if str(tier.networkuuid) == (network_uuid):
         return tier
     return None
 
@@ -338,20 +340,22 @@ def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
             add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
 
             # Add flow entry to send with intra tier traffic from the NIC to L2 lookup path)
-            addflow = [OFCTL_PATH, "add-flow", bridge, "table=0", "in_port=%s" % of_port,
-                       "nw_dst=%s" %network.cidr, "actions=resubmit(,1)"]
+            action_str = "table=0, in_port=%s," %of_port + " ip, nw_dst=%s," %network.cidr + " actions=resubmit(,1)"
+            addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
             do_cmd(addflow)
 
             #add flow entry to send inter-tier traffic from the NIC to egress ACL table(to L3 lookup path)
-            addflow = [OFCTL_PATH, "add-flow", bridge, "table=0", "in_port=%s" % of_port,
-                       "dl_dst=%s" %network.gatewaymac, "nw_dst=%s" %vpconfig.cidr, "actions=resubmit(,3)"]
+            action_str = "table=0, in_port=%s," % of_port + " ip, dl_dst=%s," %network.gatewaymac +\
+                         "nw_dst=%s," %vpconfig.cidr + "actions=resubmit(,3)"
+            addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
+
             do_cmd(addflow)
 
     # get the list of hosts on which VPC spans from the JSON config
     vpc_spanning_hosts = vpconfig.hosts
 
     for host in vpc_spanning_hosts:
-        if this_host_id == host.hostid:
+        if str(this_host_id) == str(host.hostid):
             continue
         other_host_vms = get_vms_on_host(vpconfig, host.hostid)
         for vm in other_host_vms:
