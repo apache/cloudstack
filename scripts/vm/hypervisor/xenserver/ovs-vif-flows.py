@@ -21,9 +21,11 @@
 import copy
 import os
 import sys
+import logging
 
 import cloudstack_pluginlib as pluginlib
 
+pluginlib.setup_logging("/var/log/cloud/ovstunnel.log")
 
 def clear_flows(bridge, this_vif_ofport, vif_ofports):
     # Remove flow entries originating from given ofport
@@ -83,18 +85,26 @@ def main(command, vif_raw):
 
     bridge = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'iface-to-br', this_vif])
     
-	# find xs network for this bridge, verify is used for ovs tunnel network
+    # find xs network for this bridge, verify is used for ovs tunnel network
     xs_nw_uuid = pluginlib.do_cmd([pluginlib.XE_PATH, "network-list",
 								   "bridge=%s" % bridge, "--minimal"])
-    ovs_tunnel_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
+    ovs_tunnel_network = False
+    try:
+        ovs_tunnel_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
 						       "uuid=%s" % xs_nw_uuid,
 						       "param-name=other-config",
 						       "param-key=is-ovs-tun-network", "--minimal"])
+    except:
+        pass
 
-    ovs_vpc_distributed_vr_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
+    ovs_vpc_distributed_vr_network = False
+    try:
+        ovs_vpc_distributed_vr_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
 						       "uuid=%s" % xs_nw_uuid,
 						       "param-name=other-config",
 						       "param-key=is-ovs_vpc_distributed_vr_network", "--minimal"])
+    except:
+        pass
 
     if ovs_tunnel_network == 'True':
         vlan = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'br-to-vlan', bridge])
@@ -121,6 +131,7 @@ def main(command, vif_raw):
             apply_flows(bridge,  this_vif_ofport, vif_ofports)
 
 
+    # handle case where brdige is setup for VPC and VPC is enabled for distributed routing
     if ovs_vpc_distributed_vr_network == 'True':
         vlan = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'br-to-vlan', bridge])
         if vlan != '0':
@@ -136,15 +147,15 @@ def main(command, vif_raw):
 
         ports = vsctl_output.split('\n')
         for port in ports:
-            if_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get', 'Interface', vif, 'ofport'])
-            if vif.startswith('vif'):
+            if_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get', 'Interface', port, 'ofport'])
+            if port.startswith('vif'):
                 # check VIF is in same network as that of plugged vif
                 if vif_network_id != pluginlib.get_network_id_for_vif(port):
                     continue
                 vnet_vif_ofports.append(if_ofport)
                 vnet_all_ofports.append(if_ofport)
 
-            if vif.startswith('t'):
+            if port.startswith('t'):
                 # check tunnel port is in same network as that of plugged vif
                 if vif_network_id != pluginlib.get_network_id_for_tunnel_port(port):
                     continue
@@ -159,7 +170,8 @@ def main(command, vif_raw):
             for port in vnet_tunnelif_ofports:
                 pluginlib.add_flooding_rules_for_port(bridge, port, vnet_vif_ofports)
 
-            # send on all VIF and tunnel port excluding the port on which packet arrived
+            # for a packet arrived from VIF port send on all VIF and tunnel port excluding the port
+            # on which packet arrived
             for port in vnet_vif_ofports:
                 vnet_all_ofports_copy = copy.copy(vnet_all_ofports)
                 vnet_all_ofports_copy.remove(port)
@@ -167,6 +179,7 @@ def main(command, vif_raw):
 
             #learn that MAC is reachable through the VIF port
             mac = pluginlib.get_macaddress_of_vif(this_vif)
+            this_vif_ofport = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'get', 'Interface', this_vif, 'ofport'])
             pluginlib.add_mac_lookup_table_entry(bridge, mac, this_vif_ofport)
 
         if command == 'offline':

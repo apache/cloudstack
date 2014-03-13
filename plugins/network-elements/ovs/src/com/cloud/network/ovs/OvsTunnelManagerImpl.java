@@ -36,6 +36,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
@@ -80,13 +81,14 @@ import com.cloud.network.ovs.dao.OvsTunnel;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = {OvsTunnelManager.class})
-public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager {
+public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     public static final Logger s_logger = Logger.getLogger(OvsTunnelManagerImpl.class.getName());
 
     // boolean _isEnabled;
@@ -133,7 +135,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
 
+        // register for network ACL updated for a VPC.
         _messageBus.subscribe("Network_ACL_Replaced", new NetworkAclEventsSubscriber());
+
+        // register for VM state transition updates
+        VirtualMachine.State.getStateMachine().registerListener(this);
+
         return true;
     }
 
@@ -540,92 +547,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return "OVS-DR-VPC-Bridge" + vpcId;
     }
 
-    public boolean sendVpcTopologyChangeUpdate(OvsVpcPhysicalTopologyConfigCommand updateCmd, long hostId, String bridgeName) {
-        try {
-            s_logger.debug("Sending VPC topology update to the host " + hostId);
-            updateCmd.setHostId(hostId);
-            updateCmd.setBridgeName(bridgeName);
-            Answer ans = _agentMgr.send(hostId, updateCmd);
-            if (ans.getResult()) {
-                s_logger.debug("Successfully updated the host " + hostId + " with latest VPC topology." );
-                return true;
-            }  else {
-                s_logger.debug("Failed to update the host " + hostId + " with latest VPC topology." );
-                return false;
-            }
-        } catch (Exception e) {
-            s_logger.debug("Failed to updated the host " + hostId + " with latest VPC topology." );
-            return false;
-        }
-    }
-
-    OvsVpcPhysicalTopologyConfigCommand prepareVpcTopologyUpdate(long vpcId) {
-        VpcVO vpc = _vpcDao.findById(vpcId);
-        assert (vpc != null): "invalid vpc id";
-
-        List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
-        List<Long> hostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
-        List<Long> vmIds = _ovsNetworkToplogyGuru.getAllActiveVmsInVpc(vpcId);
-
-        List<OvsVpcPhysicalTopologyConfigCommand.Host> hosts = new ArrayList<>();
-        List<OvsVpcPhysicalTopologyConfigCommand.Tier> tiers = new ArrayList<>();
-        List<OvsVpcPhysicalTopologyConfigCommand.Vm> vms = new ArrayList<>();
-
-        for (Long hostId : hostIds) {
-            HostVO hostDetails = _hostDao.findById(hostId);
-            String remoteIp = null;
-            for (Network network: vpcNetworks) {
-                try {
-                    remoteIp = getGreEndpointIP(hostDetails, network);
-                } catch (Exception e) {
-
-                }
-            }
-            OvsVpcPhysicalTopologyConfigCommand.Host host = new OvsVpcPhysicalTopologyConfigCommand.Host(hostId, remoteIp);
-            hosts.add(host);
-        }
-
-        for (Network network: vpcNetworks) {
-            String key = network.getBroadcastUri().getAuthority();
-            long gre_key;
-            if (key.contains(".")) {
-                String[] parts = key.split("\\.");
-                gre_key = Long.parseLong(parts[1]);
-            } else {
-                try {
-                    gre_key = Long.parseLong(BroadcastDomainType.getValue(key));
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            NicVO nic = _nicDao.findByIp4AddressAndNetworkId(network.getGateway(), network.getId());
-            OvsVpcPhysicalTopologyConfigCommand.Tier tier = new OvsVpcPhysicalTopologyConfigCommand.Tier(gre_key,
-                    network.getUuid(), network.getGateway(), nic.getMacAddress(), network.getCidr());
-            tiers.add(tier);
-        }
-
-        for (long vmId: vmIds) {
-            VirtualMachine vmInstance = _vmInstanceDao.findById(vmId);
-            List<OvsVpcPhysicalTopologyConfigCommand.Nic>  vmNics = new ArrayList<OvsVpcPhysicalTopologyConfigCommand.Nic>();
-            for (Nic vmNic :_nicDao.listByVmId(vmId)) {
-                Network network = _networkDao.findById(vmNic.getNetworkId());
-                if (network.getTrafficType() == TrafficType.Guest) {
-                    OvsVpcPhysicalTopologyConfigCommand.Nic nic =  new OvsVpcPhysicalTopologyConfigCommand.Nic(
-                            vmNic.getIp4Address(), vmNic.getMacAddress(), ((Long)vmNic.getNetworkId()).toString());
-                    vmNics.add(nic);
-                }
-            }
-            OvsVpcPhysicalTopologyConfigCommand.Vm vm = new OvsVpcPhysicalTopologyConfigCommand.Vm(
-                    vmInstance.getHostId(), vmNics.toArray(new OvsVpcPhysicalTopologyConfigCommand.Nic[vmNics.size()]));
-            vms.add(vm);
-        }
-        return new OvsVpcPhysicalTopologyConfigCommand(
-                hosts.toArray(new OvsVpcPhysicalTopologyConfigCommand.Host[hosts.size()]),
-                tiers.toArray(new OvsVpcPhysicalTopologyConfigCommand.Tier[tiers.size()]),
-                vms.toArray(new OvsVpcPhysicalTopologyConfigCommand.Vm[vms.size()]),
-                vpc.getCidr());
-    }
-
     @DB
     protected void checkAndCreateVpcTunnelNetworks(Host host, long vpcId) {
 
@@ -731,14 +652,156 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 s_logger.warn("Ovs Tunnel network created tunnel failed", e);
             }
         }
+    }
 
-        OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
-        for (Long id: vpcSpannedHostIds) {
-            if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
-                s_logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on with rest of" +
-                        "the host update.");
+    @Override
+    public boolean preStateTransitionEvent(VirtualMachine.State oldState,
+                                           VirtualMachine.Event event, VirtualMachine.State newState,
+                                           VirtualMachine vo, boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(VirtualMachine.State oldState, VirtualMachine.Event event,
+                                            VirtualMachine.State newState, VirtualMachine vm,
+                                            boolean status, Object opaque) {
+
+        if (!status) {
+            return false;
+        }
+
+        if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
+            }
+            handleVmStateChange((VMInstanceVO)vm);
+        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
+            }
+            handleVmStateChange((VMInstanceVO)vm);
+        } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
+            }
+            handleVmStateChange((VMInstanceVO)vm);
+        }
+
+        return true;
+    }
+
+    public void handleVmStateChange(VMInstanceVO vm) {
+
+        // get the VPC's impacted with the VM start
+        List<Long> vpcIds = _ovsNetworkToplogyGuru.getVpcIdsVmIsPartOf(vm.getId());
+        if (vpcIds == null || vpcIds.isEmpty()) {
+            return;
+        }
+
+        for (Long vpcId: vpcIds) {
+            VpcVO vpc = _vpcDao.findById(vpcId);
+            if (vpc == null || !vpc.usesDistributedRouter()) {
+                return;
+            }
+
+            // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
+            List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
+            String bridgeName=generateBridgeNameForVpc(vpcId);
+
+            OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
+            for (Long id: vpcSpannedHostIds) {
+                if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
+                    s_logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
+                            "with rest of the host update.");
+                }
             }
         }
+    }
+
+    public boolean sendVpcTopologyChangeUpdate(OvsVpcPhysicalTopologyConfigCommand updateCmd, long hostId, String bridgeName) {
+        try {
+            s_logger.debug("Sending VPC topology update to the host " + hostId);
+            updateCmd.setHostId(hostId);
+            updateCmd.setBridgeName(bridgeName);
+            Answer ans = _agentMgr.send(hostId, updateCmd);
+            if (ans.getResult()) {
+                s_logger.debug("Successfully updated the host " + hostId + " with latest VPC topology." );
+                return true;
+            }  else {
+                s_logger.debug("Failed to update the host " + hostId + " with latest VPC topology." );
+                return false;
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to updated the host " + hostId + " with latest VPC topology." );
+            return false;
+        }
+    }
+
+    OvsVpcPhysicalTopologyConfigCommand prepareVpcTopologyUpdate(long vpcId) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        assert (vpc != null): "invalid vpc id";
+
+        List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
+        List<Long> hostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
+        List<Long> vmIds = _ovsNetworkToplogyGuru.getAllActiveVmsInVpc(vpcId);
+
+        List<OvsVpcPhysicalTopologyConfigCommand.Host> hosts = new ArrayList<>();
+        List<OvsVpcPhysicalTopologyConfigCommand.Tier> tiers = new ArrayList<>();
+        List<OvsVpcPhysicalTopologyConfigCommand.Vm> vms = new ArrayList<>();
+
+        for (Long hostId : hostIds) {
+            HostVO hostDetails = _hostDao.findById(hostId);
+            String remoteIp = null;
+            for (Network network: vpcNetworks) {
+                try {
+                    remoteIp = getGreEndpointIP(hostDetails, network);
+                } catch (Exception e) {
+
+                }
+            }
+            OvsVpcPhysicalTopologyConfigCommand.Host host = new OvsVpcPhysicalTopologyConfigCommand.Host(hostId, remoteIp);
+            hosts.add(host);
+        }
+
+        for (Network network: vpcNetworks) {
+            String key = network.getBroadcastUri().getAuthority();
+            long gre_key;
+            if (key.contains(".")) {
+                String[] parts = key.split("\\.");
+                gre_key = Long.parseLong(parts[1]);
+            } else {
+                try {
+                    gre_key = Long.parseLong(BroadcastDomainType.getValue(key));
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+            NicVO nic = _nicDao.findByIp4AddressAndNetworkId(network.getGateway(), network.getId());
+            OvsVpcPhysicalTopologyConfigCommand.Tier tier = new OvsVpcPhysicalTopologyConfigCommand.Tier(gre_key,
+                    network.getUuid(), network.getGateway(), nic.getMacAddress(), network.getCidr());
+            tiers.add(tier);
+        }
+
+        for (long vmId: vmIds) {
+            VirtualMachine vmInstance = _vmInstanceDao.findById(vmId);
+            List<OvsVpcPhysicalTopologyConfigCommand.Nic>  vmNics = new ArrayList<OvsVpcPhysicalTopologyConfigCommand.Nic>();
+            for (Nic vmNic :_nicDao.listByVmId(vmId)) {
+                Network network = _networkDao.findById(vmNic.getNetworkId());
+                if (network.getTrafficType() == TrafficType.Guest) {
+                    OvsVpcPhysicalTopologyConfigCommand.Nic nic =  new OvsVpcPhysicalTopologyConfigCommand.Nic(
+                            vmNic.getIp4Address(), vmNic.getMacAddress(), network.getUuid());
+                    vmNics.add(nic);
+                }
+            }
+            OvsVpcPhysicalTopologyConfigCommand.Vm vm = new OvsVpcPhysicalTopologyConfigCommand.Vm(
+                    vmInstance.getHostId(), vmNics.toArray(new OvsVpcPhysicalTopologyConfigCommand.Nic[vmNics.size()]));
+            vms.add(vm);
+        }
+        return new OvsVpcPhysicalTopologyConfigCommand(
+                hosts.toArray(new OvsVpcPhysicalTopologyConfigCommand.Host[hosts.size()]),
+                tiers.toArray(new OvsVpcPhysicalTopologyConfigCommand.Tier[tiers.size()]),
+                vms.toArray(new OvsVpcPhysicalTopologyConfigCommand.Vm[vms.size()]),
+                vpc.getCidr());
     }
 
     // Subscriber to ACL replace events. On acl replace event, if the vpc is enabled for distributed routing
@@ -755,14 +818,14 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 for (Long id: vpcSpannedHostIds) {
                     if (!sendVpcRoutingPolicyChangeUpdate(cmd, id, bridgeName)) {
                         s_logger.debug("Failed to send VPC routing policy change update to host : " + id +
-                                ". Moving on with rest of the host updates.");
+                                ". But moving on with sending the host updates to the rest of the hosts.");
                     }
                 }
             }
         }
     }
 
-    OvsVpcRoutingPolicyConfigCommand prepareVpcRoutingPolicyUpdate(long vpcId) {
+    private OvsVpcRoutingPolicyConfigCommand prepareVpcRoutingPolicyUpdate(long vpcId) {
         VpcVO vpc = _vpcDao.findById(vpcId);
         assert (vpc != null): "invalid vpc id";
         List<OvsVpcRoutingPolicyConfigCommand.Acl> acls = new ArrayList<>();

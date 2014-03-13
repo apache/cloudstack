@@ -187,4 +187,22 @@ public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetwor
         }
         return  vmIds;
     }
+
+    @Override
+    public List<Long> getVpcIdsVmIsPartOf(long vmId) {
+        List<Long> vpcIds = new ArrayList<>();
+        List<NicVO> nics = _nicDao.listByVmId(vmId);
+        if (nics == null)
+            return null;
+
+        for (Nic nic: nics) {
+            Network network = _networkDao.findById(nic.getNetworkId());
+            if (network != null && network.getTrafficType() == Networks.TrafficType.Guest && network.getVpcId() != null) {
+                if (!vpcIds.contains(network.getVpcId())) {
+                    vpcIds.add(network.getVpcId());
+                }
+            }
+        }
+        return  vpcIds;
+    }
 }
