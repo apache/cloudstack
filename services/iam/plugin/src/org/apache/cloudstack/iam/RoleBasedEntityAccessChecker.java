@@ -63,6 +63,9 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action)
             throws PermissionDeniedException {
 
+        if (caller == null) {
+            throw new InvalidParameterValueException("Caller cannot be passed as NULL to IAM!");
+        }
         if (entity == null && action != null) {
             // check if caller can do this action
             List<IAMPolicy> policies = _iamSrv.listIAMPolicies(caller.getAccountId());

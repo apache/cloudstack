@@ -88,9 +88,9 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(long accountId);
+    boolean isRootAdmin(Long accountId);
 
-    boolean isDomainAdmin(long accountId);
+    boolean isDomainAdmin(Long accountId);
 
     boolean isNormalUser(long accountId);
 

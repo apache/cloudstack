@@ -366,37 +366,40 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean isRootAdmin(long accountId) {
-        AccountVO acct = _accountDao.findById(accountId);
-        for (SecurityChecker checker : _securityCheckers) {
-            try {
-                if (checker.checkAccess(acct, null, null, "SystemCapability")) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+    public boolean isRootAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            for (SecurityChecker checker : _securityCheckers) {
+                try {
+                    if (checker.checkAccess(acct, null, null, "SystemCapability")) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                        }
+                        return true;
                     }
-                    return true;
+                } catch (PermissionDeniedException ex) {
+                    return false;
                 }
-            } catch (PermissionDeniedException ex) {
-                return false;
             }
         }
-
         return false;
     }
 
     @Override
-    public boolean isDomainAdmin(long accountId) {
-        AccountVO acct = _accountDao.findById(accountId);
-        for (SecurityChecker checker : _securityCheckers) {
-            try {
-                if (checker.checkAccess(acct, null, null, "DomainCapability")) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+    public boolean isDomainAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            for (SecurityChecker checker : _securityCheckers) {
+                try {
+                    if (checker.checkAccess(acct, null, null, "DomainCapability")) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                        }
+                        return true;
                     }
-                    return true;
+                } catch (PermissionDeniedException ex) {
+                    return false;
                 }
-            } catch (PermissionDeniedException ex) {
-                return false;
             }
         }
         return false;

@@ -520,7 +520,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         // For end users display only enabled events
-        if(!_accountMgr.isRootAdmin(caller.getType())){
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             sc.setParameters("displayEvent", true);
         }
 

@@ -162,7 +162,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isRootAdmin(long accountId) {
+    public boolean isRootAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -298,7 +298,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isDomainAdmin(long accountId) {
+    public boolean isDomainAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -355,5 +355,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
         return null;
     }
+
 
 }
