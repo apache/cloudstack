@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -30,7 +33,6 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,7 +42,7 @@ import com.cloud.network.rules.LoadBalancer;
 
 @APICommand(name = "createAutoScaleVmGroup",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
-            responseObject = AutoScaleVmGroupResponse.class,
+            responseObject = AutoScaleVmGroupResponse.class, entityType = { IAMEntityType.AutoScaleVmGroup },
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
@@ -191,8 +193,8 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         AutoScaleVmGroup result = _autoScaleService.createAutoScaleVmGroup(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }

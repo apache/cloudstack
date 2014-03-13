@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.address;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -27,6 +29,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -36,7 +39,6 @@ import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -55,7 +57,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
-@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class,
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
@@ -260,7 +262,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
+        return  "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
     }
 
     /////////////////////////////////////////////////////
@@ -316,7 +318,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         } else {

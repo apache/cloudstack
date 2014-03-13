@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -29,12 +31,12 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0",
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {IAMEntityType.Volume},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
     private static final String s_name = "migratevolumeresponse";
 
-    /////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
@@ -87,12 +89,12 @@ public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
-        if (volume != null) {
-            return volume.getAccountId();
-        }
+          Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+          if (volume != null) {
+              return volume.getAccountId();
+          }
 
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+          return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
@@ -111,9 +113,9 @@ public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
 
         result = _volumeService.migrateVolume(this);
         if (result != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
         }

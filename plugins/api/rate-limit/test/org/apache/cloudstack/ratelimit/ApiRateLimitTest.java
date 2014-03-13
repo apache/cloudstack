@@ -53,7 +53,7 @@ public class ApiRateLimitTest {
     private static Account s_testAccount;
 
     @BeforeClass
-    public static void setUp() throws ConfigurationException {
+public static void setUp() throws ConfigurationException {
 
         when(s_configDao.getValue(Config.ApiLimitInterval.key())).thenReturn(null);
         when(s_configDao.getValue(Config.ApiLimitMax.key())).thenReturn(null);
@@ -72,7 +72,7 @@ public class ApiRateLimitTest {
         s_testAccount = acct;
 
         when(s_accountService.getAccount(5L)).thenReturn(s_testAccount);
-        when(s_accountService.isRootAdmin(Account.ACCOUNT_TYPE_NORMAL)).thenReturn(false);
+        when(s_accountService.isRootAdmin(5L)).thenReturn(false);
     }
 
     @Before
@@ -183,7 +183,7 @@ public class ApiRateLimitTest {
         s_limitService.setMaxAllowed(allowedRequests);
         s_limitService.setTimeToLive(1);
 
-        User key = this.createFakeUser();
+        User key = createFakeUser();
 
         assertTrue("The first request should be allowed", isUnderLimit(key));
 
@@ -199,7 +199,7 @@ public class ApiRateLimitTest {
         s_limitService.setMaxAllowed(allowedRequests);
         s_limitService.setTimeToLive(1);
 
-        User key = this.createFakeUser();
+        User key = createFakeUser();
 
         assertTrue("The first request should be allowed", isUnderLimit(key));
 
@@ -216,7 +216,7 @@ public class ApiRateLimitTest {
         s_limitService.setMaxAllowed(allowedRequests);
         s_limitService.setTimeToLive(1);
 
-        User key = this.createFakeUser();
+        User key = createFakeUser();
 
         for (int i = 0; i < 5; i++) {
             assertTrue("Issued 5 requests", isUnderLimit(key));

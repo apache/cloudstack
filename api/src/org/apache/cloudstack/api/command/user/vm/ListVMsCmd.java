@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -28,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
@@ -40,11 +44,11 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class,
+
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
@@ -131,10 +135,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return groupId;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
     public Long getId() {
         return id;
     }
@@ -145,10 +145,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public String getName() {
         return name;
-    }
-
-    public Long getPodId() {
-        return podId;
     }
 
     public String getState() {
@@ -163,13 +159,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
-
-    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
-        this.forVirtualNetwork = forVirtualNetwork;
-    }
 
     public Long getNetworkId() {
         return networkId;
@@ -179,9 +168,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return hypervisor;
     }
 
-    public Long getStorageId() {
-        return storageId;
-    }
 
     public Long getTemplateId() {
         return templateId;
@@ -241,6 +227,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public void execute() {
         ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

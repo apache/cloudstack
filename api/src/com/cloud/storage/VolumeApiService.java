@@ -66,11 +66,11 @@ public interface VolumeApiService {
     /**
      * Uploads the volume to secondary storage
      *
-     * @param UploadVolumeCmd cmd
+     * @param UploadVolumeCmdByAdmin cmd
      *
      * @return Volume object
      */
-    Volume uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException;
+    Volume uploadVolume(UploadVolumeCmd cmd)    throws ResourceAllocationException;
 
     boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 

@@ -16,15 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -115,8 +117,8 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void checkUuid() {
-        if (this.getCustomId() != null) {
-            _uuidMgr.checkUuid(this.getCustomId(), IpAddress.class);
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), IpAddress.class);
         }
     }
 
@@ -124,8 +126,8 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-        IpAddress result = _networkService.updateIP(getId(), this.getCustomId(), getDisplayIp());
-        IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
+        IpAddress result = _networkService.updateIP(getId(), getCustomId(), getDisplayIp());
+        IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
         ipResponse.setResponseName(getCommandName());
         setResponseObject(ipResponse);
     }

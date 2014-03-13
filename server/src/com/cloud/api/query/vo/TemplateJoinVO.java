@@ -539,11 +539,12 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
         return tempZonePair;
     }
 
-    public State getTemplateState() { return templateState; }
+    public State getTemplateState() {
+        return templateState;
+    }
 
     @Override
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachineTemplate;
     }
-
 }

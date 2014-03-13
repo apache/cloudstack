@@ -19,10 +19,12 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -34,6 +36,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,6 +47,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);
 
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
+    @Inject
+    public AccountManager _accountMgr;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -51,11 +56,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dofIdSearch.done();
 
-        this._count = "select count(distinct id) from data_center_view WHERE ";
+        _count = "select count(distinct id) from data_center_view WHERE ";
     }
 
     @Override
-    public ZoneResponse newDataCenterResponse(DataCenterJoinVO dataCenter, Boolean showCapacities) {
+    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
 
         Account account = CallContext.current().getCallingAccount();
         ZoneResponse zoneResponse = new ZoneResponse();
@@ -68,7 +73,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setDescription(dataCenter.getDescription());
         }
 
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+        if (view == ResponseView.Full) {
             zoneResponse.setDns1(dataCenter.getDns1());
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setIp6Dns1(dataCenter.getIp6Dns1());

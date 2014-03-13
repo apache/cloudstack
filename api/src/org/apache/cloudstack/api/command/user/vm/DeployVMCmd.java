@@ -24,6 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -34,6 +37,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -46,7 +50,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -66,7 +69,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class,
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
@@ -102,7 +105,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     private Long domainId;
 
     //Network information
-    @ACL(accessType = AccessType.UseNetwork)
+    @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
@@ -243,8 +246,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
         }
 
-        //transform group names to ids here
-        if (securityGroupNameList != null) {
+       //transform group names to ids here
+       if (securityGroupNameList != null) {
             List<Long> securityGroupIds = new ArrayList<Long>();
             for (String groupName : securityGroupNameList) {
                 Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
@@ -281,15 +284,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public List<Long> getNetworkIds() {
-        if (ipToNetworkList != null) {
-            if (networkIds != null || ipAddress != null || getIp6Address() != null) {
-                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
-            } else {
-                List<Long> networks = new ArrayList<Long>();
-                networks.addAll(getIpToNetworkMap().keySet());
-                return networks;
-            }
-        }
+       if (ipToNetworkList != null) {
+           if (networkIds != null || ipAddress != null || getIp6Address() != null) {
+               throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
+           } else {
+               List<Long> networks = new ArrayList<Long>();
+               networks.addAll(getIpToNetworkMap().keySet());
+               return networks;
+           }
+       }
         return networkIds;
     }
 
@@ -461,7 +464,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -569,7 +572,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                             getDetails(), getCustomId());
                 }
             } else {
-                if (zone.isSecurityGroupEnabled()) {
+                if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
                             displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
                             getAffinityGroupIdList(), getDetails(), getCustomId());
@@ -597,7 +600,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException ex) {
+        }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceAllocationException ex) {

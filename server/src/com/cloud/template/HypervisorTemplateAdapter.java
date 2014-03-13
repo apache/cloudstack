@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -46,6 +47,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -69,8 +72,10 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = TemplateAdapter.class)
@@ -97,6 +102,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     EndPointSelector _epSelector;
     @Inject
     DataCenterDao _dcDao;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public String getName() {
@@ -284,6 +291,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
+            // need to grant permission for public templates
+            if (tmplt.isPublicTemplate()) {
+                _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
+            }
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
@@ -403,13 +414,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 template.setState(VirtualMachineTemplate.State.Inactive);
                 _tmpltDao.update(template.getId(), template);
 
-                // Decrement the number of templates and total secondary storage
-                // space used by the account
-                Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
-                _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
-                _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
+                    // Decrement the number of templates and total secondary storage
+                    // space used by the account
+                    Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
+                    _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
+                    _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
 
             }
+
+            // remove its related ACL permission
+            Pair<IAMEntityType, Long> tmplt = new Pair<IAMEntityType, Long>(IAMEntityType.VirtualMachineTemplate, template.getId());
+            _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
+
         }
         return success;
 

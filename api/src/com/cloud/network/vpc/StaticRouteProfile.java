@@ -74,7 +74,7 @@ public class StaticRouteProfile implements StaticRoute {
 
     @Override
     public Long getVpcId() {
-        return vpcId;
+       return vpcId;
     }
 
     @Override

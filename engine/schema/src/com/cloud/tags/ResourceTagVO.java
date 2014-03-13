@@ -31,6 +31,7 @@ import org.apache.cloudstack.acl.IAMEntityType;
 
 import com.cloud.server.ResourceTag;
 
+
 @Entity
 @Table(name = "resource_tags")
 public class ResourceTagVO implements ResourceTag {

@@ -38,6 +38,7 @@
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
+        <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />        
     </bean>
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
@@ -224,6 +225,6 @@
 
     <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
-
+        
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
 </beans>

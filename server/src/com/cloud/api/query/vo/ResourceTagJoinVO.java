@@ -185,5 +185,4 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     public IAMEntityType getEntityType() {
         return IAMEntityType.ResourceTag;
     }
-
 }

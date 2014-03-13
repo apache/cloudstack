@@ -158,9 +158,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
+                }
+            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
         }
-        throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
-    }
 
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
         Class<?> clazz = s_typeMap.get(resourceType);
@@ -211,7 +211,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (String key : tags.keySet()) {
                     for (String resourceId : resourceIds) {
-                        if (!resourceType.resourceTagsSupport()) {
+                        if (!resourceType.resourceTagsSupport())  {
                             throw new InvalidParameterValueException("The resource type " + resourceType + " doesn't support resource tags");
                         }
 
@@ -223,7 +223,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long accountId = accountDomainPair.first();
                         if (accountId != null) {
                             _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
-                        } else if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_NORMAL) {
+                        } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
                             //check permissions;
                             _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                         } else {
@@ -254,10 +254,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         Object entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null && entity instanceof Identity) {
             return ((Identity)entity).getUuid();
-        }
+       }
 
-        return resourceId;
-    }
+           return resourceId;
+       }
 
     @Override
     @DB

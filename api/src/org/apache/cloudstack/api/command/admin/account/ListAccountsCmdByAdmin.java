@@ -14,21 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.api.command.admin.account;
 
-//metadata - consists of default dynamic roles in CS + any custom roles added by user
-public interface Role {
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
 
-    public static final short ROOT_ADMIN = 0;
-    public static final short DOMAIN_ADMIN = 1;
-    public static final short DOMAIN_USER = 2;
-    public static final short OWNER = 3;
-    public static final short PARENT_DOMAIN_ADMIN = 4;
-    public static final short PARENT_DOMAIN_USER = 5;
-    public static final short CHILD_DOMAIN_ADMIN = 6;
-    public static final short CHILD_DOMAIN_USER = 7;
-
-    public long getId();
-
-    public short getRoleType();
+@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Full)
+public class ListAccountsCmdByAdmin extends ListAccountsCmd {
 }

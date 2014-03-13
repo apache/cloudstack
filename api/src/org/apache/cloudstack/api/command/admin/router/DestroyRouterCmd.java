@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class,
+@APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class, entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyRouterCmd.class.getName());
@@ -103,7 +104,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy router");
         }

@@ -44,7 +44,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class,
+@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class, entityType = { IAMEntityType.FirewallRule },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateFirewallRuleCmd.class.getName());
@@ -217,7 +217,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId +
-                " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
     }
@@ -310,7 +310,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         if (icmpType != null) {
             return icmpType;
         } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
-            return -1;
+                return -1;
 
         }
         return null;

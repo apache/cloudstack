@@ -188,6 +188,7 @@ public class VpcVO implements Vpc {
         this.uuid = uuid;
     }
 
+
     public void setDisplay(boolean display) {
         this.display = display;
     }

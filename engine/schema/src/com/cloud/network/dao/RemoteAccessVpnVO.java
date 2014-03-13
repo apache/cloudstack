@@ -74,7 +74,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         uuid = UUID.randomUUID().toString();
     }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange, String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange,  String presharedKey) {
         this.accountId = accountId;
         serverAddressId = publicIpId;
         this.ipRange = ipRange;

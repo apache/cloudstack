@@ -40,6 +40,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -204,6 +207,7 @@ import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.GetVMUserDataCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -443,7 +447,7 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateRemoteAccessVpnCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -460,8 +464,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -568,6 +570,7 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
@@ -722,6 +725,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConfigDepot _configDepot;
     @Inject
     private UserVmManager _userVmMgr;
+    @Inject
+    private AccountService _accountService;
     @Inject
     private ServiceOfferingDao _offeringDao;
     @Inject
@@ -892,7 +897,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -919,7 +924,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -1040,7 +1045,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -1172,7 +1177,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (HostAllocator allocator : hostAllocators) {
-            if (canMigrateWithStorage) {
+            if  (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -1244,7 +1249,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId) {
         // Access check - only root administrator can migrate volumes.
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the volume");
             }
@@ -1684,115 +1689,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 ConfigurationVO configVo = _configDao.findByName(param.getName());
                 configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
                 configVOList.add(configVo);
-            }
+    }
 
             return new Pair<List<? extends Configuration>, Integer>(configVOList, configVOList.size());
         }
 
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
-
-    /* TODO: this method should go away. Keep here just in case that our latest refactoring using template_store_ref missed anything
-     * in handling Swift or S3.
-    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
-            Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
-
-        VMTemplateVO template = null;
-        if (templateId != null) {
-            template = _templateDao.findById(templateId);
-            if (template == null) {
-                throw new InvalidParameterValueException("Please specify a valid template ID.");
-            }// If ISO requested then it should be ISO.
-            if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
-                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }// If ISO not requested then it shouldn't be an ISO.
-            if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
-                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
-                        + " of the specified template id");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }
-        }
-
-        DomainVO domain = null;
-        if (!permittedAccounts.isEmpty()) {
-            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
-        } else {
-            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
-        }
-
-        List<HypervisorType> hypers = null;
-        if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-        }
-        Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
-        if (_swiftMgr.isSwiftEnabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else if (_s3Mgr.isS3Enabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso,
-                        hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
-                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        }
-
-        return templateZonePairSet;
-    }
-     */
 
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
@@ -1820,19 +1723,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
         Boolean isRecursive = null;
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated) {
             Account caller = CallContext.current().getCallingAccount();
 
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                    cmd.isRecursive(), null);
-            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(),
-                    false);
-            domainId = domainIdRecursiveListProject.first();
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                    cmd.getDomainId(), cmd.isRecursive(), null);
+            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                    domainIdRecursiveListProject, cmd.listAll(), false, "listPublicIpAddresses");
+            //domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-            _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         }
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1887,7 +1793,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         if (isAllocated) {
-            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2326,21 +2232,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (domainName != null) {
-                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-                    updateDomainChildren(domain, updatedDomainPath);
-                    domain.setName(domainName);
-                    domain.setPath(updatedDomainPath);
-                }
+        if (domainName != null) {
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+            updateDomainChildren(domain, updatedDomainPath);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
+        }
 
-                if (networkDomain != null) {
-                    if (networkDomain.isEmpty()) {
-                        domain.setNetworkDomain(null);
-                    } else {
-                        domain.setNetworkDomain(networkDomain);
-                    }
-                }
-                _domainDao.update(domainId, domain);
+        if (networkDomain != null) {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
+                domain.setNetworkDomain(networkDomain);
+            }
+        }
+        _domainDao.update(domainId, domain);
             }
         });
 
@@ -2585,10 +2491,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         CapacityVO capacity = _capacityDao.findByHostIdType(hostId, capacityType);
         return capacity == null ? 0 : capacity.getReservedCapacity() + capacity.getUsedCapacity();
 
-    }
-
-    public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     @Override
@@ -2868,6 +2770,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ExpungeVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);
         cmdList.add(ListVMsCmd.class);
+        cmdList.add(ListVMsCmdByAdmin.class);
         cmdList.add(ScaleVMCmd.class);
         cmdList.add(RebootVMCmd.class);
         cmdList.add(RemoveNicFromVMCmd.class);
@@ -2920,7 +2823,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveVpnUserCmd.class);
         cmdList.add(ResetVpnConnectionCmd.class);
         cmdList.add(UpdateVpnCustomerGatewayCmd.class);
-        cmdList.add(ListZonesByCmd.class);
+        cmdList.add(ListZonesCmd.class);
         cmdList.add(ListVMSnapshotCmd.class);
         cmdList.add(CreateVMSnapshotCmd.class);
         cmdList.add(RevertToVMSnapshotCmd.class);
@@ -3568,20 +3471,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String fingerPrint = cmd.getFingerprint();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listSSHKeyPairs");
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchCriteria<SSHKeyPairVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
@@ -3684,23 +3589,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    for (HostVO h : hosts) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Changing password for host name = " + h.getName());
-                        }
-                        // update password for this host
-                        DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                        if (nv.getValue().equals(cmd.getUsername())) {
-                            DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                            _detailsDao.persist(nvp);
-                        } else {
-                            // if one host in the cluster has diff username then
-                            // rollback to maintain consistency
+                for (HostVO h : hosts) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Changing password for host name = " + h.getName());
+                    }
+                    // update password for this host
+                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    if (nv.getValue().equals(cmd.getUsername())) {
+                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else {
+                        // if one host in the cluster has diff username then
+                        // rollback to maintain consistency
                             throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                        }
                     }
                 }
+            }
             });
         }
 

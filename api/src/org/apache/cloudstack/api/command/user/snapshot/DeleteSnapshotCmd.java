@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.user.snapshot;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSnapshot", description = "Deletes a snapshot of a disk volume.", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteSnapshot", description = "Deletes a snapshot of a disk volume.", responseObject = SuccessResponse.class, entityType = {IAMEntityType.Snapshot},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
@@ -43,7 +46,9 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotResponse.class, required = true, description = "The ID of the snapshot")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotResponse.class,
+            required=true, description="The ID of the snapshot")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -80,7 +85,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting snapshot: " + getId();
+        return  "deleting snapshot: " + getId();
     }
 
     @Override
@@ -99,7 +104,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
         boolean result = _snapshotService.deleteSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete snapshot");
         }

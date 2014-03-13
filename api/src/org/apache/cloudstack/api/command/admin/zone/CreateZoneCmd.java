@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -169,10 +170,10 @@ public class CreateZoneCmd extends BaseCmd {
     public void execute() {
         CallContext.current().setEventDetails("Zone Name: " + getZoneName());
         DataCenter result = _configService.createZone(this);
-        if (result != null) {
-            ZoneResponse response = _responseGenerator.createZoneResponse(result, false);
+        if (result != null){
+            ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a zone");
         }

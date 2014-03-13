@@ -23,11 +23,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -45,7 +47,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachineWithVolume",
             description = "Attempts Migration of a VM with its volumes to a different host",
-            responseObject = UserVmResponse.class,
+        responseObject = UserVmResponse.class, entityType = {IAMEntityType.VirtualMachine},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
@@ -74,7 +76,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.MIGRATE_TO,
                type = CommandType.MAP,
                required = false,
-               description = "Map of pool to which each volume should be migrated (volume/pool pair)")
+            description = "Map of pool to which each volume should be migrated (volume/pool pair)")
     private Map migrateVolumeTo;
 
     /////////////////////////////////////////////////////
@@ -148,9 +150,9 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         try {
             VirtualMachine migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }

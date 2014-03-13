@@ -59,7 +59,7 @@ public class ApiConstants {
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_USER_ID = "ctxuserid";
     public static final String CTXSTARTEVENTID = "ctxstarteventid";
-    public static final String CTX_START_EVENT_ID = "ctxstarteventid";
+    public static final String CTX_START_EVENT_ID = "ctxStartEventId";
     public static final String CUSTOMIZED = "customized";
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String CUSTOM_ID = "customid";
@@ -588,6 +588,7 @@ public class ApiConstants {
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
     public static final String REMAININGCAPACITY = "remainingcapacity";
+
 
     public enum HostDetails {
         all, capacity, events, stats, min;

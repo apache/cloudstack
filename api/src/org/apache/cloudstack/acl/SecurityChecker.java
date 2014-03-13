@@ -31,7 +31,9 @@ import com.cloud.utils.component.Adapter;
 public interface SecurityChecker extends Adapter {
 
     public enum AccessType {
-        ListEntry, ModifyEntry, ModifyProject, UseNetwork, OperateEntry, UseEntry
+        ModifyProject,
+        OperateEntry,
+        UseEntry
     }
 
     /**
@@ -69,11 +71,14 @@ public interface SecurityChecker extends Adapter {
      *            object that the account is trying to access.
      * @param accessType
      *            TODO
-     * @return true if access allowed. false if this adapter cannot provide permission.
+     * @return true if access allowed. false if this adapter cannot provide
+     *         permission.
      * @throws PermissionDeniedException
-     *             if this adapter is suppose to authenticate ownership and the check failed.
+     *             if this adapter is suppose to authenticate ownership and the
+     *             check failed.
      */
-    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException;
+    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
+            throws PermissionDeniedException;
 
     /**
      * Checks if the account can access the object.

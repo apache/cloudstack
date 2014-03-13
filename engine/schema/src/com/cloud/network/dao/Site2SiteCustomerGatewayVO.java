@@ -32,6 +32,7 @@ import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
+
 @Entity
 @Table(name = ("s2s_customer_gateway"))
 public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {

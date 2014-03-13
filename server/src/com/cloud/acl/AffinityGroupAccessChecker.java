@@ -49,8 +49,10 @@ public class AffinityGroupAccessChecker extends DomainChecker {
             AffinityGroup group = (AffinityGroup)entity;
 
             if (_affinityGroupService.isAdminControlledGroup(group)) {
-                if (accessType != null && accessType == AccessType.ModifyEntry && !_accountMgr.isRootAdmin(caller.getType())) {
-                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                if (accessType != null && accessType == AccessType.OperateEntry
+                        && !_accountMgr.isRootAdmin(caller.getId())) {
+                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource "
+                            + entity);
                 }
             }
 

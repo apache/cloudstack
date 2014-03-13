@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -181,9 +182,9 @@ public class UpdateZoneCmd extends BaseCmd {
         CallContext.current().setEventDetails("Zone Id: " + getId());
         DataCenter result = _configService.editZone(this);
         if (result != null) {
-            ZoneResponse response = _responseGenerator.createZoneResponse(result, false);
+            ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }

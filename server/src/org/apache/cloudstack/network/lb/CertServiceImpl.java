@@ -53,17 +53,18 @@ import javax.crypto.NoSuchPaddingException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -146,7 +147,7 @@ public class CertServiceImpl implements CertService {
         if (certVO == null) {
             throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, certVO);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, certVO);
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
@@ -190,7 +191,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVO);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVO);
 
             certLbMap = _lbCertDao.listByCertId(certId);
 
@@ -205,7 +206,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, lb);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, lb);
 
             // get the cert id
             LoadBalancerCertMapVO lbCertMapRule;
@@ -228,7 +229,7 @@ public class CertServiceImpl implements CertService {
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVOList.get(0));
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVOList.get(0));
 
         for (SslCertVO cert : certVOList) {
             certLbMap = _lbCertDao.listByCertId(cert.getId());
@@ -486,7 +487,7 @@ public class CertServiceImpl implements CertService {
         char[] password;
 
         KeyPassword(char[] word) {
-            this.password = word;
+            password = word;
         }
 
         @Override

@@ -381,7 +381,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
@@ -605,7 +605,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
@@ -808,7 +808,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
             throw new CloudRuntimeException("Host " + host.getUuid() +
-                " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
+                                            " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
         }
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
@@ -821,7 +821,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (answer == null) {
             throw new CloudRuntimeException("No resource adapter respond to DELETE_HOST event for " + host.getName() + " id = " + hostId + ", hypervisorType is " +
-                host.getHypervisorType() + ", host type is " + host.getType());
+                                            host.getHypervisorType() + ", host type is " + host.getType());
         }
 
         if (answer.getIsException()) {
@@ -836,73 +836,73 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
 
-                _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
-                _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
+        _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
 
-                // delete host details
-                _hostDetailsDao.deleteDetails(hostId);
+        // delete host details
+        _hostDetailsDao.deleteDetails(hostId);
 
                 // if host is GPU enabled, delete GPU entries
                 _hostGpuGroupsDao.deleteGpuEntries(hostId);
 
-                host.setGuid(null);
-                Long clusterId = host.getClusterId();
-                host.setClusterId(null);
-                _hostDao.update(host.getId(), host);
+        host.setGuid(null);
+        Long clusterId = host.getClusterId();
+        host.setClusterId(null);
+        _hostDao.update(host.getId(), host);
 
-                _hostDao.remove(hostId);
-                if (clusterId != null) {
-                    List<HostVO> hosts = listAllHostsInCluster(clusterId);
-                    if (hosts.size() == 0) {
-                        ClusterVO cluster = _clusterDao.findById(clusterId);
-                        cluster.setGuid(null);
-                        _clusterDao.update(clusterId, cluster);
-                    }
-                }
+        _hostDao.remove(hostId);
+        if (clusterId != null) {
+            List<HostVO> hosts = listAllHostsInCluster(clusterId);
+            if (hosts.size() == 0) {
+                ClusterVO cluster = _clusterDao.findById(clusterId);
+                cluster.setGuid(null);
+                _clusterDao.update(clusterId, cluster);
+            }
+        }
 
-                try {
-                    resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
-                } catch (NoTransitionException e) {
-                    s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
-                }
+        try {
+            resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+        }
 
-                // Delete the associated entries in host ref table
-                _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
+        // Delete the associated entries in host ref table
+        _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
-                // Make sure any VMs that were marked as being on this host are cleaned up
-                List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-                for (VMInstanceVO vm : vms) {
-                    // this is how VirtualMachineManagerImpl does it when it syncs VM states
-                    vm.setState(State.Stopped);
-                    vm.setHostId(null);
-                    _vmDao.persist(vm);
-                }
+        // Make sure any VMs that were marked as being on this host are cleaned up
+        List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+        for (VMInstanceVO vm : vms) {
+            // this is how VirtualMachineManagerImpl does it when it syncs VM states
+            vm.setState(State.Stopped);
+            vm.setHostId(null);
+            _vmDao.persist(vm);
+        }
 
-                // For pool ids you got, delete local storage host entries in pool table
-                // where
-                for (StoragePoolHostVO pool : pools) {
-                    Long poolId = pool.getPoolId();
-                    StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
-                    if (storagePool.isLocal() && isForceDeleteStorage) {
-                        storagePool.setUuid(null);
-                        storagePool.setClusterId(null);
-                        _storagePoolDao.update(poolId, storagePool);
-                        _storagePoolDao.remove(poolId);
-                        s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
-                    }
-                }
+        // For pool ids you got, delete local storage host entries in pool table
+        // where
+        for (StoragePoolHostVO pool : pools) {
+            Long poolId = pool.getPoolId();
+            StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            if (storagePool.isLocal() && isForceDeleteStorage) {
+                storagePool.setUuid(null);
+                storagePool.setClusterId(null);
+                _storagePoolDao.update(poolId, storagePool);
+                _storagePoolDao.remove(poolId);
+                s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
+            }
+        }
 
-                // delete the op_host_capacity entry
-                Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
-                SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
-                hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
-                hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
-                _capacityDao.remove(hostCapacitySC);
-                // remove from dedicated resources
-                DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
-                if (dr != null) {
-                    _dedicatedDao.remove(dr.getId());
-                }
+        // delete the op_host_capacity entry
+        Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+        SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
+        hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+        hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
+        _capacityDao.remove(hostCapacitySC);
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
             }
         });
 
@@ -930,48 +930,48 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
-                    if (cluster == null) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
-                        }
-                        throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
-                    }
+            ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
+            if (cluster == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
+                }
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
+            }
 
-                    Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
+            Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
 
-                    List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
-                    if (hosts.size() > 0) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
-                        }
-                        throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
-                    }
+            List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
+            if (hosts.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
+                }
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
+            }
 
-                    // don't allow to remove the cluster if it has non-removed storage
-                    // pools
-                    List<StoragePoolVO> storagePools = _storagePoolDao.listPoolsByCluster(cmd.getId());
-                    if (storagePools.size() > 0) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Cluster: " + cmd.getId() + " still has storage pools, can't remove");
-                        }
-                        throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has storage pools");
-                    }
+            // don't allow to remove the cluster if it has non-removed storage
+            // pools
+            List<StoragePoolVO> storagePools = _storagePoolDao.listPoolsByCluster(cmd.getId());
+            if (storagePools.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has storage pools, can't remove");
+                }
+                throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has storage pools");
+            }
 
-                    if (_clusterDao.remove(cmd.getId())) {
-                        _capacityDao.removeBy(null, null, null, cluster.getId(), null);
-                        // If this cluster is of type vmware, and if the nexus vswitch
-                        // global parameter setting is turned
-                        // on, remove the row in cluster_vsm_map for this cluster id.
-                        if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
-                            _clusterVSMMapDao.removeByClusterId(cmd.getId());
-                        }
-                        // remove from dedicated resources
-                        DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
-                        if (dr != null) {
-                            _dedicatedDao.remove(dr.getId());
-                        }
-                    }
+            if (_clusterDao.remove(cmd.getId())) {
+                _capacityDao.removeBy(null, null, null, cluster.getId(), null);
+                // If this cluster is of type vmware, and if the nexus vswitch
+                // global parameter setting is turned
+                // on, remove the row in cluster_vsm_map for this cluster id.
+                if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
+                    _clusterVSMMapDao.removeByClusterId(cmd.getId());
+                }
+                // remove from dedicated resources
+                DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+                if (dr != null) {
+                    _dedicatedDao.remove(dr.getId());
+                }
+            }
 
                 }
             });
@@ -1053,7 +1053,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (doUpdate) {
-            _clusterDao.update(cluster.getId(), cluster);
+                _clusterDao.update(cluster.getId(), cluster);
         }
 
         if (newManagedState != null && !newManagedState.equals(oldManagedState)) {
@@ -1288,8 +1288,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (guestOSCategoryId != null) {
             // Verify that the guest OS Category exists
             if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-            }
+                    throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+                }
 
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
             DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
@@ -1473,7 +1473,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
                     result =
                         adapter.createHostVOForDirectConnectAgent((HostVO)args[0], (StartupCommand[])args[1], (ServerResource)args[2], (Map<String, String>)args[3],
-                            (List<String>)args[4]);
+                        (List<String>)args[4]);
                     if (result != null && singleTaker) {
                         break;
                     }
@@ -1513,7 +1513,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.warn("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " +
                 dc.getName());
             throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() +
-                " and zone: " + dc.getName());
+                                               " and zone: " + dc.getName());
         }
 
         // If the server's private netmask is less inclusive than the pod's CIDR
@@ -1523,7 +1523,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
         if (serverNetmaskNumeric > cidrNetmaskNumeric) {
             throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() +
-                " and zone: " + dc.getName());
+                                               " and zone: " + dc.getName());
         }
 
     }
@@ -1934,7 +1934,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
                     if (vo.getInstanceId() != null) {
                         throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() +
-                            " and zone: " + dc.getName());
+                                                           " and zone: " + dc.getName());
                     }
                 }
             }
@@ -2052,7 +2052,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
                 } else {
                     throw new UnableDeleteHostException("Unable to delete the host as there are vms in " + vms.get(0).getState() +
-                        " state using this host and isForced=false specified");
+                                                        " state using this host and isForced=false specified");
                 }
             }
         }
@@ -2289,7 +2289,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
             } catch (NoTransitionException e) {
                 s_logger.debug("No next resource state for host " + host.getId() + " while current state is " + host.getResourceState() + " with event " +
-                    ResourceState.Event.UnableToMigrate, e);
+                               ResourceState.Event.UnableToMigrate, e);
                 return false;
             }
         }
@@ -2568,26 +2568,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return Transaction.execute(new TransactionCallback<Boolean>() {
                 @Override
                 public Boolean doInTransaction(TransactionStatus status) {
-                    PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
-                    if (reservationEntry != null) {
-                        long id = reservationEntry.getId();
-                        PlannerHostReservationVO hostReservation = _plannerHostReserveDao.lockRow(id, true);
-                        if (hostReservation == null) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
-                            }
-                            return false;
-                        }
-                        hostReservation.setResourceUsage(null);
-                        _plannerHostReserveDao.persist(hostReservation);
-                        return true;
-                    }
-
+            PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
+            if (reservationEntry != null) {
+                long id = reservationEntry.getId();
+                PlannerHostReservationVO hostReservation = _plannerHostReserveDao.lockRow(id, true);
+                if (hostReservation == null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
                     }
-
                     return false;
+                }
+                hostReservation.setResourceUsage(null);
+                _plannerHostReserveDao.persist(hostReservation);
+                return true;
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
+            }
+
+            return false;
                 }
             });
         } catch (CloudRuntimeException e) {

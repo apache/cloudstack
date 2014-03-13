@@ -190,6 +190,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+
         _messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
@@ -336,6 +337,24 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         });
 
         return super.configure(name, params);
+    }
+
+    @Override
+    public boolean start() {
+        s_logger.info("Populating IAM group and account association for default accounts...");
+
+        // populate group <-> account association if not present for CS admin
+        // and system accounts
+        populateIAMGroupAdminAccountMap();
+
+        return true;
+    }
+
+    private void populateIAMGroupAdminAccountMap() {
+        List<Long> sysAccts = new ArrayList<Long>();
+        sysAccts.add(Account.ACCOUNT_ID_SYSTEM);
+        sysAccts.add(Account.ACCOUNT_ID_SYSTEM + 1);
+        _iamSrv.addAccountsToGroup(sysAccts, new Long(Account.ACCOUNT_TYPE_ADMIN + 1));
     }
 
     private void addDomainWideResourceAccess(Map<String, Object> params) {
@@ -496,8 +515,9 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
             accessType = AccessType.UseEntry;
         }
+        String accessTypeStr = (accessType != null) ? accessType.toString() : null;
         return _iamSrv.addIAMPermissionToIAMPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action,
-                accessType.toString(), perm, recursive);
+                accessTypeStr, perm, recursive);
     }
 
     @DB

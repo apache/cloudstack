@@ -297,7 +297,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
                 s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-                    " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
+                        " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
             }
 
         }
@@ -466,10 +466,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     }
 
     private boolean isRootAdmin(ReservationContext reservationContext) {
-        if (reservationContext != null) {
-            if (reservationContext.getAccount() != null) {
-                return _accountMgr.isRootAdmin(reservationContext.getAccount().getType());
-            } else {
+        if(reservationContext != null){
+            if(reservationContext.getAccount() != null){
+                return _accountMgr.isRootAdmin(reservationContext.getAccount().getId());
+            }else{
                 return false;
             }
         }

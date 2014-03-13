@@ -120,7 +120,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     private boolean limitCpuUse;
 
     @Column(name = "update_count", updatable = true, nullable = false)
-    protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+    protected long updated; // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
@@ -152,8 +152,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected boolean dynamicallyScalable;
 
     /*
-        @Column(name="tags")
-        protected String tags;
+    @Column(name="tags")
+    protected String tags;
     */
 
     @Transient
@@ -505,6 +505,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return dynamicallyScalable;
     }
 
+    @Override
+    public IAMEntityType getEntityType() {
+        return IAMEntityType.VirtualMachine;
+    }
+
     public VirtualMachine.PowerState getPowerState() {
         return powerState;
     }
@@ -535,10 +540,5 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setPowerHostId(Long hostId) {
         powerHostId = hostId;
-    }
-
-    @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.VirtualMachine;
     }
 }

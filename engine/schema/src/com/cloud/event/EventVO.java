@@ -226,5 +226,4 @@ public class EventVO implements Event {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Event;
     }
-
 }

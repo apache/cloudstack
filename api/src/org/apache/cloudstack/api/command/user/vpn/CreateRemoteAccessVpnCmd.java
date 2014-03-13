@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access vpn", responseObject = RemoteAccessVpnResponse.class,
+@APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access vpn", responseObject = RemoteAccessVpnResponse.class, entityType = { IAMEntityType.RemoteAccessVpn },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
@@ -146,11 +148,11 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         try {
             RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), getDisplay());
             if (vpn != null) {
-                this.setEntityId(vpn.getServerAddressId());
+                setEntityId(vpn.getServerAddressId());
                 // find uuid for server ip address
                 IpAddress ipAddr = _entityMgr.findById(IpAddress.class, vpn.getServerAddressId());
                 if (ipAddr != null) {
-                    this.setEntityUuid(ipAddr.getUuid());
+                    setEntityUuid(ipAddr.getUuid());
                 }
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
@@ -169,7 +171,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
             if (result != null) {
                 RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }

@@ -274,6 +274,7 @@ public class FirewallRuleVO implements FirewallRule {
         return trafficType;
     }
 
+
     public void setDisplay(boolean display) {
         this.display = display;
     }
@@ -287,5 +288,4 @@ public class FirewallRuleVO implements FirewallRule {
     public IAMEntityType getEntityType() {
         return IAMEntityType.FirewallRule;
     }
-
 }

@@ -39,6 +39,7 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
@@ -329,14 +330,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     // this method is used for response generation via createAccount (which
     // creates an account + user)
     @Override
-    public AccountResponse createUserAccountResponse(UserAccount user) {
-        return ApiDBUtils.newAccountResponse(ApiDBUtils.findAccountViewById(user.getAccountId()));
+    public AccountResponse createUserAccountResponse(ResponseView view, UserAccount user) {
+        return ApiDBUtils.newAccountResponse(view, ApiDBUtils.findAccountViewById(user.getAccountId()));
     }
 
     @Override
-    public AccountResponse createAccountResponse(Account account) {
+    public AccountResponse createAccountResponse(ResponseView view, Account account) {
         AccountJoinVO vUser = ApiDBUtils.newAccountView(account);
-        return ApiDBUtils.newAccountResponse(vUser);
+        return ApiDBUtils.newAccountResponse(view, vUser);
     }
 
     @Override
@@ -466,7 +467,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
-            snapshotResponse.setRevertable(snapshotInfo.isRevertable());
+        snapshotResponse.setRevertable(snapshotInfo.isRevertable());
         }
 
         // set tag information
@@ -614,7 +615,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IPAddressResponse createIPAddressResponse(IpAddress ipAddr) {
+    public IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddr) {
         VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
         long zoneId = ipAddr.getDataCenterId();
@@ -699,9 +700,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        // show this info to admin only
-        Account account = CallContext.current().getCallingAccount();
-        if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        // show this info to full view only
+        if (view == ResponseView.Full) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
             if (vl != null) {
                 ipResponse.setVlanId(vl.getUuid());
@@ -855,9 +855,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
+    public ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities) {
         DataCenterJoinVO vOffering = ApiDBUtils.newDataCenterView(dataCenter);
-        return ApiDBUtils.newDataCenterResponse(vOffering, showCapacities);
+        return ApiDBUtils.newDataCenterResponse(view, vOffering, showCapacities);
     }
 
     public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId) {
@@ -913,9 +913,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public VolumeResponse createVolumeResponse(Volume volume) {
+    public VolumeResponse createVolumeResponse(ResponseView view, Volume volume) {
         List<VolumeJoinVO> viewVrs = ApiDBUtils.newVolumeView(volume);
-        List<VolumeResponse> listVrs = ViewResponseHelper.createVolumeResponse(viewVrs.toArray(new VolumeJoinVO[viewVrs.size()]));
+        List<VolumeResponse> listVrs = ViewResponseHelper.createVolumeResponse(view, viewVrs.toArray(new VolumeJoinVO[viewVrs.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one volume returned";
         return listVrs.get(0);
     }
@@ -1097,17 +1097,29 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /*
+    @Override
+    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
+        return createUserVmResponse(null, objectName, userVms);
+    }
+
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
+        return createUserVmResponse(null, objectName, userVms);
+    }
+    */
+
+    @Override
+    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return ViewResponseHelper.createUserVmResponse(objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(view, objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
 
     }
 
     @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
+    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return ViewResponseHelper.createUserVmResponse(objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(view, objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
     }
 
     @Override
@@ -1279,15 +1291,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result) {
+    public TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result) {
         List<TemplateJoinVO> tvo = ApiDBUtils.newTemplateView(result);
-        List<TemplateResponse> listVrs = ViewResponseHelper.createTemplateUpdateResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        List<TemplateResponse> listVrs = ViewResponseHelper.createTemplateUpdateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one template returned";
         return listVrs.get(0);
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
         if (zoneId == null || zoneId == -1) {
             tvo = ApiDBUtils.newTemplateView(result);
@@ -1295,17 +1307,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
 
         }
-        return ViewResponseHelper.createTemplateResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly) {
         VirtualMachineTemplate template = findTemplateById(templateId);
-        return createTemplateResponses(template, zoneId, readyOnly);
+        return createTemplateResponses(view, template, zoneId, readyOnly);
     }
 
     @Override
-    public List<TemplateResponse> createIsoResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
         if (zoneId == null || zoneId == -1) {
             tvo = ApiDBUtils.newTemplateView(result);
@@ -1313,7 +1325,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
         }
 
-        return ViewResponseHelper.createIsoResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createIsoResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     /*
@@ -1652,7 +1664,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
         VolumeVO volume = null;
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
@@ -1660,15 +1672,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             volume = findVolumeById(volumeId);
         }
-        return createTemplateResponses(templateId, volume.getDataCenterId(), readyOnly);
+        return createTemplateResponses(view, templateId, volume.getDataCenterId(), readyOnly);
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long vmId) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long vmId) {
         UserVm vm = findUserVmById(vmId);
         Long hostId = (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId());
         Host host = findHostById(hostId);
-        return createTemplateResponses(templateId, host.getDataCenterId(), true);
+        return createTemplateResponses(view, templateId, host.getDataCenterId(), true);
     }
 
     @Override
@@ -1727,11 +1739,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin) {
+    public TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id) {
         Long templateOwnerDomain = null;
         VirtualMachineTemplate template = ApiDBUtils.findTemplateById(id);
         Account templateOwner = ApiDBUtils.findAccountById(template.getAccountId());
-        if (isAdmin) {
+        if (view == ResponseView.Full) {
             // FIXME: we have just template id and need to get template owner
             // from that
             if (templateOwner != null) {
@@ -1742,7 +1754,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         TemplatePermissionsResponse response = new TemplatePermissionsResponse();
         response.setId(template.getUuid());
         response.setPublicTemplate(template.isPublicTemplate());
-        if (isAdmin && (templateOwnerDomain != null)) {
+        if ((view == ResponseView.Full) && (templateOwnerDomain != null)) {
             Domain domain = ApiDBUtils.findDomainById(templateOwnerDomain);
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
@@ -1793,12 +1805,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
 
         //check permissions
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        if (_accountMgr.isNormalUser(caller.getId())) {
             //regular user can see only jobs he owns
             if (caller.getId() != jobOwner.getId()) {
                 throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
             }
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             _accountMgr.checkAccess(caller, null, true, jobOwner);
         }
 
@@ -1992,7 +2004,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkResponse createNetworkResponse(Network network) {
+    public NetworkResponse createNetworkResponse(ResponseView view, Network network) {
         // need to get network profile in order to retrieve dns information from
         // there
         NetworkProfile profile = ApiDBUtils.getNetworkProfile(network.getId());
@@ -2061,7 +2073,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setReservedIpRange(reservation);
 
         // return vlan information only to Root admin
-        if (network.getBroadcastUri() != null && CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
@@ -2073,7 +2085,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
-
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
@@ -2238,8 +2249,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setPublicIpAddress(ip.getAddress().addr());
         }
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+            Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+            response.setNetworkId(network.getUuid());
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
@@ -2782,7 +2793,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public VpcResponse createVpcResponse(Vpc vpc) {
+    public VpcResponse createVpcResponse(ResponseView view, Vpc vpc) {
         VpcResponse response = new VpcResponse();
         response.setId(vpc.getUuid());
         response.setName(vpc.getName());
@@ -2822,7 +2833,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
         List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
         for (Network network : networks) {
-            NetworkResponse ntwkRsp = createNetworkResponse(network);
+            NetworkResponse ntwkRsp = createNetworkResponse(view, network);
             networkResponses.add(ntwkRsp);
         }
 
@@ -2876,7 +2887,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
 
-        NetworkACL acl = ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
+        NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
         }
@@ -3599,6 +3610,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+
     @Override
     public PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange ipRange) {
         PortableIpRangeResponse response = new PortableIpRangeResponse();
@@ -3621,7 +3633,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public PortableIpResponse createPortableIPResponse(PortableIp portableIp) {
         PortableIpResponse response = new PortableIpResponse();
         response.setAddress(portableIp.getAddress());
-        Long accountId = portableIp.getAllocatedInDomainId();
+        Long accountId =  portableIp.getAllocatedInDomainId();
         if (accountId != null) {
             Account account = ApiDBUtils.findAccountById(accountId);
             response.setAllocatedToAccountId(account.getAccountName());

@@ -21,11 +21,15 @@ import java.util.List;
 import org.apache.cloudstack.api.BaseAsyncVMCmd;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -36,9 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "destroyVirtualMachine",
-            description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.",
-            responseObject = UserVmResponse.class,
+@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVMCmd extends BaseAsyncVMCmd {
@@ -50,7 +52,9 @@ public class DestroyVMCmd extends BaseAsyncVMCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="The ID of the virtual machine")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,
@@ -100,7 +104,7 @@ public class DestroyVMCmd extends BaseAsyncVMCmd {
 
     @Override
     public String getEventDescription() {
-        return "destroying vm: " + getId();
+        return  "destroying vm: " + getId();
     }
 
     @Override
@@ -120,12 +124,12 @@ public class DestroyVMCmd extends BaseAsyncVMCmd {
 
         UserVmResponse response = new UserVmResponse();
         if (result != null) {
-            List<UserVmResponse> responses = _responseGenerator.createUserVmResponse("virtualmachine", result);
+            List<UserVmResponse> responses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result);
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }
             response.setResponseName("virtualmachine");
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");
         }

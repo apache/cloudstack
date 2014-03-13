@@ -24,6 +24,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
+import com.cloud.domain.PartOf;
 import com.cloud.exception.PermissionDeniedException;
 
 public interface AccountService {
@@ -87,7 +88,11 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(short accountType);
+    boolean isRootAdmin(Long accountId);
+
+    boolean isDomainAdmin(Long accountId);
+
+    boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
@@ -103,6 +108,11 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
-    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
 
+    //TO be implemented, to check accessibility for an entity owned by domain
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
+
+    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 }

@@ -309,5 +309,4 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     public IAMEntityType getEntityType() {
         return IAMEntityType.SecurityGroup;
     }
-
 }

@@ -45,7 +45,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class,
+@APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class, entityType = { IAMEntityType.FirewallRule },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateEgressFirewallRuleCmd.class.getName());
@@ -227,8 +227,8 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     @Override
     public long getDomainId() {
         Network network = _networkService.getNetwork(networkId);
-        return network.getDomainId();
-    }
+            return  network.getDomainId();
+        }
 
     @Override
     public void create() {
@@ -255,9 +255,9 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         }
 
         if (getVpcId() != null) {
-            throw new InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
-                " as firewall egress rule can be created only for non vpc networks.");
-        }
+                throw new  InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
+                        " as firewall egress rule can be created only for non vpc networks.");
+            }
 
         try {
             FirewallRule result = _firewallService.createEgressFirewallRule(this);
@@ -276,7 +276,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public String getEventDescription() {
-        Network network = _networkService.getNetwork(networkId);
+         Network network = _networkService.getNetwork(networkId);
         return ("Creating firewall rule for network: " + network + " for protocol:" + getProtocol());
     }
 
@@ -293,7 +293,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public Long getSyncObjId() {
-        return getNetworkId();
+                return  getNetworkId();
     }
 
     @Override
@@ -338,7 +338,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public TrafficType getTrafficType() {
-        return TrafficType.Egress;
+           return TrafficType.Egress;
     }
 
     @Override

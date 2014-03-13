@@ -167,5 +167,4 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     public IAMEntityType getEntityType() {
         return IAMEntityType.ProjectInvitation;
     }
-
 }

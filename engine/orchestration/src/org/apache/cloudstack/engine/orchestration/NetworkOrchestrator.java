@@ -16,6 +16,43 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.region.PortableIpDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -169,35 +206,6 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -252,6 +260,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected IPAddressDao _publicIpAddressDao;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    MessageBus _messageBus;
 
     List<NetworkGuru> networkGurus;
 
@@ -663,6 +673,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
+                            //send event for storing the domain wide resource access
+                            Map<String, Object> params = new HashMap<String, Object>();
+                            params.put(ApiConstants.ENTITY_TYPE, IAMEntityType.Network);
+                            params.put(ApiConstants.ENTITY_ID, id);
+                            params.put(ApiConstants.DOMAIN_ID, domainId);
+                            params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccess == null ? true : subdomainAccess);
+                            _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT,
+                                    PublishScope.LOCAL, params);
                         }
                     }
                 });
@@ -718,44 +736,44 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
 
                     for (NicProfile requested : requestedProfiles) {
-                        Boolean isDefaultNic = false;
-                        if (vm != null && (requested != null && requested.isDefaultNic())) {
-                            isDefaultNic = true;
-                        }
-
-                        while (deviceIds[deviceId] && deviceId < deviceIds.length) {
-                            deviceId++;
-                        }
-
-                        Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
-
-                        NicProfile vmNic = vmNicPair.first();
-                        if (vmNic == null) {
-                            continue;
-                        }
-
-                        deviceId = vmNicPair.second();
-
-                        int devId = vmNic.getDeviceId();
-                        if (devId > deviceIds.length) {
-                            throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
-                        }
-                        if (deviceIds[devId]) {
-                            throw new IllegalArgumentException("Conflicting device id for two different nics: " + vmNic);
-                        }
-
-                        deviceIds[devId] = true;
-
-                        if (vmNic.isDefaultNic()) {
-                            if (defaultNic != null) {
-                                throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vmNic);
-                            }
-                            defaultNic = vmNic;
-                        }
-
-                        nics.add(vmNic);
-                        vm.addNic(vmNic);
+                    Boolean isDefaultNic = false;
+                    if (vm != null && (requested != null && requested.isDefaultNic())) {
+                        isDefaultNic = true;
                     }
+
+                    while (deviceIds[deviceId] && deviceId < deviceIds.length) {
+                        deviceId++;
+                    }
+
+                    Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
+
+                    NicProfile vmNic = vmNicPair.first();
+                    if (vmNic == null) {
+                        continue;
+                    }
+
+                    deviceId = vmNicPair.second();
+
+                    int devId = vmNic.getDeviceId();
+                    if (devId > deviceIds.length) {
+                        throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
+                    }
+                    if (deviceIds[devId]) {
+                        throw new IllegalArgumentException("Conflicting device id for two different nics: " + vmNic);
+                    }
+
+                    deviceIds[devId] = true;
+
+                    if (vmNic.isDefaultNic()) {
+                        if (defaultNic != null) {
+                            throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vmNic);
+                        }
+                        defaultNic = vmNic;
+                    }
+
+                    nics.add(vmNic);
+                    vm.addNic(vmNic);
+                }
                 }
                 if (nics.size() != size) {
                     s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested nics " + size);
@@ -1074,16 +1092,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         try {
-            // reapply all the firewall/staticNat/lb rules
-            s_logger.debug("Reprogramming network " + network + " as a part of network implement");
-            if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
-                s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
-                // see DataCenterVO.java
-                ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
-                        network.getDataCenterId());
-                ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
-                throw ex;
-            }
+        // reapply all the firewall/staticNat/lb rules
+        s_logger.debug("Reprogramming network " + network + " as a part of network implement");
+        if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
+            s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
+            // see DataCenterVO.java
+            ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
+                    network.getDataCenterId());
+            ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
+            throw ex;
+        }
             for (NetworkElement element : networkElements) {
                 if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
                     if (!((AggregatedCommandExecutor)element).completeAggregatedExecution(network, dest)) {
@@ -1578,12 +1596,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 && network.getTrafficType() == TrafficType.Guest
                 && network.getGuestType() == GuestType.Shared
                 && isLastNicInSubnet(nic)) {
-            // remove the dhcpservice ip if this is the last nic in subnet.
-            DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
-            if (dhcpServiceProvider != null
+        // remove the dhcpservice ip if this is the last nic in subnet.
+        DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+        if (dhcpServiceProvider != null
                     && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
-                removeDhcpServiceInSubnet(nic);
-            }
+            removeDhcpServiceInSubnet(nic);
+        }
         }
 
         NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
@@ -2225,6 +2243,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(networkFinal.getId());
                                 if (networkAccount != null)
                                     _networkAccountDao.remove(networkAccount.getId());
+
+                                // remove its related ACL permission
+                                Pair<IAMEntityType, Long> networkMsg = new Pair<IAMEntityType, Long>(IAMEntityType.Network, networkFinal.getId());
+                                _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                             }
 
                             NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());

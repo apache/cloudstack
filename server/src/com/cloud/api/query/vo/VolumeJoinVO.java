@@ -572,6 +572,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         return path;
     }
 
+
     public String getChainInfo() {
         return chainInfo;
     }
@@ -580,5 +581,4 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Volume;
     }
-
 }

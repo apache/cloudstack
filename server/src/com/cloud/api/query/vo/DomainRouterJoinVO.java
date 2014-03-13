@@ -517,5 +517,4 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachine;
     }
-
 }
