@@ -88,7 +88,7 @@ public interface UserVmManager extends UserVmService {
 
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,

@@ -1378,8 +1378,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private boolean startNewVM(long vmId) {
         try {
             CallContext.current().setEventDetails("Vm Id: " + vmId);
-            _userVmManager.startVirtualMachine(vmId, null, null);
-        } catch (ResourceUnavailableException ex) {
+            _userVmManager.startVirtualMachine(vmId, null, null, null);
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {

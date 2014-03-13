@@ -22,9 +22,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
@@ -32,6 +29,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DataCenterDeployment;
@@ -114,6 +113,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    @Inject
+    DeploymentPlanningManager _planningMgr;
 
     @Override
     public VMEntityVO loadVirtualMachine(String vmId) {
@@ -138,7 +139,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
+    public String reserveVirtualMachine(VMEntityVO vmEntityVO, DeploymentPlanner plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
         throws InsufficientCapacityException, ResourceUnavailableException {
 
         //call planner and get the deployDestination.
@@ -189,13 +190,13 @@ public class VMEntityManagerImpl implements VMEntityManager {
         while (true) {
             DeployDestination dest = null;
             try {
-                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, null);
+                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse);
             } catch (AffinityConflictException e) {
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
             }
 
             if (dest != null) {
-                String reservationId = _dpMgr.finalizeReservation(dest, vmProfile, plan, exclude);
+                String reservationId = _dpMgr.finalizeReservation(dest, vmProfile, plan, exclude, plannerToUse);
                 if (reservationId != null) {
                     return reservationId;
                 } else {
@@ -229,7 +230,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
             DataCenterDeployment reservedPlan =
                 new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
-                _itMgr.start(vm.getUuid(), params, reservedPlan);
+                _itMgr.start(vm.getUuid(), params, reservedPlan, _planningMgr.getDeploymentPlannerByName(vmReservation.getDeploymentPlanner()));
             } catch (Exception ex) {
                 // Retry the deployment without using the reservation plan
                 DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
@@ -238,11 +239,11 @@ public class VMEntityManagerImpl implements VMEntityManager {
                     plan.setAvoids(reservedPlan.getAvoids());
                 }
 
-                _itMgr.start(vm.getUuid(), params, plan);
+                _itMgr.start(vm.getUuid(), params, plan, null);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
-            _itMgr.start(vm.getUuid(), params, null);
+            _itMgr.start(vm.getUuid(), params, null, null);
         }
 
     }

@@ -1346,7 +1346,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipToAssoc, _vlanDao.findById(ipToAssoc.getVlanId()));
         ipList.add(publicIp);
         Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
-        if (ipToServices != null & !ipToServices.isEmpty()) {
+        if (!ipToServices.isEmpty()) {
             Set<Service> services = ipToServices.get(publicIp);
             if (services != null && !services.isEmpty()) {
                 throw new InvalidParameterValueException("IP " + ipToAssoc + " has services and rules associated in the network " + networkId);
@@ -1387,7 +1387,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
         ipList.add(publicIp);
         Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
-        if (ipToServices != null & !ipToServices.isEmpty()) {
+        if (!ipToServices.isEmpty()) {
             Set<Service> ipServices = ipToServices.get(publicIp);
             if (ipServices != null && !ipServices.isEmpty()) {
                 return false;

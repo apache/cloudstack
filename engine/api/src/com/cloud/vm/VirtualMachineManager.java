@@ -85,7 +85,7 @@ public interface VirtualMachineManager extends Manager {
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner);
 
     void stop(String vmUuid) throws ResourceUnavailableException;
 

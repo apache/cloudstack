@@ -805,7 +805,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     protected DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, Account caller, long callerUserId, Map<Param, Object> params)
         throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        _itMgr.start(internalLbVm.getUuid(), params, null);
+        _itMgr.start(internalLbVm.getUuid(), params, null, null);
         if (internalLbVm.isStopPending()) {
             s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
             internalLbVm.setStopPending(false);

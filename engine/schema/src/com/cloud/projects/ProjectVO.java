@@ -31,6 +31,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -161,4 +162,8 @@ public class ProjectVO implements Project, Identity, InternalIdentity {
         this.uuid = uuid;
     }
 
+    @Override
+    public int hashCode() {
+        return NumbersUtil.hash(id);
+    }
 }

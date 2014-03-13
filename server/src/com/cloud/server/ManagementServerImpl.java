@@ -44,11 +44,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -557,18 +555,14 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.ResourceTagVO;
@@ -584,7 +578,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -669,8 +662,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private VMTemplateDao _templateDao;
-    @Inject
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
@@ -738,12 +729,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private AccountService _accountService;
     @Inject
     private ServiceOfferingDao _offeringDao;
-
     @Inject
     private DeploymentPlanningManager _dpMgr;
 
     private LockMasterListener _lockMasterListener;
-
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     @Inject
@@ -1706,210 +1695,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
-    }
-
-    /* TODO: this method should go away. Keep here just in case that our latest refactoring using template_store_ref missed anything
-     * in handling Swift or S3.
-    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
-            Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
-
-        VMTemplateVO template = null;
-        if (templateId != null) {
-            template = _templateDao.findById(templateId);
-            if (template == null) {
-                throw new InvalidParameterValueException("Please specify a valid template ID.");
-            }// If ISO requested then it should be ISO.
-            if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
-                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }// If ISO not requested then it shouldn't be an ISO.
-            if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
-                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
-                        + " of the specified template id");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }
-        }
-
-        DomainVO domain = null;
-        if (!permittedAccounts.isEmpty()) {
-            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
-        } else {
-            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
-        }
-
-        List<HypervisorType> hypers = null;
-        if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-        }
-        Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
-        if (_swiftMgr.isSwiftEnabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else if (_s3Mgr.isS3Enabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso,
-                        hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
-                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        }
-
-        return templateZonePairSet;
-    }
-     */
-
-    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getTemplateName();
-        String displayText = cmd.getDisplayText();
-        String format = cmd.getFormat();
-        Long guestOSId = cmd.getOsTypeId();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
-        Boolean bootable = cmd.isBootable();
-        Integer sortKey = cmd.getSortKey();
-        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
-        Boolean isRoutingTemplate = cmd.isRoutingType();
-        Account account = CallContext.current().getCallingAccount();
-
-        // verify that template exists
-        VMTemplateVO template = _templateDao.findById(id);
-        if (template == null || template.getRemoved() != null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-            ex.addProxyObject(id.toString(), "templateId");
-            throw ex;
-        }
-
-        // Don't allow to modify system template
-        if (id.equals(Long.valueOf(1))) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(template.getUuid(), "templateId");
-            throw ex;
-        }
-
-        // do a permission check
-        _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
-
-        if(cmd.isRoutingType() != null){
-            if (!_accountService.isRootAdmin(account.getId())) {
-                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
-            }
-        }
-        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null
-                && isDynamicallyScalable == null && isRoutingTemplate == null);
-        if (!updateNeeded) {
-            return template;
-        }
-
-        template = _templateDao.createForUpdate(id);
-
-        if (name != null) {
-            template.setName(name);
-        }
-
-        if (displayText != null) {
-            template.setDisplayText(displayText);
-        }
-
-        if (sortKey != null) {
-            template.setSortKey(sortKey);
-        }
-
-        ImageFormat imageFormat = null;
-        if (format != null) {
-            try {
-                imageFormat = ImageFormat.valueOf(format.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-
-            template.setFormat(imageFormat);
-        }
-
-        if (guestOSId != null) {
-            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-
-            if (guestOS == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
-            } else {
-                template.setGuestOSId(guestOSId);
-            }
-        }
-
-        if (passwordEnabled != null) {
-            template.setEnablePassword(passwordEnabled);
-        }
-
-        if (bootable != null) {
-            template.setBootable(bootable);
-        }
-
-        if (isDynamicallyScalable != null) {
-            template.setDynamicallyScalable(isDynamicallyScalable);
-        }
-
-        if (isRoutingTemplate != null) {
-            if (isRoutingTemplate) {
-                template.setTemplateType(TemplateType.ROUTING);
-            } else {
-                template.setTemplateType(TemplateType.USER);
-            }
-        }
-
-        _templateDao.update(id, template);
-
-        return _templateDao.findById(id);
     }
 
     @Override
@@ -3463,7 +3248,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        long diskOffMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
+        long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());

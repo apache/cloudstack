@@ -181,6 +181,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters.")
     private Map details;
 
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
+    private String deploymentPlanner;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -194,6 +197,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
     }
 
     public String getDisplayName() {

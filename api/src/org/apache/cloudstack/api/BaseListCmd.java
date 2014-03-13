@@ -24,7 +24,7 @@ import com.cloud.utils.exception.CSExceptionErrorCode;
 public abstract class BaseListCmd extends BaseCmd {
 
     private static Long s_maxPageSize = null;
-    public static Long s_pageSizeUnlimited = -1L;
+    public static final Long s_pageSizeUnlimited = -1L;
 
     // ///////////////////////////////////////////////////
     // ///////// BaseList API parameters /////////////////
