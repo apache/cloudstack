@@ -40,15 +40,10 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -465,6 +460,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -556,18 +553,14 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.ResourceTagVO;
@@ -575,7 +568,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
@@ -583,7 +575,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -668,8 +659,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private VMTemplateDao _templateDao;
-    @Inject
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
@@ -734,15 +723,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
-    private AccountService _accountService;
-    @Inject
     private ServiceOfferingDao _offeringDao;
-
     @Inject
     private DeploymentPlanningManager _dpMgr;
 
     private LockMasterListener _lockMasterListener;
-
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     @Inject
@@ -1808,108 +1793,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return templateZonePairSet;
     }
      */
-
-    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getTemplateName();
-        String displayText = cmd.getDisplayText();
-        String format = cmd.getFormat();
-        Long guestOSId = cmd.getOsTypeId();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
-        Boolean bootable = cmd.isBootable();
-        Integer sortKey = cmd.getSortKey();
-        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
-        Boolean isRoutingTemplate = cmd.isRoutingType();
-        Account account = CallContext.current().getCallingAccount();
-
-        // verify that template exists
-        VMTemplateVO template = _templateDao.findById(id);
-        if (template == null || template.getRemoved() != null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-            ex.addProxyObject(id.toString(), "templateId");
-            throw ex;
-        }
-
-        // Don't allow to modify system template
-        if (id.equals(Long.valueOf(1))) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(template.getUuid(), "templateId");
-            throw ex;
-        }
-
-        // do a permission check
-        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
-
-        if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account.getType())) {
-                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
-            }
-        }
-        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null
-                && isDynamicallyScalable == null && isRoutingTemplate == null);
-        if (!updateNeeded) {
-            return template;
-        }
-
-        template = _templateDao.createForUpdate(id);
-
-        if (name != null) {
-            template.setName(name);
-        }
-
-        if (displayText != null) {
-            template.setDisplayText(displayText);
-        }
-
-        if (sortKey != null) {
-            template.setSortKey(sortKey);
-        }
-
-        ImageFormat imageFormat = null;
-        if (format != null) {
-            try {
-                imageFormat = ImageFormat.valueOf(format.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-
-            template.setFormat(imageFormat);
-        }
-
-        if (guestOSId != null) {
-            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-
-            if (guestOS == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
-            } else {
-                template.setGuestOSId(guestOSId);
-            }
-        }
-
-        if (passwordEnabled != null) {
-            template.setEnablePassword(passwordEnabled);
-        }
-
-        if (bootable != null) {
-            template.setBootable(bootable);
-        }
-
-        if (isDynamicallyScalable != null) {
-            template.setDynamicallyScalable(isDynamicallyScalable);
-        }
-
-        if (isRoutingTemplate != null) {
-            if (isRoutingTemplate) {
-                template.setTemplateType(TemplateType.ROUTING);
-            } else {
-                template.setTemplateType(TemplateType.USER);
-            }
-        }
-
-        _templateDao.update(id, template);
-
-        return _templateDao.findById(id);
-    }
 
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
@@ -3462,7 +3345,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        long diskOffMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
+        long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
