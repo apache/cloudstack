@@ -1356,10 +1356,11 @@ public class HypervisorHostHelper {
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
             workerVmMo.configureVm(vmConfigSpec);
+            String deviceId = File.separator + workerVmMo.getMor().getValue() + File.separator + "VirtualIDEController0:0";
             bSuccess = true;
             OvfFile ovfFile = new OvfFile();
             ovfFile.setPath(diskFileName);
-            ovfFile.setDeviceId("1000");
+            ovfFile.setDeviceId(deviceId);
             ovfFile.setSize(size);
             // write OVF descriptor file
             OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
