@@ -321,62 +321,66 @@ def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
         logging.debug("WARNING:Can't find VPC info in json config file")
         return "FAILURE:IMPROPER_JSON_CONFG_FILE"
 
-    # get the list of Vm's in the VPC from the JSON config
-    this_host_vms = get_vms_on_host(vpconfig, this_host_id)
+    try:
+        # get the list of Vm's in the VPC from the JSON config
+        this_host_vms = get_vms_on_host(vpconfig, this_host_id)
 
-    for vm in this_host_vms:
-        for nic in vm.nics:
-            mac_addr = nic.macaddress
-            ip = nic.ipaddress
-            vif_name = get_vif_name_from_macaddress(mac_addr)
-            of_port = get_ofport_for_vif(vif_name)
-            network = get_network_details(vpconfig, nic.networkuuid)
-
-            # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet on the found OFPORT
-            add_mac_lookup_table_entry(bridge, mac_addr, of_port)
-
-            # Add flow rule in L3 look up table: if the destination IP = VM's IP then modify the packet
-            # to set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
-            add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
-
-            # Add flow entry to send with intra tier traffic from the NIC to L2 lookup path)
-            action_str = "table=0, in_port=%s," %of_port + " ip, nw_dst=%s," %network.cidr + " actions=resubmit(,1)"
-            addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
-            do_cmd(addflow)
-
-            #add flow entry to send inter-tier traffic from the NIC to egress ACL table(to L3 lookup path)
-            action_str = "table=0, in_port=%s," % of_port + " ip, dl_dst=%s," %network.gatewaymac +\
-                         "nw_dst=%s," %vpconfig.cidr + "actions=resubmit(,3)"
-            addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
-
-            do_cmd(addflow)
-
-    # get the list of hosts on which VPC spans from the JSON config
-    vpc_spanning_hosts = vpconfig.hosts
-
-    for host in vpc_spanning_hosts:
-        if str(this_host_id) == str(host.hostid):
-            continue
-        other_host_vms = get_vms_on_host(vpconfig, host.hostid)
-        for vm in other_host_vms:
+        for vm in this_host_vms:
             for nic in vm.nics:
                 mac_addr = nic.macaddress
                 ip = nic.ipaddress
+                vif_name = get_vif_name_from_macaddress(mac_addr)
+                of_port = get_ofport_for_vif(vif_name)
                 network = get_network_details(vpconfig, nic.networkuuid)
-                gre_key = network.grekey
 
-                # generate tunnel name from tunnel naming convention
-                tunnel_name = "t%s-%s-%s" % (gre_key, this_host_id, host.hostid)
-                of_port = get_ofport_for_vif(tunnel_name)
-
-                # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet tunnel port
+                # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet on the found OFPORT
                 add_mac_lookup_table_entry(bridge, mac_addr, of_port)
 
-                # Add flow tule in L3 look up table: if the destination IP = VM's IP then modify the packet
-                # set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
+                # Add flow rule in L3 look up table: if the destination IP = VM's IP then modify the packet
+                # to set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
                 add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
 
-    return "SUCCESS: successfully configured bridge as per the VPC topology"
+                # Add flow entry to send with intra tier traffic from the NIC to L2 lookup path)
+                action_str = "table=0, in_port=%s," %of_port + " ip, nw_dst=%s," %network.cidr + " actions=resubmit(,1)"
+                addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
+                do_cmd(addflow)
+
+                #add flow entry to send inter-tier traffic from the NIC to egress ACL table(to L3 lookup path)
+                action_str = "table=0, in_port=%s," % of_port + " ip, dl_dst=%s," %network.gatewaymac +\
+                             "nw_dst=%s," %vpconfig.cidr + "actions=resubmit(,3)"
+                addflow = [OFCTL_PATH, "add-flow", bridge, action_str]
+
+                do_cmd(addflow)
+
+        # get the list of hosts on which VPC spans from the JSON config
+        vpc_spanning_hosts = vpconfig.hosts
+
+        for host in vpc_spanning_hosts:
+            if str(this_host_id) == str(host.hostid):
+                continue
+            other_host_vms = get_vms_on_host(vpconfig, host.hostid)
+            for vm in other_host_vms:
+                for nic in vm.nics:
+                    mac_addr = nic.macaddress
+                    ip = nic.ipaddress
+                    network = get_network_details(vpconfig, nic.networkuuid)
+                    gre_key = network.grekey
+
+                    # generate tunnel name from tunnel naming convention
+                    tunnel_name = "t%s-%s-%s" % (gre_key, this_host_id, host.hostid)
+                    of_port = get_ofport_for_vif(tunnel_name)
+
+                    # Add flow rule in L2 look up table, if the destination mac = MAC of the nic send packet tunnel port
+                    add_mac_lookup_table_entry(bridge, mac_addr, of_port)
+
+                    # Add flow tule in L3 look up table: if the destination IP = VM's IP then modify the packet
+                    # set DST MAC = VM's MAC, SRC MAC=tier gateway MAC and send to egress table
+                    add_ip_lookup_table_entry(bridge, ip, network.gatewaymac, mac_addr)
+
+        return "SUCCESS: successfully configured bridge as per the VPC topology"
+    except:
+        logging.debug("An unexpected error occurred while configuring bridge as per VPC topology.")
+        raise
 
 def get_acl(vpcconfig, required_acl_id):
     acls = vpcconfig.acls
@@ -392,60 +396,84 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
         logging.debug("WARNING:Can't find VPC info in json config file")
         return "FAILURE:IMPROPER_JSON_CONFG_FILE"
 
-    # First flush current egress ACL's before re-applying the ACL's
-    del_flows(bridge, table=3)
+    try:
+        # First flush current egress ACL's before re-applying the ACL's
+        del_flows(bridge, table=3)
 
-    egress_rules_added = False
-    ingress_rules_added = False
+        egress_rules_added = False
+        ingress_rules_added = False
 
-    tiers = vpconfig.tiers
-    for tier in tiers:
-        tier_cidr = tier.cidr
-        acl = get_acl(vpconfig, tier.aclid)
-        acl_items = acl.aclitems
+        tiers = vpconfig.tiers
+        for tier in tiers:
+            tier_cidr = tier.cidr
+            acl = get_acl(vpconfig, tier.aclid)
+            acl_items = acl.aclitems
 
-        for acl_item in acl_items:
-            number = acl_item.number
-            action = acl_item.action
-            direction = acl_item.direction
-            source_port_start = acl_item.sourceportstart
-            source_port_end = acl_item.sourceportend
-            protocol = acl_item.protocol
-            source_cidrs = acl_item.sourcecidrs
-            acl_priority = 1000 + number
-            for source_cidr in source_cidrs:
-                if direction is "ingress":
-                    ingress_rules_added = True
-                    # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
-                    # source_cidr and destination ip is in tier_cidr
-                    port = source_port_start
-                    while (port < source_port_end):
-                        if action is "deny":
-                            add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
-                                     nw_proto=protocol, actions='drop')
-                        if action is "allow":
-                            add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
-                                     nw_proto=protocol, actions='resubmit(,1)')
-                        port = port + 1
+            for acl_item in acl_items:
+                number = acl_item.number
+                action = acl_item.action
+                direction = acl_item.direction
+                source_port_start = acl_item.sourceportstart
+                source_port_end = acl_item.sourceportend
+                protocol = acl_item.protocol
+                source_cidrs = acl_item.sourcecidrs
+                acl_priority = 1000 + number
+                for source_cidr in source_cidrs:
+                    if direction is "ingress":
+                        ingress_rules_added = True
 
-                elif direction in "egress":
-                    egress_rules_added = True
-                    # add flow rule to do action (allow/deny) for flows where destination IP of the packet is in
-                    # source_cidr and source ip is in tier_cidr
-                    port = source_port_start
-                    while (port < source_port_end):
-                        if action is "deny":
-                            add_flow(bridge, priority= acl_priority, table=5, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                     nw_proto=protocol, actions='drop')
-                        if action is "allow":
-                            add_flow(bridge, priority= acl_priority, table=5, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                     nw_proto=protocol, actions='resubmit(,1)')
-                        port = port + 1
+                        if source_port_start is None and source_port_end is None:
+                            if action is "deny":
+                                add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='drop')
+                            if action is "allow":
+                                add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            continue
 
-    if egress_rules_added is False:
-        # add a default rule in egress table to forward packet to L3 lookup table
-        add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
+                        # add flow rule to do action (allow/deny) for flows where source IP of the packet is in
+                        # source_cidr and destination ip is in tier_cidr
+                        port = source_port_start
+                        while (port < source_port_end):
+                            if action is "deny":
+                                add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='drop')
+                            if action is "allow":
+                                add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            port = port + 1
 
-    if ingress_rules_added is False:
-        # add a default rule in egress table drop packets
-        add_flow(bridge, priority=0, table=5, actions='drop')
+                    elif direction in "egress":
+                        egress_rules_added = True
+
+                        if source_port_start is None and source_port_end is None:
+                            if action is "deny":
+                                add_flow(bridge, priority= acl_priority, table=3, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='drop')
+                            if action is "allow":
+                                add_flow(bridge, priority= acl_priority,table=3, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            continue
+
+                        # add flow rule to do action (allow/deny) for flows where destination IP of the packet is in
+                        # source_cidr and source ip is in tier_cidr
+                        port = source_port_start
+                        while (port < source_port_end):
+                            if action is "deny":
+                                add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='drop')
+                            if action is "allow":
+                                add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            port = port + 1
+
+        if egress_rules_added is False:
+            # add a default rule in egress table to forward packet to L3 lookup table
+            add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
+
+        if ingress_rules_added is False:
+            # add a default rule in egress table drop packets
+            add_flow(bridge, priority=0, table=5, actions='drop')
+    except:
+        logging.debug("An unexpected error occurred while configuring bridge as per VPC's routing policies.")
+        raise

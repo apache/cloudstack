@@ -1147,7 +1147,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (vmSpec != null) {
             vifr.otherConfig.put("cloudstack-vm-id", vmSpec.getUuid());
         }
+
+        // OVS plugin looks at network UUID in the vif 'otherconfig' details to group VIF's & tunnel ports as part of tier
+        // when bridge is setup for distributed routing
         vifr.otherConfig.put("cloudstack-network-id", nic.getNetworkUuid());
+
         vifr.network = getNetwork(conn, nic);
 
         if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
@@ -5285,7 +5289,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         try {
             Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
-            String bridgeName = nw.getBridge(conn);;
+            String bridgeName = nw.getBridge(conn);
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
                     bridgeName, "config", cmd.getVpcConfigInJson(), "host-id", ((Long)cmd.getHostId()).toString());
                 if (result.startsWith("SUCCESS")) {
@@ -5302,8 +5306,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public Answer execute(OvsVpcRoutingPolicyConfigCommand cmd) {
         Connection conn = getConnection();
         try {
+            Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
+            String bridgeName = nw.getBridge(conn);
+
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_routing_policies", "bridge",
-                    cmd.getBridgeName(), "host-id", ((Long)cmd.getHostId()).toString(), "config",
+                    bridgeName, "host-id", ((Long)cmd.getHostId()).toString(), "config",
                     cmd.getVpcConfigInJson());
             if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
