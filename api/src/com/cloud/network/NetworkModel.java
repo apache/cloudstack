@@ -199,10 +199,10 @@ public interface NetworkModel {
     List<? extends PhysicalNetwork> getPhysicalNtwksSupportingTrafficType(long zoneId, TrafficType trafficType);
 
     /**
-     * @param guestNic
+     * @param ntwkId
      * @return
      */
-    boolean isPrivateGateway(Nic guestNic);
+    boolean isPrivateGateway(long ntwkId);
 
     Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
 

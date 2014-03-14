@@ -1671,8 +1671,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public boolean isPrivateGateway(Nic guestNic) {
-        Network network = getNetwork(guestNic.getNetworkId());
+    public boolean isPrivateGateway(long ntwkId) {
+        Network network = getNetwork(ntwkId);
         if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != s_privateOfferingId.longValue()) {
             return false;
         }
