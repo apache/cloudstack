@@ -184,7 +184,7 @@ then
   echo "$ipv6 $host" >> $HOSTS
 fi
 
-if [ "$dflt" != "" ]
+if [ "$dflt" != "" -a "$ipv4" != "" ]
 then
   #make sure dnsmasq looks into options file
   sed -i /dhcp-optsfile/d /etc/dnsmasq.conf
