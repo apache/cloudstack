@@ -531,7 +531,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                     }
                 }
             } catch (Exception e) {
-                s_logger.warn(String.format("Destroy tunnel failed", e));
+                s_logger.warn("Destroy tunnel failed", e);
             }
         }
     }
@@ -812,7 +812,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             try {
                 NetworkVO network = (NetworkVO) args;
                 String bridgeName=generateBridgeNameForVpc(network.getVpcId());
-                if (network.getVpcId() != null & isVpcEnabledForDistributedRouter(network.getVpcId())) {
+                if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
                     long vpcId = network.getVpcId();
                     OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
                     List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
