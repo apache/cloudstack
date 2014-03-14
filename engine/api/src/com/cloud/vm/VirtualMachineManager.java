@@ -36,7 +36,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
@@ -77,7 +76,7 @@ public interface VirtualMachineManager extends Manager {
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
-        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
+        List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
