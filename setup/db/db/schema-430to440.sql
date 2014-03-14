@@ -745,3 +745,5 @@ ALTER TABLE `cloud`.`vpc` ADD COLUMN uses_distributed_router  boolean default fa
 
 INSERT INTO `cloud`.`storage_pool_details` (pool_id,name,value,display) SELECT storage_pool.id,data_center_details.name,data_center_details.value,data_center_details.display FROM `cloud`.`storage_pool` JOIN `cloud`.`data_center_details` ON data_center_details.dc_id=storage_pool.data_center_id WHERE data_center_details.name = "storage.overprovisioning.factor";
 DELETE FROM `cloud`.`data_center_details` WHERE name="storage.overprovisioning.factor";
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
+ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);
