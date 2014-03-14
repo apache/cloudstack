@@ -413,7 +413,7 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
 
-        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":"","rootdisksize":""}]
+        cmd.details = [{}]
 
         if customcpunumber:
             cmd.details[0]["cpuNumber"] = customcpunumber
