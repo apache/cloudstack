@@ -102,6 +102,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportMigrated, State.Running);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
