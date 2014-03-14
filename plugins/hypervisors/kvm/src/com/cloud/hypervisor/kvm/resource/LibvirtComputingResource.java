@@ -1827,6 +1827,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         boolean shrinkOk = cmd.getShrinkOk();
         StorageFilerTO spool = cmd.getPool();
 
+        if ( currentSize == newSize) {
+            // nothing to do
+            s_logger.info("No need to resize volume: current size " + currentSize + " is same as new size " + newSize);
+            return new ResizeVolumeAnswer(cmd, true, "success", currentSize);
+        }
+
         try {
             KVMStoragePool pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
             KVMPhysicalDisk vol = pool.getPhysicalDisk(volid);

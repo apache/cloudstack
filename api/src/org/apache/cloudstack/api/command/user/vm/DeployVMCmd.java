@@ -121,6 +121,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
     private Long size;
 
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, description = "Optional field to resize root disk on deploy. Only applies to template-based deployments. Analogous to details[0].rootdisksize, which takes precedence over this parameter if both are provided")
+    private Long rootdisksize;
+
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
     private String group;
 
@@ -225,6 +228,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                     customparameterMap.put(key, value.get(key));
                 }
             }
+        }
+        if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
+            customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
         return customparameterMap;
     }

@@ -823,11 +823,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 } else if (format == PhysicalDiskFormat.QCOW2) {
                     QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath());
+                    if (size > template.getVirtualSize()) {
+                        destFile.setSize(size);
+                    } else {
+                        destFile.setSize(template.getVirtualSize());
+                    }
                     QemuImg qemu = new QemuImg(timeout);
                     qemu.create(destFile, backingFile);
                 } else if (format == PhysicalDiskFormat.RAW) {
                     QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath(), PhysicalDiskFormat.RAW);
+                    if (size > template.getVirtualSize()) {
+                        destFile.setSize(size);
+                    } else {
+                        destFile.setSize(template.getVirtualSize());
+                    }
                     QemuImg qemu = new QemuImg(timeout);
                     qemu.convert(sourceFile, destFile);
                 }
@@ -835,8 +845,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 format = PhysicalDiskFormat.RAW;
                 disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
                 disk.setFormat(format);
-                disk.setSize(template.getVirtualSize());
-                disk.setVirtualSize(disk.getSize());
+                if (size > template.getVirtualSize()) {
+                    disk.setSize(size);
+                    disk.setVirtualSize(size);
+                } else {
+                    // leave these as they were if size isn't applicable
+                    disk.setSize(template.getVirtualSize());
+                    disk.setVirtualSize(disk.getSize());
+                }
 
                 QemuImg qemu = new QemuImg(timeout);
                 QemuImgFile srcFile;
@@ -844,6 +860,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(),
                                 destPool.getAuthSecret(), disk.getPath()));
                 destFile.setFormat(format);
+                if (size > template.getVirtualSize()) {
+                    destFile.setSize(size);
+                } else {
+                    destFile.setSize(template.getVirtualSize());
+                }
 
                 if (srcPool.getType() != StoragePoolType.RBD) {
                     srcFile = new QemuImgFile(template.getPath(), template.getFormat());
@@ -877,9 +898,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             if (srcImage.isOldFormat()) {
                                 /* The source image is RBD format 1, we have to do a regular copy */
                                 s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                        " is RBD format 1. We have to perform a regular copy (" + template.getVirtualSize() + " bytes)");
+                                        " is RBD format 1. We have to perform a regular copy (" + disk.getVirtualSize() + " bytes)");
 
-                                rbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
+                                rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
                                 RbdImage destImage = rbd.open(disk.getName());
 
                                 s_logger.debug("Starting to copy " + srcImage.getName() + " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
@@ -923,7 +944,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                             s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
                                     destPool.getSourceDir());
-                            dRbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
+                            dRbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
 
                             RbdImage srcImage = sRbd.open(template.getName());
                             RbdImage destImage = dRbd.open(disk.getName());

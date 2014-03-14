@@ -325,7 +325,7 @@ class VirtualMachine:
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
                     hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',
-                    customcpunumber=None, customcpuspeed=None, custommemory=None):
+                    customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -413,7 +413,7 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
 
-        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":""}]
+        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":"","rootdisksize":""}]
 
         if customcpunumber:
             cmd.details[0]["cpuNumber"] = customcpunumber
@@ -423,6 +423,9 @@ class VirtualMachine:
 
         if custommemory:
             cmd.details[0]["memory"] = custommemory
+
+        if rootdisksize:
+            cmd.details[0]["rootdisksize"] = rootdisksize
 
         if group:
             cmd.group = group

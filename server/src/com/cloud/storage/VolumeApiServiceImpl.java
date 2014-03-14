@@ -701,27 +701,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
 
-        /*
-         * Volumes with no hypervisor have never been assigned, and can be
-         * resized by recreating. perhaps in the future we can just update the
-         * db entry for the volume
-         */
-        if (_volsDao.getHypervisorType(volume.getId()) == HypervisorType.None) {
-            throw new InvalidParameterValueException("Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
+        /* Only works for KVM/Xen/VMware for now, and volumes with 'None' since they're just allocated in db */
+        if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM
+            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
+            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware
+            && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.None) {
+            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM, VMware, XenServer hypervisor for resize");
         }
 
-        /* Only works for KVM/Xen for now */
-        if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
-                && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
-            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
-        }
-
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("Volume should be in ready state before attempting a resize");
-        }
-
-        if (!volume.getVolumeType().equals(Volume.Type.DATADISK)) {
-            throw new InvalidParameterValueException("Can only resize DATA volumes");
+        if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
+            throw new InvalidParameterValueException("Volume should be in ready or allocated state before attempting a resize. "
+                                                     + "Volume " + volume.getUuid() + " state is:" + volume.getState());
         }
 
         /*
@@ -729,7 +719,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
          * required, get the correct size value
          */
         if (newDiskOffering == null) {
-            if (diskOffering.isCustomized()) {
+            if (diskOffering.isCustomized() || volume.getVolumeType().equals(Volume.Type.ROOT)) {
                 newSize = cmd.getSize();
 
                 if (newSize == null) {
@@ -741,6 +731,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("current offering" + volume.getDiskOfferingId() + " cannot be resized, need to specify a disk offering");
             }
         } else {
+            if (!volume.getVolumeType().equals(Volume.Type.DATADISK)) {
+                throw new InvalidParameterValueException("Can only resize Data volumes via new disk offering");
+            }
 
             if (newDiskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
                 throw new InvalidParameterValueException("Disk offering ID is missing or invalid");
@@ -784,8 +777,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* does the caller have the authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
-
         long currentSize = volume.getSize();
 
         /*
@@ -804,6 +795,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize
                     - currentSize));
         }
+
+        /* If this volume has never been beyond allocated state, short circuit everything and simply update the database */
+        if (volume.getState() == Volume.State.Allocated) {
+            s_logger.debug("Volume is allocated, but never created, simply updating database with new size");
+            volume.setSize(newSize);
+            if (newDiskOffering != null) {
+                volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+            }
+            _volsDao.update(volume.getId(), volume);
+            return volume;
+        }
+
+        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+
 
         if (userVm != null) {
             // serialize VM operation
