@@ -1015,7 +1015,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
                 false, "listIpForwardingRules");
-        domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
