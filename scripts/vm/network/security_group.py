@@ -978,7 +978,7 @@ def addFWFramework(brname):
         execute("iptables -N " + brfwin)
 
     try:
-        refs = execute("""iptables -n -L " + brfw + " | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % brfw).strip()
+        refs = execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip()
         if refs == "0":
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
