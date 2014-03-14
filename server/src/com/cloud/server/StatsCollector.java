@@ -343,7 +343,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
                 for (HostVO host : gpuEnabledHosts) {
                     HashMap<String, HashMap<String, Long>> groupDetails = _resourceMgr.getGPUStatistics(host);
-                    _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
+                    if (groupDetails != null) {
+                        _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
+                    }
                 }
                 hostIds = _hostGpuGroupsDao.listHostIds();
             } catch (Throwable t) {
