@@ -746,4 +746,5 @@ INSERT INTO `cloud`.`storage_pool_details` (pool_id,name,value,display) SELECT s
 DELETE FROM `cloud`.`data_center_details` WHERE name="storage.overprovisioning.factor";
 ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_region_level_vpc boolean default false;
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_streched_l2 boolean default false;
+ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
