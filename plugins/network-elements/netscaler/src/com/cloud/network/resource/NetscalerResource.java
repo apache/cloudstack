@@ -949,7 +949,7 @@ public class NetscalerResource implements ServerResource {
             ns newVpx = ns.add(_netscalerSdxService, ns_obj);
 
             if (newVpx == null) {
-                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
+                return new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
             }
 
             // wait for VPX instance to start-up
