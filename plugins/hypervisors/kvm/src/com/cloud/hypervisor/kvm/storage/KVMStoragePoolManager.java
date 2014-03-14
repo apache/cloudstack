@@ -302,17 +302,21 @@ public class KVMStoragePoolManager {
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, KVMStoragePool destPool, int timeout) {
+        return createDiskFromTemplate(template, name, destPool, template.getSize(), timeout);
+    }
+
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, KVMStoragePool destPool, long size, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
 
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, size, destPool, timeout);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, size, destPool, timeout);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.DIR, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.DIR, size, destPool, timeout);
         } else {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.QCOW2, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.QCOW2, size, destPool, timeout);
         }
     }
 

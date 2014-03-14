@@ -612,8 +612,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
-        if (rootDisksize != null) {
-            size = (rootDisksize * 1024 * 1024 * 1024);
+        if (rootDisksize != null ) {
+            rootDisksize = rootDisksize * 1024 * 1024 * 1024;
+            if (rootDisksize > size) {
+                s_logger.debug("Using root disk size of " + rootDisksize + " for volume " + name);
+                size = rootDisksize;
+            } else {
+                s_logger.debug("Using root disk size of " + size + " for volume " + name + "since specified root disk size of " + rootDisksize + " is smaller than template");
+            }
         }
 
         minIops = minIops != null ? minIops : offering.getMinIops();
