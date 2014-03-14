@@ -30,8 +30,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class LibvirtXMLParser extends DefaultHandler {
     private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
-    protected static SAXParserFactory s_spf;
-
+    protected static final SAXParserFactory s_spf;
     static {
         s_spf = SAXParserFactory.newInstance();
 

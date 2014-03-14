@@ -19,6 +19,9 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -33,7 +36,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -44,7 +46,7 @@ import com.cloud.user.User;
 
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
-            responseObject = AutoScaleVmProfileResponse.class,
+            responseObject = AutoScaleVmProfileResponse.class, entityType = { IAMEntityType.AutoScaleVmProfile },
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
@@ -244,7 +246,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         AutoScaleVmProfile result = _entityMgr.findById(AutoScaleVmProfile.class, getEntityId());
         AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override
@@ -252,8 +254,8 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
         AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
         }

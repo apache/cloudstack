@@ -230,5 +230,4 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Event;
     }
-
 }

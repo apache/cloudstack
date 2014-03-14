@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -31,6 +33,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -46,6 +49,8 @@ import com.cloud.uservm.UserVm;
             description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
                 + "new properties to take effect.",
             responseObject = UserVmResponse.class,
+        responseView = ResponseView.Restricted,
+        entityType = {IAMEntityType.VirtualMachine},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
@@ -56,7 +61,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
@@ -139,10 +144,10 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
         dc.add(VMDetails.valueOf("affgrp"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
 
-        if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", details, result).get(0);
+        if (result != null){
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm's affinity groups");
         }

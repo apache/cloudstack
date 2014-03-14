@@ -50,6 +50,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -479,6 +481,14 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.DELETE";
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
+    //Guest OS related events
+    public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
+    public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
+    public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
+    public static final String EVENT_GUEST_OS_MAPPING_ADD = "GUEST.OS.MAPPING.ADD";
+    public static final String EVENT_GUEST_OS_MAPPING_REMOVE = "GUEST.OS.MAPPING.REMOVE";
+    public static final String EVENT_GUEST_OS_MAPPING_UPDATE = "GUEST.OS.MAPPING.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -795,6 +805,14 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER, "OpenDaylightController");
+
+        //Guest OS
+        entityEventDetails.put(EVENT_GUEST_OS_ADD, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_REMOVE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_UPDATE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_ADD, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_REMOVE, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_UPDATE, GuestOSHypervisor.class.getName());
     }
 
     public static String getEntityForEvent(String eventName) {

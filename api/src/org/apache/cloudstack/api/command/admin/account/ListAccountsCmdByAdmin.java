@@ -14,18 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.api.command.admin.account;
 
-package com.cloud.agent.api.routing;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
 
-public class FinishAggregationCommand extends NetworkElementCommand{
-    protected FinishAggregationCommand() {
-        super();
-    }
-
-    public FinishAggregationCommand(String name, String ip, String guestIp) {
-        super();
-        this.setAccessDetail(NetworkElementCommand.ROUTER_NAME, name);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_IP, ip);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestIp);
-    }
+@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Full)
+public class ListAccountsCmdByAdmin extends ListAccountsCmd {
 }

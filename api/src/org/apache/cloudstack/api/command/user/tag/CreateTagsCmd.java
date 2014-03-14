@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -37,7 +38,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
-@APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0",
+@APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0", entityType = {IAMEntityType.ResourceTag},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
@@ -118,7 +119,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
 
         if (tags != null && !tags.isEmpty()) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tags");
         }

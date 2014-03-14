@@ -572,7 +572,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-        ResourceUnavailableException {
+    ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -630,7 +630,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         // Check if zone is disabled
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -1677,8 +1677,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
             Account account = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
-                PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState()
+                    && !_accountMgr.isRootAdmin(account.getId())) {
+                PermissionDeniedException ex = new PermissionDeniedException(
+                        "Cannot perform this operation, Zone with specified id is currently disabled");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
             }
@@ -1823,14 +1825,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // first delete from image_store_details table, we need to do that since
-                // we are not actually deleting record from main
-                // image_data_store table, so delete cascade will not work
-                _imageStoreDetailsDao.deleteDetails(storeId);
-                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
-                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-                _imageStoreDao.remove(storeId);
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
             }
         });
 
@@ -1877,8 +1879,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
-            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+            PermissionDeniedException ex = new PermissionDeniedException(
+                    "Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
@@ -1934,14 +1937,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // first delete from image_store_details table, we need to do that since
-                // we are not actually deleting record from main
-                // image_data_store table, so delete cascade will not work
-                _imageStoreDetailsDao.deleteDetails(storeId);
-                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
-                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-                _imageStoreDao.remove(storeId);
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
             }
         });
 

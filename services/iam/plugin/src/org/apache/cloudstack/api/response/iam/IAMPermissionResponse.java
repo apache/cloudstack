@@ -108,13 +108,13 @@ public class IAMPermissionResponse extends BaseResponse {
         if (getClass() != obj.getClass())
             return false;
         IAMPermissionResponse other = (IAMPermissionResponse) obj;
-        if ((entityType == null && other.entityType != null) || !entityType.equals(other.entityType)) {
+        if ((entityType == null && other.entityType != null) || (entityType != null && !entityType.equals(other.entityType))) {
             return false;
-        } else if ((action == null && other.action != null) || !action.equals(other.action)) {
+        } else if ((action == null && other.action != null) || (action != null && !action.equals(other.action))) {
             return false;
-        } else if ((scope == null && other.scope != null) || !scope.equals(other.scope)) {
+        } else if ((scope == null && other.scope != null) || (scope != null && !scope.equals(other.scope))) {
             return false;
-        } else if ((scopeId == null && other.scopeId != null) || !scopeId.equals(other.scopeId)) {
+        } else if ((scopeId == null && other.scopeId != null) || (scopeId != null && !scopeId.equals(other.scopeId))) {
             return false;
         }
         return true;

@@ -41,11 +41,10 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -56,8 +55,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -78,6 +75,8 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
@@ -277,6 +276,7 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
@@ -1885,8 +1885,35 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
 
-    private DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params) throws StorageUnavailableException,
-    InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    private DomainRouterVO waitRouter(DomainRouterVO router) {
+        DomainRouterVO vm = _routerDao.findById(router.getId());
+
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
+        while (vm.getState() == State.Starting) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            // reload to get the latest state info
+            vm = _routerDao.findById(router.getId());
+        }
+
+        if (vm.getState() == State.Running) {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Router " + router.getInstanceName() + " is now fully up");
+
+            return router;
+        }
+
+        s_logger.warn("Router " + router.getInstanceName() + " failed to start. current state: " + vm.getState());
+        return null;
+    }
+
+    private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params)
+            throws StorageUnavailableException, InsufficientCapacityException,
+    ConcurrentOperationException, ResourceUnavailableException {
 
         if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
@@ -1897,7 +1924,15 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             return router;
         }
 
-        final DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
+        //
+        // If another thread has already requested a VR start, there is a transition period for VR to transit from
+        // Starting to Running, there exist a race conditioning window here
+        // We will wait until VR is up or fail
+        if (router.getState() == State.Starting) {
+            return waitRouter(router);
+        }
+
+        DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
         final List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
@@ -2320,12 +2355,20 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (final Long guestNetworkId : routerGuestNtwkIds) {
+            AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIp4Address(),
+                    getRouterIpInNetwork(guestNetworkId, router.getId()));
+            cmds.addCommand(startCmd);
+
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
+
+            AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, router.getInstanceName(), controlNic.getIp4Address(),
+                    getRouterIpInNetwork(guestNetworkId, router.getId()));
+            cmds.addCommand(finishCmd);
         }
 
 
@@ -2337,8 +2380,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         } else {
             finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0), false);
         }
-
-
 
         return true;
     }
@@ -4258,5 +4299,32 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.warn("Error while rebooting the router", e);
             }
         }
+    }
+
+    protected boolean aggregationExecution(AggregationControlCommand.Action action, Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+        for (DomainRouterVO router : routers) {
+            AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), getRouterControlIp(router.getId()),
+                    getRouterIpInNetwork(network.getId(), router.getId()));
+            Commands cmds = new Commands(cmd);
+            if (!sendCommandsToRouter(router, cmds)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean prepareAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+        return aggregationExecution(Action.Start, network, routers);
+    }
+
+    @Override
+    public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+        return aggregationExecution(Action.Finish, network, routers);
+    }
+
+    @Override
+    public boolean cleanupAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException {
+        return aggregationExecution(Action.Cleanup, network, routers);
     }
 }

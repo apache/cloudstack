@@ -593,7 +593,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 

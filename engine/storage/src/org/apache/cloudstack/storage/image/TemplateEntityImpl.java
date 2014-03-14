@@ -108,8 +108,8 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public boolean isDynamicallyScalable() {
+        return false;
     }
 
     @Override

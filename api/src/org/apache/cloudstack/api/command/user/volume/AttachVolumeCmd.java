@@ -16,14 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -33,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class,
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
@@ -51,11 +55,9 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-               type = CommandType.UUID,
-               entityType = UserVmResponse.class,
-               required = true,
-               description = "    the ID of the virtual machine")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
+            required=true, description="    the ID of the virtual machine")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -66,6 +68,7 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
         return deviceId;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
@@ -109,7 +112,7 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
 
     @Override
     public String getEventDescription() {
-        return "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
+        return  "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
     }
 
     @Override
@@ -117,9 +120,9 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
         CallContext.current().setEventDetails("Volume Id: " + getId() + " VmId: " + getVirtualMachineId());
         Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach volume");
         }

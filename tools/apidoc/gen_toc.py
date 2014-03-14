@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-#
+# 
 #   http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -126,7 +126,7 @@ known_categories = {
     'Project': 'Project',
     'Lun': 'Storage',
     'Pool': 'Pool',
-    'VPC': 'VPC',
+    'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
@@ -160,6 +160,7 @@ known_categories = {
     'Ucs' : 'UCS',
     'CacheStores' : 'Cache Stores',
     'CacheStore' : 'Cache Store',
+    'IAM' : 'IAM',
     'OvsElement' : 'Ovs Element',
     'StratosphereSsp' : ' Stratosphere SSP'
     }
@@ -206,7 +207,7 @@ for f in sys.argv:
         pass
     except IndexError, e:
         print fn
-
+    
 
 def xml_for(command):
     name = command['name']
@@ -221,7 +222,7 @@ def xml_for(command):
 def write_xml(out, user):
     with file(out, 'w') as f:
         cat_strings = []
-
+        
         for category in categories.keys():
             strings = []
             for command in categories[category]:
@@ -243,7 +244,7 @@ def write_xml(out, user):
 <xsl:for-each select="commands/command">
 %(all_strings)s
 </xsl:for-each>
-</ul>
+</ul>      
 </div>
 
 ''' % locals()
@@ -269,7 +270,7 @@ def java_for_user(user):
         for command in categories[category]:
             if command['user'] == user:
                 strings.append(java_for(command, user))
-    func = user_to_func[user]
+    func = user_to_func[user]        
     all_strings = ''.join(strings)
     return '''
     public void %(func)s() {

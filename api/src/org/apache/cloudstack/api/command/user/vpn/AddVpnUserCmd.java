@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,14 +29,13 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 
-@APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class,
+@APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class, entityType = {IAMEntityType.VpnUser},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
@@ -135,7 +137,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
         vpnResponse.setResponseName(getCommandName());
         vpnResponse.setObjectName("vpnuser");
-        this.setResponseObject(vpnResponse);
+        setResponseObject(vpnResponse);
     }
 
     @Override

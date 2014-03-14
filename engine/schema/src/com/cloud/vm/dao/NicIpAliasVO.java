@@ -36,7 +36,7 @@ import com.cloud.vm.NicIpAlias;
 
 @Entity
 @Table(name = "nic_ip_alias")
-public class NicIpAliasVO implements NicIpAlias {
+public class NicIpAliasVO implements NicIpAlias  {
 
     public NicIpAliasVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
         this.nicId = nicId;
@@ -209,17 +209,17 @@ public class NicIpAliasVO implements NicIpAlias {
     }
 
     @Override
-    public String getNetmask() {
+    public  String getNetmask() {
         return netmask;
     }
 
     @Override
-    public String getGateway() {
-        return gateway;
+    public  String getGateway() {
+        return  gateway;
     }
 
     public void setGateway(String gateway) {
-        this.gateway = gateway;
+          this.gateway = gateway;
     }
 
     public NicIpAlias.state getState() {

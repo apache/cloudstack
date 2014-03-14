@@ -21,6 +21,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class,
+@APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class, entityType = {IAMEntityType.AutoScalePolicy},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScalePolicyCmd.class.getName());
@@ -62,6 +65,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
                description = "the list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
@@ -76,7 +80,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale policy");
         }

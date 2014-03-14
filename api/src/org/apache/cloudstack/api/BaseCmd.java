@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
@@ -38,7 +40,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.ConcurrentOperationException;
@@ -291,14 +292,14 @@ public abstract class BaseCmd {
                 final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
                 if ((parameterAnnotation != null) && parameterAnnotation.expose()) {
                     filteredFields.add(field);
+                    }
                 }
-            }
 
             // Cache the prepared list for future use
             fieldsForCmdClass.put(clazz, filteredFields);
-        }
+                    }
         return filteredFields;
-    }
+                }
 
     /**
      * This method doesn't return all the @{link Parameter}, but only the ones exposed

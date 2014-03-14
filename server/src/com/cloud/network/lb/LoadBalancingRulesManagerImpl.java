@@ -980,7 +980,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             if (nicInSameNetwork == null) {
                 InvalidParameterValueException ex =
-                    new InvalidParameterValueException("VM with id specified cannot be added because it doesn't belong in the same network.");
+                        new InvalidParameterValueException("VM with id specified cannot be added because it doesn't belong in the same network.");
                 ex.addProxyObject(vm.getUuid(), "instanceId");
                 throw ex;
             }
@@ -1499,7 +1499,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
  final long sourceIpId,
             final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay)
-        throws NetworkRuleConflictException {
+            throws NetworkRuleConflictException {
 
         if (!NetUtils.isValidPort(destPort)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
@@ -2006,11 +2006,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             // if the VM is destroyed, being expunged, in an error state, or in
             // an unknown state, skip it
             switch (userVm.getState()) {
-                case Destroyed:
-                case Expunging:
-                case Error:
-                case Unknown:
-                    continue;
+            case Destroyed:
+            case Expunging:
+            case Error:
+            case Unknown:
+                continue;
             }
 
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
@@ -2076,18 +2076,21 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Map<String, String> tags = cmd.getTags();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
-            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listLoadBalancerRules");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -2120,7 +2123,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         SearchCriteria<LoadBalancerVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<LoadBalancerVO> ssc = _lbDao.createSearchCriteria();

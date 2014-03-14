@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 
 import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE})
@@ -39,6 +40,8 @@ public @interface APICommand {
     boolean includeInApiDoc() default true;
 
     String since() default "";
+
+    ResponseView responseView() default ResponseView.Full;
 
     boolean requestHasSensitiveInfo() default true;
 

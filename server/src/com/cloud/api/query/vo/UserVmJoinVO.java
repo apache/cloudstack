@@ -916,5 +916,4 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.VirtualMachine;
     }
-
 }

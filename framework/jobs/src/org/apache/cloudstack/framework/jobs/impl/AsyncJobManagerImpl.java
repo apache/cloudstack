@@ -117,7 +117,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
-    private ExecutorService _executor;
+    private ExecutorService _apiJobExecutor;
+    private ExecutorService _workerJobExecutor;
 
     @Override
     public String getConfigComponentName() {
@@ -390,7 +391,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (executeInContext) {
             runnable.run();
         } else {
-            _executor.submit(runnable);
+            if (job.getDispatcher() == null || job.getDispatcher().equalsIgnoreCase("ApiAsyncJobDispatcher"))
+                _apiJobExecutor.submit(runnable);
+            else
+                _workerJobExecutor.submit(runnable);
         }
     }
 
@@ -655,8 +659,24 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private Runnable getHeartbeatTask() {
         return new ManagedContextRunnable() {
+
             @Override
             protected void runInContext() {
+                GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerHeartbeat");
+                try {
+                    if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                        try {
+                            reallyRun();
+                        } finally {
+                            scanLock.unlock();
+                        }
+                    }
+                } finally {
+                    scanLock.releaseRef();
+                }
+            }
+
+            protected void reallyRun() {
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
@@ -855,10 +875,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final Properties dbProps = DbProperties.getDbProperties();
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 
-            int poolSize = (cloudMaxActive * 2) / 3;
+            int apiPoolSize = cloudMaxActive / 2;
+            int workPoolSize = (cloudMaxActive * 2) / 3;
 
-            s_logger.info("Start AsyncJobManager thread pool in size " + poolSize);
-            _executor = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(AsyncJobManager.JOB_POOL_THREAD_PREFIX));
+            s_logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize);
+            _apiJobExecutor = Executors.newFixedThreadPool(apiPoolSize, new NamedThreadFactory(AsyncJobManager.API_JOB_POOL_THREAD_PREFIX));
+
+            s_logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize);
+            _workerJobExecutor = Executors.newFixedThreadPool(workPoolSize, new NamedThreadFactory(AsyncJobManager.WORK_JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
         }
@@ -941,7 +965,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean stop() {
         _heartbeatScheduler.shutdown();
-        _executor.shutdown();
+        _apiJobExecutor.shutdown();
+        _workerJobExecutor.shutdown();
         return true;
     }
 

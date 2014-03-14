@@ -14,18 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.api.command.admin.iso;
 
-package com.cloud.agent.api.routing;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
+import org.apache.cloudstack.api.response.TemplateResponse;
 
-public class StartAggregationCommand extends NetworkElementCommand{
-    protected StartAggregationCommand() {
-        super();
-    }
-
-    public StartAggregationCommand(String name, String ip, String guestIp) {
-        super();
-        this.setAccessDetail(NetworkElementCommand.ROUTER_NAME, name);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_IP, ip);
-        this.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestIp);
-    }
+@APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+public class ListIsosCmdByAdmin extends ListIsosCmd {
 }

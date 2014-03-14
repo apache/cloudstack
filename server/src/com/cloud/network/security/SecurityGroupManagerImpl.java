@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
@@ -812,7 +813,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
-        _accountMgr.checkAccess(caller, null, true, securityGroup);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, securityGroup);
 
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override

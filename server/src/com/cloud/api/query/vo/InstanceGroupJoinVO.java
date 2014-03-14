@@ -163,5 +163,4 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     public IAMEntityType getEntityType() {
         return IAMEntityType.InstanceGroup;
     }
-
 }

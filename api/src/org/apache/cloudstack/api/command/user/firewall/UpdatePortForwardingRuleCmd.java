@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,8 +38,8 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
- description = "Updates a port forwarding rule",
- requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {IAMEntityType.PortForwardingRule},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -141,14 +143,14 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void checkUuid() {
-        if (this.getCustomId() != null) {
-            _uuidMgr.checkUuid(this.getCustomId(), FirewallRule.class);
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), FirewallRule.class);
         }
     }
 
     @Override
     public void execute() {
-        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, this.getCustomId(), getDisplay());
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getCustomId(), getDisplay());
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
         if (rule != null) {
             fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);

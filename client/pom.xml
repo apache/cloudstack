@@ -18,7 +18,7 @@
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
     <version>4.4.0-SNAPSHOT</version>
-  </parent>
+  </parent> 
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -187,7 +187,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-       <groupId>org.apache.cloudstack</groupId>
+      <groupId>org.apache.cloudstack</groupId>
        <artifactId>cloud-plugin-planner-skip-heurestics</artifactId>
        <version>${project.version}</version>
     </dependency>
@@ -220,7 +220,17 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-inmemory</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>    
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-iam</artifactId>
+      <version>${project.version}</version>
+    </dependency>   
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-iam</artifactId>
+      <version>${project.version}</version>
+    </dependency>         
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-ipc</artifactId>

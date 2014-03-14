@@ -31,6 +31,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -218,7 +219,6 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
@@ -745,7 +745,6 @@ public class ApiDBUtils {
         s_resourceDetailsService = resourceDetailsService;
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
-
     }
 
     // ///////////////////////////////////////////////////////////
@@ -785,9 +784,6 @@ public class ApiDBUtils {
         return s_ms.getVersion();
     }
 
-    public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return s_userVmMgr.searchForUserVMs(c, s_accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null).first();
-    }
 
     // ///////////////////////////////////////////////////////////
     // Manager methods //
@@ -803,8 +799,8 @@ public class ApiDBUtils {
         return s_resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
     }
 
-    public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
-        return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
+    public static long findCorrectResourceLimit(Long limit, long accountId, ResourceType type) {
+        return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountId, limit, type);
     }
 
     public static long getResourceCount(ResourceType type, long accountId) {
@@ -1183,7 +1179,7 @@ public class ApiDBUtils {
 
     public static boolean isExtractionDisabled() {
         String disableExtractionString = s_configDao.getValue(Config.DisableExtraction.toString());
-        boolean disableExtraction = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
+        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
         return disableExtraction;
     }
 
@@ -1321,7 +1317,7 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO findPublicKeyByVmId(long vmId) {
+    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
         return s_userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
     }
 
@@ -1534,12 +1530,12 @@ public class ApiDBUtils {
         return s_domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, caller);
     }
 
-    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm) {
-        return s_userVmJoinDao.setUserVmResponse(vmData, vm);
+    public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {
+        return s_userVmJoinDao.setUserVmResponse(view, vmData, vm);
     }
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
@@ -1632,6 +1628,7 @@ public class ApiDBUtils {
         return s_userAccountJoinDao.searchByAccountId(accountId);
     }
 
+
     public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
         return s_projectAccountJoinDao.newProjectAccountResponse(proj);
     }
@@ -1668,12 +1665,12 @@ public class ApiDBUtils {
         return s_hostJoinDao.newHostView(vr);
     }
 
-    public static VolumeResponse newVolumeResponse(VolumeJoinVO vr) {
-        return s_volJoinDao.newVolumeResponse(vr);
+    public static VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vr) {
+        return s_volJoinDao.newVolumeResponse(view, vr);
     }
 
-    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr) {
-        return s_volJoinDao.setVolumeResponse(vrData, vr);
+    public static VolumeResponse fillVolumeDetails(ResponseView view, VolumeResponse vrData, VolumeJoinVO vr) {
+        return s_volJoinDao.setVolumeResponse(view, vrData, vr);
     }
 
     public static List<VolumeJoinVO> newVolumeView(Volume vr) {
@@ -1712,8 +1709,9 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static AccountResponse newAccountResponse(AccountJoinVO ve) {
-        return s_accountJoinDao.newAccountResponse(ve);
+
+    public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {
+        return s_accountJoinDao.newAccountResponse(view, ve);
     }
 
     public static AccountJoinVO newAccountView(Account e) {
@@ -1748,8 +1746,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
@@ -1768,16 +1766,16 @@ public class ApiDBUtils {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
 
-    public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
-        return s_templateJoinDao.newTemplateResponse(vr);
+    public static TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO vr) {
+        return s_templateJoinDao.newTemplateResponse(view, vr);
     }
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr) {
-        return s_templateJoinDao.setTemplateResponse(vrData, vr);
+    public static TemplateResponse fillTemplateDetails(ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+        return s_templateJoinDao.setTemplateResponse(view, vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {
@@ -1799,6 +1797,7 @@ public class ApiDBUtils {
     public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
         return s_affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
+
 
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
         return s_gslbService.listSiteLoadBalancers(gslbRuleId);

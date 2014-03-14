@@ -48,7 +48,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
@@ -56,14 +55,9 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -74,19 +68,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     @Inject
-    HostDao _hostDao = null;
+    protected HostDao _hostDao = null;
     @Inject
     HostDetailsDao _hostDetailsDao = null;
-    @Inject
-    UserVmDao _vmDao = null;
-    @Inject
-    ServiceOfferingDao _offeringDao = null;
-    @Inject
-    DomainRouterDao _routerDao = null;
-    @Inject
-    ConsoleProxyDao _consoleProxyDao = null;
-    @Inject
-    SecondaryStorageVmDao _secStorgaeVmDao = null;
     @Inject
     ConfigurationDao _configDao = null;
     @Inject
@@ -96,18 +80,19 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     VMInstanceDao _vmInstanceDao = null;
     @Inject
-    ResourceManager _resourceMgr;
+    protected ResourceManager _resourceMgr;
     @Inject
     ClusterDao _clusterDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-    float _factor = 1;
-    boolean _checkHvm = true;
-    protected String _allocationAlgorithm = "random";
     @Inject
     CapacityManager _capacityMgr;
+
+    boolean _checkHvm = true;
+    protected String _allocationAlgorithm = "random";
+
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
@@ -489,8 +474,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (_configDao != null) {
             Map<String, String> configs = _configDao.getConfiguration(params);
-            String opFactor = configs.get("cpu.overprovisioning.factor");
-            _factor = NumbersUtil.parseFloat(opFactor, 1);
 
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {

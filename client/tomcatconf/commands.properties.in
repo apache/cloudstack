@@ -110,6 +110,15 @@ extractIso=15
 #### guest OS commands
 listOsTypes=15
 listOsCategories=15
+addGuestOs=1
+updateGuestOs=1
+removeGuestOs=1
+
+#### guest OS mapping commands
+listGuestOsMapping=1
+addGuestOsMapping=1
+updateGuestOsMapping=1
+removeGuestOsMapping=1
 
 #### service offering commands
 createServiceOffering=1
@@ -718,6 +727,22 @@ deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
+
+### IAM commands
+createIAMPolicy=1
+deleteIAMPolicy=1
+listIAMPolicies=1
+addIAMPermissionToIAMPolicy=1
+removeIAMPermissionFromIAMPolicy=1
+createIAMGroup=1
+deleteIAMGroup=1
+listIAMGroups=1
+addAccountToIAMGroup=1
+removeAccountFromIAMGroup=1
+attachIAMPolicyToIAMGroup=1
+removeIAMPolicyFromIAMGroup=1
+attachIAMPolicyToAccount=1
+removeIAMPolicyFromAccount=1
 
 #### juniper-contrail commands
 createServiceInstance=1

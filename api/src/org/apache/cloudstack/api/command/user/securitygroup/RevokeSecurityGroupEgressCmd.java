@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,10 +34,8 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "revokeSecurityGroupEgress",
-            responseObject = SuccessResponse.class,
-            description = "Deletes a particular egress rule from this security group",
-            since = "3.0.0",
+
+@APICommand(name = "revokeSecurityGroupEgress", responseObject = SuccessResponse.class, description = "Deletes a particular egress rule from this security group", since = "3.0.0", entityType = {IAMEntityType.SecurityGroup},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
@@ -48,7 +47,7 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the egress rule", entityType = SecurityGroupRuleResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the egress rule", entityType=SecurityGroupRuleResponse.class)
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -100,7 +99,7 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
         boolean result = _securityGroupService.revokeSecurityGroupEgress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revoke security group egress rule");
         }

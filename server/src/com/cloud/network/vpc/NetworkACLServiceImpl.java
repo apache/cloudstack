@@ -23,15 +23,16 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -168,7 +169,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             // VpcId is not specified. Find permitted VPCs for the caller
             // and list ACLs belonging to the permitted VPCs
+            List<Long> permittedDomains = new ArrayList<Long>();
             List<Long> permittedAccounts = new ArrayList<Long>();
+            List<Long> permittedResources = new ArrayList<Long>();
+
             Long domainId = cmd.getDomainId();
             boolean isRecursive = cmd.isRecursive();
             String accountName = cmd.getAccountName();
@@ -176,15 +180,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             boolean listAll = cmd.listAll();
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                listAll, false);
-            domainId = domainIdRecursiveListProject.first();
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject,
+                    listAll, false, "listNetworkACLLists");
+            //domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
             SearchBuilder<VpcVO> sbVpc = _vpcDao.createSearchBuilder();
-            _accountMgr.buildACLSearchBuilder(sbVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(sbVpc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             SearchCriteria<VpcVO> scVpc = sbVpc.create();
-            _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(scVpc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
             List<Long> vpcIds = new ArrayList<Long>();
             for (VpcVO vpc : vpcs) {
@@ -200,7 +204,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
-        Pair<List<NetworkACLVO>, Integer> acls = _networkACLDao.searchAndCount(sc, filter);
+        Pair<List<NetworkACLVO>, Integer> acls =  _networkACLDao.searchAndCount(sc, filter);
         return new Pair<List<? extends NetworkACL>, Integer>(acls.first(), acls.second());
     }
 
@@ -261,7 +265,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         PrivateGateway privateGateway = _vpcSvc.getVpcPrivateGateway(gateway.getId());
         _accountMgr.checkAccess(caller, null, true, privateGateway);
 
-        return _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
+        return  _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
 
     }
 
@@ -550,7 +554,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             // aclId is not specified
             // List permitted VPCs and filter aclItems
+            List<Long> permittedDomains = new ArrayList<Long>();
             List<Long> permittedAccounts = new ArrayList<Long>();
+            List<Long> permittedResources = new ArrayList<Long>();
             Long domainId = cmd.getDomainId();
             boolean isRecursive = cmd.isRecursive();
             String accountName = cmd.getAccountName();
@@ -558,15 +564,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             boolean listAll = cmd.listAll();
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                listAll, false);
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject,
+                    listAll, false, "listNetworkACLs");
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
             SearchBuilder<VpcVO> sbVpc = _vpcDao.createSearchBuilder();
-            _accountMgr.buildACLSearchBuilder(sbVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(sbVpc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             SearchCriteria<VpcVO> scVpc = sbVpc.create();
-            _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(scVpc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
             List<Long> vpcIds = new ArrayList<Long>();
             for (VpcVO vpc : vpcs) {

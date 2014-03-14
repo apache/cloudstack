@@ -14,21 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
 
-//metadata - consists of default dynamic roles in CS + any custom roles added by user
-public interface Role {
+package com.cloud.network.element;
 
-    public static final short ROOT_ADMIN = 0;
-    public static final short DOMAIN_ADMIN = 1;
-    public static final short DOMAIN_USER = 2;
-    public static final short OWNER = 3;
-    public static final short PARENT_DOMAIN_ADMIN = 4;
-    public static final short PARENT_DOMAIN_USER = 5;
-    public static final short CHILD_DOMAIN_ADMIN = 6;
-    public static final short CHILD_DOMAIN_USER = 7;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 
-    public long getId();
-
-    public short getRoleType();
+public interface AggregatedCommandExecutor {
+    public boolean prepareAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
+    public boolean completeAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
+    public boolean cleanupAggregatedExecution(Network network, DeployDestination dest) throws ResourceUnavailableException;
 }

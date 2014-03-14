@@ -490,15 +490,18 @@
 
                                 var array1 = [];
                                 if (args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != "") {
-                                    array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" + "=" + args.data.plannerMode);
+                                    array1.push("&serviceofferingdetails[0].key" + "=" + "ImplicitDedicationMode");
+                                    array1.push("&serviceofferingdetails[0].value" + "=" + args.data.plannerMode);
                                 }
 
                                 if (args.data.pciDevice != "") {
-                                    array1.push("&serviceofferingdetails[1].pciDevice" + "=" + args.data.pciDevice);
+                                    array1.push("&serviceofferingdetails[1].key" + "=" + "pciDevice");
+                                    array1.push("&serviceofferingdetails[1].value" + "=" + args.data.pciDevice);
                                 }
 
                                 if (args.data.pciDevice == "VGPU") {
-                                    array1.push("&serviceofferingdetails[2].vgpuType" + "=" + args.data.vgpuType);
+                                    array1.push("&serviceofferingdetails[2].key" + "=" + "vgpuType");
+                                    array1.push("&serviceofferingdetails[2].value" + "=" + args.data.vgpuType);
                                 }
 
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {

@@ -20,6 +20,9 @@ import java.security.InvalidParameterException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,7 +33,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM",
+@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM", entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetVMPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMPasswordCmd.class.getName());
@@ -40,7 +43,9 @@ public class GetVMPasswordCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class
+            , required=true, description="The ID of the virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -61,7 +66,7 @@ public class GetVMPasswordCmd extends BaseCmd {
         if (passwd == null || passwd.equals(""))
             throw new InvalidParameterException("No password for VM with id '" + getId() + "' found.");
 
-        this.setResponseObject(new GetVMPasswordResponse(getCommandName(), passwd));
+        setResponseObject(new GetVMPasswordResponse(getCommandName(), passwd));
     }
 
     @Override

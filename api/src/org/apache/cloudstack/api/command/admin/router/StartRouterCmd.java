@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +38,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
 
-@APICommand(name = "startRouter", responseObject = DomainRouterResponse.class, description = "Starts a router.",
+@APICommand(name = "startRouter", responseObject = DomainRouterResponse.class, description = "Starts a router.", entityType = {IAMEntityType.VirtualMachine},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
@@ -114,7 +115,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
         if (result != null) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+            setResponseObject(routerResponse);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start router");
         }

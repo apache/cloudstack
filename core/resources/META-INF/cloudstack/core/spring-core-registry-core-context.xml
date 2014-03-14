@@ -46,7 +46,7 @@
         <property name="orderConfigKey" value="security.checkers.order" />
         <property name="excludeKey" value="security.checkers.exclude" />
         <property name="orderConfigDefault"
-            value="AffinityGroupAccessChecker,DomainChecker" />
+            value="RoleBasedEntityAccessChecker,AffinityGroupAccessChecker,DomainChecker" />
     </bean>
 
     <bean id="resourceDiscoverersRegistry"
@@ -218,7 +218,7 @@
             </list>
         </property>
     </bean>
-    
+
     <bean id="remoteAccessVPNServiceProviderRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="remote.access.vpn.service.provider.exclude" />
@@ -249,6 +249,11 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="api.checkers.exclude" />
     </bean>
+    
+    <bean id="querySelectorsRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="query.selectors.exclude" />
+    </bean>    
 
     <bean id="apiCommandsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">

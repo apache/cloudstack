@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.user.vpc;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 
-@APICommand(name = "deleteStaticRoute", description = "Deletes a static route", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteStaticRoute", description = "Deletes a static route", responseObject = SuccessResponse.class, entityType = {IAMEntityType.StaticRoute},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());
@@ -44,7 +47,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "the ID of the static route")
     private Long id;
 
@@ -98,7 +101,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete static route");
         }

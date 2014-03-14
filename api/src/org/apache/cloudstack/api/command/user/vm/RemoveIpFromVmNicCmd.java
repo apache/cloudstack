@@ -37,6 +37,7 @@ import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.vm.NicSecondaryIp;
 
+
 @APICommand(name = "removeIpFromNic", description = "Removes secondary IP from the NIC.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
@@ -46,12 +47,11 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ID,
-               type = CommandType.UUID,
-               required = true,
-               entityType = NicSecondaryIpResponse.class,
-               description = "the ID of the secondary ip address to nic")
+            type = CommandType.UUID,
+            required = true,
+            entityType = NicSecondaryIpResponse.class,
+            description = "the ID of the secondary ip address to nic")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -96,7 +96,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Disassociating ip address with id=" + id);
+        return  ("Disassociating ip address with id=" + id);
     }
 
     /////////////////////////////////////////////////////
@@ -153,7 +153,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             boolean result = _networkService.releaseSecondaryIpFromNic(id);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
             }

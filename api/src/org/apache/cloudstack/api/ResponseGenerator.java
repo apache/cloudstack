@@ -25,6 +25,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -175,6 +177,7 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
@@ -196,7 +199,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
 
-    AccountResponse createAccountResponse(Account account);
+    AccountResponse createAccountResponse(ResponseView view, Account account);
 
     DomainResponse createDomainResponse(Domain domain);
 
@@ -214,9 +217,9 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
@@ -232,7 +235,7 @@ public interface ResponseGenerator {
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
-    IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
+    IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
     GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
 
@@ -250,9 +253,9 @@ public interface ResponseGenerator {
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
-    ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities);
+    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities);
 
-    VolumeResponse createVolumeResponse(Volume volume);
+    VolumeResponse createVolumeResponse(ResponseView view, Volume volume);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
@@ -278,17 +281,13 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
-    //List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
-
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
-
-    //ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
 
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules);
 
@@ -302,38 +301,31 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    //List<EventResponse> createEventResponse(EventJoinVO... events);
+    TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
-    TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result);
-
-    List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
-    TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin);
+    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
 
     NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering);
 
-    NetworkResponse createNetworkResponse(Network network);
+    NetworkResponse createNetworkResponse(ResponseView view, Network network);
 
     UserResponse createUserResponse(User user);
 
-    //List<UserResponse> createUserResponse(UserAccountJoinVO... users);
-
-    AccountResponse createUserAccountResponse(UserAccount user);
+    AccountResponse createUserAccountResponse(ResponseView view, UserAccount user);
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
-
-    // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
-    //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long vmId);
 
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
 
@@ -382,7 +374,7 @@ public interface ResponseGenerator {
      * @param vpc
      * @return
      */
-    VpcResponse createVpcResponse(Vpc vpc);
+    VpcResponse createVpcResponse(ResponseView view, Vpc vpc);
 
     /**
      * @param networkACLItem
@@ -423,6 +415,8 @@ public interface ResponseGenerator {
     AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
 
     GuestOSResponse createGuestOSResponse(GuestOS os);
+
+    GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 

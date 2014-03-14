@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,7 +37,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
-@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0",
+@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0", entityType = {IAMEntityType.ResourceTag},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
@@ -109,7 +110,7 @@ public class DeleteTagsCmd extends BaseAsyncCmd {
 
         if (success) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete tags");
         }

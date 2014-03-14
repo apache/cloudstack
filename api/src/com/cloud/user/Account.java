@@ -23,9 +23,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Account extends ControlledEntity, InternalIdentity, Identity {
-    public enum Type {
-        Normal, Admin, DomainAdmin, CustomerCare, Project
-    }
+
 
     public enum State {
         disabled, enabled, locked

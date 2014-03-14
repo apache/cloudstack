@@ -163,21 +163,6 @@ def pingtest(session, args):
     return txt
 
 @echo
-def savePassword(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug("  save password to domr failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -1520,7 +1505,6 @@ if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "savePassword": savePassword, 
                             "routerProxy": routerProxy, 
                             "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 

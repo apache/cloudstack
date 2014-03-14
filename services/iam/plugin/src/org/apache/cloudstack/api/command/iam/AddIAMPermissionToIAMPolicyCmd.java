@@ -39,7 +39,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.utils.db.EntityManager;
 
 
 @APICommand(name = "addIAMPermissionToIAMPolicy", description = "Add IAM permission to an iam policy", responseObject = IAMPolicyResponse.class)
@@ -49,8 +48,6 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
 
     @Inject
     public IAMApiService _iamApiSrv;
-    @Inject
-    public EntityManager _entityMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

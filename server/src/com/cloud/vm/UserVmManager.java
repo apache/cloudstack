@@ -20,22 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.server.Criteria;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -92,23 +88,7 @@ public interface UserVmManager extends UserVmService {
 
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 
-    /**
-     * Obtains a list of virtual machines by the specified search criteria.
-     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
-     * @param c
-     * @param caller TODO
-     * @param domainId TODO
-     * @param isRecursive TODO
-     * @param permittedAccounts TODO
-     * @param listAll TODO
-     * @param listProjectResourcesCriteria TODO
-     * @param tags TODO
-     * @return List of UserVMs + count
-     */
-    Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll,
-        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
-
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,

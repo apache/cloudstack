@@ -21,17 +21,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
@@ -106,7 +104,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
-    private Map<String, String> details;
+    private Map details;
 
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
@@ -215,7 +213,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             Iterator<?> iter = props.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> detail = (HashMap<String, String>) iter.next();
-                detailsMap.putAll(detail);
+                detailsMap.put(detail.get("key"), detail.get("value"));
             }
         }
         return detailsMap;

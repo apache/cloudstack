@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -52,22 +53,22 @@ public class LdapCreateAccountCmd extends BaseCmd {
     private LdapManager _ldapManager;
 
     @Parameter(name = ApiConstants.ACCOUNT,
-               type = CommandType.STRING,
-               description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+            type = CommandType.STRING,
+            description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-               type = CommandType.SHORT,
-               required = true,
-               description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+            type = CommandType.SHORT,
+            required = true,
+            description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Creates the user under the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.TIMEZONE,
-               type = CommandType.STRING,
-               description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+            type = CommandType.STRING,
+            description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Unique username.")
@@ -97,7 +98,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
 
     UserAccount createCloudstackUserAccount(final LdapUser user) {
         return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName,
-            accountType, domainId, networkDomain, details, accountUUID, userUUID);
+                accountType, domainId, networkDomain, details, accountUUID, userUUID);
     }
 
     @Override
@@ -109,7 +110,8 @@ public class LdapCreateAccountCmd extends BaseCmd {
             validateUser(user);
             final UserAccount userAccount = createCloudstackUserAccount(user);
             if (userAccount != null) {
-                final AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
+                final AccountResponse response = _responseGenerator
+                        .createUserAccountResponse(ResponseView.Full, userAccount);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

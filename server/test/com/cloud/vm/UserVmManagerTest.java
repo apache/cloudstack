@@ -334,7 +334,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm on incompatible HV.
     @Test(expected = InvalidParameterValueException.class)
-    public void testScaleVMF1() throws Exception {
+    public void testScaleVMF1()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -349,7 +349,7 @@ public class UserVmManagerTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
-        // UserContext.current().setEventDetails("Vm Id: "+getId());
+       // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
@@ -366,7 +366,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm on equal service offerings.
     @Test(expected = InvalidParameterValueException.class)
-    public void testScaleVMF2() throws Exception {
+    public void testScaleVMF2()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -388,8 +388,8 @@ public class UserVmManagerTest {
 
         doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
 
-        ServiceOffering so1 = getSvcoffering(512);
-        ServiceOffering so2 = getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
         when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
@@ -407,7 +407,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm for Stopped vm.
     //@Test(expected=InvalidParameterValueException.class)
-    public void testScaleVMF3() throws Exception {
+    public void testScaleVMF3()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -423,8 +423,8 @@ public class UserVmManagerTest {
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        ServiceOffering so1 = getSvcoffering(512);
-        ServiceOffering so2 = getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
         when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
@@ -448,7 +448,7 @@ public class UserVmManagerTest {
     }
 
     // Test scaleVm for Running vm. Full positive test.
-    public void testScaleVMF4() throws Exception {
+    public void testScaleVMF4()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -469,8 +469,8 @@ public class UserVmManagerTest {
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        ServiceOffering so1 = getSvcoffering(512);
-        ServiceOffering so2 = getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
         when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
@@ -478,7 +478,7 @@ public class UserVmManagerTest {
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
-        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
+        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(),  anyBoolean())).thenReturn(false);
         when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so1, false)).thenReturn(_vmInstance);
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), anyLong());
@@ -498,7 +498,7 @@ public class UserVmManagerTest {
 
     private ServiceOfferingVO getSvcoffering(int ramSize) {
 
-        long id = 4L;
+        long id  = 4L;
         String name = "name";
         String displayText = "displayText";
         int cpu = 1;
@@ -515,7 +515,7 @@ public class UserVmManagerTest {
 
     // Test Move VM b/w accounts where caller is not ROOT/Domain admin
     @Test(expected = InvalidParameterValueException.class)
-    public void testMoveVmToUser1() throws Exception {
+    public void testMoveVmToUser1()  throws Exception {
         AssignVMCmd cmd = new AssignVMCmd();
         Class<?> _class = cmd.getClass();
 
@@ -538,7 +538,7 @@ public class UserVmManagerTest {
         CallContext.register(user, caller);
         try {
 
-            _userVmMgr.moveVMToUser(cmd);
+        _userVmMgr.moveVMToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -546,7 +546,7 @@ public class UserVmManagerTest {
 
     // Test Move VM b/w accounts where caller doesn't have access to the old or new account
     @Test(expected = PermissionDeniedException.class)
-    public void testMoveVmToUser2() throws Exception {
+    public void testMoveVmToUser2()  throws Exception {
         AssignVMCmd cmd = new AssignVMCmd();
         Class<?> _class = cmd.getClass();
 
@@ -581,6 +581,9 @@ public class UserVmManagerTest {
             any(ControlledEntity.class));
 
         CallContext.register(user, caller);
+
+        when(_accountMgr.isRootAdmin(anyLong())).thenReturn(true);
+
         try {
             _userVmMgr.moveVMToUser(cmd);
         } finally {

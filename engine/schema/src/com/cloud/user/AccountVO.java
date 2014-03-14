@@ -193,5 +193,4 @@ public class AccountVO implements Account {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Account;
     }
-
 }

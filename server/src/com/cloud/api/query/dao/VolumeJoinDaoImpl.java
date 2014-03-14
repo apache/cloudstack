@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -39,6 +40,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -49,7 +51,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao _configDao;
+    private ConfigurationDao  _configDao;
+    @Inject
+    public AccountManager _accountMgr;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -65,11 +69,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volIdSearch.and("id", volIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         volIdSearch.done();
 
-        this._count = "select count(distinct id) from volume_view WHERE ";
+        _count = "select count(distinct id) from volume_view WHERE ";
     }
 
     @Override
-    public VolumeResponse newVolumeResponse(VolumeJoinVO volume) {
+    public VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO volume) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeResponse volResponse = new VolumeResponse();
@@ -110,7 +114,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
+            if (view == ResponseView.Full)
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
@@ -138,7 +142,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (view == ResponseView.Full) {
             volResponse.setPath(volume.getPath());
         }
 
@@ -170,7 +174,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         }
 
         // return hypervisor and storage pool info for ROOT and Resource domain only
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+        if (view == ResponseView.Full) {
             if (volume.getState() != Volume.State.UploadOp) {
                 if (volume.getHypervisorType() != null) {
                     volResponse.setHypervisor(volume.getHypervisorType().toString());
@@ -222,7 +226,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
     }
 
     @Override
-    public VolumeResponse setVolumeResponse(VolumeResponse volData, VolumeJoinVO vol) {
+    public VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol) {
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);

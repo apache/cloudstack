@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,13 +31,12 @@ import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
 
-@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class,
+@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class, entityType = {IAMEntityType.Condition},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
@@ -69,8 +71,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
         condition = _autoScaleService.createCondition(this);
 
         if (condition != null) {
-            this.setEntityId(condition.getId());
-            this.setEntityUuid(condition.getUuid());
+            setEntityId(condition.getId());
+            setEntityUuid(condition.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create condition.");
         }
@@ -81,7 +83,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
         Condition condition = _entityMgr.findById(Condition.class, getEntityId());
         ConditionResponse response = _responseGenerator.createConditionResponse(condition);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     // /////////////////////////////////////////////////

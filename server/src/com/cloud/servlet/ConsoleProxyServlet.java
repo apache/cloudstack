@@ -330,15 +330,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         if (hostInfo != null) {
             if (hostInfo.startsWith("consoleurl")) {
-                String tokens[] = hostInfo.split("&");
+            String tokens[] = hostInfo.split("&");
 
-                if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
-                    host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
-                    tunnelUrl = tokens[0].substring("consoleurl=".length());
-                    tunnelSession = tokens[1].split("=")[1];
-                } else {
-                    host = "";
-                }
+            if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
+                host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
+                tunnelUrl = tokens[0].substring("consoleurl=".length());
+                tunnelSession = tokens[1].split("=")[1];
+            } else {
+                host = "";
+            }
             } else if (hostInfo.startsWith("instanceId")) {
                 host = hostInfo.substring(hostInfo.indexOf('=') + 1);
             } else {
@@ -449,7 +449,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
             param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
         }
-        if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
+        if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
         }
@@ -516,37 +516,38 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 
         // root admin can access anything
-        if (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
+        if (_accountMgr.isRootAdmin(accountObj.getId()))
             return true;
 
         switch (vm.getType()) {
             case User:
-                try {
-                    _accountMgr.checkAccess(accountObj, null, true, vm);
-                } catch (PermissionDeniedException ex) {
-                    if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                        if (s_logger.isDebugEnabled()) {
+            try {
+                _accountMgr.checkAccess(accountObj, null, true, vm);
+            } catch (PermissionDeniedException ex) {
+                if (_accountMgr.isNormalUser(accountObj.getId())) {
+                    if (s_logger.isDebugEnabled()) {
                             s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
                                 accountObj.getId() + " and caller is a normal user");
-                        }
-                    } else if (accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
-                                accountObj.getId() + " and the domain-admin caller does not manage the target domain");
-                        }
                     }
-                    return false;
+                } else if (_accountMgr.isDomainAdmin(accountObj.getId())
+                        || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
+                                + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
+                    }
                 }
-                break;
-
-            case DomainRouter:
-            case ConsoleProxy:
-            case SecondaryStorageVm:
                 return false;
+            }
+            break;
+
+        case DomainRouter:
+            case ConsoleProxy:
+        case SecondaryStorageVm:
+            return false;
 
             default:
-                s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
-                return false;
+            s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
+            return false;
         }
 
         return true;

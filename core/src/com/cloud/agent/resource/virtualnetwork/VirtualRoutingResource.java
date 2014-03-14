@@ -25,11 +25,12 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand;
+import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.routing.FinishAggregationCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -47,7 +48,6 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.routing.StartAggregationCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
@@ -77,6 +77,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -123,6 +125,7 @@ public class VirtualRoutingResource {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
     private Map <String, Queue> _vrAggregateCommandsSet;
+    protected Map<String, Lock> _vrLockMap = new HashMap<String, Lock>();
 
     private String _name;
     private int _sleep;
@@ -137,13 +140,22 @@ public class VirtualRoutingResource {
 
     public Answer executeRequest(final NetworkElementCommand cmd) {
         boolean aggregated = false;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        Lock lock;
+        if (_vrLockMap.containsKey(routerName)) {
+            lock = _vrLockMap.get(routerName);
+        } else {
+            lock = new ReentrantLock();
+            _vrLockMap.put(routerName, lock);
+        }
+        lock.lock();
+
         try {
             ExecutionResult rc = _vrDeployer.prepareCommand(cmd);
             if (!rc.isSuccess()) {
                 s_logger.error("Failed to prepare VR command due to " + rc.getDetails());
                 return new Answer(cmd, false, rc.getDetails());
             }
-            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
             assert cmd.getRouterAccessIp() != null : "Why there is no access IP for VR?";
 
@@ -151,10 +163,8 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
-            if (cmd instanceof StartAggregationCommand) {
-                return execute((StartAggregationCommand)cmd);
-            } else if (cmd instanceof FinishAggregationCommand) {
-                return execute((FinishAggregationCommand)cmd);
+            if (cmd instanceof AggregationControlCommand) {
+                return execute((AggregationControlCommand)cmd);
             }
 
             if (_vrAggregateCommandsSet.containsKey(routerName)) {
@@ -174,6 +184,7 @@ public class VirtualRoutingResource {
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         } finally {
+            lock.unlock();
             if (!aggregated) {
                 ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
                 if (!rc.isSuccess()) {
@@ -1019,15 +1030,6 @@ public class VirtualRoutingResource {
         return false;
     }
 
-    private Answer execute(StartAggregationCommand cmd) {
-        // Access IP would be used as ID for router
-        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        assert routerName != null;
-        Queue<NetworkElementCommand> queue = new LinkedBlockingQueue<>();
-        _vrAggregateCommandsSet.put(routerName, queue);
-        return new Answer(cmd);
-    }
-
     private List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
         List<ConfigItem> cfg;
         if (cmd instanceof SetPortForwardingRulesVpcCommand) {
@@ -1078,51 +1080,70 @@ public class VirtualRoutingResource {
         return cfg;
     }
 
-    private Answer execute(FinishAggregationCommand cmd) {
+    private Answer execute(AggregationControlCommand cmd) {
+        Action action = cmd.getAction();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         assert routerName != null;
         assert cmd.getRouterAccessIp() != null;
-        Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("#Apache CloudStack Virtual Router Config File\n");
-            sb.append("<version>\n" + _cfgVersion + "\n</version>\n");
-            for (NetworkElementCommand command : queue) {
-                List<ConfigItem> cfg = generateCommandCfg(command);
-                if (cfg == null) {
-                    s_logger.warn("Unknown commands for VirtualRoutingResource, but continue: " + cmd.toString());
-                    continue;
-                }
 
-                for (ConfigItem c : cfg) {
-                    if (c.isFile()) {
-                        sb.append("<file>\n");
-                        sb.append(c.getFilePath() + c.getFileName() + "\n");
-                        sb.append(c.getFileContents() + "\n");
-                        sb.append("</file>\n");
-                    } else {
-                        sb.append("<script>\n");
-                        sb.append("/opt/cloud/bin/" + c.getScript() + " " + c.getArgs() + "\n");
-                        sb.append("</script>\n");
+        if (action == Action.Start) {
+            assert (!_vrAggregateCommandsSet.containsKey(routerName));
+
+            Queue<NetworkElementCommand> queue = new LinkedBlockingQueue<>();
+            _vrAggregateCommandsSet.put(routerName, queue);
+            return new Answer(cmd);
+        } else if (action == Action.Finish) {
+            Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
+            try {
+                StringBuilder sb = new StringBuilder();
+                sb.append("#Apache CloudStack Virtual Router Config File\n");
+                sb.append("<version>\n" + _cfgVersion + "\n</version>\n");
+                for (NetworkElementCommand command : queue) {
+                    List<ConfigItem> cfg = generateCommandCfg(command);
+                    if (cfg == null) {
+                        s_logger.warn("Unknown commands for VirtualRoutingResource, but continue: " + cmd.toString());
+                        continue;
+                    }
+
+                    for (ConfigItem c : cfg) {
+                        if (c.isFile()) {
+                            sb.append("<file>\n");
+                            sb.append(c.getFilePath() + c.getFileName() + "\n");
+                            sb.append(c.getFileContents() + "\n");
+                            sb.append("</file>\n");
+                        } else {
+                            sb.append("<script>\n");
+                            sb.append("/opt/cloud/bin/" + c.getScript() + " " + c.getArgs() + "\n");
+                            sb.append("</script>\n");
+                        }
                     }
                 }
-            }
-            String cfgFilePath = "/var/cache/cloud/";
-            String cfgFileName = "VR-"+ UUID.randomUUID().toString() + ".cfg";
-            ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), cfgFilePath, cfgFileName, sb.toString());
-            if (!result.isSuccess()) {
-                return new Answer(cmd, false, result.getDetails());
-            }
+                String cfgFilePath = "/var/cache/cloud/";
+                String cfgFileName = "VR-"+ UUID.randomUUID().toString() + ".cfg";
+                ExecutionResult result = _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), cfgFilePath, cfgFileName, sb.toString());
+                if (!result.isSuccess()) {
+                    return new Answer(cmd, false, result.getDetails());
+                }
 
-            result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_CFG, "-c " + cfgFilePath + cfgFileName);
-            if (!result.isSuccess()) {
-                return new Answer(cmd, false, result.getDetails());
+                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_CFG, "-c " + cfgFilePath + cfgFileName);
+                if (!result.isSuccess()) {
+                    return new Answer(cmd, false, result.getDetails());
+                }
+                return new Answer(cmd);
+            } finally {
+                queue.clear();
+                _vrAggregateCommandsSet.remove(routerName);
             }
-            return new Answer(cmd);
-        } finally {
-            queue.clear();
+        } else if (action == Action.Cleanup) {
+            assert (_vrAggregateCommandsSet.containsKey(routerName));
+            Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
+            if (queue != null) {
+                queue.clear();
+            }
             _vrAggregateCommandsSet.remove(routerName);
-        }
-    }
 
+            return new Answer(cmd);
+        }
+        return new Answer(cmd, false, "Fail to recongize aggregation action " + action.toString());
+    }
 }

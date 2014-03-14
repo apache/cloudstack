@@ -38,12 +38,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
@@ -51,13 +56,12 @@ import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -72,6 +76,7 @@ import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.PartOf;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -86,6 +91,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -105,7 +111,6 @@ import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
@@ -248,6 +253,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
+
+    List<QuerySelector> _querySelectors;
+
+    @Inject
+    MessageBus _messageBus;
+
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
 
@@ -265,7 +276,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     AccountVO _systemAccount;
 
     List<SecurityChecker> _securityCheckers;
-
     int _cleanupInterval;
 
     public List<UserAuthenticator> getUserAuthenticators() {
@@ -290,6 +300,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
         _securityCheckers = securityCheckers;
+    }
+
+    public List<QuerySelector> getQuerySelectors() {
+        return _querySelectors;
+    }
+
+    public void setQuerySelectors(List<QuerySelector> querySelectors) {
+        _querySelectors = querySelectors;
     }
 
     @Override
@@ -319,7 +337,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserVO getSystemUser() {
         if (_systemUser == null) {
             _systemUser = _userDao.findById(User.UID_SYSTEM);
-        }
+    }
         return _systemUser;
     }
 
@@ -349,16 +367,61 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
-        return (accountType == Account.ACCOUNT_TYPE_ADMIN);
+    public boolean isRootAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            for (SecurityChecker checker : _securityCheckers) {
+                try {
+                    if (checker.checkAccess(acct, null, null, "SystemCapability")) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                        }
+                        return true;
+                    }
+                } catch (PermissionDeniedException ex) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isDomainAdmin(Long accountId) {
+        if (accountId != null) {
+            AccountVO acct = _accountDao.findById(accountId);
+            for (SecurityChecker checker : _securityCheckers) {
+                try {
+                    if (checker.checkAccess(acct, null, null, "DomainCapability")) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                        }
+                        return true;
+                    }
+                } catch (PermissionDeniedException ex) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        AccountVO acct = _accountDao.findById(accountId);
+        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isResourceDomainAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
     }
 
-    public boolean isInternalAccount(short accountType) {
-        if (isRootAdmin(accountType) || (accountType == Account.ACCOUNT_ID_SYSTEM)) {
+    public boolean isInternalAccount(long accountId) {
+        Account account = _accountDao.findById(accountId);
+        if (isRootAdmin(accountId) || (account.getType() == Account.ACCOUNT_ID_SYSTEM)) {
             return true;
         }
         return false;
@@ -380,8 +443,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
 
+        //TO BE IMPLEMENTED
+
+    }
+
+    @Override
+    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
+        checkAccess(caller, accessType, sameOwner, null, entities);
+    }
+
+    @Override
+    public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
         //check for the same owner
         Long ownerId = null;
         ControlledEntity prevEntity = null;
@@ -398,7 +473,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getType())) {
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getId())) {
             // no need to make permission checks if the system/root admin makes the call
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
@@ -416,7 +491,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 domainId = account != null ? account.getDomainId() : -1;
             }
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) &&
-                !(accessType != null && accessType == AccessType.UseNetwork) && !(entity instanceof AffinityGroup)) {
+                !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) && !(entity instanceof AffinityGroup)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -427,7 +502,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
-                if (checker.checkAccess(caller, entity, accessType)) {
+                if (checker.checkAccess(caller, entity, accessType, apiName)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
                     }
@@ -494,13 +569,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    UserAccountVO user = null;
-                    user = _userAccountDao.lockRow(id, true);
-                    user.setLoginAttempts(attempts);
+            UserAccountVO user = null;
+            user = _userAccountDao.lockRow(id, true);
+            user.setLoginAttempts(attempts);
                     if (toDisable) {
-                        user.setState(State.disabled.toString());
-                    }
-                    _userAccountDao.update(id, user);
+                user.setState(State.disabled.toString());
+            }
+            _userAccountDao.update(id, user);
                 }
             });
         } catch (Exception e) {
@@ -584,6 +659,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
+
+            //delete the account from group
+            _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
 
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
@@ -711,8 +789,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
-                        accountCleanupNeeded = true;
+                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                    accountCleanupNeeded = true;
                     }
                 }
             }
@@ -754,9 +832,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : ipsToRelease) {
                 if (ip.isPortable()) {
-                    s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                    _ipAddrMgr.releasePortableIpAddress(ip.getId());
-                }
+                s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                _ipAddrMgr.releasePortableIpAddress(ip.getId());
+            }
             }
 
             // release dedication if any
@@ -873,7 +951,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email,
         final String timezone, String accountName,
         final short accountType,
-        Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
+                                         Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
 
         if (accountName == null) {
             accountName = userName;
@@ -910,8 +988,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -938,6 +1016,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
                     user.setRegistrationToken(registrationToken);
                 }
+
+                // create correct account and group association based on accountType
+                if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
+                    Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+                    accountGroupMap.put(accountId, new Long(accountType + 1));
+                    _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
+                }
+
                 return new Pair<Long, Account>(user.getId(), account);
             }
         });
@@ -1024,7 +1110,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), null, true, account);
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
 
         if (firstName != null) {
             if (firstName.isEmpty()) {
@@ -1138,7 +1224,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = doSetUserStatus(userId, State.disabled);
         if (success) {
@@ -1176,15 +1262,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                boolean success = doSetUserStatus(userId, State.enabled);
+        boolean success = doSetUserStatus(userId, State.enabled);
 
-                // make sure the account is enabled too
-                success = success && enableAccount(user.getAccountId());
+        // make sure the account is enabled too
+        success = success && enableAccount(user.getAccountId());
 
                 return success;
             }
@@ -1225,7 +1311,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
@@ -1334,7 +1420,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Check if user performing the action is allowed to modify this account
         Account caller = CallContext.current().getCallingAccount();
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -1368,7 +1454,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, lock is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         if (lockAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1398,7 +1484,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, disable is not allowed");
         }
 
-        checkAccess(caller, null, true, account);
+        checkAccess(caller, AccessType.OperateEntry, true, account);
 
         if (disableAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1456,8 +1542,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -1478,9 +1564,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean success = _accountDao.update(accountFinal.getId(), acctForUpdate);
 
-                if (details != null && success) {
+        if (details != null && success) {
                     _accountDetailsDao.update(accountFinal.getId(), details);
-                }
+        }
 
                 return success;
             }
@@ -1517,7 +1603,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The user is default and can't be removed");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), null, true, account);
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return _userDao.remove(id);
     }
@@ -1759,8 +1845,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
-                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -1780,26 +1866,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return Transaction.execute(new TransactionCallback<AccountVO>() {
             @Override
             public AccountVO doInTransaction(TransactionStatus status) {
-                AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid));
+        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid));
 
-                if (account == null) {
-                    throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
-                }
+        if (account == null) {
+            throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
+        }
 
-                Long accountId = account.getId();
+        Long accountId = account.getId();
 
-                if (details != null) {
-                    _accountDetailsDao.persist(accountId, details);
-                }
+        if (details != null) {
+            _accountDetailsDao.persist(accountId, details);
+        }
 
-                // Create resource count records for the account
-                _resourceCountDao.createResourceCounts(accountId, ResourceLimit.ResourceOwnerType.Account);
+        // Create resource count records for the account
+        _resourceCountDao.createResourceCounts(accountId, ResourceLimit.ResourceOwnerType.Account);
 
-                // Create default security group
-                _networkGroupMgr.createDefaultSecurityGroup(accountId);
+        // Create default security group
+        _networkGroupMgr.createDefaultSecurityGroup(accountId);
 
-                return account;
-            }
+        return account;
+    }
         });
     }
 
@@ -1809,7 +1895,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         String encodedPassword = null;
-        for (UserAuthenticator authenticator : _userPasswordEncoders) {
+        for (UserAuthenticator  authenticator : _userPasswordEncoders) {
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;
@@ -1820,7 +1906,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (userUUID == null) {
-            userUUID = UUID.randomUUID().toString();
+            userUUID =  UUID.randomUUID().toString();
         }
         UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID));
         CallContext.current().putContextParameter(User.class, user.getUuid());
@@ -1949,7 +2035,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     loginIpAddress);
             } else {
                 ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
-                    "user has logged in. The IP Address cannot be determined");
+                        "user has logged in. The IP Address cannot be determined");
             }
             return user;
         } else {
@@ -2001,7 +2087,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 // return null;
             }
             // Whenever the user is able to log in successfully, reset the login attempts to zero
-            if (!isInternalAccount(userAccount.getType()))
+            if (!isInternalAccount(userAccount.getId()))
                 updateLoginAttempts(userAccount.getId(), 0, false);
 
             return userAccount;
@@ -2017,14 +2103,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         // Internal accounts are not disabled
                         int attemptsMade = userAccount.getLoginAttempts() + 1;
                         if (updateIncorrectLoginCount) {
-                            if (attemptsMade < _allowedLoginAttempts) {
-                                updateLoginAttempts(userAccount.getId(), attemptsMade, false);
-                                s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
-                            } else {
-                                updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
-                                s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." + " Please contact admin.");
-                            }
+                        if (attemptsMade < _allowedLoginAttempts) {
+                            updateLoginAttempts(userAccount.getId(), attemptsMade, false);
+                            s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
+                        } else {
+                            updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
+                            s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." + " Please contact admin.");
                         }
+                    }
                     }
                 } else {
                     s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
@@ -2062,8 +2148,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                keys[0] = createUserApiKey(userId);
-                keys[1] = createUserSecretKey(userId);
+        keys[0] = createUserApiKey(userId);
+        keys[1] = createUserSecretKey(userId);
             }
         });
 
@@ -2125,79 +2211,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return null;
     }
 
+
     @Override
-    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
-
-        if (sb.entity() instanceof IPAddressVO) {
-            sb.and("accountIdIN", ((IPAddressVO)sb.entity()).getAllocatedToAccountId(), SearchCriteria.Op.IN);
-            sb.and("domainId", ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), SearchCriteria.Op.EQ);
-        } else if (sb.entity() instanceof ProjectInvitationVO) {
-            sb.and("accountIdIN", ((ProjectInvitationVO)sb.entity()).getForAccountId(), SearchCriteria.Op.IN);
-            sb.and("domainId", ((ProjectInvitationVO)sb.entity()).getInDomainId(), SearchCriteria.Op.EQ);
-        } else {
-            sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-            sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        }
-
-        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
-            // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-
-            if (sb.entity() instanceof IPAddressVO) {
-                sb.join("domainSearch", domainSearch, ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            } else if (sb.entity() instanceof ProjectInvitationVO) {
-                sb.join("domainSearch", domainSearch, ((ProjectInvitationVO)sb.entity()).getInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            } else {
-                sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            }
-
-        }
-        if (listProjectResourcesCriteria != null) {
-            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
-            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-            }
-
-            if (sb.entity() instanceof IPAddressVO) {
-                sb.join("accountSearch", accountSearch, ((IPAddressVO)sb.entity()).getAllocatedToAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            } else if (sb.entity() instanceof ProjectInvitationVO) {
-                sb.join("accountSearch", accountSearch, ((ProjectInvitationVO)sb.entity()).getForAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            } else {
-                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            }
-        }
+    public UserAccount getUserByApiKey(String apiKey) {
+        return _userAccountDao.getUserByApiKey(apiKey);
     }
 
     @Override
-    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
-
-        if (listProjectResourcesCriteria != null) {
-            sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-    }
-
-    @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
-        permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
-        boolean listAll, boolean forProjectInvitation) {
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
+            String action) {
+        //TODO: need to handle listAll flag
         Long domainId = domainIdRecursiveListProject.first();
         if (domainId != null) {
+            // look for entity in the given domain
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
@@ -2222,8 +2249,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (userAccount != null) {
+                //check permissions
                 checkAccess(caller, null, false, userAccount);
-                // check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
                 throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
@@ -2234,7 +2261,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (projectId != null) {
             if (!forProjectInvitation) {
                 if (projectId.longValue() == -1) {
-                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    if (isNormalUser(caller.getId())) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                     } else {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
@@ -2251,80 +2278,210 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
-            if (id == null) {
-                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
-            }
-            if (permittedAccounts.isEmpty() && domainId == null) {
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    permittedAccounts.add(caller.getId());
-                } else if (!listAll) {
-                    if (id == null) {
-                        permittedAccounts.add(caller.getId());
-                    } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                        domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
-                    }
-                } else if (domainId == null) {
-                    if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                        domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
-                    }
-                }
-            } else if (domainId != null) {
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    permittedAccounts.add(caller.getId());
-                }
-            }
+            domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
 
+            // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
+            // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
+            // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
+            // assume that there is only one query selector adapter
+            if (_querySelectors == null || _querySelectors.size() == 0)
+                return; // no futher filtering
+
+            QuerySelector qs = _querySelectors.get(0);
+            boolean grantedAll = qs.isGrantedAll(caller, action);
+            if ( grantedAll ){
+                if ( domainId != null ){
+                    permittedDomains.add(domainId);
+                }
+            }
+            else {
+                List<Long> grantedDomains = qs.getAuthorizedDomains(caller, action);
+                List<Long> grantedAccounts = qs.getAuthorizedAccounts(caller, action);
+                List<Long> grantedResources = qs.getAuthorizedResources(caller, action);
+
+                if (permittedAccounts.isEmpty() && domainId != null) {
+                    // specific domain and no account is specified
+                    if (grantedDomains.contains(domainId)) {
+                        permittedDomains.add(domainId);
+                    } else {
+                        for (Long acctId : grantedAccounts) {
+                            Account acct = _accountDao.findById(acctId);
+                            if (acct != null && acct.getDomainId() == domainId) {
+                                permittedAccounts.add(acctId);
+                            }
+                        }
+                        permittedResources.addAll(grantedResources);
+                    }
+                } else if (permittedAccounts.isEmpty()) {
+                    // neither domain nor account is not specified
+                    permittedDomains.addAll(grantedDomains);
+                    permittedAccounts.addAll(grantedAccounts);
+                    permittedResources.addAll(grantedResources);
+                }
+            }
         }
     }
 
     @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
-
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-
-        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
-            // if accountId isn't specified, we can do a domain match for the
-            // admin case if isRecursive is true
-            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
+    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, boolean isRecursive,
+            List<Long> permittedDomains,
+            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 
         if (listProjectResourcesCriteria != null) {
+            // add criteria for project or not
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
             if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
             } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+                accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+            }
+
+            if (sb.entity() instanceof IPAddressVO) {
+                sb.join("accountSearch", accountSearch, ((IPAddressVO)sb.entity()).getAllocatedToAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            } else {
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
             }
         }
+        if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() && permittedResources.isEmpty())
+            // can access everything
+            return;
 
+        if (!permittedAccounts.isEmpty() || !permittedResources.isEmpty()) {
+            if (!permittedAccounts.isEmpty()) {
+                if (sb.entity() instanceof IPAddressVO) {
+                    sb.and().op("accountIdIn", ((IPAddressVO)sb.entity()).getAllocatedToAccountId(), SearchCriteria.Op.IN);
+                } else {
+                    sb.and().op("accountIdIn", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+                }
+                if (!permittedResources.isEmpty()) {
+                    sb.or("idIn", ((InternalIdentity)sb.entity()).getId(), SearchCriteria.Op.IN);
+                }
+            } else {
+                // permittedResources is not empty
+                sb.and().op("idIn", ((InternalIdentity)sb.entity()).getId(), SearchCriteria.Op.IN);
+            }
+            if (!permittedDomains.isEmpty()) {
+                if (isRecursive) {
+                    SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+                    for (int i = 0; i < permittedDomains.size(); i++) {
+                        domainSearch.or("path" + i, domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+                    }
+                    if (sb.entity() instanceof IPAddressVO) {
+                        sb.join("domainSearch", domainSearch, ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+                    } else {
+                        sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+                    }
+                } else {
+                    if (sb.entity() instanceof IPAddressVO) {
+                        sb.or("domainIdIn", ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), SearchCriteria.Op.IN);
+                    } else {
+                        sb.or("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                    }
+                }
+            }
+            sb.cp();
+        } else {
+            // permittedDomains is not empty
+            if (isRecursive) {
+                SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+                domainSearch.and().op("path0", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+                for (int i = 1; i < permittedDomains.size(); i++) {
+                    domainSearch.or("path" + i, domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+                }
+                domainSearch.cp();
+                if (sb.entity() instanceof IPAddressVO) {
+                    sb.join("domainSearch", domainSearch, ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+                } else {
+                    sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+                }
+            } else {
+                if (sb.entity() instanceof IPAddressVO) {
+                    sb.and().op("domainIdIn", ((IPAddressVO)sb.entity()).getAllocatedInDomainId(), SearchCriteria.Op.IN);
+                } else {
+                    sb.and().op("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+                }
+                sb.cp();
+            }
+        }
     }
 
     @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, boolean isRecursive,
+            List<Long> permittedDomains,
+            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 
         if (listProjectResourcesCriteria != null) {
-            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
         }
+
+        if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() && permittedResources.isEmpty())
+            // can access everything
+            return;
 
         if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
+            sc.setParameters("accountIdIn", permittedAccounts.toArray());
+        }
+        if (!permittedResources.isEmpty()) {
+            sc.setParameters("idIn", permittedResources.toArray());
+        }
+        if (!permittedDomains.isEmpty()) {
             if (isRecursive) {
-                sc.setParameters("domainPath", domain.getPath() + "%");
+                for (int i = 0; i < permittedDomains.size(); i++) {
+                    DomainVO domain = _domainDao.findById(permittedDomains.get(i));
+                    sc.setJoinParameters("domainSearch", "path" + i, domain.getPath() + "%");
+                }
             } else {
-                sc.setParameters("domainId", domainId);
+                sc.setParameters("domainIdIn", permittedDomains.toArray());
             }
         }
     }
 
     @Override
-    public UserAccount getUserByApiKey(String apiKey) {
-        return _userAccountDao.getUserByApiKey(apiKey);
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,
+            List<Long> permittedDomains,
+            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+
+        if (listProjectResourcesCriteria != null) {
+            // add criteria for project or not
+            if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+                sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
+            } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+            }
+        }
+
+        if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() && permittedResources.isEmpty())
+            // can access everything
+            return;
+
+        // Note that this may have limitations on number of permitted domains, accounts, or resource ids are allowed due to sql package size limitation
+        if (!permittedDomains.isEmpty()) {
+            if (isRecursive) {
+                for (int i = 0; i < permittedDomains.size(); i++) {
+                    Domain domain = _domainDao.findById(permittedDomains.get(i));
+                    aclSc.addOr("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
+                }
+            } else {
+                aclSc.addOr("domainId", SearchCriteria.Op.IN, permittedDomains.toArray());
+            }
+        }
+        if (!permittedAccounts.isEmpty()) {
+            aclSc.addOr("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
+        }
+        if (!permittedResources.isEmpty()) {
+            aclSc.addOr("id", SearchCriteria.Op.IN, permittedResources.toArray());
+        }
+
+        sc.addAnd("accountId", SearchCriteria.Op.SC, aclSc);
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        if (_querySelectors == null || _querySelectors.size() == 0)
+            return new ArrayList<String>();
+
+        QuerySelector qs = _querySelectors.get(0);
+        return qs.listAclGroupsByAccount(accountId);
     }
 
     @Override
@@ -2373,5 +2530,4 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         return null;
     }
-
 }

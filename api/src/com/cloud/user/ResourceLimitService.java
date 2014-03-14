@@ -88,7 +88,7 @@ public interface ResourceLimitService {
      * @param type
      * @return
      */
-    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type);
+    public long findCorrectResourceLimitForAccount(long accountId, Long limit, ResourceType type);
 
     /**
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check

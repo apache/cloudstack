@@ -267,9 +267,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             "] is down." +
             ((sb != null) ? sb.toString() : ""));
 
-        for (final VMInstanceVO vm : vms) {
+        for (VMInstanceVO vm : vms) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getHostName());
+            }
+            vm = _instanceDao.findByUuid(vm.getUuid());
+            Long hostId = vm.getHostId();
+            if ( hostId != null && !hostId.equals(host.getId()) ) {
+                s_logger.debug("VM " + vm.getHostName() + " is not on down host " + host.getId() + " it is on other host "
+                        + hostId + " VM HA is done");
+                continue;
             }
             scheduleRestart(vm, investigate);
         }
@@ -386,8 +393,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        HaWorkVO work =
-            new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1, vm.getUpdated());
+        if (hostId == null) {
+            hostId = vm.getLastHostId();
+        }
+
+        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled,
+                hostId != null ? hostId : 0L, vm.getState(), maxRetries + 1, vm.getUpdated());
         _haDao.persist(work);
 
         if (s_logger.isInfoEnabled()) {
@@ -694,6 +705,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
+
                 _itMgr.advanceStop(vm.getUuid(), false);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
@@ -704,6 +716,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
+
                 _itMgr.advanceStop(vm.getUuid(), true);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
@@ -900,8 +913,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         work.setDateTaken(null);
                     }
                 } catch (Exception e) {
-                    s_logger.error("Terminating " + work, e);
-                    work.setStep(Step.Error);
+                    s_logger.warn("Encountered unhandled exception during HA process, reschedule retry", e);
+
+                    long nextTime = (System.currentTimeMillis() >> 10) + _restartRetryInterval;
+
+                    s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
+                    work.setTimeToTry(nextTime);
+                    work.setServerId(null);
+                    work.setDateTaken(null);
                 }
                 _haDao.update(work.getId(), work);
             } catch (final Throwable th) {
@@ -951,12 +970,30 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Override
     public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
         if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
-            VMInstanceVO vm = _instanceDao.findById(vo.getId());
+            final VMInstanceVO vm = _instanceDao.findById(vo.getId());
             if (vm.isHaEnabled()) {
+                if (vm.getState() != State.Stopped)
+                    s_logger.warn("Sanity check failed. postStateTransitionEvent reports transited to Stopped but VM " + vm + " is still at state " + vm.getState());
+
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
-                scheduleRestart(vm, true);
+                _executor.submit(new ManagedContextRunnable() {
+                    @Override
+                    protected void runInContext() {
+                        try {
+                            scheduleRestart(vm, false);
+                        } catch (Exception e) {
+                            s_logger.warn("Unexpected exception when scheduling a HA restart", e);
+                        }
+                    }
+                });
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean hasPendingHaWork(long vmId) {
+        List<HaWorkVO> haWorks = _haDao.listRunningHaWorkForVm(vmId);
+        return haWorks.size() > 0;
     }
 }

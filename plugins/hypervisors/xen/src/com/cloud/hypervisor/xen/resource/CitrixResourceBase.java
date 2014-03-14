@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -329,7 +330,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected static HashMap<Types.VmPowerState, PowerState> s_powerStatesTable;
+    protected static final HashMap<Types.VmPowerState, PowerState> s_powerStatesTable;
     static {
         s_powerStatesTable = new HashMap<Types.VmPowerState, PowerState>();
         s_powerStatesTable.put(Types.VmPowerState.HALTED, PowerState.PowerOff);
@@ -340,7 +341,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     // TODO vmsync {
-    protected static HashMap<Types.VmPowerState, State> s_statesTable;
+    protected static final HashMap<Types.VmPowerState, State> s_statesTable;
     static {
         s_statesTable = new HashMap<Types.VmPowerState, State>();
         s_statesTable.put(Types.VmPowerState.HALTED, State.Stopped);

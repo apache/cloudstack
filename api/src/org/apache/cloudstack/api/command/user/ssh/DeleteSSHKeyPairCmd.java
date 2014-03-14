@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ssh;
 
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -24,11 +28,10 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {IAMEntityType.SSHKeyPair},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
@@ -79,7 +82,7 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
         boolean result = _mgr.deleteSSHKeyPair(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

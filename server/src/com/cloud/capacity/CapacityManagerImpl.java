@@ -188,6 +188,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         Long clusterId = null;
         if (hostId != null) {
             HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                s_logger.warn("Host " + hostId + " no long exist anymore!");
+                return true;
+            }
+
             clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {

@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -28,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
@@ -40,11 +44,11 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class,
+
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { IAMEntityType.VirtualMachine },
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
@@ -63,6 +67,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
     private Long id;
+
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class,
+               description="the IDs of the virtual machines, mutually exclusive with id")
+    private List<Long> ids;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine")
     private String name;
@@ -127,20 +135,16 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return groupId;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
     public Long getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public List<Long> getIds() {
+        return ids;
     }
 
-    public Long getPodId() {
-        return podId;
+    public String getName() {
+        return name;
     }
 
     public String getState() {
@@ -155,13 +159,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
-
-    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
-        this.forVirtualNetwork = forVirtualNetwork;
-    }
 
     public Long getNetworkId() {
         return networkId;
@@ -171,9 +168,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return hypervisor;
     }
 
-    public Long getStorageId() {
-        return storageId;
-    }
 
     public Long getTemplateId() {
         return templateId;
@@ -233,6 +227,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public void execute() {
         ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

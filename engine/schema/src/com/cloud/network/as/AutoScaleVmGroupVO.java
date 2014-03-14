@@ -230,5 +230,4 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     public IAMEntityType getEntityType() {
         return IAMEntityType.AutoScaleVmGroup;
     }
-
 }
