@@ -665,7 +665,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     public boolean postStateTransitionEvent(VirtualMachine.State oldState, VirtualMachine.Event event,
                                             VirtualMachine.State newState, VirtualMachine vm,
                                             boolean status, Object opaque) {
-
         if (!status) {
             return false;
         }
@@ -720,7 +719,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
     public boolean sendVpcTopologyChangeUpdate(OvsVpcPhysicalTopologyConfigCommand updateCmd, long hostId, String bridgeName) {
         try {
-            s_logger.debug("Sending VPC topology update to the host " + hostId);
+            s_logger.debug("Sending VPC topology change update to the host " + hostId);
             updateCmd.setHostId(hostId);
             updateCmd.setBridgeName(bridgeName);
             Answer ans = _agentMgr.send(hostId, updateCmd);
@@ -732,7 +731,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 return false;
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to updated the host " + hostId + " with latest VPC topology." );
+            s_logger.debug("Failed to updated the host " + hostId + " with latest VPC topology.", e );
             return false;
         }
     }
@@ -797,6 +796,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                     vmInstance.getHostId(), vmNics.toArray(new OvsVpcPhysicalTopologyConfigCommand.Nic[vmNics.size()]));
             vms.add(vm);
         }
+
         return new OvsVpcPhysicalTopologyConfigCommand(
                 hosts.toArray(new OvsVpcPhysicalTopologyConfigCommand.Host[hosts.size()]),
                 tiers.toArray(new OvsVpcPhysicalTopologyConfigCommand.Tier[tiers.size()]),
@@ -804,47 +804,58 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 vpc.getCidr());
     }
 
-    // Subscriber to ACL replace events. On acl replace event, if the vpc is enabled for distributed routing
-    // send the ACL update to all the hosts on which VPC spans
+    // Subscriber to ACL replace events. On acl replace event, if the vpc for the tier is enabled for
+    // distributed routing send the ACL update to all the hosts on which VPC spans
     public class NetworkAclEventsSubscriber implements MessageSubscriber {
         @Override
         public void onPublishMessage(String senderAddress, String subject, Object args) {
-            NetworkVO network = (NetworkVO) args;
-            String bridgeName=generateBridgeNameForVpc(network.getVpcId());
-            if (network.getVpcId() != null & isVpcEnabledForDistributedRouter(network.getVpcId())) {
-                long vpcId = network.getVpcId();
-                OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
-                List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
-                for (Long id: vpcSpannedHostIds) {
-                    if (!sendVpcRoutingPolicyChangeUpdate(cmd, id, bridgeName)) {
-                        s_logger.debug("Failed to send VPC routing policy change update to host : " + id +
-                                ". But moving on with sending the host updates to the rest of the hosts.");
+            try {
+                NetworkVO network = (NetworkVO) args;
+                String bridgeName=generateBridgeNameForVpc(network.getVpcId());
+                if (network.getVpcId() != null & isVpcEnabledForDistributedRouter(network.getVpcId())) {
+                    long vpcId = network.getVpcId();
+                    OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
+                    List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
+                    for (Long id: vpcSpannedHostIds) {
+                        if (!sendVpcRoutingPolicyChangeUpdate(cmd, id, bridgeName)) {
+                            s_logger.debug("Failed to send VPC routing policy change update to host : " + id +
+                                    ". But moving on with sending the updates to the rest of the hosts.");
+                        }
                     }
                 }
+            } catch (Exception e) {
+                s_logger.debug("Failed to send VPC routing policy change updates all hosts in vpc", e);
             }
         }
     }
 
     private OvsVpcRoutingPolicyConfigCommand prepareVpcRoutingPolicyUpdate(long vpcId) {
-        VpcVO vpc = _vpcDao.findById(vpcId);
-        assert (vpc != null): "invalid vpc id";
+
         List<OvsVpcRoutingPolicyConfigCommand.Acl> acls = new ArrayList<>();
         List<OvsVpcRoutingPolicyConfigCommand.Tier> tiers = new ArrayList<>();
 
+        VpcVO vpc = _vpcDao.findById(vpcId);
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
+        assert (vpc != null && (vpcNetworks != null && !vpcNetworks.isEmpty())): "invalid vpc id";
+
         for (Network network : vpcNetworks) {
             Long networkAclId = network.getNetworkACLId();
+            if (networkAclId == null)
+                continue;
             NetworkACLVO networkAcl = _networkACLDao.findById(networkAclId);
 
             List<OvsVpcRoutingPolicyConfigCommand.AclItem> aclItems = new ArrayList<>();
             List<NetworkACLItemVO> aclItemVos = _networkACLItemDao.listByACL(networkAclId);
             for (NetworkACLItemVO aclItem : aclItemVos) {
                 String[] sourceCidrs = aclItem.getSourceCidrList().toArray(new String[aclItem.getSourceCidrList().size()]);
+
                 aclItems.add(new OvsVpcRoutingPolicyConfigCommand.AclItem(
                         aclItem.getNumber(), aclItem.getUuid(), aclItem.getAction().name(),
                         aclItem.getTrafficType().name(),
-                        aclItem.getSourcePortStart().toString(), aclItem.getSourcePortEnd().toString(),
-                        aclItem.getProtocol(), sourceCidrs));
+                        ((aclItem.getSourcePortStart() != null) ?aclItem.getSourcePortStart().toString() :null),
+                        ((aclItem.getSourcePortEnd() != null) ?aclItem.getSourcePortEnd().toString() :null),
+                        aclItem.getProtocol(),
+                        sourceCidrs));
             }
 
             OvsVpcRoutingPolicyConfigCommand.Acl acl = new OvsVpcRoutingPolicyConfigCommand.Acl(networkAcl.getUuid(),
@@ -862,10 +873,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return cmd;
     }
 
-
     public boolean sendVpcRoutingPolicyChangeUpdate(OvsVpcRoutingPolicyConfigCommand updateCmd, long hostId, String bridgeName) {
         try {
-            s_logger.debug("Sending VPC routing policy change update to the host " + hostId);
+            s_logger.debug("Sending VPC routing policies change update to the host " + hostId);
             updateCmd.setHostId(hostId);
             updateCmd.setBridgeName(bridgeName);
             Answer ans = _agentMgr.send(hostId, updateCmd);
@@ -873,11 +883,11 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 s_logger.debug("Successfully updated the host " + hostId + " with latest VPC routing policies." );
                 return true;
             }  else {
-                s_logger.debug("Failed to update the host " + hostId + " with latest routing policy." );
+                s_logger.debug("Failed to update the host " + hostId + " with latest routing policies." );
                 return false;
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to updated the host " + hostId + " with latest routing policy." );
+            s_logger.debug("Failed to updated the host " + hostId + " with latest routing policies due to" , e );
             return false;
         }
     }

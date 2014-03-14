@@ -151,6 +151,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 
         implemented.setBroadcastDomainType(BroadcastDomainType.Vswitch);
 
+        // for the networks that are part of VPC enabled for distributed routing use scheme vs://vpcid.GRE key for network
         if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
             String keyStr = BroadcastDomainType.getValue(implemented.getBroadcastUri());
             Long vpcid= network.getVpcId();
