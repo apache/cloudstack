@@ -664,7 +664,7 @@ CREATE TABLE `cloud`.`op_router_monitoring_services` (
   `last_alert_timestamp` varchar(255) NOT NULL COMMENT 'Timestamp of the last alert received from Virtual Router',
    PRIMARY KEY (`vm_id`),
    CONSTRAINT `fk_virtual_router__id` FOREIGN KEY `fk_virtual_router__id` (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET=utf8
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 
