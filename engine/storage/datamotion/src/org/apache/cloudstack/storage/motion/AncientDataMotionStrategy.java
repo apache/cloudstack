@@ -372,7 +372,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
         MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName());
-        EndPoint ep = selector.select(volume.getDataStore());
+        EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

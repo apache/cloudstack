@@ -1901,6 +1901,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
         response.setConcurrentConnections(offering.getConcurrentConnections());
+        response.setSupportsStrechedL2Subnet(offering.getSupportsStrechedL2());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -2765,6 +2766,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDisplayText(offering.getDisplayText());
         response.setIsDefault(offering.isDefault());
         response.setState(offering.getState().name());
+        response.setSupportsDistributedRouter(offering.supportsDistributedRouter());
+        response.setSupportsRegionLevelVpc(offering.offersRegionLevelVPC());
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
@@ -2807,6 +2810,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
         response.setForDisplay(vpc.isDisplay());
+        response.setUsesDistributedRouter(vpc.usesDistributedRouter());
+        response.setRegionLevelVpc(vpc.isRegionLevelVpc());
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();

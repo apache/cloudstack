@@ -16,7 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
@@ -62,9 +67,11 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = UserVmResponse.class,
-               required = true,
                description = "the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP, type = CommandType.MAP, description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].ip=10.1.1.75")
+    private Map vmIdIpMap;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -76,6 +83,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public List<Long> getVirtualMachineIds() {
         return virtualMachineIds;
+    }
+
+    public Map<Long, String> getVmIdIpMap() {
+        return vmIdIpMap;
     }
 
     /////////////////////////////////////////////////////
@@ -106,10 +117,42 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
         return "applying instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
+
+    public Map<Long, List<String>> getVmIdIpListMap() {
+        Map<Long, List<String>> vmIdIpsMap = null;
+        if (vmIdIpMap != null && !vmIdIpMap.isEmpty()) {
+            vmIdIpsMap = new HashMap<Long, List<String>>();
+            Collection idIpsCollection = vmIdIpMap.values();
+            Iterator iter = idIpsCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> idIpsMap = (HashMap<String, String>)iter.next();
+                String vmId = idIpsMap.get("vmid");
+                String vmIp = idIpsMap.get("vmip");
+
+                Long longVmId = new Long(vmId);
+
+                List<String> ipsList = null;
+                if (vmIdIpsMap.containsKey(longVmId)) {
+                    ipsList = vmIdIpsMap.get(longVmId);
+                } else {
+                    ipsList = new ArrayList<String>();
+                }
+                ipsList.add(vmIp);
+                vmIdIpsMap.put(longVmId, ipsList);
+
+            }
+        }
+
+        return vmIdIpsMap;
+    }
+
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " VmIds: " + StringUtils.join(getVirtualMachineIds(), ","));
-        boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds);
+
+        Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
+
+        boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

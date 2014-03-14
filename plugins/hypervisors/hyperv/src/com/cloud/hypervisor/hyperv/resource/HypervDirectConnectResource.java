@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -83,10 +84,14 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
@@ -172,7 +177,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected final int _retry = 24;
     protected final int _sleep = 10000;
     protected static final int DEFAULT_DOMR_SSHPORT = 3922;
-
+    private final int maxid = 4094;
     private String _clusterGuid;
 
     // Used by initialize to assert object configured before
@@ -477,7 +482,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             answer = execute((SetStaticRouteCommand) cmd);
         } else if (clazz == SetMonitorServiceCommand.class) {
             answer = execute((SetMonitorServiceCommand) cmd);
-        } else {
+        } else if (clazz == PlugNicCommand.class) {
+            answer = execute((PlugNicCommand)cmd);
+        } else if (clazz == UnPlugNicCommand.class) {
+            answer = execute((UnPlugNicCommand)cmd);
+        }
+        else {
             if (clazz == StartCommand.class) {
                 VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -509,6 +519,59 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return answer;
     }
 
+
+    private PlugNicAnswer execute(PlugNicCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource PlugNicCommand " + s_gson.toJson(cmd));
+        }
+
+        try {
+
+            String vmName = cmd.getVmName();
+            NicTO nic = cmd.getNic();
+            URI broadcastUri = nic.getBroadcastUri();
+            if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+                throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + nic.getBroadcastUri());
+            }
+            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            int publicNicInfo = -1;
+            publicNicInfo = getVmNics(vmName, maxid);
+            if (publicNicInfo > 0) {
+                modifyNicVlan(vmName, vlanId, publicNicInfo);
+            }
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
+        }
+    }
+
+
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource UnPlugNicCommand " + s_gson.toJson(cmd));
+        }
+
+        try {
+            String vmName = cmd.getVmName();
+            NicTO nic = cmd.getNic();
+            URI broadcastUri = nic.getBroadcastUri();
+            if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+                throw new InternalErrorException("Unable to unassign a public IP to a VIF on network " + nic.getBroadcastUri());
+            }
+            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            int publicNicInfo = -1;
+            publicNicInfo = getVmNics(vmName, vlanId);
+            if (publicNicInfo > 0) {
+                modifyNicVlan(vmName, maxid, publicNicInfo);
+            }
+            return new UnPlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + e.toString());
+        }
+    }
+
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args) {
         Pair<Boolean, String> result;
@@ -535,7 +598,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
         File keyFile = getSystemVMKeyFile();
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(), fileName, null);
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(Charset.forName("UTF-8")), fileName, null);
         } catch (Exception e) {
             s_logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
             return new ExecutionResult(false, e.getMessage());
@@ -621,14 +684,18 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     protected ExecutionResult prepareNetworkElementCommand(SetupGuestNetworkCommand cmd) {
         NicTO nic = cmd.getNic();
-        String routerIp = getRouterSshControlIp(cmd);
         String domrName =
                 cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
         try {
-            int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp,
-                    nic.getMac());
-            nic.setDeviceId(ethDeviceNum);
+            URI broadcastUri = nic.getBroadcastUri();
+            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            int ethDeviceNum = getVmNics(domrName, vlanId);
+            if (ethDeviceNum > 0) {
+                nic.setDeviceId(ethDeviceNum);
+            } else {
+                return new ExecutionResult(false, "Prepare SetupGuestNetwork failed due to unable to find the nic");
+            }
         } catch (Exception e) {
             String msg = "Prepare SetupGuestNetwork failed due to " + e.toString();
             s_logger.warn(msg, e);
@@ -640,23 +707,27 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIp = getRouterSshControlIp(cmd);
 
         try {
             IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
-
-                int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, ip.getVifMacAddress());
-                if (ethDeviceNum < 0) {
+                URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
+                if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+                    throw new InternalErrorException("Invalid Broadcast URI " + ip.getBroadcastUri());
+                }
+                int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+                int publicNicInfo = -1;
+                publicNicInfo = getVmNics(routerName, vlanId);
+                if (publicNicInfo < 0) {
                     if (ip.isAdd()) {
                         throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
-                    } else {
+                        } else {
                         s_logger.debug("VIF to deassociate IP with does not exist, return success");
                         continue;
                     }
                 }
 
-                ip.setNicDevId(ethDeviceNum);
+                ip.setNicDevId(publicNicInfo);
             }
         } catch (Exception e) {
             s_logger.error("Prepare Ip Assoc failure on applying one ip due to exception:  ", e);
@@ -668,12 +739,17 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     protected ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIp = getRouterSshControlIp(cmd);
         IpAddressTO pubIp = cmd.getIpAddress();
 
         try {
-            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
-            pubIp.setNicDevId(ethDeviceNum);
+            String broadcastUri = pubIp.getBroadcastUri();
+            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            int ethDeviceNum = getVmNics(routerName, vlanId);
+            if (ethDeviceNum > 0) {
+                pubIp.setNicDevId(ethDeviceNum);
+            } else {
+                return new ExecutionResult(false, "Prepare Ip SNAT failed due to unable to find the nic");
+            }
         } catch (Exception e) {
             String msg = "Prepare Ip SNAT failure due to " + e.toString();
             s_logger.error(msg, e);
@@ -686,12 +762,16 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         NicTO nic = cmd.getNic();
         String routerName =
                 cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        String routerIp = getRouterSshControlIp(cmd);
 
         try {
-            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp,
-                    nic.getMac());
-            nic.setDeviceId(ethDeviceNum);
+            URI broadcastUri = nic.getBroadcastUri();
+            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            int ethDeviceNum = getVmNics(routerName, vlanId);
+            if (ethDeviceNum > 0) {
+                nic.setDeviceId(ethDeviceNum);
+            } else {
+                return new ExecutionResult(false, "Prepare SetNetworkACL failed due to unable to find the nic");
+            }
         } catch (Exception e) {
             String msg = "Prepare SetNetworkACL failed due to " + e.toString();
             s_logger.error(msg, e);
@@ -1183,7 +1263,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(), routerIp.replace('.', '_') +
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(Charset.forName("UTF-8")), routerIp.replace('.', '_') +
                 ".cfg", null);
 
             try {
@@ -1380,7 +1460,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         String json = new Gson().toJson(data);
         s_logger.debug("VM data JSON IS:" + json);
 
-        json = Base64.encodeBase64String(json.getBytes());
+        json = Base64.encodeBase64String(json.getBytes(Charset.forName("UTF-8")));
 
         String args = "-d " + json;
 
@@ -1711,6 +1791,27 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     protected void modifyNicVlan(String vmName, int vlanId, String macAddress) {
         ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, macAddress);
+        URI agentUri = null;
+        try {
+            String cmdName = ModifyVmNicConfigCommand.class.getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+        }
+        String ansStr = postHttpRequest(s_gson.toJson(modifynic), agentUri);
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        s_logger.debug("executeRequest received response "
+                + s_gson.toJson(result));
+        if (result.length > 0) {
+            ModifyVmNicConfigAnswer ans = ((ModifyVmNicConfigAnswer)result[0]);
+        }
+    }
+
+    protected void modifyNicVlan(String vmName, int vlanId, int pos) {
+        ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, pos);
         URI agentUri = null;
         try {
             String cmdName = ModifyVmNicConfigCommand.class.getName();

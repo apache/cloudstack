@@ -67,6 +67,12 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "service_offering_id")
     Long serviceOfferingId;
 
+    @Column(name = "supports_distributed_router")
+    boolean supportsDistributedRouter=false;
+
+    @Column(name = "supports_region_level_vpc")
+    boolean offersRegionLevelVPC = false;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -80,9 +86,12 @@ public class VpcOfferingVO implements VpcOffering {
         this.state = State.Disabled;
     }
 
-    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId) {
+    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
+                         boolean supportsDistributedRouter, boolean offersRegionLevelVPC) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
+        this.supportsDistributedRouter = supportsDistributedRouter;
+        this.offersRegionLevelVPC = offersRegionLevelVPC;
     }
 
     @Override
@@ -144,5 +153,15 @@ public class VpcOfferingVO implements VpcOffering {
     @Override
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    @Override
+    public boolean supportsDistributedRouter() {
+        return supportsDistributedRouter;
+    }
+
+    @Override
+    public boolean offersRegionLevelVPC() {
+        return offersRegionLevelVPC;
     }
 }

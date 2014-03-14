@@ -291,7 +291,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public void setHostAllocators(List<HostAllocator> hostAllocators) {
-        this.hostAllocators = hostAllocators;
+        hostAllocators = hostAllocators;
     }
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -3243,9 +3243,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         @SuppressWarnings("unchecked")
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            this.name = name;
-            this.state = state;
-            this.vm = vm;
+            name = name;
+            state = state;
+            vm = vm;
             hostUuid = host;
         }
 
@@ -4100,7 +4100,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vmId);
-        if (pendingWorkJobs.size() == 0 || !_haMgr.hasPendingHaWork(vmId)) {
+        if (pendingWorkJobs.size() == 0 && !_haMgr.hasPendingHaWork(vmId)) {
             // there is no pending operation job
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm != null) {
@@ -4407,7 +4407,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 @Override
                 public boolean checkCondition() {
                     VMInstanceVO instance = _vmDao.findById(vmId);
-                    if (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && srcHostIdForMigration.equals(instance.getPowerHostId())))
+                    if ((instance.getPowerState() == desiredPowerState && srcHostIdForMigration == null) ||
+                            (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && instance.getPowerHostId() != srcHostIdForMigration)))
                         return true;
                     return false;
                 }

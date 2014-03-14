@@ -2642,7 +2642,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean securityGroupEnabled = false;
         boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
-            if (network.getDataCenterId() != zone.getId()) {
+            if ((network.getDataCenterId() != zone.getId()) && !network.isStrechedL2Network()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
 
@@ -4016,7 +4016,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
+                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
+                && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
             throw new InvalidParameterValueException("Unsupported hypervisor type for vm migration, we support" + " XenServer/VMware/KVM only");
         }
 

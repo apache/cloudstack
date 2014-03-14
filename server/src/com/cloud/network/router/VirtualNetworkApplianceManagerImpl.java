@@ -55,6 +55,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.alert.AlertService.AlertType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -73,6 +74,8 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.routing.GetRouterAlertsCommand;
+import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
@@ -179,6 +182,7 @@ import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
@@ -188,6 +192,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.dao.OpRouterMonitorServiceVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
@@ -394,6 +399,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     AsyncJobManager _asyncMgr;
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
+    @Inject
+    OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1348,6 +1355,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                 updateSite2SiteVpnConnectionState(routers);
 
+                getRouterAlerts();
+
                 final List<NetworkVO> networks = _networkDao.listRedundantNetworks();
                 s_logger.debug("Found " + networks.size() + " networks to update RvR status. ");
                 for (final NetworkVO network : networks) {
@@ -1361,6 +1370,64 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         }
     }
+
+    private void getRouterAlerts() {
+        try{
+            List<DomainRouterVO> routersInIsolatedNetwork = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
+            List<DomainRouterVO> routersInSharedNetwork = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Shared, mgmtSrvrId);
+
+            List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+            routers.addAll(routersInIsolatedNetwork);
+            routers.addAll(routersInSharedNetwork);
+            s_logger.debug("Found " + routers.size() + " running routers. ");
+
+            for (final DomainRouterVO router : routers) {
+                if (router.getVpcId() != null) {
+                    continue;
+                }
+                String privateIP = router.getPrivateIpAddress();
+
+                if (privateIP != null) {
+                    OpRouterMonitorServiceVO opRouterMonitorServiceVO = _opRouterMonitorServiceDao.findById(router.getId());
+
+                    GetRouterAlertsCommand command = null;
+                    if (opRouterMonitorServiceVO == null) {
+                        command = new GetRouterAlertsCommand(null);
+                    } else {
+                        command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
+                    }
+
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+
+                    GetRouterAlertsAnswer answer = null;
+                    try {
+                        answer = (GetRouterAlertsAnswer) _agentMgr.easySend(router.getHostId(), command);
+                        String alerts[] = answer.getAlerts();
+                        if (alerts != null ) {
+                            for (String alert: alerts) {
+                                _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), "Monitoring Service on VR " + router.getInstanceName(), alert);
+                            }
+                            String lastAlertTimeStamp = answer.getTimeStamp();
+                            if (opRouterMonitorServiceVO == null) {
+                                opRouterMonitorServiceVO = new OpRouterMonitorServiceVO(router.getId(), router.getHostName(), lastAlertTimeStamp);
+                                _opRouterMonitorServiceDao.persist(opRouterMonitorServiceVO);
+                            } else {
+                                opRouterMonitorServiceVO.setLastAlertTimestamp(lastAlertTimeStamp);
+                                _opRouterMonitorServiceDao.update(opRouterMonitorServiceVO.getId(), opRouterMonitorServiceVO);
+                            }
+                        }
+                    } catch (Exception e) {
+                        s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
+                        continue;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error while collecting alerts from router", e);
+        }
+    }
+
 
     private final static int DEFAULT_PRIORITY = 100;
     private final static int DEFAULT_DELTA = 2;

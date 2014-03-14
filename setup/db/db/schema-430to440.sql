@@ -26,6 +26,7 @@ ALTER TABLE `cloud`.`disk_offering` ADD `cache_mode` VARCHAR( 16 ) DEFAULT 'none
 
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='150' WHERE hypervisor_version='6.1.0';
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='500' WHERE hypervisor_version='6.2.0';
+UPDATE `cloud`.`hypervisor_capabilities` set storage_motion_supported='1' WHERE hypervisor_version='6.2' AND hypervisor_type="Hyperv";
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
@@ -657,6 +658,14 @@ ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL D
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
 
+CREATE TABLE `cloud`.`op_router_monitoring_services` (
+  `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
+  `router_name` varchar(255) NOT NULL COMMENT 'Name of the Virtual Router',
+  `last_alert_timestamp` varchar(255) NOT NULL COMMENT 'Timestamp of the last alert received from Virtual Router',
+   PRIMARY KEY (`vm_id`),
+   CONSTRAINT `fk_virtual_router__id` FOREIGN KEY `fk_virtual_router__id` (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
 ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
@@ -730,5 +739,14 @@ UPDATE `cloud`.`guest_os_hypervisor` SET `created` = now();
 ALTER TABLE `cloud`.`guest_os` ADD COLUMN `created` datetime COMMENT 'Time when Guest OS was created in system';
 ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when Guest OS was removed if deleted, else NULL';
 UPDATE `cloud`.`guest_os` SET `created` = now();
-
 ALTER TABLE `cloud`.`vm_reservation` ADD COLUMN `deployment_planner` varchar(40) DEFAULT NULL COMMENT 'Preferred deployment planner for the vm';
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_distributed_router boolean default false;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN uses_distributed_router  boolean default false;
+INSERT INTO `cloud`.`storage_pool_details` (pool_id,name,value,display) SELECT storage_pool.id,data_center_details.name,data_center_details.value,data_center_details.display FROM `cloud`.`storage_pool` JOIN `cloud`.`data_center_details` ON data_center_details.dc_id=storage_pool.data_center_id WHERE data_center_details.name = "storage.overprovisioning.factor";
+DELETE FROM `cloud`.`data_center_details` WHERE name="storage.overprovisioning.factor";
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_region_level_vpc boolean default false;
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_streched_l2 boolean default false;
+ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
+ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);

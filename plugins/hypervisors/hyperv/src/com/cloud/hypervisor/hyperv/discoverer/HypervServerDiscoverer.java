@@ -19,6 +19,7 @@ package com.cloud.hypervisor.hyperv.discoverer;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,7 +255,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -318,7 +319,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
      * @return GUID in form of a string.
      */
     public static String calcServerResourceGuid(final String uuidSeed) {
-        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes()).toString();
+        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
         return guid;
     }
 

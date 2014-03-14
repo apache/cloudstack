@@ -32,6 +32,8 @@ import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
+import com.cloud.agent.api.routing.GetRouterAlertsCommand;
+import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
@@ -102,6 +104,7 @@ public class VirtualRoutingResource {
         protected static final String IPASSOC = "ipassoc.sh";
         protected static final String LB = "loadbalancer.sh";
         protected static final String MONITOR_SERVICE = "monitor_service.sh";
+        protected static final String ROUTER_ALERTS = "getRouterAlerts.sh";
         protected static final String PASSWORD = "savepassword.sh";
         protected static final String RVR_CHECK = "checkrouter.sh";
         protected static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
@@ -275,7 +278,9 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof GetDomRVersionCmd) {
             return execute((GetDomRVersionCmd)cmd);
         } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-            return execute((CheckS2SVpnConnectionsCommand)cmd);
+            return execute((CheckS2SVpnConnectionsCommand) cmd);
+        } else if (cmd instanceof GetRouterAlertsCommand) {
+            return execute((GetRouterAlertsCommand)cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -642,6 +647,29 @@ public class VirtualRoutingResource {
         return new CheckS2SVpnConnectionsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
+    private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {
+
+        String args = null;
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (cmd.getPreviousAlertTimeStamp() != null) {
+            args = cmd.getPreviousAlertTimeStamp();
+        }
+
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_ALERTS, args);
+        String alerts[] = null;
+        String lastAlertTimestamp = null;
+        // CallHostPlugin results "success" when there are no alerts on virtual router
+        if (result.isSuccess()) {
+            if (!result.getDetails().isEmpty() && !result.getDetails().equals("No Alerts")) {
+                alerts = result.getDetails().split("\\\\n");
+                String[] lastAlert = alerts[alerts.length - 1].split(" ");
+                lastAlertTimestamp = lastAlert[0] + " " + lastAlert[1];
+            }
+        }
+
+        return new GetRouterAlertsAnswer(cmd, alerts, lastAlertTimestamp);
+    }
+
     protected Answer execute(CheckRouterCommand cmd) {
         final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RVR_CHECK, null);
         if (!result.isSuccess()) {
@@ -729,6 +757,21 @@ public class VirtualRoutingResource {
         }
 
         cfg.add(new ConfigItem(VRScripts.MONITOR_SERVICE, args));
+        return cfg;
+    }
+
+    protected List<ConfigItem> generateConfig(GetRouterAlertsCommand cmd) {
+        LinkedList<ConfigItem> cfg = new LinkedList<>();
+
+        String args = null;
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (cmd.getPreviousAlertTimeStamp() != null) {
+            args = "getRouterAlerts.sh " + routerIp + " " + cmd.getPreviousAlertTimeStamp();
+        } else {
+            args = "getRouterAlerts.sh " + routerIp;
+        }
+
+        cfg.add(new ConfigItem(VRScripts.ROUTER_ALERTS, args));
         return cfg;
     }
 

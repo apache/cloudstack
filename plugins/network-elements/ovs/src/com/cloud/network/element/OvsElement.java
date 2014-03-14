@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.element;
 
+import com.cloud.host.dao.HostDao;
+import com.cloud.vm.dao.UserVmDao;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +75,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkElement.class, ConnectivityProvider.class,
         SourceNatServiceProvider.class, StaticNatServiceProvider.class,
@@ -93,6 +96,10 @@ StaticNatServiceProvider, IpDeployer {
     DomainRouterDao _routerDao;
     @Inject
     VpcVirtualNetworkApplianceManager _routerMgr;
+    @Inject
+    UserVmDao _userVmDao;
+    @Inject
+    HostDao _hostDao;
 
     private static final Logger s_logger = Logger.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -171,7 +178,12 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
 
-        _ovsTunnelMgr.vmCheckAndCreateTunnel(vm, network, dest);
+        if (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return false;
+        }
+
+        // prepare the tunnel network on the host, in order for VM to get launched
+        _ovsTunnelMgr.checkAndPrepareHostForTunnelNetwork(network, dest.getHost());
 
         return true;
     }
@@ -192,7 +204,8 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
 
-        _ovsTunnelMgr.checkAndDestroyTunnel(vm.getVirtualMachine(), network);
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        _ovsTunnelMgr.checkAndRemoveHostFromTunnelNetwork(network, host);
         return true;
     }
 
@@ -246,7 +259,12 @@ StaticNatServiceProvider, IpDeployer {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
         // L2 Support : SDN provisioning
-        capabilities.put(Service.Connectivity, null);
+        Map<Capability, String> connectivityCapabilities = new HashMap<Capability, String>();
+        connectivityCapabilities.put(Capability.DistributedRouter, null);
+        connectivityCapabilities.put(Capability.StretchedL2Subnet, null);
+        connectivityCapabilities.put(Capability.RegionLevelVpc, null);
+        capabilities.put(Service.Connectivity, connectivityCapabilities);
+
 
         // L3 Support : Port Forwarding
         capabilities.put(Service.PortForwarding, null);

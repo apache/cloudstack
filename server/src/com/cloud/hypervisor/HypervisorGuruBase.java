@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import com.cloud.network.dao.NetworkVO;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +42,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -51,6 +53,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     NicDao _nicDao;
+    @Inject
+    NetworkDao  _networkDao;
     @Inject
     VMInstanceDao _virtualMachineDao;
     @Inject
@@ -86,6 +90,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNetworkRateMbps(profile.getNetworkRate());
         to.setName(profile.getName());
         to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
+
+        NetworkVO network = _networkDao.findById(profile.getNetworkId());
+        to.setNetworkUuid(network.getUuid());
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());

@@ -256,13 +256,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         });
 
-        for (Long id : wakeupList) {
-            // TODO, we assume that all jobs in this category is API job only
-            AsyncJobVO jobToWakeup = _jobDao.findById(id);
-            if (jobToWakeup != null && (jobToWakeup.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0)
-                scheduleExecution(jobToWakeup, false);
-        }
-
+        //
+        // disable wakeup scheduling now, since all API jobs are currently using block-waiting for sub-jobs
+        //
+        /*
+                for (Long id : wakeupList) {
+                    // TODO, we assume that all jobs in this category is API job only
+                    AsyncJobVO jobToWakeup = _jobDao.findById(id);
+                    if (jobToWakeup != null && (jobToWakeup.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0)
+                        scheduleExecution(jobToWakeup, false);
+                }
+        */
         _messageBus.publish(null, AsyncJob.Topics.JOB_STATE, PublishScope.GLOBAL, jobId);
     }
 

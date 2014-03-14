@@ -262,6 +262,8 @@ public class ApiConstants {
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
+    public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
+
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN = "removevlan";
@@ -588,7 +590,10 @@ public class ApiConstants {
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
     public static final String REMAININGCAPACITY = "remainingcapacity";
-
+    public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
+    public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
+    public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
+    public static final String REGION_LEVEL_VPC = "regionlevelvpc";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

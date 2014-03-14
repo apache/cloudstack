@@ -34,4 +34,6 @@ public interface LoadBalancerVMMapDao extends GenericDao<LoadBalancerVMMapVO, Lo
     LoadBalancerVMMapVO findByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId);
 
     boolean isVmAttachedToLoadBalancer(long loadBalancerId);
+
+    List<LoadBalancerVMMapVO> listByInstanceIp(String instanceIp);
 }

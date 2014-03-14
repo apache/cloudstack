@@ -94,7 +94,7 @@ public interface LoadBalancingRulesService {
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
      */
-    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds);
+    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap);
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 

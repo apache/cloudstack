@@ -57,6 +57,7 @@ public class NetworkProfile implements Network {
     private final boolean displayNetwork;
     private Long networkAclId;
     private final String guruName;
+    private boolean strechedL2Subnet;
 
     public NetworkProfile(Network network) {
         id = network.getId();
@@ -89,6 +90,7 @@ public class NetworkProfile implements Network {
         displayNetwork = network.getDisplayNetwork();
         networkAclId = network.getNetworkACLId();
         guruName = network.getGuruName();
+        strechedL2Subnet = network.isStrechedL2Network();
     }
 
     public String getDns1() {
@@ -282,4 +284,10 @@ public class NetworkProfile implements Network {
     public IAMEntityType getEntityType() {
         return IAMEntityType.Network;
     }
+
+    @Override
+    public boolean isStrechedL2Network() {
+        return false;
+    }
+
 }

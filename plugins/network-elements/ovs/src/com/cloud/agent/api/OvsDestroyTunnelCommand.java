@@ -20,14 +20,14 @@ package com.cloud.agent.api;
 public class OvsDestroyTunnelCommand extends Command {
 
     Long networkId;
-    Integer key;
+    String networkName;
     String inPortName;
 
-    public OvsDestroyTunnelCommand(Long networkId, Integer key,
+    public OvsDestroyTunnelCommand(Long networkId, String networkName,
             String inPortName) {
         this.networkId = networkId;
         this.inPortName = inPortName;
-        this.key = key;
+        this.networkName = networkName;
     }
 
     public Long getNetworkId() {
@@ -38,8 +38,8 @@ public class OvsDestroyTunnelCommand extends Command {
         return inPortName;
     }
 
-    public Integer getKey() {
-        return key;
+    public String getBridgeName() {
+        return networkName;
     }
 
     @Override
