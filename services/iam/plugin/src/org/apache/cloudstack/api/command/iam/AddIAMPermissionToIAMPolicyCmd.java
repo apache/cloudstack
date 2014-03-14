@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.iam.IAMPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.IAMApiService;
@@ -72,6 +73,9 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IAM_SCOPE_ID, type = CommandType.STRING, required = false, description = "The UUID of the permission scope id")
     private String scopeId;
 
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = false, description = "Read Only access is added; Only applicable when action = List/Read api name")
+    private Boolean readOnly;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -100,6 +104,10 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
         return _iamApiSrv.getPermissionScopeId(scope, entityType, scopeId);
     }
 
+    public Boolean isReadOnly() {
+        return (readOnly != null) ? readOnly : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -123,7 +131,7 @@ public class AddIAMPermissionToIAMPolicyCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("IAM policy Id: " + getId());
         // Only explicit ALLOW is supported for this release, no explicit deny
         IAMPolicy result = _iamApiSrv.addIAMPermissionToIAMPolicy(id, entityType, PermissionScope.valueOf(scope),
-                getScopeId(), action, Permission.Allow, false);
+                getScopeId(), action, Permission.Allow, false, isReadOnly());
         if (result != null) {
             IAMPolicyResponse response = _iamApiSrv.createIAMPolicyResponse(result);
             response.setResponseName(getCommandName());
