@@ -4407,8 +4407,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 @Override
                 public boolean checkCondition() {
                     VMInstanceVO instance = _vmDao.findById(vmId);
-                    if ((instance.getPowerState() == desiredPowerState && srcHostIdForMigration == null) ||
-                            (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && instance.getPowerHostId() != srcHostIdForMigration)))
+                    if (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && instance.getPowerHostId() != srcHostIdForMigration))
                         return true;
                     return false;
                 }
