@@ -113,10 +113,12 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
@@ -307,6 +309,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     IpAddressManager _ipAddrMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    LoadBalancerVMMapDao _lbVmMapDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -806,7 +810,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 s_logger.debug("VM nic IP " + secondaryIp + " is associated with the static NAT rule public IP address id " + publicIpVO.getId());
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
-        } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType()  == Network.GuestType.Shared) {
+
+            List<LoadBalancerVMMapVO> lbVmMap = _lbVmMapDao.listByInstanceIp(secondaryIp);
+            if (lbVmMap != null && lbVmMap.size() != 0) {
+                s_logger.debug("VM nic IP " + secondaryIp + " is mapped to load balancing rule");
+                throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is mapped to load balancing rule");
+
+            }
+
+        } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType() == Network.GuestType.Shared) {
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(secIpVO.getNetworkId(), secIpVO.getIp4Address());
             if (ip != null) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
