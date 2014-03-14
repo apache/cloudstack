@@ -259,7 +259,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         //
         // disable wakeup scheduling now, since all API jobs are currently using block-waiting for sub-jobs
         //
-        /*        
+        /*
                 for (Long id : wakeupList) {
                     // TODO, we assume that all jobs in this category is API job only
                     AsyncJobVO jobToWakeup = _jobDao.findById(id);
