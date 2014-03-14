@@ -40,6 +40,7 @@ import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.iam.AddAccountToIAMGroupCmd;
@@ -506,11 +507,17 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_IAM_POLICY_GRANT, eventDescription = "Granting acl permission to IAM Policy")
     public IAMPolicy addIAMPermissionToIAMPolicy(long iamPolicyId, String entityType, PermissionScope scope,
-            Long scopeId, String action, Permission perm, Boolean recursive) {
+            Long scopeId, String action, Permission perm, Boolean recursive, Boolean readOnly) {
         Class<?> cmdClass = _apiServer.getCmdClass(action);
         AccessType accessType = null;
         if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
-            accessType = AccessType.UseEntry;
+            if (readOnly) {
+                accessType = AccessType.ListEntry;
+            } else {
+                accessType = AccessType.UseEntry;
+            }
+        } else if (!(BaseAsyncCreateCmd.class.isAssignableFrom(cmdClass))) {
+            accessType = AccessType.OperateEntry;
         }
         String accessTypeStr = (accessType != null) ? accessType.toString() : null;
         return _iamSrv.addIAMPermissionToIAMPolicy(iamPolicyId, entityType, scope.toString(), scopeId, action,

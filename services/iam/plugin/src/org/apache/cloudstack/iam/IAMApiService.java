@@ -60,7 +60,7 @@ public interface IAMApiService extends PluggableService {
     void removeIAMPolicyFromAccounts(Long policyId, List<Long> accountIds);
 
     IAMPolicy addIAMPermissionToIAMPolicy(long iamPolicyId, String entityType, PermissionScope scope, Long scopeId,
-            String action, Permission perm, Boolean recursive);
+            String action, Permission perm, Boolean recursive, Boolean readOnly);
 
     IAMPolicy removeIAMPermissionFromIAMPolicy(long iamPolicyId, String entityType, PermissionScope scope, Long scopeId, String action);
 

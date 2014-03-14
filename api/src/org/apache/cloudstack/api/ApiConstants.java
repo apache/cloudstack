@@ -594,6 +594,8 @@ public class ApiConstants {
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
+    public static final String READ_ONLY = "readOnly";
+
 
     public enum HostDetails {
         all, capacity, events, stats, min;
