@@ -36,12 +36,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -51,19 +49,9 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.Outcome;
-import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
-import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
-import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -291,7 +279,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public void setHostAllocators(List<HostAllocator> hostAllocators) {
-        this.hostAllocators = hostAllocators;
+        hostAllocators = hostAllocators;
     }
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -3243,9 +3231,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         @SuppressWarnings("unchecked")
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
-            this.name = name;
-            this.state = state;
-            this.vm = vm;
+            name = name;
+            state = state;
+            vm = vm;
             hostUuid = host;
         }
 
@@ -4100,7 +4088,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vmId);
-        if (pendingWorkJobs.size() == 0 || !_haMgr.hasPendingHaWork(vmId)) {
+        if (pendingWorkJobs.size() == 0 && !_haMgr.hasPendingHaWork(vmId)) {
             // there is no pending operation job
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm != null) {
@@ -4407,7 +4395,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 @Override
                 public boolean checkCondition() {
                     VMInstanceVO instance = _vmDao.findById(vmId);
-                    if (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && srcHostIdForMigration.equals(instance.getPowerHostId())))
+                    if ((instance.getPowerState() == desiredPowerState && srcHostIdForMigration == null) ||
+                            (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && instance.getPowerHostId() != srcHostIdForMigration)))
                         return true;
                     return false;
                 }
