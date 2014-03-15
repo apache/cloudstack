@@ -899,7 +899,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, Object data) {
-        HostVO host = findById(vo.getId());
+        // lock target row from beginning to avoid lock-promotion caused deadlock
+        HostVO host = lockRow(vo.getId(), true);
         if (host == null) {
             if (event == Event.Remove && newStatus == Status.Removed) {
                 host = findByIdIncludingRemoved(vo.getId());
