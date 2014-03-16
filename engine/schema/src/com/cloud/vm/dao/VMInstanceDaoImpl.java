@@ -417,44 +417,44 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updateState(State oldState, Event event, State newState, VirtualMachine vm, Object opaque) {
-    	if (newState == null) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-    		}
-    		return false;
-    	}
+        if (newState == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+            }
+            return false;
+        }
 
-    	@SuppressWarnings("unchecked")
-		Pair<Long, Long> hosts = (Pair<Long,Long>)opaque;
-		Long newHostId = hosts.second();
+        @SuppressWarnings("unchecked")
+        Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
+        Long newHostId = hosts.second();
 
-    	VMInstanceVO vmi = (VMInstanceVO)vm;
-    	Long oldHostId = vmi.getHostId();
-    	Long oldUpdated = vmi.getUpdated();
-    	Date oldUpdateDate = vmi.getUpdateTime();
-    	if ( newState.equals(oldState) && newHostId != null && newHostId.equals(oldHostId) ) {
-    	    // state is same, don't need to update
-    	    return true;
-    	}
+        VMInstanceVO vmi = (VMInstanceVO)vm;
+        Long oldHostId = vmi.getHostId();
+        Long oldUpdated = vmi.getUpdated();
+        Date oldUpdateDate = vmi.getUpdateTime();
+        if (newState.equals(oldState) && newHostId != null && newHostId.equals(oldHostId)) {
+            // state is same, don't need to update
+            return true;
+        }
 
         // lock the target row at beginning to avoid lock-promotion caused deadlock
         lockRow(vm.getId(), true);
-    	
-    	SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
-    	sc.setParameters("id", vmi.getId());
-    	sc.setParameters("states", oldState);
-    	sc.setParameters("host", vmi.getHostId());
-    	sc.setParameters("update", vmi.getUpdated());
 
-    	vmi.incrUpdated();
-    	UpdateBuilder ub = getUpdateBuilder(vmi);
+        SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
+        sc.setParameters("id", vmi.getId());
+        sc.setParameters("states", oldState);
+        sc.setParameters("host", vmi.getHostId());
+        sc.setParameters("update", vmi.getUpdated());
 
-    	ub.set(vmi, "state", newState);
-    	ub.set(vmi, "hostId", newHostId);
-    	ub.set(vmi, "podIdToDeployIn", vmi.getPodIdToDeployIn());
-    	ub.set(vmi, _updateTimeAttr, new Date());
+        vmi.incrUpdated();
+        UpdateBuilder ub = getUpdateBuilder(vmi);
 
-    	int result = update(vmi, sc);
+        ub.set(vmi, "state", newState);
+        ub.set(vmi, "hostId", newHostId);
+        ub.set(vmi, "podIdToDeployIn", vmi.getPodIdToDeployIn());
+        ub.set(vmi, _updateTimeAttr, new Date());
+
+        int result = update(vmi, sc);
         if (result == 0) {
             VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
 

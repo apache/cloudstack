@@ -72,7 +72,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -103,8 +102,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         before retrying the stop | seconds | 120 || * }
  **/
 @Local(value = { HighAvailabilityManager.class })
-public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener,
-        StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
 
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
@@ -236,7 +234,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return;
         }
 
-        s_logger.warn("Scheduling restart for VMs on host " + host.getId());
+        s_logger.warn("Scheduling restart for VMs on host " + host.getId() + "-" + host.getName());
 
         final List<VMInstanceVO> vms = _instanceDao.listByHostId(host.getId());
         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
@@ -806,7 +804,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         _stopped = true;
 
         _executor = Executors.newScheduledThreadPool(count, new NamedThreadFactory("HA"));
-        VirtualMachine.State.getStateMachine().registerListener(this);
 
         return true;
     }
@@ -921,6 +918,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     work.setTimeToTry(nextTime);
                     work.setServerId(null);
                     work.setDateTaken(null);
+
+                    // if restart failed in the middle due to exception, VM state may has been changed
+                    // recapture into the HA worker so that it can really continue in it next turn
+                    VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
+                    work.setUpdateTime(vm.getUpdated());
+                    work.setPreviousState(vm.getState());
                 }
                 _haDao.update(work.getId(), work);
             } catch (final Throwable th) {
@@ -960,35 +963,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Override
     public DeploymentPlanner getHAPlanner() {
         return _haPlanners.get(0);
-    }
-
-    @Override
-    public boolean preStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        return true;
-    }
-
-    @Override
-    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (oldState == State.Running && event == VirtualMachine.Event.FollowAgentPowerOffReport && newState == State.Stopped) {
-            final VMInstanceVO vm = _instanceDao.findById(vo.getId());
-            if (vm.isHaEnabled()) {
-                if (vm.getState() != State.Stopped)
-                    s_logger.warn("Sanity check failed. postStateTransitionEvent reports transited to Stopped but VM " + vm + " is still at state " + vm.getState());
-
-                s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
-                _executor.submit(new ManagedContextRunnable() {
-                    @Override
-                    protected void runInContext() {
-                        try {
-                            scheduleRestart(vm, false);
-                        } catch (Exception e) {
-                            s_logger.warn("Unexpected exception when scheduling a HA restart", e);
-                        }
-                    }
-                });
-            }
-        }
-        return true;
     }
 
     @Override

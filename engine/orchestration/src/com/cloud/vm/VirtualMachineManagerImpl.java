@@ -4221,6 +4221,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Stopped:
         case Migrating:
             s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-off report while there is no pending jobs on it");
+            if(vm.isHaEnabled() && vm.getState() == State.Running && vm.getHypervisorType() != HypervisorType.VMware && vm.getHypervisorType() != HypervisorType.Hyperv) {
+                s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
+                if(!_haMgr.hasPendingHaWork(vm.getId()))
+                	_haMgr.scheduleRestart(vm, true);
+                else
+                    s_logger.info("VM " + vm.getInstanceName() + " already has an pending HA task working on it");
+                
+                return;
+            }
+            
             VirtualMachineGuru vmGuru = getVmGuru(vm);
             VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
             sendStop(vmGuru, profile, true);
@@ -4406,10 +4416,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             super(VirtualMachine.class, job, VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
-                    VMInstanceVO instance = _vmDao.findById(vmId);
-                    if ((instance.getPowerState() == desiredPowerState && srcHostIdForMigration == null) ||
-                            (instance.getPowerState() == desiredPowerState && (srcHostIdForMigration != null && instance.getPowerHostId() != srcHostIdForMigration)))
+                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                    assert (jobVo != null);
+                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
                         return true;
+                    
                     return false;
                 }
             }, Topics.VM_POWER_STATE, AsyncJob.Topics.JOB_STATE);
