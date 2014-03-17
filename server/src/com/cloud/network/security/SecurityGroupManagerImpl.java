@@ -713,7 +713,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         final Integer startPortOrTypeFinal = startPortOrType;
         final Integer endPortOrCodeFinal = endPortOrCode;
         final String protocolFinal = protocol;
-        return Transaction.execute(new TransactionCallback<List<SecurityGroupRuleVO>>() {
+        List<SecurityGroupRuleVO> newRules = Transaction.execute(new TransactionCallback<List<SecurityGroupRuleVO>>() {
             @Override
             public List<SecurityGroupRuleVO> doInTransaction(TransactionStatus status) {
                 // Prevents other threads/management servers from creating duplicate security rules
@@ -756,9 +756,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Added " + newRules.size() + " rules to security group " + securityGroup.getName());
                     }
-                    final ArrayList<Long> affectedVms = new ArrayList<Long>();
-                    affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
-                    scheduleRulesetUpdateToHosts(affectedVms, true, null);
                     return newRules;
                 } catch (Exception e) {
                     s_logger.warn("Exception caught when adding security group rules ", e);
@@ -771,6 +768,15 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        try {
+            final ArrayList<Long> affectedVms = new ArrayList<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+        } catch (Exception e) {
+            s_logger.debug("can't update rules on host, ignore", e);
+        }
+
+        return newRules;
     }
 
     @Override
@@ -810,7 +816,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
         _accountMgr.checkAccess(caller, null, true, securityGroup);
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        long securityGroupId = rule.getSecurityGroupId();
+        Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 SecurityGroupVO groupHandle = null;
@@ -825,11 +832,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         
                     _securityGroupRuleDao.remove(id);
                     s_logger.debug("revokeSecurityGroupRule succeeded for security rule id: " + id);
-        
-                    final ArrayList<Long> affectedVms = new ArrayList<Long>();
-                    affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupHandle.getId()));
-                    scheduleRulesetUpdateToHosts(affectedVms, true, null);
-        
+
                     return true;
                 } catch (Exception e) {
                     s_logger.warn("Exception caught when deleting security rules ", e);
@@ -841,6 +844,16 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 }
             }
         });
+
+        try {
+            final ArrayList<Long> affectedVms = new ArrayList<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroupId));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+        } catch (Exception e) {
+            s_logger.debug("Can't update rules for host, ignore", e);
+        }
+
+        return result;
     }
 
     @Override
