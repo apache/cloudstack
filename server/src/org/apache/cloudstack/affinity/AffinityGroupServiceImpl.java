@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -218,7 +217,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     _affinityGroupDomainMapDao.persist(domainMap);
                     //send event for storing the domain wide resource access
                     Map<String, Object> params = new HashMap<String, Object>();
-                    params.put(ApiConstants.ENTITY_TYPE, IAMEntityType.AffinityGroup);
+                    params.put(ApiConstants.ENTITY_TYPE, AffinityGroup.class);
                     params.put(ApiConstants.ENTITY_ID, group.getId());
                     params.put(ApiConstants.DOMAIN_ID, domainId);
                     params.put(ApiConstants.SUBDOMAIN_ACCESS, subDomainAccess);
@@ -300,7 +299,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                         _affinityGroupDomainMapDao.remove(groupDomain.getId());
                     }
                     // remove its related ACL permission
-                    Pair<IAMEntityType, Long> params = new Pair<IAMEntityType, Long>(IAMEntityType.AffinityGroup, affinityGroupIdFinal);
+                    Pair<Class<?>, Long> params = new Pair<Class<?>, Long>(AffinityGroup.class, affinityGroupIdFinal);
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
                 }
             }

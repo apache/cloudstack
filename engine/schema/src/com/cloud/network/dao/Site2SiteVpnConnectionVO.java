@@ -28,7 +28,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.network.Site2SiteVpnConnection;
@@ -175,7 +174,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Site2SiteVpnConnection;
+    public Class<?> getEntityType() {
+        return Site2SiteVpnConnection.class;
     }
 }

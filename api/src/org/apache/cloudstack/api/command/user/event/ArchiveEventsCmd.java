@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,10 +31,11 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class, entityType = {IAMEntityType.Event},
+@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveEventsCmd extends BaseCmd {
 

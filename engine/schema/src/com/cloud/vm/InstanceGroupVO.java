@@ -28,8 +28,6 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -120,7 +118,7 @@ public class InstanceGroupVO implements InstanceGroup {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.InstanceGroup;
+    public Class<?> getEntityType() {
+        return InstanceGroup.class;
     }
 }

@@ -30,8 +30,6 @@ import javax.persistence.Table;
 
 import com.google.gson.annotations.Expose;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 
@@ -239,7 +237,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Snapshot;
+    public Class<?> getEntityType() {
+        return Snapshot.class;
     }
 }

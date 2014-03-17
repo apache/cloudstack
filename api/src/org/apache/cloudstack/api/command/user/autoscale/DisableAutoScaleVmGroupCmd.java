@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -35,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {IAMEntityType.AutoScaleVmGroup},
+@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableAutoScaleVmGroupCmd.class.getName());

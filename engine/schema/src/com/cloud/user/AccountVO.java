@@ -28,8 +28,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -190,7 +188,7 @@ public class AccountVO implements Account {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Account;
+    public Class<?> getEntityType() {
+        return Account.class;
     }
 }

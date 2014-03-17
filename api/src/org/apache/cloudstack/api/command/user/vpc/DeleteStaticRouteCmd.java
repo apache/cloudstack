@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.vpc;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -38,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 
-@APICommand(name = "deleteStaticRoute", description = "Deletes a static route", responseObject = SuccessResponse.class, entityType = {IAMEntityType.StaticRoute},
+@APICommand(name = "deleteStaticRoute", description = "Deletes a static route", responseObject = SuccessResponse.class, entityType = {StaticRoute.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());

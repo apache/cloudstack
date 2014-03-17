@@ -33,7 +33,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 
 import com.cloud.utils.db.GenericDao;
@@ -246,7 +245,7 @@ public class VMSnapshotVO implements VMSnapshot {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.VMSnapshot;
+    public Class<?> getEntityType() {
+        return VMSnapshot.class;
     }
 }

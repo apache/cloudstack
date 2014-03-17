@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -325,8 +324,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.FirewallRule;
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 
 }

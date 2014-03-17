@@ -28,8 +28,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -139,7 +137,7 @@ public class StaticRouteVO implements StaticRoute {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.StaticRoute;
+    public Class<?> getEntityType() {
+        return StaticRoute.class;
     }
 }

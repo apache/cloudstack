@@ -29,7 +29,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -130,8 +129,8 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Condition;
+    public Class<?> getEntityType() {
+        return Condition.class;
     }
 
 }

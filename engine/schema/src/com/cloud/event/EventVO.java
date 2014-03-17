@@ -29,8 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -223,7 +221,7 @@ public class EventVO implements Event {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Event;
+    public Class<?> getEntityType() {
+        return Event.class;
     }
 }

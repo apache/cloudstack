@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,8 +34,9 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listRouters", description = "List routers.", responseObject = DomainRouterResponse.class, entityType = {IAMEntityType.VirtualMachine},
+@APICommand(name = "listRouters", description = "List routers.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());

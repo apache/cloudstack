@@ -25,8 +25,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.network.RemoteAccessVpn;
 
 @Entity
@@ -168,7 +166,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.RemoteAccessVpn;
+    public Class<?> getEntityType() {
+        return RemoteAccessVpn.class;
     }
 }

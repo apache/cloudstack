@@ -32,8 +32,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -601,7 +599,7 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Volume;
+    public Class<?> getEntityType() {
+        return Volume.class;
     }
 }

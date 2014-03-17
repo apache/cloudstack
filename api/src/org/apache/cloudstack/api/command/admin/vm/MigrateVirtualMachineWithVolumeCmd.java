@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -47,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachineWithVolume",
             description = "Attempts Migration of a VM with its volumes to a different host",
-        responseObject = UserVmResponse.class, entityType = {IAMEntityType.VirtualMachine},
+        responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -28,7 +27,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class, entityType = {IAMEntityType.Account},
+@APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());

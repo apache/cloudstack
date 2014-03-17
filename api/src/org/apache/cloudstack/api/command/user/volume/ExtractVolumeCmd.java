@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -39,7 +38,7 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {IAMEntityType.Volume},
+@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractVolumeCmd extends BaseAsyncVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
@@ -72,6 +71,7 @@ public class ExtractVolumeCmd extends BaseAsyncVolumeCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public Long getId() {
         return id;
     }

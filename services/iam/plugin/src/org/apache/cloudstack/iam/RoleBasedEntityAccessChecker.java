@@ -83,7 +83,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
         String entityType = null;
         if (entity.getEntityType() != null) {
-            entityType = entity.getEntityType().toString();
+            entityType = entity.getEntityType().getSimpleName();
         }
 
         if (accessType == null) {

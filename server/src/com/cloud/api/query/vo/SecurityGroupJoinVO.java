@@ -23,8 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
@@ -306,7 +305,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.SecurityGroup;
+    public Class<?> getEntityType() {
+        return SecurityGroup.class;
     }
 }
