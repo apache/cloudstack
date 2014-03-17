@@ -34,5 +34,9 @@
     <bean id="LXCGuru" class="com.cloud.hypervisor.LXCGuru">
         <property name="name" value="LXCGuru" />
     </bean>
+    
+    <bean id="DockerGuru" class="com.cloud.hypervisor.DockerGuru">
+        <property name="name" value="DockerGuru" />
+    </bean>
 
 </beans>

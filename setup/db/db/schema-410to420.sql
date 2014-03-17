@@ -661,19 +661,24 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT'
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id';
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `uuid` varchar(40) UNIQUE;
 
--- START: support for LXC
+-- START: support for LXC and Docker
  
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES (UUID(), 'LXC', 'default', 50, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES (UUID(), 'Docker', 'default', 50, 1);
+
 ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `lxc_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a LXC host';
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `docker_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a Docker host';
  
-UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC' WHERE name='hypervisor.list';
+UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Docker' WHERE name='hypervisor.list';
  
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
      VALUES (10, UUID(), 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+     VALUES (10, UUID(), 'routing-10', 'SystemVM Template (Docker)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (Docker)', 'QCOW2', 15, 0, 1, 'Docker');
 
 ALTER TABLE `cloud`.`user_vm` MODIFY user_data TEXT(32768);
 
--- END: support for LXC
+-- END: support for LXC and Docker
 
 CREATE TABLE `cloud`.`vm_snapshots` (
   `id` bigint(20) unsigned NOT NULL auto_increment COMMENT 'Primary Key',
@@ -2178,6 +2183,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.hyperv', 'SystemVM Template (HyperV)', 'Name of the default router template on Hyperv.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.kvm', 'SystemVM Template (KVM)', 'Name of the default router template on KVM.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.lxc', 'SystemVM Template (LXC)', 'Name of the default router template on LXC.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.docker', 'SystemVM Template (Docker)', 'Name of the default router template on Docker.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.vmware', 'SystemVM Template (vSphere)', 'Name of the default router template on Vmware.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.xen', 'SystemVM Template (XenServer)', 'Name of the default router template on Xenserver.');
 

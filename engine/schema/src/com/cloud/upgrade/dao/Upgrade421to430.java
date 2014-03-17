@@ -212,6 +212,8 @@ public class Upgrade421to430 implements DbUpgrade {
                             break;
                         case LXC:       hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
                             break;
+                        case Docker:    hypervisorsListInUse.add(Hypervisor.HypervisorType.Docker);
+                        	break;
                     }
                 }
             } catch (SQLException e) {
@@ -223,6 +225,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.3");
                     put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.3");
                     put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.3");
+                    put(Hypervisor.HypervisorType.Docker, "systemvm-docker-4.3");
                     put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.3");
                 }
             };
@@ -232,6 +235,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
                     put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
                     put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
+                    put(Hypervisor.HypervisorType.Docker, "router.template.docker");
                     put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
                 }
             };
@@ -241,6 +245,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     put(Hypervisor.HypervisorType.VMware, "http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-vmware.ova");
                     put(Hypervisor.HypervisorType.KVM, "http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-kvm.qcow2.bz2");
                     put(Hypervisor.HypervisorType.LXC, "http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-kvm.qcow2.bz2");
+                    put(Hypervisor.HypervisorType.Docker, "http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-kvm.qcow2.bz2");
                     put(Hypervisor.HypervisorType.Hyperv, "http://download.cloud.com/templates/4.3/systemvm64template-2013-12-23-hyperv.vhd.bz2");
                 }
             };
@@ -250,6 +255,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     put(Hypervisor.HypervisorType.VMware, "ef593a061f3b7594ab0bfd9b0ed0a0d4");
                     put(Hypervisor.HypervisorType.KVM, "85a1bed07bf43cbf022451cb2ecae4ff");
                     put(Hypervisor.HypervisorType.LXC, "85a1bed07bf43cbf022451cb2ecae4ff");
+                    put(Hypervisor.HypervisorType.Docker, "85a1bed07bf43cbf022451cb2ecae4ff");
                     put(Hypervisor.HypervisorType.Hyperv, "5df45ee6ebe1b703a8805f4e1f4d0818");
                 }
             };

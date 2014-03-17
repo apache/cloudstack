@@ -32,6 +32,7 @@ public class Hypervisor {
         Simulator,
         Ovm,
         LXC,
+        Docker,
 
         Any; /*If you don't care about the hypervisor type*/
 
@@ -59,6 +60,8 @@ public class Hypervisor {
                 return HypervisorType.Ovm;
             } else if (hypervisor.equalsIgnoreCase("LXC")) {
                 return HypervisorType.LXC;
+            } else if (hypervisor.equalsIgnoreCase("Docker")) {
+                return HypervisorType.Docker;
             } else if (hypervisor.equalsIgnoreCase("Any")) {
                 return HypervisorType.Any;
             } else {

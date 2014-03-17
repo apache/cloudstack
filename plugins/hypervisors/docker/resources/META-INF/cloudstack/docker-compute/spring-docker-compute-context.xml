@@ -27,24 +27,4 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
 
-
-    <bean id="KvmServerDiscoverer"
-        class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer">
-        <property name="name" value="KVM Agent" />
-    </bean>
-
-    <bean id="LxcServerDiscoverer"
-        class="com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer">
-        <property name="name" value="Lxc Discover" />
-    </bean>
-    
-    <bean id="DockerServerDiscoverer"
-        class="com.cloud.hypervisor.kvm.discoverer.DockerServerDiscoverer">
-        <property name="name" value="Docker Discover" />
-    </bean>    
-
-    <bean id="dummyHostDiscoverer" class="com.cloud.resource.DummyHostDiscoverer">
-        <property name="name" value="dummyHostDiscoverer" />
-    </bean>
-
 </beans>

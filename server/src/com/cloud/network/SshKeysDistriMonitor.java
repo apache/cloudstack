@@ -37,7 +37,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-
 public class SshKeysDistriMonitor implements Listener {
 	  private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
 	  	AgentManager _agentMgr;
@@ -74,7 +73,8 @@ public class SshKeysDistriMonitor implements Listener {
 	    	if (cmd instanceof StartupRoutingCommand) {
 	    		if (((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.KVM ||
                     ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer ||
-                    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.LXC) {
+                    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.LXC ||
+                    ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.Docker) {
 	    			/*TODO: Get the private/public keys here*/
 	    			
 	    			String pubKey = _configDao.getValue("ssh.publickey");
