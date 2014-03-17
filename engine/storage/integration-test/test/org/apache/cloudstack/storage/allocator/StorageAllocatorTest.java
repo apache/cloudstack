@@ -251,7 +251,7 @@ public class StorageAllocatorTest {
     public void testClusterAllocatorWithTags() {
         try {
             createDb();
-            StoragePoolDetailVO detailVO = new StoragePoolDetailVO(this.storagePoolId, "high", "true", display);
+            StoragePoolDetailVO detailVO = new StoragePoolDetailVO(this.storagePoolId, "high", "true", true);
             poolDetailsDao.persist(detailVO);
             DiskOfferingVO diskOff = this.diskOfferingDao.findById(diskOffering.getId());
             List<String> tags = new ArrayList<String>();
@@ -285,7 +285,7 @@ public class StorageAllocatorTest {
     public void testClusterAllocatorWithWrongTag() {
         try {
             createDb();
-            StoragePoolDetailVO detailVO = new StoragePoolDetailVO(this.storagePoolId, "high", "true", display);
+            StoragePoolDetailVO detailVO = new StoragePoolDetailVO(this.storagePoolId, "high", "true", true);
             poolDetailsDao.persist(detailVO);
             DiskOfferingVO diskOff = this.diskOfferingDao.findById(diskOffering.getId());
             List<String> tags = new ArrayList<String>();
