@@ -16,6 +16,24 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -364,8 +382,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             } else if (cmd instanceof PvlanSetupCommand) {
                 return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
-                return this.storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
-            } else if (cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand) {
+                return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+            } else if (cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand) {
                 return new Answer(cmd);
             } else {
                 s_logger.error("Simulator does not implement command of type "+cmd.toString());
