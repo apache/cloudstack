@@ -384,7 +384,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return haEnabled;
     }
 
+    //FIXME - Remove this and use isDisplay() instead
     public boolean isDisplayVm() {
+        return displayVm;
+    }
+
+    @Override
+    public boolean isDisplay() {
         return displayVm;
     }
 

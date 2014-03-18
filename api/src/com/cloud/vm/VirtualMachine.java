@@ -321,4 +321,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     long getUpdated();
 
+    boolean isDisplay();
+
 }
