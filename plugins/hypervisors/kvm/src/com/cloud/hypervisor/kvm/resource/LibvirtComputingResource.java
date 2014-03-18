@@ -331,7 +331,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public ExecutionResult executeInVR(String routerIp, String script, String args) {
-        final Script command = new Script(_routerProxyPath, _timeout, s_logger);
+        return executeInVR(routerIp, script, args, _timeout);
+    }
+
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script, String args, int timeout) {
+        final Script command = new Script(_routerProxyPath, timeout, s_logger);
         final AllLinesParser parser = new AllLinesParser();
         command.add(script);
         command.add(routerIp);

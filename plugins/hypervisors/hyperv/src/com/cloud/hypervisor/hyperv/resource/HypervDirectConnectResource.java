@@ -574,6 +574,11 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args) {
+        return executeInVR(routerIP, script, args, 120);
+    }
+
+    @Override
+    public ExecutionResult executeInVR(String routerIP, String script, String args, int timeout) {
         Pair<Boolean, String> result;
 
         //TODO: Password should be masked, cannot output to log directly
@@ -582,7 +587,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            result = SshHelper.sshExecute(routerIP, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args);
+            result = SshHelper.sshExecute(routerIP, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args,
+                    60000, 60000, timeout * 1000);
         } catch (Exception e) {
             String msg = "Command failed due to " + e ;
             s_logger.error(msg);

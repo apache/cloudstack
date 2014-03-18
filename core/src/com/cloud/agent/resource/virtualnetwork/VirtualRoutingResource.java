@@ -1137,11 +1137,13 @@ public class VirtualRoutingResource {
             return new Answer(cmd);
         } else if (action == Action.Finish) {
             Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
+            int answerCounts = 0;
             try {
                 StringBuilder sb = new StringBuilder();
                 sb.append("#Apache CloudStack Virtual Router Config File\n");
                 sb.append("<version>\n" + _cfgVersion + "\n</version>\n");
                 for (NetworkElementCommand command : queue) {
+                    answerCounts += command.getAnswersCount();
                     List<ConfigItem> cfg = generateCommandCfg(command);
                     if (cfg == null) {
                         s_logger.warn("Unknown commands for VirtualRoutingResource, but continue: " + cmd.toString());
@@ -1168,7 +1170,12 @@ public class VirtualRoutingResource {
                     return new Answer(cmd, false, result.getDetails());
                 }
 
-                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_CFG, "-c " + cfgFilePath + cfgFileName);
+                // 3 second for each answer should be enough, and 120s is the minimal timeout
+                int timeout = answerCounts * 3;
+                if (timeout < 120) {
+                    timeout = 120;
+                }
+                result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_CFG, "-c " + cfgFilePath + cfgFileName, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }

@@ -91,6 +91,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Override
     public ExecutionResult executeInVR(String routerIp, String script, String args) {
+        return executeInVR(routerIp, script, args, 60);
+    }
+
+    @Override
+    public ExecutionResult executeInVR(String routerIp, String script, String args, int timeout) {
         assertEquals(routerIp, ROUTERIP);
         verifyCommand(_currentCmd, script, args);
         return new ExecutionResult(true, null);
