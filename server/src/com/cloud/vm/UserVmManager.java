@@ -109,4 +109,6 @@ public interface UserVmManager extends UserVmService {
     public void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering);
 
     public void removeCustomOfferingDetails(long vmId);
+
+    void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 }

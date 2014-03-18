@@ -38,6 +38,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -445,6 +446,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     UUIDManager _uuidMgr;
     @Inject
     DeploymentPlanningManager _planningMgr;
+    @Inject
+    VolumeApiService _volumeService;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -828,9 +831,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Generate usage event for VM upgrade
-        generateUsageEvent(newServiceOffering, cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+        UserVmVO userVm = _vmDao.findById(vmId);
+        generateUsageEvent( userVm, userVm.isDisplayVm(), EventTypes.EVENT_VM_UPGRADE);
 
-        return _vmDao.findById(vmInstance.getId());
+        return userVm;
     }
 
     @Override
@@ -1212,11 +1216,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UserVmVO vmInstance = _vmDao.findById(vmId);
             if (vmInstance.getState().equals(State.Stopped)) {
                 // Generate usage event for VM upgrade
-                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+                generateUsageEvent(vmInstance, vmInstance.isDisplayVm(), EventTypes.EVENT_VM_UPGRADE);
             }
             if (vmInstance.getState().equals(State.Running)) {
                 // Generate usage event for Dynamic scaling of VM
-                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+                generateUsageEvent( vmInstance, vmInstance.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
             }
             return vmInstance;
         } else {
@@ -1557,8 +1561,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         offeringId = offering.getId();
                     }
                 }
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                                offeringId, templateId, volume.getSize(), Volume.class.getName(), volume.getUuid());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        offeringId, templateId, volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             }
         }
 
@@ -1610,7 +1614,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
 
-        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, _offeringDao));
+        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, _offeringDao, _vmDao, this));
 
         String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
@@ -1829,6 +1833,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         String hostName = cmd.getHostName();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Input validation and permission checks
         UserVmVO vmInstance = _vmDao.findById(id.longValue());
@@ -1840,13 +1845,50 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //If the flag is specified and is changed
         if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplayVm()) {
+
+            //update vm
+            vmInstance.setDisplayVm(isDisplayVm);
+
+            // Resource limit changes
             ServiceOffering offering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.user_vm, isDisplayVm);
             _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.cpu, isDisplayVm, new Long(offering.getCpu()));
             _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.memory, isDisplayVm, new Long(offering.getRamSize()));
+
+            // Usage
+            saveUsageEvent(vmInstance);
+
+            // take care of the root volume as well.
+            _volumeService.updateDisplay(_volsDao.findByInstanceAndType(id, Volume.Type.ROOT).get(0), isDisplayVm);
+
         }
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId(), hostName);
+    }
+
+    private void saveUsageEvent(UserVmVO vm) {
+
+        // If vm not destroyed
+        if( vm.getState() != State.Destroyed && vm.getState() != State.Expunging && vm.getState() != State.Error){
+
+            if(vm.isDisplayVm()){
+                //1. Allocated VM Usage Event
+                generateUsageEvent(vm, true, EventTypes.EVENT_VM_CREATE);
+                //2. Running VM Usage Event
+                if(vm.getState() == State.Running || vm.getState() == State.Stopping){
+                    generateUsageEvent(vm, true, EventTypes.EVENT_VM_START);
+                }
+
+            }else {
+                //1. Allocated VM Usage Event
+                generateUsageEvent(vm, true, EventTypes.EVENT_VM_DESTROY);
+                //2. Running VM Usage Event
+                if(vm.getState() == State.Running || vm.getState() == State.Stopping){
+                    generateUsageEvent(vm, true, EventTypes.EVENT_VM_STOP);
+                }
+            }
+        }
+
     }
 
     @Override
@@ -2935,10 +2977,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (!offering.isDynamic()) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(),
-                            hypervisorType.toString(), VirtualMachine.class.getName(), vm.getUuid());
+                            hypervisorType.toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
                 } else {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(),
-                            hypervisorType.toString(), VirtualMachine.class.getName(), vm.getUuid(), customParameters);
+                            hypervisorType.toString(), VirtualMachine.class.getName(), vm.getUuid(), customParameters, vm.isDisplayVm());
                 }
 
                 //Update Resource Count for the given account
@@ -2948,13 +2990,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
     }
 
-    private void generateUsageEvent(ServiceOfferingVO serviceOffering, Map<String, String> customParameters, UserVmVO vm, String eventType) {
+    @Override
+    public void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType){
+        ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
         if (!serviceOffering.isDynamic()) {
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm
-                    .getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid());
-        } else {
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm
-                    .getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), customParameters);
+            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                    VirtualMachine.class.getName(), vm.getUuid(), isDisplay);
+        }
+        else {
+            Map<String, String> customParameters = new HashMap<String, String>();
+            customParameters.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
+            customParameters.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
+            customParameters.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
+            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                    VirtualMachine.class.getName(), vm.getUuid(), customParameters, isDisplay);
         }
     }
 
@@ -3409,7 +3460,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (VolumeVO volume : volumes) {
                 if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid());
+                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                 }
             }
 
@@ -4214,7 +4265,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             public void doInTransactionWithoutResult(TransactionStatus status) {
         //generate destroy vm event for usage
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                        vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid());
+                        vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
 
         // update resource counts for old account
                 resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
@@ -4226,20 +4277,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // OS 2: update volume
         for (VolumeVO volume : volumes) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
-                    _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
+            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
             volume.setAccountId(newAccount.getAccountId());
             volume.setDomainId(newAccount.getDomainId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
-                    _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             //snapshots: mark these removed in db
             List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
-                    for (SnapshotVO snapshot : snapshots) {
+            for (SnapshotVO snapshot : snapshots) {
                 _snapshotDao.remove(snapshot.getId());
             }
         }
@@ -4249,7 +4300,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //generate usage events to account for this change
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                        vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid());
+                        vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
             }
         });
 

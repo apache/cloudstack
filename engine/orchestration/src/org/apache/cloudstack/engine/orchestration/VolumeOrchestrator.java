@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -149,6 +151,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     HostDao _hostDao;
     @Inject
     SnapshotService _snapshotSrv;
+    @Inject
+    protected UserVmDao _userVmDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -592,6 +596,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (template.getFormat() == ImageFormat.ISO) {
             vol.setIsoId(template.getId());
         }
+        // display flag matters only for the User vms
+        if (vm.getType() == VirtualMachine.Type.User) {
+            UserVmVO userVm = _userVmDao.findById(vm.getId());
+            vol.setDisplayVolume(userVm.isDisplayVm());
+        }
 
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
@@ -599,10 +608,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Save usage event and update resource count for user vm volumes
         if (vm.getType() == VirtualMachine.Type.User) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
-                    Volume.class.getName(), vol.getUuid());
+                    Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(vol.getSize()));
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
         }
         return toDiskProfile(vol, offering);
     }
@@ -642,6 +651,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDeviceId(1l);
         }
 
+        if (vm.getType() == VirtualMachine.Type.User) {
+           UserVmVO userVm = _userVmDao.findById(vm.getId());
+           vol.setDisplayVolume(userVm.isDisplayVm());
+        }
+
+
         vol = _volsDao.persist(vol);
 
         // Create event and update resource count for volumes if vm is a user vm
@@ -652,10 +667,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             offeringId = offering.getId();
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, null, size,
-                    Volume.class.getName(), vol.getUuid());
+                    Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(vol.getSize()));
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
         }
         return toDiskProfile(vol, offering);
     }

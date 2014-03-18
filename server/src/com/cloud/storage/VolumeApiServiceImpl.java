@@ -591,10 +591,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         volume = _volsDao.persist(volume);
-        if (cmd.getSnapshotId() == null) {
+        if (cmd.getSnapshotId() == null && displayVolume) {
             // for volume created from snapshot, create usage event after volume creation
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            diskOfferingId, null, size, Volume.class.getName(), volume.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    diskOfferingId, null, size, Volume.class.getName(), volume.getUuid(), displayVolume);
         }
 
         CallContext.current().setEventDetails("Volume Id: " + volume.getId());
@@ -677,11 +677,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // sync old snapshots to region store if necessary
 
         createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
-
+        VolumeVO volumeVo = _volsDao.findById(createdVolume.getId());
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
-                createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
+                createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid(), volumeVo.isDisplayVolume());
 
-        return _volsDao.findById(createdVolume.getId());
+        return volumeVo;
     }
 
     @Override
@@ -972,7 +972,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     // Log usage event for volumes belonging user VM's only
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid());
+                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                 }
             }
             // Mark volume as removed if volume has not been created on primary or secondary
@@ -1225,12 +1225,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         VolumeVO volume = _volumeDao.findById(volumeId);
 
+        if(volume == null)
+            throw new InvalidParameterValueException("The volume id doesn't exist");
+
         if (path != null) {
             volume.setPath(path);
-        }
-
-        if (displayVolume != null) {
-            volume.setDisplayVolume(displayVolume);
         }
 
         if(chainInfo != null){
@@ -1258,15 +1257,59 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volume.setUuid(customId);
         }
 
-        if (displayVolume != null && displayVolume != volume.isDisplayVolume()) { // No need to check permissions since only Admin allowed to call this API.
-            volume.setDisplayVolume(displayVolume);
-            _resourceLimitMgr.changeResourceCount(entityOwnerId, ResourceType.volume, displayVolume);
-            _resourceLimitMgr.changeResourceCount(entityOwnerId, ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
-        }
+        updateDisplay(volume, displayVolume);
 
         _volumeDao.update(volumeId, volume);
 
         return volume;
+    }
+
+
+    @Override
+    public void updateDisplay(Volume volume, Boolean displayVolume){
+        // 1. Resource limit changes
+        updateResourceCount(volume, displayVolume);
+
+        // 2. generate usage event if not in destroyed state
+        saveUsageEvent(volume, displayVolume);
+
+        // 3. Set the flag
+        if (displayVolume != null && displayVolume != volume.isDisplayVolume()){
+            // FIXME - Confused - typecast for now.
+            ((VolumeVO)volume).setDisplayVolume(displayVolume);
+            _volumeDao.update(volume.getId(), (VolumeVO)volume);
+        }
+
+    }
+
+    private void updateResourceCount(Volume volume, Boolean displayVolume){
+        // Update only when the flag has changed.
+        if (displayVolume != null && displayVolume != volume.isDisplayVolume()){
+            _resourceLimitMgr.changeResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
+            _resourceLimitMgr.changeResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
+        }
+    }
+
+    private void saveUsageEvent(Volume volume, Boolean displayVolume){
+
+        // Update only when the flag has changed  &&  only when volume in a non-destroyed state.
+        if ((displayVolume != null && displayVolume != volume.isDisplayVolume()) && !isVolumeDestroyed(volume)){
+            if (displayVolume){
+                // flag turned 1 equivalent to freshly created volume
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+            }else {
+                // flag turned 0 equivalent to deleting a volume
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        Volume.class.getName(), volume.getUuid());
+            }
+        }
+    }
+
+    private boolean isVolumeDestroyed(Volume volume){
+        if(volume.getState() == Volume.State.Destroy || volume.getState() == Volume.State.Expunging && volume.getState() == Volume.State.Expunged)
+            return true;
+        return false;
     }
 
     @Override
