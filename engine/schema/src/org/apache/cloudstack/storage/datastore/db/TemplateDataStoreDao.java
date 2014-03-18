@@ -65,6 +65,8 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
 
+    TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId);
+
     void duplicateCacheRecordsOnRegionStore(long storeId);
 
     TemplateDataStoreVO findReadyOnCache(long templateId);
