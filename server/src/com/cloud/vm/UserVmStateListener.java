@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.server.ManagementService;
+import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -33,11 +34,9 @@ import org.apache.cloudstack.framework.events.EventBus;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
@@ -51,15 +50,19 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected NetworkDao _networkDao;
     @Inject protected NicDao _nicDao;
     @Inject protected ServiceOfferingDao _offeringDao;
+    @Inject protected UserVmDao _userVmDao;
+    @Inject protected UserVmManager _userVmMgr;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
     protected static EventBus s_eventBus = null;
 
-    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao) {
+    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
         this._offeringDao = offeringDao;
+        this._userVmDao = userVmDao;
+        this._userVmMgr = userVmMgr;
     }
 
     @Override
@@ -98,22 +101,14 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         return true;
     }
 
-    private void generateUsageEvent(Long serviceOfferingId,VirtualMachine vm,  String eventType){
-        ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getId(), serviceOfferingId);
-        if (!serviceOffering.isDynamic()) {
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
-                    VirtualMachine.class.getName(), vm.getUuid());
+    private void generateUsageEvent(Long serviceOfferingId, VirtualMachine vm,  String eventType){
+        boolean displayVm = true;
+        if(vm.getType() == VirtualMachine.Type.User){
+            UserVmVO uservm = _userVmDao.findById(vm.getId());
+            displayVm = uservm.isDisplayVm();
         }
-        else {
-            Map<String, String> customParameters = new HashMap<String, String>();
-            customParameters.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
-            customParameters.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
-            customParameters.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
-                    VirtualMachine.class.getName(), vm.getUuid(), customParameters);
-        }
+
+        _userVmMgr.generateUsageEvent(vm, displayVm, eventType);
     }
 
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
