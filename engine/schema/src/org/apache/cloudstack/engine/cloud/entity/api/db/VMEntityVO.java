@@ -173,6 +173,9 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name = "disk_offering_id")
     protected Long diskOfferingId;
 
+    @Column(name = "display_vm", updatable = true, nullable = false)
+    protected boolean display = true;
+
     @Transient
     private VMReservationVO vmReservation;
 
@@ -538,5 +541,14 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }

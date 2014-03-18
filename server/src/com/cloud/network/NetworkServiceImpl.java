@@ -2277,9 +2277,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
                     String nicIdString = Long.toString(nic.getId());
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString,
-                                    oldNetworkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
+                                    oldNetworkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString,
-                                    networkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
+                                    networkOfferingId, null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
                 }
                     }
                 });
