@@ -18,8 +18,6 @@ package com.cloud.network;
 
 import java.net.URI;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -279,7 +277,7 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Network;
+    public Class<?> getEntityType() {
+        return Network.class;
     }
 }

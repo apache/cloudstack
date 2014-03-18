@@ -28,8 +28,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 
 @Entity
@@ -191,7 +189,7 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.GlobalLoadBalancerRule;
+    public Class<?> getEntityType() {
+        return GlobalLoadBalancerRule.class;
     }
 }

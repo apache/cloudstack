@@ -33,7 +33,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -1304,7 +1303,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             // add ACL permission in IAM
             Map<String, Object> permit = new HashMap<String, Object>();
-            permit.put(ApiConstants.ENTITY_TYPE, IAMEntityType.VirtualMachineTemplate.toString());
+            permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
             permit.put(ApiConstants.IAM_ACTION, "listTemplates");
@@ -1321,7 +1320,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _launchPermissionDao.removePermissions(id, accountIds);
             // remove ACL permission in IAM
             Map<String, Object> permit = new HashMap<String, Object>();
-            permit.put(ApiConstants.ENTITY_TYPE, IAMEntityType.VirtualMachineTemplate.toString());
+            permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
             permit.put(ApiConstants.IAM_ACTION, "listTemplates");

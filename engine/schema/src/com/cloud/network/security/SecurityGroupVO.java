@@ -25,8 +25,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 @Entity
 @Table(name = ("security_group"))
 public class SecurityGroupVO implements SecurityGroup {
@@ -97,7 +95,7 @@ public class SecurityGroupVO implements SecurityGroup {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.SecurityGroup;
+    public Class<?> getEntityType() {
+        return SecurityGroup.class;
     }
 }

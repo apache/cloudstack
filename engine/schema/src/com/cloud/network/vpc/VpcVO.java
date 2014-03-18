@@ -26,8 +26,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -99,8 +97,8 @@ public class VpcVO implements Vpc {
         uuid = UUID.randomUUID().toString();
         state = State.Enabled;
         this.networkDomain = networkDomain;
-        this.vpcOfferingId = vpcOffId;
-        this.usesDistributedRouter = useDistributedRouter;
+        vpcOfferingId = vpcOffId;
+        usesDistributedRouter = useDistributedRouter;
     }
 
     @Override
@@ -204,8 +202,8 @@ public class VpcVO implements Vpc {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Vpc;
+    public Class<?> getEntityType() {
+        return Vpc.class;
     }
 
     @Override

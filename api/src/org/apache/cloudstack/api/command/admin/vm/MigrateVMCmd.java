@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -45,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachine",
             description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
-        responseObject = UserVmResponse.class, entityType = {IAMEntityType.VirtualMachine},
+        responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVMCmd extends BaseAsyncCmd {

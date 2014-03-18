@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createAutoScalePolicy",
             description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.",
-        responseObject = AutoScalePolicyResponse.class, entityType = {IAMEntityType.AutoScalePolicy},
+        responseObject = AutoScalePolicyResponse.class, entityType = {AutoScalePolicy.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {

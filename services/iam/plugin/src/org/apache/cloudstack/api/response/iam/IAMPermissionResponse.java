@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.response.iam;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -34,7 +33,7 @@ public class IAMPermissionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ENTITY_TYPE)
     @Param(description = "the entity type of this permission")
-    private IAMEntityType entityType;
+    private String entityType;
 
     @SerializedName(ApiConstants.IAM_SCOPE)
     @Param(description = "scope of this permission")
@@ -48,11 +47,11 @@ public class IAMPermissionResponse extends BaseResponse {
     @Param(description = "allow or deny of this permission")
     private IAMPolicyPermission.Permission permission;
 
-    public IAMEntityType getEntityType() {
+    public String getEntityType() {
         return entityType;
     }
 
-    public void setEntityType(IAMEntityType entityType) {
+    public void setEntityType(String entityType) {
         this.entityType = entityType;
     }
 

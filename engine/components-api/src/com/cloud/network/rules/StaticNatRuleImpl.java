@@ -18,8 +18,6 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 public class StaticNatRuleImpl implements StaticNatRule {
     long id;
     String xid;
@@ -152,7 +150,7 @@ public class StaticNatRuleImpl implements StaticNatRule {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.FirewallRule;
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 }

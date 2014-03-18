@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 
 public class PrivateGatewayProfile implements PrivateGateway {
     VpcGateway vpcGateway;
@@ -113,7 +112,7 @@ public class PrivateGatewayProfile implements PrivateGateway {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.VpcGateway;
+    public Class<?> getEntityType() {
+        return VpcGateway.class;
     }
 }

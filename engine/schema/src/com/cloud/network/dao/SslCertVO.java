@@ -23,8 +23,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.network.lb.SslCert;
 import com.cloud.utils.db.Encrypt;
 
@@ -124,8 +122,8 @@ public class SslCertVO implements SslCert {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.SSLCert;
+    public Class<?> getEntityType() {
+        return SslCert.class;
     }
 
 }

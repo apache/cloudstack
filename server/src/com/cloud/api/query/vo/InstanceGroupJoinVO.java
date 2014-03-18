@@ -23,9 +23,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.InstanceGroup;
 
 @Entity
 @Table(name = "instance_group_view")
@@ -160,7 +159,7 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.InstanceGroup;
+    public Class<?> getEntityType() {
+        return InstanceGroup.class;
     }
 }

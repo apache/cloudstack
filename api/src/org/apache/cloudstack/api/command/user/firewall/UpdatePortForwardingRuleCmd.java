@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +37,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
-        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {IAMEntityType.PortForwardingRule},
+        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {PortForwardingRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());

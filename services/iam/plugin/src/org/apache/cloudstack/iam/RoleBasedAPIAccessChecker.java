@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -46,6 +45,7 @@ import com.cloud.api.ApiServerService;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -133,9 +133,9 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
         // add permissions for public templates
         List<VMTemplateVO> pTmplts = _templateDao.listByPublic();
         for (VMTemplateVO tmpl : pTmplts){
-            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_DOMAIN_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
-            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), IAMEntityType.VirtualMachineTemplate.toString(),
+            _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_NORMAL + 1), VirtualMachineTemplate.class.getSimpleName(),
                     PermissionScope.RESOURCE.toString(), tmpl.getId(), "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
         }
 
@@ -218,7 +218,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
 
         AccessType accessType = null;
-        IAMEntityType[] entityTypes = null;
+        Class<?>[] entityTypes = null;
         if (cmdClass != null) {
             BaseCmd cmdObj;
             try {
@@ -262,8 +262,9 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             _iamSrv.addIAMPermissionToIAMPolicy(policyId, null, permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                     apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
         } else {
-            for (IAMEntityType entityType : entityTypes) {
-                _iamSrv.addIAMPermissionToIAMPolicy(policyId, entityType.toString(), permissionScope.toString(), new Long(IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
+            for (Class<?> entityType : entityTypes) {
+                _iamSrv.addIAMPermissionToIAMPolicy(policyId, entityType.getSimpleName(), permissionScope.toString(), new Long(
+                        IAMPolicyPermission.PERMISSION_SCOPE_ID_CURRENT_CALLER),
                         apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow, false);
             }
          }

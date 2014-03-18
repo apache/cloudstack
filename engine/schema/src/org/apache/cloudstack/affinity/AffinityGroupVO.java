@@ -28,7 +28,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.IAMEntityType;
 
 @Entity
 @Table(name = ("affinity_group"))
@@ -126,8 +125,8 @@ public class AffinityGroupVO implements AffinityGroup {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.AffinityGroup;
+    public Class<?> getEntityType() {
+        return AffinityGroup.class;
     }
 
 }

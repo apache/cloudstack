@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -383,7 +382,7 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.Snapshot;
+    public Class<?> getEntityType() {
+        return Snapshot.class;
     }
 }

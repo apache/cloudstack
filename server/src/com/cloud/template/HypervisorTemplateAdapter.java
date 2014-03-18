@@ -29,7 +29,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -423,7 +422,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
 
             // remove its related ACL permission
-            Pair<IAMEntityType, Long> tmplt = new Pair<IAMEntityType, Long>(IAMEntityType.VirtualMachineTemplate, template.getId());
+            Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
 
         }

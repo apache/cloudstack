@@ -50,7 +50,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -84,6 +83,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -292,15 +292,15 @@ public class IAMApiServiceTest {
         Class clz = ListVMsCmd.class;
         when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(clz);
         when(
-                _iamSrv.addIAMPermissionToIAMPolicy(policyId, IAMEntityType.VirtualMachine.toString(),
+                _iamSrv.addIAMPermissionToIAMPolicy(policyId, VirtualMachine.class.getSimpleName(),
                         PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
                         AccessType.UseEntry.toString(), Permission.Allow, false)).thenReturn(policy);
-        _aclSrv.addIAMPermissionToIAMPolicy(policyId, IAMEntityType.VirtualMachine.toString(),
+        _aclSrv.addIAMPermissionToIAMPolicy(policyId, VirtualMachine.class.getSimpleName(),
                 PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false);
         Pair<List<IAMPolicy>, Integer> policyList = new Pair<List<IAMPolicy>, Integer>(policies, 1);
         List<IAMPolicyPermission> policyPerms = new ArrayList<IAMPolicyPermission>();
         IAMPolicyPermission perm = new IAMPolicyPermissionVO(policyId, "listVirtualMachines",
-                IAMEntityType.VirtualMachine.toString(), AccessType.UseEntry.toString(),
+                VirtualMachine.class.getSimpleName(), AccessType.UseEntry.toString(),
                 PermissionScope.RESOURCE.toString(),
                 resId, Permission.Allow, false);
         policyPerms.add(perm);
@@ -316,7 +316,7 @@ public class IAMApiServiceTest {
 
         //remove permission from policy
         policyPerms.remove(perm);
-        _aclSrv.removeIAMPermissionFromIAMPolicy(policyId, IAMEntityType.VirtualMachine.toString(),
+        _aclSrv.removeIAMPermissionFromIAMPolicy(policyId, VirtualMachine.class.getSimpleName(),
                 PermissionScope.RESOURCE, resId, "listVirtualMachines");
         policyResp = _aclSrv.listIAMPolicies(null, "policy1", callerDomainId, 0L, 20L);
         assertTrue("No. of response items should be one", policyResp.getCount() == 1);

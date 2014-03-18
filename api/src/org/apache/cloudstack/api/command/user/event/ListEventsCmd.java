@@ -20,7 +20,6 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -28,7 +27,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listEvents", description = "A command to list events.", responseObject = EventResponse.class, entityType = {IAMEntityType.Event},
+import com.cloud.event.Event;
+
+@APICommand(name = "listEvents", description = "A command to list events.", responseObject = EventResponse.class, entityType = {Event.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());

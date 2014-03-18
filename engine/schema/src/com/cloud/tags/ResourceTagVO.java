@@ -27,8 +27,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.acl.IAMEntityType;
-
 import com.cloud.server.ResourceTag;
 
 
@@ -166,7 +164,7 @@ public class ResourceTagVO implements ResourceTag {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.ResourceTag;
+    public Class<?> getEntityType() {
+        return ResourceTag.class;
     }
 }

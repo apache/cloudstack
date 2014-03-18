@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.IAMEntityType;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
@@ -31,6 +30,7 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateEntityImpl implements TemplateEntity {
     protected TemplateInfo templateInfo;
@@ -287,7 +287,7 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     @Override
-    public IAMEntityType getEntityType() {
-        return IAMEntityType.VirtualMachineTemplate;
+    public Class<?> getEntityType() {
+        return VirtualMachineTemplate.class;
     }
 }
