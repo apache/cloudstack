@@ -1399,7 +1399,7 @@
                                         },
                                         onPerformAction: function() {
                                             $tr.addClass('loading').find('td:last').prepend($('<div>').addClass('loading'));
-                                            $quickViewTooltip.hide();
+                                            $quickViewTooltip.detach();
                                         },
                                         onActionComplete: function() {
                                             if (listViewArgs.onActionComplete) {
