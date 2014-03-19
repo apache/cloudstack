@@ -295,7 +295,7 @@ public class IAMApiServiceTest {
                 _iamSrv.addIAMPermissionToIAMPolicy(policyId, VirtualMachine.class.getSimpleName(),
                         PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
                         AccessType.UseEntry.toString(), Permission.Allow, false)).thenReturn(policy);
-        _aclSrv.addIAMPermissionToIAMPolicy(policyId, IAMEntityType.VirtualMachine.toString(),
+        _aclSrv.addIAMPermissionToIAMPolicy(policyId, VirtualMachine.class.getSimpleName(),
                 PermissionScope.RESOURCE, resId, "listVirtualMachines", Permission.Allow, false, false);
         Pair<List<IAMPolicy>, Integer> policyList = new Pair<List<IAMPolicy>, Integer>(policies, 1);
         List<IAMPolicyPermission> policyPerms = new ArrayList<IAMPolicyPermission>();
