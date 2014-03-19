@@ -4224,13 +4224,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if(vm.isHaEnabled() && vm.getState() == State.Running && vm.getHypervisorType() != HypervisorType.VMware && vm.getHypervisorType() != HypervisorType.Hyperv) {
                 s_logger.info("Detected out-of-band stop of a HA enabled VM " + vm.getInstanceName() + ", will schedule restart");
                 if(!_haMgr.hasPendingHaWork(vm.getId()))
-                	_haMgr.scheduleRestart(vm, true);
+                    _haMgr.scheduleRestart(vm, true);
                 else
                     s_logger.info("VM " + vm.getInstanceName() + " already has an pending HA task working on it");
-                
                 return;
             }
-            
+
             VirtualMachineGuru vmGuru = getVmGuru(vm);
             VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
             sendStop(vmGuru, profile, true);
@@ -4420,7 +4419,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     assert (jobVo != null);
                     if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
                         return true;
-                    
                     return false;
                 }
             }, Topics.VM_POWER_STATE, AsyncJob.Topics.JOB_STATE);
