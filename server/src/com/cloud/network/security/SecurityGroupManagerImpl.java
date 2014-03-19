@@ -1341,6 +1341,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @Override
     public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId,
             String secondaryIp, boolean ruleAction) {
+        Account caller = CallContext.current().getCallingAccount();
 
         String vmMac = null;
         String vmName = null;
@@ -1351,36 +1352,33 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         NicVO nic = _nicDao.findById(nicId);
         Long vmId = nic.getInstanceId();
+        UserVm vm = _userVMDao.findById(vmId);
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Can't configure the SG ipset, arprules rules for the non existing or non user vm");
+        }
+        // Verify permissions
+        _accountMgr.checkAccess(caller, null, false, vm);
 
         // Validate parameters
         List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);
-        if (vmSgGrps == null) {
+        if (vmSgGrps.isEmpty()) {
             s_logger.debug("Vm is not in any Security group ");
             return true;
         }
 
-        Account caller = CallContext.current().getCallingAccount();
-
-        for (SecurityGroupVO securityGroup: vmSgGrps) {
-            Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
-            if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
-            }
-            // Verify permissions
-            _accountMgr.checkAccess(caller, null, true, securityGroup);
+        //If network does not support SG service, no need add SG rules for secondary ip
+        Network network = _networkModel.getNetwork(nic.getNetworkId());
+        if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            s_logger.debug("Network " + network + " is not enabled with security group service, "+
+                    "so not applying SG rules for secondary ip");
+            return true;
         }
 
-        UserVm  vm = _userVMDao.findById(vmId);
-        if (vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Can't configure the SG ipset, arprules rules for the non user vm");
-        }
 
-        if (vm != null) {
-            vmMac = vm.getPrivateMacAddress();
-            vmName = vm.getInstanceName();
-            if (vmMac == null || vmName == null) {
-                throw new InvalidParameterValueException("vm name or vm mac can't be null");
-            }
+        vmMac = vm.getPrivateMacAddress();
+        vmName = vm.getInstanceName();
+        if (vmMac == null || vmName == null) {
+            throw new InvalidParameterValueException("vm name or vm mac can't be null");
         }
 
         //create command for the to add ip in ipset and arptables rules
