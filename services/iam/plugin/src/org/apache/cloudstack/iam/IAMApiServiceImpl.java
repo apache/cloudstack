@@ -721,7 +721,8 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             String description = "Policy to grant permission to " + entityType + entityId;
             policy = createIAMPolicy(caller, aclPolicyName, description, null);
             // add permission to this policy
-            addIAMPermissionToIAMPolicy(policy.getId(), entityType, PermissionScope.RESOURCE, entityId, action, Permission.Allow, false);
+            addIAMPermissionToIAMPolicy(policy.getId(), entityType, PermissionScope.RESOURCE, entityId, action,
+                    Permission.Allow, false, false);
         }
         // attach this policy to list of accounts if not attached already
         Long policyId = policy.getId();
