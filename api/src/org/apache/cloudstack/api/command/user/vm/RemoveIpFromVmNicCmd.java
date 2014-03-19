@@ -131,6 +131,13 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
         return null;
     }
 
+
+    private boolean isZoneSGEnabled() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
+        return dc.isSecurityGroupEnabled();
+    }
+
     @Override
     public void execute() throws InvalidParameterValueException {
         CallContext.current().setEventDetails("Ip Id: " + id);
@@ -140,7 +147,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid IP id is passed");
         }
 
-        if (getNetworkType() == NetworkType.Basic) {
+        if (isZoneSGEnabled()) {
             //remove the security group rules for this secondary ip
             boolean success = false;
             success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getIp4Address(), false);
