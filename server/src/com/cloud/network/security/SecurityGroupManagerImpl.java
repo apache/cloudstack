@@ -1350,16 +1350,17 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         // Validate parameters
         List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);
-        if (vmSgGrps == null) {
+        if (vmSgGrps.isEmpty()) {
             s_logger.debug("Vm is not in any Security group ");
             return true;
         }
 
-        for (SecurityGroupVO securityGroup : vmSgGrps) {
-            Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
-            if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
-            }
+        //If network does not support SG service, no need add SG rules for secondary ip
+        Network network = _networkModel.getNetwork(nic.getNetworkId());
+        if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            s_logger.debug("Network " + network + " is not enabled with security group service, "+
+                    "so not applying SG rules for secondary ip");
+            return true;
         }
 
         String vmMac = vm.getPrivateMacAddress();

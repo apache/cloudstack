@@ -92,6 +92,12 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return dc.getNetworkType();
     }
 
+    private boolean isZoneSGEnabled() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
+        return dc.isSecurityGroupEnabled();
+    }
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NET_IP_ASSIGN;
@@ -136,7 +142,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
         if (result != null) {
             secondaryIp = result.getIp4Address();
-            if (getNetworkType() == NetworkType.Basic) {
+            if (isZoneSGEnabled()) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
                 success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), secondaryIp, true);
