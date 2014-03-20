@@ -141,11 +141,11 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "the ID of the disk offering of the virtual machine")
+    @Param(description = "the ID of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "the name of the disk offering of the virtual machine")
+    @Param(description = "the name of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingName;
 
     @SerializedName("forvirtualnetwork")
@@ -165,7 +165,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Integer memory;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the vgpu type used by the virtual machine")
+    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
     private String vgpu;
 
     @SerializedName("cpuused")

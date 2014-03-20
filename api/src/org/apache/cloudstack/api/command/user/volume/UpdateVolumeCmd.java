@@ -54,7 +54,10 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume")
     private String path;
 
-    @Parameter(name = ApiConstants.CHAIN_INFO, type = CommandType.STRING, description = "The chain info of the volume")
+    @Parameter(name = ApiConstants.CHAIN_INFO,
+            type = CommandType.STRING,
+            description = "The chain info of the volume",
+            since = "4.4")
     private String chainInfo;
 
     @Parameter(name = ApiConstants.STORAGE_ID,

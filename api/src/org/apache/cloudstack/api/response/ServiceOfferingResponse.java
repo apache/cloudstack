@@ -107,19 +107,19 @@ public class ServiceOfferingResponse extends BaseResponse {
     private Integer networkRate;
 
     @SerializedName("iscustomizediops")
-    @Param(description = "true if disk offering uses custom iops, false otherwise")
+    @Param(description = "true if disk offering uses custom iops, false otherwise", since = "4.4")
     private Boolean customizedIops;
 
     @SerializedName(ApiConstants.MIN_IOPS)
-    @Param(description = "the min iops of the disk offering")
+    @Param(description = "the min iops of the disk offering", since = "4.4")
     private Long minIops;
 
     @SerializedName(ApiConstants.MAX_IOPS)
-    @Param(description = "the max iops of the disk offering")
+    @Param(description = "the max iops of the disk offering", since = "4.4")
     private Long maxIops;
 
     @SerializedName(ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE)
-    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)", since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
     @SerializedName("diskBytesReadRate")

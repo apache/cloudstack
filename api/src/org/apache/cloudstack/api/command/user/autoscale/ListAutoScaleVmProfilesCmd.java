@@ -51,7 +51,7 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the templateid of the autoscale vm profile")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list profiles by service offering id")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list profiles by service offering id", since = "4.4")
     private Long serviceOffId;
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "the otherdeployparameters of the autoscale vm profile")

@@ -112,11 +112,11 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
-    @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's")
+    @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's", since = "4.4")
     private boolean usesDistributedRouter;
 
     @SerializedName((ApiConstants.REGION_LEVEL_VPC))
-    @Param(description = "true if VPC is region level")
+    @Param(description = "true if VPC is region level", since = "4.4")
     private Boolean regionLevelVpc;
 
     public void setId(String id) {

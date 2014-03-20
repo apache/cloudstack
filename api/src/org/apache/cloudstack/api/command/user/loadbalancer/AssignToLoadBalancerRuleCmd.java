@@ -70,7 +70,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                description = "the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP, type = CommandType.MAP, description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].ip=10.1.1.75")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP,
+            type = CommandType.MAP,
+            description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].ip=10.1.1.75",
+            since = "4.4")
     private Map vmIdIpMap;
 
     /////////////////////////////////////////////////////

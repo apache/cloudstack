@@ -46,7 +46,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule", since = "4.4")
     private Long id;
 
     @Parameter(name = ApiConstants.PRIVATE_IP, type = CommandType.STRING, description = "the private IP address of the port forwarding rule")

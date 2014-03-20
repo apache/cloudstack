@@ -137,7 +137,7 @@ public class HostResponse extends BaseResponse {
     private Long memoryUsed;
 
     @SerializedName(ApiConstants.GPUGROUP)
-    @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class)
+    @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class, since = "4.4")
     private List<GpuResponse> gpuGroup;
 
     @SerializedName("disksizetotal")

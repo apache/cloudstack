@@ -117,7 +117,7 @@ public class NetworkOfferingResponse extends BaseResponse {
     private Integer concurrentConnections;
 
     @SerializedName(ApiConstants.SUPPORTS_STRECHED_L2_SUBNET)
-    @Param(description = "true if network offering supports network that span multiple zones")
+    @Param(description = "true if network offering supports network that span multiple zones", since = "4.4")
     private Boolean supportsStrechedL2Subnet;
 
     public void setId(String id) {

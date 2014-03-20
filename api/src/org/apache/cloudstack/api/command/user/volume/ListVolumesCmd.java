@@ -76,7 +76,11 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
                authorized = {RoleType.Admin})
     private Long storageId;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "list volumes by disk offering")
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = DiskOfferingResponse.class,
+            description = "list volumes by disk offering",
+            since = "4.4")
     private Long diskOfferingId;
 
     @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
