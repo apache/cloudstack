@@ -388,6 +388,7 @@ namespace HypervResource
                 {
 
                     int nicid = nic.deviceId;
+                    Int32 networkRateMbps = nic.networkRateMbps;
                     string mac = nic.mac;
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
@@ -445,6 +446,11 @@ namespace HypervResource
                         if (vlan != null)
                         {
                             SetPortVlan(vlan, portSettings);
+                        }
+
+                        if (networkRateMbps > 0)
+                        {
+                            SetBandWidthLimit((ulong)networkRateMbps, portSettings);
                         }
 
                         logger.DebugFormat("Created adapter {0} on port {1}, {2}", 
@@ -1501,6 +1507,46 @@ namespace HypervResource
             }
 
             return newResourcePaths[0];
+        }
+
+        private void SetBandWidthLimit(ulong limit, EthernetPortAllocationSettingData portPath)
+        {
+            logger.DebugFormat("Setting network rate limit to {0}", limit);
+
+            var vmVirtMgmtSvc = GetVirtualisationSystemManagementService();
+            //            EthernetSwitchPortBandwidthSettingData.GetInstances();
+
+            // Create NIC resource by cloning the default NIC
+            var bandwidthSettings = EthernetSwitchPortBandwidthSettingData.GetInstances(vmVirtMgmtSvc.Scope, "InstanceID LIKE \"%Default\"");
+
+            // Assert
+            if (bandwidthSettings.Count != 1)
+            {
+                var errMsg = string.Format("Internal error, could not find default EthernetSwitchPortBandwidthSettingData instance");
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            var defaultBandwidthSettings = bandwidthSettings.OfType<EthernetSwitchPortBandwidthSettingData>().First();
+
+            var newBandwidthSettings = new EthernetSwitchPortBandwidthSettingData((ManagementBaseObject)defaultBandwidthSettings.LateBoundObject.Clone());
+            newBandwidthSettings.Limit = limit * 1000000;
+
+            // Insert bandwidth settings to nic
+            string[] newResources = new string[] { newBandwidthSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddFeatureSettings(newResources, portPath.Path);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to properly apply network rate limit {0} for NIC on port {1}",
+                    limit,
+                    portPath.Path);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
         }
 
 
