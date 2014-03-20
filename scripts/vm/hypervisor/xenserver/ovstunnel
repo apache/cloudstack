@@ -103,6 +103,8 @@ def setup_ovs_bridge(session, args):
                                 "bridge=%s" % bridge, "--minimal"])
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:is-ovs-tun-network=True"])
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:is-ovs_vpc_distributed_vr_network=False"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
@@ -155,6 +157,8 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         # been configured
         xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
                                 "bridge=%s" % bridge, "--minimal"])
+        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                   "other-config:is-ovs-tun-network=False"])
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:is-ovs_vpc_distributed_vr_network=True"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
