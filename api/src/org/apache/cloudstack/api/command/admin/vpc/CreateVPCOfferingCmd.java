@@ -43,7 +43,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
-    private static final String Name = "createvpcofferingresponse";
+    private static final String s_name = "createvpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -159,7 +159,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

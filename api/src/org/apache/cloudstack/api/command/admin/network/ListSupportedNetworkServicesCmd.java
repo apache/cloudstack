@@ -41,7 +41,7 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
-    private static final String Name = "listsupportednetworkservicesresponse";
+    private static final String s_name = "listsupportednetworkservicesresponse";
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "network service provider name")
     private String providerName;
@@ -74,7 +74,7 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

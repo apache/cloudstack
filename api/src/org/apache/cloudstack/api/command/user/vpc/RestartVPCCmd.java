@@ -40,7 +40,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RestartVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartVPCCmd.class.getName());
-    private static final String Name = "restartvpcresponse";
+    private static final String s_name = "restartvpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,7 +62,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override
