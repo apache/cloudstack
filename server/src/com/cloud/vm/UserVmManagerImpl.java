@@ -70,6 +70,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -81,11 +83,13 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -94,6 +98,8 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -199,6 +205,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -448,6 +455,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     DeploymentPlanningManager _planningMgr;
     @Inject
     VolumeApiService _volumeService;
+    @Inject
+    DataStoreManager _dataStoreMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -4651,6 +4660,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         /* Detach and destory the old root volume */
 
         _volsDao.detachVolume(root.getId());
+
+        handleManagedStorage(vm, root);
+
         volumeMgr.destroyVolume(root);
 
         // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
@@ -4696,6 +4708,59 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Restore VM " + vmId + " with template " + template.getUuid() + " done successfully");
         return vm;
 
+    }
+
+    private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
+        StoragePoolVO storagePool = _storagePoolDao.findById(root.getPoolId());
+
+        if (storagePool.isManaged()) {
+            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+
+            if (hostId != null) {
+                DataTO volTO = volFactory.getVolume(root.getId()).getTO();
+                DiskTO disk = new DiskTO(volTO, root.getDeviceId(), root.getPath(), root.getVolumeType());
+
+                // it's OK in this case to send a detach command to the host for a root volume as this
+                // will simply lead to the SR that supports the root volume being removed
+                DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+
+                cmd.setManaged(true);
+
+                cmd.setStorageHost(storagePool.getHostAddress());
+                cmd.setStoragePort(storagePool.getPort());
+
+                cmd.set_iScsiName(root.get_iScsiName());
+
+                Commands cmds = new Commands(Command.OnError.Stop);
+
+                cmds.addCommand(cmd);
+
+                try {
+                    _agentMgr.send(hostId, cmds);
+                }
+                catch (Exception ex) {
+                    throw new CloudRuntimeException(ex.getMessage());
+                }
+
+                if (!cmds.isSuccessful()) {
+                    for (Answer answer : cmds.getAnswers()) {
+                        if (!answer.getResult()) {
+                            s_logger.warn("Failed to reset vm due to: " + answer.getDetails());
+
+                            throw new CloudRuntimeException("Unable to reset " + vm + " due to " + answer.getDetails());
+                        }
+                    }
+                }
+
+                if (hostId != null) {
+                    // root.getPoolId() should be null if the VM we are attaching the disk to has never been started before
+                    DataStore dataStore = root.getPoolId() != null ? _dataStoreMgr.getDataStore(root.getPoolId(), DataStoreRole.Primary) : null;
+                    Host host = this._hostDao.findById(hostId);
+
+                    volumeMgr.disconnectVolumeFromHost(volFactory.getVolume(root.getId()), host, dataStore);
+                }
+            }
+        }
     }
 
     @Override
