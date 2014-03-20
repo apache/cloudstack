@@ -2205,6 +2205,18 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        response.setStrechedL2Subnet(network.isStrechedL2Network());
+        if (network.isStrechedL2Network()) {
+            Set<String> networkSpannedZones = new  HashSet<String>();
+            List<VMInstanceVO> vmInstances = new ArrayList<VMInstanceVO>();
+            vmInstances.addAll(ApiDBUtils.listUserVMsByNetworkId(network.getId()));
+            vmInstances.addAll(ApiDBUtils.listDomainRoutersByNetworkId(network.getId()));
+            for (VirtualMachine vm : vmInstances) {
+                DataCenter vmZone = ApiDBUtils.findZoneById(vm.getDataCenterId());
+                networkSpannedZones.add(vmZone.getUuid());
+            }
+            response.setNetworkSpannedZones(networkSpannedZones);
+        }
         response.setObjectName("network");
         return response;
     }

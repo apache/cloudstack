@@ -17,7 +17,6 @@
 package com.cloud.network.vpc;
 
 
-import com.cloud.network.element.NetworkElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
