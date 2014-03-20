@@ -118,19 +118,20 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not")
+    @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether compute offering iops is custom or not", since = "4.4")
     private Boolean customizedIops;
 
-    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the compute offering")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "min iops of the compute offering", since = "4.4")
     private Long minIops;
 
-    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the compute offering")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the compute offering", since = "4.4")
     private Long maxIops;
 
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
             type = CommandType.INTEGER,
             required = false,
-            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)",
+            since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
     /////////////////////////////////////////////////////

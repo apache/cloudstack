@@ -74,7 +74,7 @@ public class DiskOfferingResponse extends BaseResponse {
     private Long maxIops;
 
     @SerializedName(ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE)
-    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)", since = "4.4")
     private Integer hypervisorSnapshotReserve;
 
     @SerializedName(ApiConstants.TAGS)
@@ -102,7 +102,7 @@ public class DiskOfferingResponse extends BaseResponse {
     private Long iopsWriteRate;
 
     @SerializedName("cacheMode")
-    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough")
+    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.4")
     private String cacheMode;
 
     @SerializedName("displayoffering")

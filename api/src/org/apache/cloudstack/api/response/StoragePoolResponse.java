@@ -108,8 +108,8 @@ public class StoragePoolResponse extends BaseResponse {
     private String scope;
 
     @SerializedName("overprovisionfactor")
-    @Param(description = "the overprovisionfactor for the storage pool")
-    private String overprovisionfactor;
+    @Param(description = "the overprovisionfactor for the storage pool", since = "4.4")
+    private String overProvisionFactor;
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor type of the storage pool")
@@ -307,6 +307,6 @@ public class StoragePoolResponse extends BaseResponse {
     }
 
     public void setOverProvisionFactor(String overProvisionFactor) {
-        this.overprovisionfactor = overProvisionFactor;
+        this.overProvisionFactor = overProvisionFactor;
     }
 }

@@ -240,7 +240,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.IAM_GROUPS)
-    @Param(description = "the list of acl groups that account belongs to")
+    @Param(description = "the list of acl groups that account belongs to", since = "4.4")
     private List<String> groups;
 
     @Override

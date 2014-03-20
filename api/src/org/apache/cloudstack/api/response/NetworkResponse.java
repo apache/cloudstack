@@ -218,11 +218,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String aclId;
 
     @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
-    @Param(description = "true if network can span multiple zones")
+    @Param(description = "true if network can span multiple zones", since = "4.4")
     private Boolean strechedL2Subnet;
 
     @SerializedName(ApiConstants.NETWORK_SPANNED_ZONES)
-    @Param(description = "If a network is enabled for 'streched l2 subnet' then represents zones on which network currently spans")
+    @Param(description = "If a network is enabled for 'streched l2 subnet' then represents zones on which network currently spans", since = "4.4")
     private Set<String> networkSpannedZones;
 
     public Boolean getDisplayNetwork() {
