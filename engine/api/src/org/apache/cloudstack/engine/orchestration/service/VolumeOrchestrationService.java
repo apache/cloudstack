@@ -21,7 +21,6 @@ package org.apache.cloudstack.engine.orchestration.service;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -94,8 +93,6 @@ public interface VolumeOrchestrationService {
     void release(VirtualMachineProfile profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
-
-    void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
 
     void disconnectVolumesFromHost(long vmId, long hostId);
 

@@ -37,10 +37,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -830,15 +828,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             } catch (ExecutionException e) {
                 s_logger.debug("failed expunge volume" + expunge.getId(), e);
             }
-        }
-    }
-
-    @Override
-    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
-        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
-
-        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            ((PrimaryDataStoreDriver)dataStoreDriver).disconnectVolumeFromHost(volumeInfo, host, dataStore);
         }
     }
 
