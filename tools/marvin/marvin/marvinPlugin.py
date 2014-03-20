@@ -271,11 +271,11 @@ class MarvinPlugin(Plugin):
                     test_names = self.conf.workingDir
                 else:
                     test_names = self.conf.testNames
-            for suites in test_names:
-                if os.path.isdir(suites):
-                    self.__runSuites(suites)
-                if os.path.isfile(suites):
-                    self.__runSuite(suites)
+                for suites in test_names:
+                    if os.path.isdir(suites):
+                        self.__runSuites(suites)
+                    if os.path.isfile(suites):
+                        self.__runSuite(suites)
             return SUCCESS
         except Exception as e:
             print "Exception Occurred under startMarvin: %s" % \
