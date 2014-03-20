@@ -99,6 +99,9 @@
     <Compile Include="ROOT.virtualization.v2.Msvm_EthernetSwitchPort.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_EthernetSwitchPortBandwidthSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_EthernetSwitchPortVlanSettingData.cs">
       <SubType>Component</SubType>
     </Compile>
