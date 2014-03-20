@@ -44,7 +44,7 @@ import com.cloud.network.element.VirtualRouterElementService;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
-    private static final String Name = "listvirtualrouterelementsresponse";
+    private static final String s_name = "listvirtualrouterelementsresponse";
 
     // TODO, VirtualRouterElementServer is not singleton in system!
     @Inject
@@ -95,7 +95,7 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

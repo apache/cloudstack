@@ -39,7 +39,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
-    private static final String Name = "updatevpcresponse";
+    private static final String s_name = "updatevpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -82,7 +82,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

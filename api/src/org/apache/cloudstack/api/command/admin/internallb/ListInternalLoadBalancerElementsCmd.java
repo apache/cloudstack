@@ -47,7 +47,7 @@ import com.cloud.network.VirtualRouterProvider;
             responseHasSensitiveInfo = false)
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLoadBalancerElementsCmd.class.getName());
-    private static final String Name = "listinternalloadbalancerelementsresponse";
+    private static final String s_name = "listinternalloadbalancerelementsresponse";
 
     @Inject
     private InternalLoadBalancerElementService _service;
@@ -88,7 +88,7 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

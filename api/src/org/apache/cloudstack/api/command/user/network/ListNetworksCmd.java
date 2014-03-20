@@ -40,7 +40,7 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
-    private static final String Name = "listnetworksresponse";
+    private static final String s_name = "listnetworksresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -155,7 +155,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override
