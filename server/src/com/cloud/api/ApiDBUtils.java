@@ -1091,6 +1091,16 @@ public class ApiDBUtils {
         return s_userVmDao.listByHostId(hostId);
     }
 
+    public static List<UserVmVO> listUserVMsByNetworkId(long networkId) {
+        return s_userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Running,
+                VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Unknown,
+                VirtualMachine.State.Migrating);
+    }
+
+    public static List<DomainRouterVO> listDomainRoutersByNetworkId(long networkId) {
+        return s_domainRouterDao.findByNetwork(networkId);
+    }
+
     public static List<DataCenterVO> listZones() {
         return s_zoneDao.listAll();
     }

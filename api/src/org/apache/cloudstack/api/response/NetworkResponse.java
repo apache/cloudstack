@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import java.util.Set;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -216,6 +217,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
 
+    @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
+    @Param(description = "true if network can span multiple zones")
+    private Boolean strechedL2Subnet;
+
+    @SerializedName(ApiConstants.NETWORK_SPANNED_ZONES)
+    @Param(description = "If a network is enabled for 'streched l2 subnet' then represents zones on which network currently spans")
+    private Set<String> networkSpannedZones;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -411,5 +420,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setAclId(String aclId) {
         this.aclId = aclId;
+    }
+
+    public void setStrechedL2Subnet(Boolean strechedL2Subnet) {
+        this.strechedL2Subnet = strechedL2Subnet;
+    }
+
+    public void setNetworkSpannedZones(Set<String> networkSpannedZones) {
+        this.networkSpannedZones = networkSpannedZones;
     }
 }
