@@ -122,8 +122,7 @@ class MarvinInit:
                (self.__createTestClient() != FAILED) and
                (self.__deployDC() != FAILED)):
                 return SUCCESS
-            else:
-                return FAILED
+            return FAILED
         except Exception, e:
             print "\n Exception Occurred Under init " \
                   "%s" % GetDetailExceptionInfo(e)

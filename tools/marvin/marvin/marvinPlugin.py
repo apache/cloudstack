@@ -40,6 +40,7 @@ class MarvinPlugin(Plugin):
     def __init__(self):
         self.__identifier = None
         self.__testClient = None
+        self.__logFolderPath = None
         self.__parsedConfig = None
         '''
         Contains Config File
@@ -210,38 +211,6 @@ class MarvinPlugin(Plugin):
         if type == 'dir':
             return os.path.split(inp)[-1]
 
-    def __runSuite(self, test_suite=None):
-        try:
-            if test_suite:
-                if self.wantFile(test_suite):
-                    test_mod_name = self.__getModName(test_suite)
-                    temp_obj = MarvinInit(self.__configFile,
-                                          None, test_mod_name,
-                                          self.__zoneForTests)
-                    if temp_obj and temp_obj.init() == SUCCESS:
-                        print "\nMarvin Initialization Successful." \
-                              "Test Suite:%s" % str(test_suite)
-                        self.__testClient = temp_obj.getTestClient()
-                        self.__tcRunLogger = temp_obj.getLogger()
-                        self.__parsedConfig = temp_obj.getParsedConfig()
-                        self.__resultStream = temp_obj.getResultFile()
-                        self.__testRunner = nose.core.\
-                            TextTestRunner(stream=self.__resultStream,
-                                           descriptions=True,
-                                           verbosity=2)
-                        return SUCCESS
-            return FAILED
-        except Exception as e:
-            print "\n Exception Occurred when running suite :%s Error : %s" \
-                % (test_suite, GetDetailExceptionInfo(e))
-            return FAILED
-
-    def __runSuites(self, suites):
-        for suite in suites:
-            if os.path.isdir(suite):
-                return self.__runSuites(suite)
-            self.__runSuite(suite)
-
     def startMarvin(self):
         '''
         @Name : startMarvin
@@ -252,31 +221,22 @@ class MarvinPlugin(Plugin):
                 Creates a debugstream for tc debug log
         '''
         try:
-            if self.__deployDcFlag:
-                print "\n***Step1 :Deploy Flag is Enabled, will deployDC****"
-                obj_marvininit = MarvinInit(self.__configFile,
-                                            self.__deployDcFlag,
-                                            "DeployDc",
-                                            self.__zoneForTests)
-                if not obj_marvininit or obj_marvininit.init() != SUCCESS:
-                    return FAILED
-            print "\n====Now Start Running Test Suites===="
-            if len(self.conf.testNames) == 0:
-                if self.conf.workingDir == '':
-                    print "\n==== " \
-                          "No Test Suites are provided, please check ===="
-                    return FAILED
-            else:
-                if self.conf.workingDir != '':
-                    test_names = self.conf.workingDir
-                else:
-                    test_names = self.conf.testNames
-                for suites in test_names:
-                    if os.path.isdir(suites):
-                        self.__runSuites(suites)
-                    if os.path.isfile(suites):
-                        self.__runSuite(suites)
-            return SUCCESS
+            obj_marvininit = MarvinInit(self.__configFile,
+                                       self.__deployDcFlag,
+                                       None,
+                                       self.__zoneForTests)
+            if obj_marvininit and obj_marvininit.init() == SUCCESS:
+                self.__testClient = temp_obj.getTestClient()
+                self.__tcRunLogger = temp_obj.getLogger()
+                self.__parsedConfig = temp_obj.getParsedConfig()
+                self.__resultStream = temp_obj.getResultFile()
+                self.__logFolderPath = temp_obj.getLogFolderPath()
+                self.__testRunner = nose.core.\
+                        TextTestRunner(stream=self.__resultStream,
+                                       descriptions=True,
+                                       verbosity=2)
+                return SUCCESS
+            return FAILED
         except Exception as e:
             print "Exception Occurred under startMarvin: %s" % \
                   GetDetailExceptionInfo(e)
