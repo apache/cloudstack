@@ -234,7 +234,7 @@ def get_template(apiclient, zoneid, ostype, services=None,
         for template in list_templates:
             if template.isready and template.templatetype == templatetype:
                 return template
-
+        return list_templates[0]
     raise Exception("Exception: Failed to find built in template which is in "
                                 "ready state: %s" % templatetype)
     return
