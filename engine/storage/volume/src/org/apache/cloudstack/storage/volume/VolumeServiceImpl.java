@@ -1499,6 +1499,7 @@ public class VolumeServiceImpl implements VolumeService {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
             s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
+            throw new ResourceAllocationException("Take snapshot for VolumeId: " + volume.getId() + " failed.", ResourceType.snapshot);
         }
 
         return snapshot;
