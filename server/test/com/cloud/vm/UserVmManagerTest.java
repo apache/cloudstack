@@ -50,6 +50,8 @@ import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -141,6 +143,8 @@ public class UserVmManagerTest {
     EntityManager _entityMgr;
     @Mock
     ResourceLimitService _resourceLimitMgr;
+    @Mock
+    PrimaryDataStoreDao _storagePoolDao;
 
     @Before
     public void setup() {
@@ -162,6 +166,7 @@ public class UserVmManagerTest {
         _userVmMgr._resourceLimitMgr = _resourceLimitMgr;
         _userVmMgr._scaleRetry = 2;
         _userVmMgr._entityMgr = _entityMgr;
+        _userVmMgr._storagePoolDao = _storagePoolDao;
 
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
@@ -214,6 +219,12 @@ public class UserVmManagerTest {
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
+        StoragePoolVO storagePool = new StoragePoolVO();
+
+        storagePool.setManaged(false);
+
+        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
+
         CallContext.register(user, account);
         try {
             _userVmMgr.restoreVMInternal(_account, _vmMock, null);
@@ -244,6 +255,12 @@ public class UserVmManagerTest {
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        StoragePoolVO storagePool = new StoragePoolVO();
+
+        storagePool.setManaged(false);
+
+        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
 
         CallContext.register(user, account);
         try {
@@ -281,6 +298,12 @@ public class UserVmManagerTest {
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        StoragePoolVO storagePool = new StoragePoolVO();
+
+        storagePool.setManaged(false);
+
+        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
 
         CallContext.register(user, account);
         try {
@@ -320,6 +343,12 @@ public class UserVmManagerTest {
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        StoragePoolVO storagePool = new StoragePoolVO();
+
+        storagePool.setManaged(false);
+
+        when(_storagePoolDao.findById(anyLong())).thenReturn(storagePool);
 
         CallContext.register(user, account);
         try {
