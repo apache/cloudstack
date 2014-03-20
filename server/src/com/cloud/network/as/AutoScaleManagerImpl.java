@@ -1414,7 +1414,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
         lstVmId.add(new Long(vmId));
-        return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, null);
+        return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>());
 
     }
 

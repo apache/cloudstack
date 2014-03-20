@@ -92,7 +92,7 @@ public interface LoadBalancingRulesService {
     boolean deleteLBHealthCheckPolicy(long healthCheckPolicyId, boolean apply);
 
     /**
-     * Assign a virtual machine, or list of virtual machines, to a load balancer.
+     * Assign a virtual machine or list of virtual machines, or Map of <vmId vmIp> to a load balancer.
      */
     boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap);
 
@@ -151,4 +151,6 @@ public interface LoadBalancingRulesService {
     public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
 
     Map<Ip, UserVm> getLbInstances(long lbId);
+
+    boolean isLbRuleMappedToVmGuestIp(String vmSecondaryIp);
 }
