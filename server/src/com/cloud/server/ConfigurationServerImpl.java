@@ -737,7 +737,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
             // FIXME: take a global database lock here for safety.
-            Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
+            boolean onWindows = isOnWindows();
+            if(!onWindows) {
+              Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
+            }
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
             try {
@@ -872,7 +875,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     }
 
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
-        String injectScript = "scripts/vm/systemvm/injectkeys.sh";
+        s_logger.info("Trying to inject public and private keys into systemvm iso");
+        String injectScript = getInjectScript();
         String scriptPath = Script.findScript("", injectScript);
         String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
         if (scriptPath == null) {
@@ -881,17 +885,40 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (systemVmIsoPath == null) {
             throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
         }
-        final Script command = new Script("/bin/bash", s_logger);
+        Script command = null;
+        if(isOnWindows()) {
+          command = new Script("python", s_logger);
+        } else {
+          command = new Script("/bin/bash", s_logger);
+        }
         command.add(scriptPath);
         command.add(publicKeyPath);
         command.add(privKeyPath);
         command.add(systemVmIsoPath);
 
         final String result = command.execute();
+        s_logger.info("Injected public and private keys into systemvm iso with result : " + result);
         if (result != null) {
             s_logger.warn("Failed to inject generated public key into systemvm iso " + result);
             throw new CloudRuntimeException("Failed to inject generated public key into systemvm iso " + result);
         }
+    }
+
+    protected String getInjectScript() {
+      String injectScript = null;
+      boolean onWindows = isOnWindows();
+      if(onWindows) {
+        injectScript = "scripts/vm/systemvm/injectkeys.py";
+      } else {
+        injectScript = "scripts/vm/systemvm/injectkeys.sh";
+      }
+      return injectScript;
+    }
+
+    protected boolean isOnWindows() {
+      String os = System.getProperty("os.name", "generic").toLowerCase();
+      boolean onWindows = (os != null && os.startsWith("windows"));
+      return onWindows;
     }
 
     @DB

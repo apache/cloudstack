@@ -1,0 +1,229 @@
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to
+  you under the Apache License, Version 2.0 (the "License"); you may not use
+  this file except in compliance with the License. You may obtain a copy of
+  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
+  by applicable law or agreed to in writing, software distributed under the
+  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific
+  language governing permissions and limitations under the License. -->
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' xmlns:fire='http://schemas.microsoft.com/wix/FirewallExtension'>
+  <Product Name='ACS' Id='eea70ed5-5950-4f01-b4aa-4a07636359bb'
+    UpgradeCode='d6208c34-7b50-4512-b19e-b904dcc1373e' Language='1033'
+    Codepage='1252' Version='4.4.0' Manufacturer='Apache Cloud Stack'>
+
+    <Package Id='*' Keywords='Installer' Description="Apache Cloud Stack Installer"
+      Comments='Foobar is a registered trademark of Acme Ltd.'
+      Manufacturer='Apache' InstallerVersion='100' Languages='1033'
+      Compressed='yes' SummaryCodepage='1252' />
+
+    <Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
+    <Property Id='DiskPrompt' Value="Apache Cloud Stack Installation program" />
+    <Condition Message="Java Is not Installed. Please set the JAVA_HOME"><![CDATA[%JAVA_HOME]]></Condition>
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFilesFolder' Name='PFiles'>
+        <Directory Id='Acme' Name='Apache'>
+          <Directory Id='INSTALLDIR' Name='CS'>
+            <Component Id='MainExecutable'
+              Guid='5980d204-a63a-45db-a7e8-cbd50b2d314b'>
+              <CreateFolder />
+              <Environment Id="CLOUDSTACK_HOME" Action="set"
+                Name="CLOUDSTACK_HOME" Permanent="no" System="yes"
+                Value="[INSTALLDIR]." />
+              <Environment Id="CATALINA_BASE" Action="set"
+                Name="CATALINA_BASE" Permanent="no" System="yes"
+                Value="[INSTALLDIR]." />
+              <Environment Id="CATALINA_OPTS" Action="set"
+                Name="CATALINA_OPTS" Permanent="no" System="yes"
+                Value="-XX:MaxPermSize=512m -Xmx1024m -Xms256m" />
+
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="ACS">
+          <Component Id="ProgramMenuDir" Guid="69932d81-ea9c-4a74-9013-7da61f291090">
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+            <RegistryValue Root='HKCU'
+              Key='Software\[Manufacturer]\[ProductName]' Type='string'
+              Value='' KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+    <Property Id='TOMCATIMAGEPATH'>
+      <RegistrySearch Id="TomcatImagePath" Name="ImagePath"
+        Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\Tomcat6"
+        Type="raw" Win64="yes" />
+    </Property>
+    <Component Id="ServiceInstaller" Directory="INSTALLDIR"
+      Guid="dfebb4bb-cac0-4cef-aa91-342bafa18349">
+      <File Id='ACSServiceEXEFile' Name='start.exe' Source='start.bat'
+        KeyPath='yes' />
+      <ServiceInstall Id='InstallACSService' Name='ACSService'
+        Description='ACS Service' ErrorControl='normal' Start='auto'
+        Type='ownProcess' Vital='yes' />
+      <ServiceControl Id='UninstallACSService' Name='ACSService'
+        Remove='uninstall' Wait='yes' />
+      <RegistryValue Root='HKLM'
+        Key='SYSTEM\CurrentControlSet\Services\ACSService' Name="ImagePath"
+        Type='expandable' Value='[TOMCATIMAGEPATH]' />
+    </Component>
+    <DirectoryRef Id="INSTALLDIR">
+      <Directory Id="WEBAPPS" Name="webapps">
+        <Component Id="webappsFolder" Guid="53c03092-438f-4da1-b14d-ceee90c79de0">
+          <CreateFolder />
+        </Component>
+      </Directory>
+    </DirectoryRef>
+    <!-- DirectoryRef Id="WEBAPPS"> <Directory Id="clientId" FileSource="client\WEB-INF\classes">
+      <Component Id="copyAllToConf" Guid="0e081e69-5c30-426e-b711-b7750115f62b"
+      KeyPath="yes"> <CopyFile Id="AllFiles" DestinationDirectory="CONF" SourceName="*"
+      /> </Component> </Directory> </DirectoryRef -->
+    <DirectoryRef Id="WEBAPPS">
+      <Component Id="copyToConf" Guid="99da8926-1eec-4a7f-ac7f-1326d8e73ea0"
+        KeyPath="yes">
+        <File Id="server.xml" Source="client\WEB-INF\classes\server-nonssl.xml"
+          Checksum="no">
+          <CopyFile Id="copyServerXML" DestinationName="server.xml"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="tomcat6.conf" Source="client\WEB-INF\classes\tomcat6-nonssl.conf"
+          Checksum="no">
+          <CopyFile Id="copyTomcat6ConfXML" DestinationName="tomcat6.conf"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="web.xml" Source="client\WEB-INF\classes\web.xml"
+          Checksum="no">
+          <CopyFile Id="copyWebXML" DestinationName="web.xml"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="log4j_cloud.xml" Source="client\WEB-INF\classes\log4j-cloud.xml"
+          Checksum="no">
+          <CopyFile Id="log4j_cloudxml" DestinationName="log4j-cloud.xml"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="environment.properties" Source="client\WEB-INF\classes\environment.properties"
+          Checksum="no">
+          <CopyFile Id="environmentproperties" DestinationName="environment.properties"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="classpath.conf" Source="client\WEB-INF\classes\classpath.conf"
+          Checksum="no">
+          <CopyFile Id="classpathconf" DestinationName="classpath.conf"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="catalina.properties" Source="client\WEB-INF\classes\catalina.properties"
+          Checksum="no">
+          <CopyFile Id="catalinaproperties" DestinationName="catalina.properties"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="tomcat_users.xml" Source="client\WEB-INF\classes\tomcat-users.xml"
+          Checksum="no">
+          <CopyFile Id="tomcat_usersxml" DestinationName="tomcat-users.xml"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="catalina.policy" Source="client\WEB-INF\classes\catalina.policy"
+          Checksum="no">
+          <CopyFile Id="catalinapolicy" DestinationName="catalina.policy"
+            DestinationDirectory="CONF" />
+        </File>
+        <File Id="db.properties" Source="client\WEB-INF\classes\db.properties"
+          Checksum="no">
+          <CopyFile Id="dbproperties" DestinationName="db.properties"
+            DestinationDirectory="LIB"/>
+        </File>
+        <File Id="cloudmanagementserver.keystore"
+          Source="client\WEB-INF\classes\cloudmanagementserver.keystore"
+          Checksum="no">
+          <CopyFile Id="cloudmanagementserverkeystore"
+            DestinationName="cloud.keystore"
+            DestinationDirectory="LIB" />
+        </File>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="INSTALLDIR">
+      <Directory Id="CONF" Name="conf">
+        <Component Id="confFolder" Guid="ad227f7d-6808-4bdf-8ac6-3b2954d51b96">
+          <CreateFolder />
+        </Component>
+      </Directory>
+    </DirectoryRef>
+	<DirectoryRef Id="INSTALLDIR">
+      <Directory Id="LIB" Name="lib">
+        <Component Id="libFolder" Guid="d338841e-2ea4-48b3-ab48-9c42e2961600">
+          <CreateFolder />
+        </Component>
+      </Directory>
+    </DirectoryRef>
+    <Component Id="firewallRules" Guid="2d056999-8191-41a0-94e0-e6dfcc188417"
+      Directory="INSTALLDIR">
+      <CreateFolder />
+      <fire:FirewallException Id="p_8080" Name="port_8080"
+        Description="for cloudstack management server" Port="8080"
+        Profile="all" Protocol="tcp" Scope="any" />
+      <fire:FirewallException Id="p_8096" Name="port_8096"
+        Description="for cloudstack management server admin" Port="8096"
+        Profile="all" Protocol="tcp" Scope="any" />
+      <fire:FirewallException Id="p_8787" Name="port_8787"
+        Description="for cloudstack management server" Port="8787"
+        Profile="all" Protocol="tcp" Scope="any" />
+      <fire:FirewallException Id="p_9090" Name="port_9090"
+        Description="for cloudstack management server" Port="9090"
+        Profile="all" Protocol="tcp" Scope="any" />
+
+      <fire:FirewallException Id="p_3922" Name="port_3922"
+        Description="for cloudstack management server" Port="3922"
+        Profile="all" Protocol="tcp" Scope="any" />
+      <fire:FirewallException Id="p_8250" Name="port_8250"
+        Description="for cloudstack management server" Port="8250"
+        Profile="all" Protocol="tcp" Scope="any" />
+    </Component>
+
+    <!-- Updating Tomcat's catalina base -->
+    <!-- Property Id='TomcatDirectory' Value="$(env.CATALINA_HOME)\bin\Tomcat6.exe"
+      / -->
+    <Property Id='TOMCATDIRECTORY'>
+      <RegistrySearch Id="TomcatSearch" Name="InstallPath"
+        Root="HKLM" Key="SOFTWARE\Apache Software Foundation\Tomcat\6.0\Tomcat6"
+        Type="raw" Win64="yes" />
+    </Property>
+    <CustomAction Id="TomcatPath" Property="TOMCATDIRECTORY1"
+      Value="[TOMCATDIRECTORY]\bin\Tomcat6.exe">
+    </CustomAction>
+
+    <Condition
+      Message="Apache tomcat6 is not installed please do install tomcat6 first"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
+    <CustomAction Id="UpdateTomcatCatalinaBase"
+      ExeCommand="//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m"
+      Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+    <InstallExecuteSequence>
+      <InstallServices Sequence="4999"></InstallServices>
+      <Custom Action="TomcatPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
+      <Custom Action="UpdateTomcatCatalinaBase" Before="InstallFinalize">NOT Installed</Custom>
+    </InstallExecuteSequence>
+    <UIRef Id="WixUI_Mondo" />
+    <Feature Id='Complete' Title='ACS' Description='The complete package.'
+      Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id='MainProgram' Title='Program' Description='The main executable.'
+        Level='1'>
+        <ComponentRef Id='webappsFolder' />
+        <ComponentGroupRef Id='ClientPath' />
+        <ComponentRef Id='ProgramMenuDir' />
+        <ComponentRef Id='confFolder' />
+        <ComponentRef Id='libFolder' />
+        <!-- ComponentRef Id='copyAllToConf' / -->
+        <ComponentRef Id='copyToConf' />
+        <ComponentRef Id='firewallRules' />
+        <ComponentRef Id='MainExecutable' />
+        <ComponentRef Id='ServiceInstaller' />
+        <!-- ComponentRef Id='TomcatInstalled' / -->
+      </Feature>
+    </Feature>
+    <UIRef Id="WixUI_ErrorProgressText" />
+  </Product>
+</Wix>
