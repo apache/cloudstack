@@ -937,12 +937,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
 
-        if (instanceIds == null && vmIdIpMap == null) {
+        if (instanceIds == null && vmIdIpMap.isEmpty()) {
             throw new InvalidParameterValueException("Both instanceids and vmidipmap  can't be null");
         }
 
         // instanceIds and vmIdipmap is passed
-        if (instanceIds != null && vmIdIpMap != null) {
+        if (instanceIds != null && !vmIdIpMap.isEmpty()) {
             for(long instanceId: instanceIds) {
                 if (!vmIdIpMap.containsKey(instanceId)) {
                     vmIdIpMap.put(instanceId, null);
@@ -951,7 +951,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         //only instanceids list passed
-        if (instanceIds != null && vmIdIpMap == null){
+        if (instanceIds != null && vmIdIpMap.isEmpty()){
             vmIdIpMap = new HashMap<Long, List<String>>();
             for (long instanceId: instanceIds){
                 vmIdIpMap.put(instanceId, null);
@@ -977,9 +977,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             ipsList.add(mappedInstance.getInstanceIp());
             existingVmIdIps.put(mappedInstance.getInstanceId(), ipsList);
         }
-
-
-
 
         final List<UserVm> vmsToAdd = new ArrayList<UserVm>();
 
@@ -1047,11 +1044,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 //check if the ips belongs to nic secondary ip
                 for (String ip: vmIpsList) {
                     if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
-                        throw new InvalidParameterValueException("VM ip specified  " + ip  + " is not belongs to nic in network " + nicInSameNetwork.getNetworkId());
+                        throw new InvalidParameterValueException("VM ip "+ ip + " specified does not belong to " +
+                                "nic in network " + nicInSameNetwork.getNetworkId());
                     }
                 }
             }
-
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Adding " + vm + " to the load balancer pool");
@@ -2314,6 +2311,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             dstList.put(ip, vm);
         }
         return dstList;
+    }
+
+    @Override
+    public boolean isLbRuleMappedToVmGuestIp(String vmSecondaryIp) {
+        List<LoadBalancerVMMapVO> lbVmMap = _lb2VmMapDao.listByInstanceIp(vmSecondaryIp);
+        if (lbVmMap == null || lbVmMap.isEmpty()) {
+            return  false;
+        }
+        return true;
     }
 
     @Override

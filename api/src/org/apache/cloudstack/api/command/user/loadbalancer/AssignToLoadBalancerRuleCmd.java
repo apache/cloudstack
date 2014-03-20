@@ -119,9 +119,8 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
 
     public Map<Long, List<String>> getVmIdIpListMap() {
-        Map<Long, List<String>> vmIdIpsMap = null;
+        Map<Long, List<String>> vmIdIpsMap = new HashMap<Long, List<String>>();
         if (vmIdIpMap != null && !vmIdIpMap.isEmpty()) {
-            vmIdIpsMap = new HashMap<Long, List<String>>();
             Collection idIpsCollection = vmIdIpMap.values();
             Iterator iter = idIpsCollection.iterator();
             while (iter.hasNext()) {

@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.lb.LoadBalancingRulesService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -106,7 +107,6 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -311,6 +311,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     EntityManager _entityMgr;
     @Inject
     LoadBalancerVMMapDao _lbVmMapDao;
+
+    @Inject
+    LoadBalancingRulesService _lbService;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -811,11 +814,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
 
-            List<LoadBalancerVMMapVO> lbVmMap = _lbVmMapDao.listByInstanceIp(secondaryIp);
-            if (lbVmMap != null && lbVmMap.size() != 0) {
+            if (_lbService.isLbRuleMappedToVmGuestIp(secondaryIp)) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is mapped to load balancing rule");
                 throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is mapped to load balancing rule");
-
             }
 
         } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType() == Network.GuestType.Shared) {
