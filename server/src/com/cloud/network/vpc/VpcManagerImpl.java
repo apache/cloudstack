@@ -387,8 +387,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         validateConnectivtyServiceCapablitlies(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);
+
         boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
         boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
+
         VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null,
                 serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
