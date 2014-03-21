@@ -661,14 +661,14 @@
                         }
                     },
                     restore: {
-                        label: 'label.action.restore.instance',
+                        label: 'label.recover.vm',
                         compactLabel: 'label.restore',
                         messages: {
                             confirm: function(args) {
-                                return 'message.action.restore.instance';
+                                return 'message.recover.vm';
                             },
                             notification: function(args) {
-                                return 'label.action.restore.instance';
+                                return 'label.recover.vm';
                             }
                         },
                         action: function(args) {
@@ -695,14 +695,13 @@
                         }
                     },
                     reset: {
-                        label: 'label.resetVM',
-                        textLabel: 'label.resetVM',
+                        label: 'label.reinstall.vm',
                         messages: {
                             confirm: function(args) {
-                                return 'message.restoreVM';
+                                return 'message.reinstall.vm';
                             },
                             notification: function(args) {
-                                return 'label.resetVM';
+                                return 'label.reinstall.vm';
                             },
                             complete: function(args) {
                             	if (args.password != null && args.password.length > 0)
