@@ -651,9 +651,9 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    restore: {
+                    recover: {
                         label: 'label.recover.vm',
-                        compactLabel: 'label.restore',
+                        compactLabel: 'label.recover.vm',
                         messages: {
                             confirm: function(args) {
                                 return 'message.recover.vm';
@@ -685,7 +685,7 @@
                             }
                         }
                     },
-                    reset: {
+                    reinstall: {
                         label: 'label.reinstall.vm',
                         messages: {
                             confirm: function(args) {
@@ -2186,7 +2186,7 @@
 
         if (jsonObj.state == 'Destroyed') {
             if (isAdmin() || isDomainAdmin()) {
-                allowedActions.push("restore");
+                allowedActions.push("recover");
             }
             if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
@@ -2196,7 +2196,7 @@
             if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("destroy");            
-            allowedActions.push("reset");
+            allowedActions.push("reinstall");
              
             //when userVm is running, scaleUp is not supported for KVM
             if (jsonObj.hypervisor != 'KVM') {
@@ -2222,7 +2222,7 @@
             allowedActions.push("edit");
             allowedActions.push("start");
             allowedActions.push("destroy");
-            allowedActions.push("reset");
+            allowedActions.push("reinstall");
             if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
