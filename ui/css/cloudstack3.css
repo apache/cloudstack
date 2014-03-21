@@ -12179,11 +12179,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .restoreVM .icon,
-.restore .icon {
+.restore .icon,
+.recover .icon {
   background-position: -168px -31px;
 }
 
-.reset .icon {
+.reset .icon, .reinstall .icon {
   background-position: -168px -31px;
 }
 
