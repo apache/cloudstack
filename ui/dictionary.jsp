@@ -25,6 +25,10 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
 dictionary = {
+'label.recover.vm': '<fmt:message key="label.recover.vm" />',
+'message.recover.vm': '<fmt:message key="message.recover.vm" />',
+'label.reinstall.vm': '<fmt:message key="label.reinstall.vm" />',
+'message.reinstall.vm': '<fmt:message key="message.reinstall.vm" />',
 'label.port': '<fmt:message key="label.port" />',
 'label.remove.ldap': '<fmt:message key="label.remove.ldap" />',
 'message.remove.ldap': '<fmt:message key="message.remove.ldap" />',
