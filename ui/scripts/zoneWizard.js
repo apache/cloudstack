@@ -1429,8 +1429,8 @@
                                 return;
                             }
 
-                            //zone-wide-primary-storage is supported only for KVM and VMWare
-                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware") {
+                            //zone-wide-primary-storage is supported only for KVM and VMWare and Hyperv
+                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware" || selectedHypervisorObj.hypervisortype == "Hyperv") {
                                 var scope = [];
                                 scope.push({
                                     id: 'zone',
