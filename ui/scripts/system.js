@@ -15131,7 +15131,11 @@
                                                 id: 'VMware',
                                                 description: _l('VMware')
                                             });
-                                            
+                                            items.push({
+                                                id: 'Hyperv',
+                                                description: _l('Hyperv')
+                                            });
+
                                             args.response.success({
                                                 data: items
                                             });
