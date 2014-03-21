@@ -1053,7 +1053,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     public Pair<JobInfo.Status, String> orchestrateDeleteVMSnapshot(VmWorkDeleteVMSnapshot work) {
         boolean result = orchestrateDeleteVMSnapshot(work.getVmSnapshotId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                _jobMgr.marshallResultObject(new Boolean(result)));
+                _jobMgr.marshallResultObject(result));
     }
 
     public Pair<JobInfo.Status, String> orchestrateRevertToVMSnapshot(VmWorkRevertToVMSnapshot work) throws Exception {
@@ -1064,7 +1064,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     public Pair<JobInfo.Status, String> orchestrateDeleteAllVMSnapshots(VmWorkDeleteAllVMSnapshots work) {
         boolean result = orchestrateDeleteAllVMSnapshots(work.getVmId(), work.getSnapshotType());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                _jobMgr.marshallResultObject(new Boolean(result)));
+                _jobMgr.marshallResultObject(result));
     }
 
     @Override

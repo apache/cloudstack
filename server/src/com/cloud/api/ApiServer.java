@@ -885,7 +885,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
-            session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
+            session.setAttribute("registered", Boolean.toString(userAcct.isRegistered()));
 
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);

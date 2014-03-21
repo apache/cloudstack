@@ -104,7 +104,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     @Inject
     private DataStoreManager storeMgr;
 
-    private Boolean _sslCopy = new Boolean(false);
+    private boolean _sslCopy = false;
     private String _ssvmUrlDomain;
     private ScheduledExecutorService _executor = null;
 

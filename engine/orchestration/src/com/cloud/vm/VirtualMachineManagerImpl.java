@@ -5238,7 +5238,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         boolean result = orchestrateRemoveNicFromVm(vm, nic);
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                _jobMgr.marshallResultObject(new Boolean(result)));
+                _jobMgr.marshallResultObject(result));
     }
 
     private Pair<JobInfo.Status, String> orchestrateRemoveVmFromNetwork(VmWorkRemoveVmFromNetwork work) throws Exception {
@@ -5250,7 +5250,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean result = orchestrateRemoveVmFromNetwork(vm,
                 work.getNetwork(), work.getBroadcastUri());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                _jobMgr.marshallResultObject(new Boolean(result)));
+                _jobMgr.marshallResultObject(result));
     }
 
     private Pair<JobInfo.Status, String> orchestrateReconfigure(VmWorkReconfigure work) throws Exception {
