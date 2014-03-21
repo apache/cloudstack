@@ -967,7 +967,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
     @Override
     public boolean hasPendingHaWork(long vmId) {
-        List<HaWorkVO> haWorks = _haDao.listRunningHaWorkForVm(vmId);
+        List<HaWorkVO> haWorks = _haDao.listPendingHaWorkForVm(vmId);
         return haWorks.size() > 0;
     }
 }
