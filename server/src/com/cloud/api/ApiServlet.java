@@ -198,7 +198,7 @@ public class ApiServlet extends HttpServlet {
                             //check if UUID is passed in for domain
                             domainId = _apiServer.fetchDomainId(domainIdArr[0]);
                             if (domainId == null) {
-                                domainId = new Long(Long.parseLong(domainIdArr[0]));
+                                domainId = Long.parseLong(domainIdArr[0]);
                             }
                             auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
                         } catch (final NumberFormatException e) {
@@ -395,8 +395,8 @@ public class ApiServlet extends HttpServlet {
     }
 
     @SuppressWarnings("rawtypes")
-    private String getLoginSuccessResponse(final HttpSession session, final String responseType) {
-        final StringBuffer sb = new StringBuffer();
+    String getLoginSuccessResponse(final HttpSession session, final String responseType) {
+        final StringBuilder sb = new StringBuilder();
         final int inactiveInterval = session.getMaxInactiveInterval();
 
         final String user_UUID = (String)session.getAttribute("user_UUID");
@@ -409,7 +409,7 @@ public class ApiServlet extends HttpServlet {
             sb.append("{ \"loginresponse\" : { ");
             final Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
-                sb.append("\"timeout\" : \"" + inactiveInterval + "\"");
+                sb.append("\"timeout\" : \"").append(inactiveInterval).append("\"");
                 while (attrNames.hasMoreElements()) {
                     final String attrName = (String)attrNames.nextElement();
                     if ("userid".equalsIgnoreCase(attrName)) {
@@ -427,20 +427,26 @@ public class ApiServlet extends HttpServlet {
             sb.append(" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
-            sb.append("<timeout>" + inactiveInterval + "</timeout>");
+            sb.append("<loginresponse cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
+            sb.append("<timeout>").append(inactiveInterval).append("</timeout>");
             final Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
                 while (attrNames.hasMoreElements()) {
                     final String attrName = (String)attrNames.nextElement();
                     if (ApiConstants.USER_ID.equalsIgnoreCase(attrName)) {
-                        sb.append("<" + attrName + ">" + user_UUID + "</" + attrName + ">");
+                        sb.append("<").append(attrName).append(">")
+                                .append(user_UUID).append("</")
+                                .append(attrName).append(">");
                     } else if ("domainid".equalsIgnoreCase(attrName)) {
-                        sb.append("<" + attrName + ">" + domain_UUID + "</" + attrName + ">");
+                        sb.append("<").append(attrName).append(">")
+                                .append(domain_UUID).append("</")
+                                .append(attrName).append(">");
                     } else {
                         final Object attrObj = session.getAttribute(attrName);
                         if (attrObj instanceof String || attrObj instanceof Long || attrObj instanceof Short) {
-                            sb.append("<" + attrName + ">" + attrObj.toString() + "</" + attrName + ">");
+                            sb.append("<").append(attrName).append(">")
+                                    .append(attrObj.toString()).append("</")
+                                    .append(attrName).append(">");
                         }
                     }
                 }

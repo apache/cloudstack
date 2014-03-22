@@ -18,17 +18,22 @@ package com.cloud.api;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.iterators.IteratorEnumeration;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,10 +41,17 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.XMLReaderFactory;
 
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
@@ -65,6 +77,9 @@ public class ApiServletTest {
     @Mock
     HttpSession session;
 
+    @Mock
+    ManagementServer managementServer;
+
     StringWriter responseWriter;
 
     ApiServlet servlet;
@@ -87,6 +102,26 @@ public class ApiServletTest {
         Field apiServerField = ApiServlet.class.getDeclaredField("_apiServer");
         apiServerField.setAccessible(true);
         apiServerField.set(servlet, apiServer);
+    }
+
+    /**
+     * These are envinonment hacks, actually getting into the behavior of other
+     * classes, but there is no other way to run the test.
+     */
+    @Before
+    public void hackEnvironment() throws Exception {
+        Field smsField = ApiDBUtils.class.getDeclaredField("s_ms");
+        smsField.setAccessible(true);
+        smsField.set(null, managementServer);
+        Mockito.when(managementServer.getVersion()).thenReturn(
+                "LATEST-AND-GREATEST");
+    }
+
+    @After
+    public void cleanupEnvironmentHacks() throws Exception {
+        Field smsField = ApiDBUtils.class.getDeclaredField("s_ms");
+        smsField.setAccessible(true);
+        smsField.set(null, null);
     }
 
     @Test
@@ -123,6 +158,7 @@ public class ApiServletTest {
         Assert.assertEquals("árvíztűrőtükörfúró", params.get("防水镜钻孔机")[0]);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextUnauthorizedGET() {
         Mockito.when(request.getMethod()).thenReturn("GET");
@@ -136,6 +172,7 @@ public class ApiServletTest {
                 Mockito.any(StringBuffer.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextAuthorizedGet() {
         Mockito.when(request.getMethod()).thenReturn("GET");
@@ -150,7 +187,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void processRequestInContextLougout() {
+    public void processRequestInContextLogout() {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
                 session);
@@ -164,6 +201,65 @@ public class ApiServletTest {
 
         Mockito.verify(apiServer).logoutUser(1l);
         Mockito.verify(session).invalidate();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void processRequestInContextLogin() {
+        Mockito.when(request.getMethod()).thenReturn("GET");
+        Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
+                session);
+        HashMap<String, String[]> params = new HashMap<String, String[]>();
+        params.put(ApiConstants.COMMAND, new String[] { "login" });
+        params.put(ApiConstants.USERNAME, new String[] { "TEST" });
+        params.put(ApiConstants.PASSWORD, new String[] { "TEST-PWD" });
+        params.put(ApiConstants.DOMAIN_ID, new String[] { "42" });
+        params.put(ApiConstants.DOMAIN, new String[] { "TEST-DOMAIN" });
+        Mockito.when(request.getParameterMap()).thenReturn(params);
+        Mockito.when(apiServer.fetchDomainId("42")).thenReturn(null);
+        Mockito.when(session.getAttribute("userid")).thenReturn(1l);
+        Mockito.when(session.getAttribute("accountobj")).thenReturn(account);
+
+        servlet.processRequestInContext(request, response);
+
+        Mockito.verify(request).getSession(true);
+        Mockito.verify(apiServer).loginUser(Mockito.any(HttpSession.class),
+                Mockito.eq("TEST"), Mockito.eq("TEST-PWD"), Mockito.eq(42l),
+                Mockito.eq("/TEST-DOMAIN/"), Mockito.eq("127.0.0.1"),
+                Mockito.any(Map.class));
+        Mockito.verify(response).setStatus(HttpServletResponse.SC_OK);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void getLoginSuccessResponseJson() throws JsonParseException,
+            IOException {
+        Mockito.when(session.getAttributeNames()).thenReturn(
+                new IteratorEnumeration(Arrays.asList("foo", "bar", "userid",
+                        "domainid").iterator()));
+        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(
+                "TEST");
+
+        String loginResponse = servlet.getLoginSuccessResponse(session, "json");
+
+        ObjectNode node = (ObjectNode) new ObjectMapper()
+                .readTree(loginResponse);
+        Assert.assertNotNull(node.get("loginresponse"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void getLoginSuccessResponseXml() throws JsonParseException,
+            IOException, SAXException {
+        Mockito.when(session.getAttributeNames()).thenReturn(
+                new IteratorEnumeration(Arrays.asList("foo", "bar", "userid",
+                        "domainid").iterator()));
+        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(
+                "TEST");
+        String loginResponse = servlet.getLoginSuccessResponse(session, "xml");
+        XMLReaderFactory.createXMLReader().parse(
+                new InputSource(new StringReader(loginResponse)));
+        ;
     }
 
 }
