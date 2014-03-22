@@ -3389,45 +3389,40 @@ public class ApiResponseHelper implements ResponseGenerator {
         Calendar cal = Calendar.getInstance(tz);
         cal.setTime(inputDate);
 
-        StringBuffer sb = new StringBuffer();
-        sb.append(cal.get(Calendar.YEAR) + "-");
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(cal.get(Calendar.YEAR)).append('-');
 
         int month = cal.get(Calendar.MONTH) + 1;
         if (month < 10) {
-            sb.append("0" + month + "-");
-        } else {
-            sb.append(month + "-");
+            sb.append('0');
         }
+        sb.append(month).append('-');
 
         int day = cal.get(Calendar.DAY_OF_MONTH);
         if (day < 10) {
-            sb.append("0" + day);
-        } else {
-            sb.append("" + day);
+            sb.append('0');
         }
+        sb.append(day);
 
         sb.append("'T'");
 
         int hour = cal.get(Calendar.HOUR_OF_DAY);
         if (hour < 10) {
-            sb.append("0" + hour + ":");
-        } else {
-            sb.append(hour + ":");
+            sb.append('0');
         }
+        sb.append(hour).append(':');
 
         int minute = cal.get(Calendar.MINUTE);
         if (minute < 10) {
-            sb.append("0" + minute + ":");
-        } else {
-            sb.append(minute + ":");
+            sb.append('0');
         }
+        sb.append(minute).append(':');
 
         int seconds = cal.get(Calendar.SECOND);
         if (seconds < 10) {
-            sb.append("0" + seconds);
-        } else {
-            sb.append("" + seconds);
+            sb.append('0');
         }
+        sb.append(seconds);
 
         double offset = cal.get(Calendar.ZONE_OFFSET);
         if (tz.inDaylightTime(inputDate)) {
@@ -3443,26 +3438,28 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (hourOffset < 0) {
             if (hourOffset > -10) {
-                sb.append("-0" + Math.abs(hourOffset));
+                sb.append("-0");
             } else {
-                sb.append("-" + Math.abs(hourOffset));
+                sb.append('-');
             }
+            sb.append(Math.abs(hourOffset));
         } else {
             if (hourOffset < 10) {
-                sb.append("+0" + hourOffset);
+                sb.append("+0");
             } else {
-                sb.append("+" + hourOffset);
+                sb.append("+");
             }
+            sb.append(hourOffset);
         }
 
-        sb.append(":");
+        sb.append(':');
 
         if (minuteOffset == 0) {
             sb.append("00");
         } else if (minuteOffset < 10) {
-            sb.append("0" + minuteOffset);
+            sb.append('0').append(minuteOffset);
         } else {
-            sb.append("" + minuteOffset);
+            sb.append(minuteOffset);
         }
 
         return sb.toString();
