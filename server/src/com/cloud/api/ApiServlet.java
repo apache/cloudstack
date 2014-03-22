@@ -82,7 +82,7 @@ public class ApiServlet extends HttpServlet {
         processRequest(req, resp);
     }
 
-    private void utf8Fixup(final HttpServletRequest req, final Map<String, Object[]> params) {
+    void utf8Fixup(final HttpServletRequest req, final Map<String, Object[]> params) {
         if (req.getQueryString() == null) {
             return;
         }
@@ -91,23 +91,23 @@ public class ApiServlet extends HttpServlet {
         if (paramsInQueryString != null) {
             for (final String param : paramsInQueryString) {
                 final String[] paramTokens = param.split("=", 2);
-                if (paramTokens != null && paramTokens.length == 2) {
-                    String name = paramTokens[0];
-                    String value = paramTokens[1];
-
-                    try {
-                        name = URLDecoder.decode(name, "UTF-8");
-                    } catch (final UnsupportedEncodingException e) {
-                    }
-                    try {
-                        value = URLDecoder.decode(value, "UTF-8");
-                    } catch (final UnsupportedEncodingException e) {
-                    }
+                if (paramTokens.length == 2) {
+                    String name = decodeUtf8(paramTokens[0]);
+                    String value = decodeUtf8(paramTokens[1]);
                     params.put(name, new String[] {value});
                 } else {
                     s_logger.debug("Invalid parameter in URL found. param: " + param);
                 }
             }
+        }
+    }
+
+    private String decodeUtf8(final String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            //should never happen
+            return null;
         }
     }
 
@@ -120,10 +120,10 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
-    private void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
+    void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
         final StringBuffer auditTrailSb = new StringBuffer();
-        auditTrailSb.append(" " + req.getRemoteAddr());
-        auditTrailSb.append(" -- " + req.getMethod() + " ");
+        auditTrailSb.append(" ").append(req.getRemoteAddr());
+        auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
         // get the response format since we'll need it in a couple of places
         String responseType = BaseCmd.RESPONSE_TYPE_XML;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
@@ -171,7 +171,7 @@ public class ApiServlet extends HttpServlet {
                         }
                     }
                     auditTrailSb.append("command=logout");
-                    auditTrailSb.append(" " + HttpServletResponse.SC_OK);
+                    auditTrailSb.append(" ").append(HttpServletResponse.SC_OK);
                     writeResponse(resp, getLogoutSuccessResponse(responseType), HttpServletResponse.SC_OK, responseType);
                     return;
                 } else if ("login".equalsIgnoreCase(command)) {
