@@ -121,7 +121,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
-        final StringBuffer auditTrailSb = new StringBuffer();
+        final StringBuilder auditTrailSb = new StringBuilder(128);
         auditTrailSb.append(" ").append(req.getRemoteAddr());
         auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
         // get the response format since we'll need it in a couple of places

@@ -280,7 +280,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public void handle(final HttpRequest request, final HttpResponse response, final HttpContext context) throws HttpException, IOException {
 
         // Create StringBuffer to log information in access log
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         final HttpServerConnection connObj = (HttpServerConnection)context.getAttribute("http.connection");
         if (connObj instanceof SocketHttpServerConnection) {
             final InetAddress remoteAddr = ((SocketHttpServerConnection)connObj).getRemoteAddress();
@@ -365,7 +365,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     @SuppressWarnings("rawtypes")
-    public String handleRequest(final Map params, final String responseType, final StringBuffer auditTrailSb) throws ServerApiException {
+    public String handleRequest(final Map params, final String responseType, final StringBuilder auditTrailSb) throws ServerApiException {
         checkCharacterInkParams(params);
 
         String response = null;
@@ -645,7 +645,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    private void buildAuditTrail(final StringBuffer auditTrailSb, final String command, final String result) {
+    private void buildAuditTrail(final StringBuilder auditTrailSb, final String command, final String result) {
         if (result == null) {
             return;
         }
