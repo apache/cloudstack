@@ -517,7 +517,16 @@
                                             return elem.id == val;
                                         })[0];
 
-                                        if (!item) return true;
+                                        if (!item) {
+                                        	// handle removal of custom size controls
+                                            $step.find('.section.custom-size').hide();
+                                            $step.removeClass('custom-disk-size');
+
+                                            // handle removal of custom IOPS controls
+                                            $step.removeClass('custom-iops-do');
+
+                                            return true;
+                                        }
 
                                         var custom = item[args.customFlag];
 
