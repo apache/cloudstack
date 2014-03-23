@@ -435,12 +435,12 @@ public class ApiServlet extends HttpServlet {
     }
 
     private String getLogoutSuccessResponse(final String responseType) {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<logoutresponse cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
             sb.append("<description>success</description>");
             sb.append("</logoutresponse>");
         }
