@@ -309,19 +309,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (_apiServer.verifyRequest(params, userId)) {
-                /*
-                 * if (accountObj != null) { Account userAccount = (Account)accountObj; if (userAccount.getType() ==
-                 * Account.ACCOUNT_TYPE_NORMAL) { params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
-                 * params.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account });
-                 * params.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { domainId });
-                 * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } else {
-                 * params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
-                 * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } }
-                 *
-                 * // update user context info here so that we can take information if the request is authenticated // via api
-                 * key mechanism updateUserContext(params, session != null ? session.getId() : null);
-                 */
-
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
                     " sessionId=" + (session != null ? session.getId() : null) + ")");
 
@@ -361,16 +348,6 @@ public class ApiServlet extends HttpServlet {
             CallContext.unregister();
         }
     }
-
-    /*
-     * private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) { String userIdStr =
-     * (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]); Account accountObj =
-     * (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
-     *
-     * Long userId = null; Long accountId = null; if(userIdStr != null) userId = Long.parseLong(userIdStr);
-     *
-     * if(accountObj != null) accountId = accountObj.getId(); UserContext.updateContext(userId, accountId, sessionId); }
-     */
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(final HttpServletResponse resp, final String response, final int responseCode, final String responseType) {
