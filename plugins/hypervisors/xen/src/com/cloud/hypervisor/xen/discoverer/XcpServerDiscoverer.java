@@ -179,11 +179,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         try {
-            List<HostVO> eHosts = _resourceMgr.listAllHostsInCluster(clusterId);
-            if (eHosts.size() > 0) {
-                HostVO eHost = eHosts.get(0);
-                _hostDao.loadDetails(eHost);
-            }
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
