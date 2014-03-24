@@ -1236,7 +1236,8 @@ class NATRule:
 
     @classmethod
     def create(cls, apiclient, virtual_machine, services, ipaddressid=None,
-               projectid=None, openfirewall=False, networkid=None, vpcid=None):
+               projectid=None, openfirewall=False, networkid=None, vpcid=None,
+               vmguestip=None):
         """Create Port forwarding rule"""
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
 
@@ -1265,6 +1266,10 @@ class NATRule:
 
         if vpcid:
             cmd.vpcid = vpcid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1331,7 +1336,8 @@ class StaticNATRule:
         return(apiclient.listIpForwardingRules(cmd))
 
     @classmethod
-    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None):
+    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None,
+            vmguestip=None):
         """Enables Static NAT rule"""
 
         cmd = enableStaticNat.enableStaticNatCmd()
@@ -1339,6 +1345,9 @@ class StaticNATRule:
         cmd.virtualmachineid = virtualmachineid
         if networkid:
             cmd.networkid = networkid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
         apiclient.enableStaticNat(cmd)
         return
 
