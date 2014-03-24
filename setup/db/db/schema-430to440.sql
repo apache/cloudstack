@@ -658,6 +658,20 @@ ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL D
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
 
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (227, UUID(), 1, 'CentOS 6.5 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (228, UUID(), 1, 'CentOS 6.5 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (229, UUID(), 6, 'Windows 8.1 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (230, UUID(), 6, 'Windows 8.1 (32-bit)');
+
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8.1 (64-bit)', 229);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8.1 (64-bit)', 229);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8.1 (32-bit)', 230);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8.1 (32-bit)', 230);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (32-bit)', 227);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (32-bit)', 227);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (64-bit)', 228);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (64-bit)', 228);
+
 CREATE TABLE `cloud`.`op_router_monitoring_services` (
   `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
   `router_name` varchar(255) NOT NULL COMMENT 'Name of the Virtual Router',
