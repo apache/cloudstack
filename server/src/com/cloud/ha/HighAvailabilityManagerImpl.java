@@ -267,12 +267,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         for (VMInstanceVO vm : vms) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getHostName());
+                s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getInstanceName());
             }
             vm = _instanceDao.findByUuid(vm.getUuid());
             Long hostId = vm.getHostId();
             if ( hostId != null && !hostId.equals(host.getId()) ) {
-                s_logger.debug("VM " + vm.getHostName() + " is not on down host " + host.getId() + " it is on other host "
+                s_logger.debug("VM " + vm.getInstanceName() + " is not on down host " + host.getId() + " it is on other host "
                         + hostId + " VM HA is done");
                 continue;
             }
@@ -501,7 +501,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 } else if (!alive) {
                     fenced = true;
                 } else {
-                    s_logger.debug("VM " + vm.getHostName() + " is found to be alive by " + investigator.getName());
+                    s_logger.debug("VM " + vm.getInstanceName() + " is found to be alive by " + investigator.getName());
                     if (host.getStatus() == Status.Up) {
                         s_logger.info(vm + " is alive and host is up. No need to restart it.");
                         return null;
