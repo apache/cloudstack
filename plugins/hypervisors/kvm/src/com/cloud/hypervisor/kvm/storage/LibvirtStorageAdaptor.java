@@ -16,10 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -1096,19 +1093,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             boolean useTmpFile = false;
 
             try {
-                if (sourceFormat != destFormat) {
-                    srcFile = new QemuImgFile(sourcePath, sourceFormat);
-                    destFile = new QemuImgFile("/tmp/" + name);
-                    s_logger.debug("Converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " as a temporary file for RBD conversion");
-                    qemu.convert(srcFile, destFile);
-                    sourceFile = destFile.getFileName();
-                    useTmpFile = true;
-                } else {
-                    // Source file is RAW, we can write directly to RBD
-                    sourceFile = sourcePath;
-                }
+                srcFile = new QemuImgFile(sourcePath, sourceFormat);
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
+                                                                      destPool.getSourcePort(),
+                                                                      destPool.getAuthUserName(),
+                                                                      destPool.getAuthSecret(),
+                                                                      destPool.getSourceDir() + "/" + name);
+                destFile = new QemuImgFile(rbdDestFile, destFormat);
 
-                // We now convert the temporary file to a RBD image with format 2
+                s_logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + destPool.getSourceDir() + "/" + name);
+                qemu.convert(srcFile, destFile);
+                s_logger.debug("Succesfully converted source image " + srcFile.getFileName() + " to RBD image " + destPool.getSourceDir() + "/" + name);
+
+                /* We still have to create and protect a RBD snapshot in order to do cloning */
                 Rados r = new Rados(destPool.getAuthUserName());
                 r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                 r.confSet("key", destPool.getAuthSecret());
@@ -1119,34 +1116,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 IoCTX io = r.ioCtxCreate(destPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
 
-                s_logger.debug("Creating RBD image " + name + " in Ceph pool " + destPool.getSourceDir() + " with RBD format 2");
-                rbd.create(name, disk.getVirtualSize(), rbdFeatures, rbdOrder);
-
                 RbdImage image = rbd.open(name);
-
-                File fh = new File(sourceFile);
-                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fh));
-
-                int chunkSize = 4194304;
-                long offset = 0;
-                s_logger.debug("Reading file " + sourceFile + " (" + fh.length() + " bytes) into RBD image " + name + " in chunks of " + chunkSize + " bytes");
-                while (true) {
-                    byte[] buf = new byte[chunkSize];
-
-                    int bytes = bis.read(buf);
-                    if (bytes <= 0) {
-                        break;
-                    }
-                    image.write(buf, offset, bytes);
-                    offset += bytes;
-                }
-                s_logger.debug("Completed writing " + sourceFile + " to RBD image " + name + ". Bytes written: " + offset);
-                bis.close();
-
-                if (useTmpFile) {
-                    s_logger.debug("Removing temporary file " + sourceFile);
-                    fh.delete();
-                }
 
                 /* Snapshot the image and protect that snapshot so we can clone (layer) from it */
                 s_logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
@@ -1157,7 +1127,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 rbd.close(image);
                 r.ioCtxDestroy(io);
             } catch (QemuImgException e) {
-                s_logger.error("Failed to do a temp convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                s_logger.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
                 newDisk = null;
             } catch (RadosException e) {
                 s_logger.error("A Ceph RADOS operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
@@ -1165,11 +1135,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } catch (RbdException e) {
                 s_logger.error("A Ceph RBD operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
                 newDisk = null;
-            } catch (IOException e) {
-                s_logger.error("Failed reading the temporary file during the conversion to RBD: " + e.getMessage());
-                newDisk = null;
             }
-
         } else {
             /**
                 We let Qemu-Img do the work here. Although we could work with librbd and have that do the cloning
