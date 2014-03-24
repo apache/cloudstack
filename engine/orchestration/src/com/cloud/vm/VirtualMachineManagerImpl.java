@@ -1051,10 +1051,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (vm.getType() == VirtualMachine.Type.User) {
                                     String platform = answer.getPlatform();
                                     if (platform != null) {
-                                        UserVmVO userVm = _userVmDao.findById(vm.getId());
-                                        _userVmDao.loadDetails(userVm);
-                                        userVm.setDetail("platform", platform);
-                                        _userVmDao.saveDetails(userVm);
+                                        Map<String,String> vmmetadata = new HashMap<String,String>();
+                                        vmmetadata.put(vm.getInstanceName(), platform);
+                                        syncVMMetaData(vmmetadata);
                                     }
                                 }
                             }
@@ -2558,20 +2557,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
             if (vm != null && vm.getType() == VirtualMachine.Type.User) {
-                // track platform info
+                boolean changed = false;
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 _userVmDao.loadDetails(userVm);
-                userVm.setDetail("platform",  platform);
+                if ( userVm.details.containsKey("timeoffset")) {
+                    userVm.details.remove("timeoffset");
+                    changed = true;
+                }
+                if (!userVm.details.containsKey("platform") || !userVm.details.get("platform").equals(platform)) {
+                    userVm.setDetail("platform",  platform);
+                    changed = true;
+                }
                 String pvdriver = "xenserver56";
                 if ( platform.contains("device_id")) {
                     pvdriver = "xenserver61";
                 }
-                userVm.setDetail("hypervisortoolsversion", pvdriver);
-                _userVmDao.saveDetails(userVm);
+                if (!userVm.details.containsKey("hypervisortoolsversion") || !userVm.details.get("hypervisortoolsversion").equals(pvdriver)) {
+                    userVm.setDetail("hypervisortoolsversion", pvdriver);
+                    changed = true;
+                }
+                if ( changed ) {
+                    _userVmDao.saveDetails(userVm);
+                }
             }
         }
     }
-
 
     public void deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
