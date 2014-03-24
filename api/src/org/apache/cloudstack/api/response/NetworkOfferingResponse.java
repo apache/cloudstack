@@ -109,7 +109,7 @@ public class NetworkOfferingResponse extends BaseResponse {
     private Map details;
 
     @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY)
-    @Param(description = "true if network offering supports persistent networks, false otherwise")
+    @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @SerializedName(ApiConstants.MAX_CONNECTIONS)

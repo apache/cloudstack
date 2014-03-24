@@ -66,7 +66,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
-public class AssignToLoadBalancerTest {
+public class AssignLoadBalancerTest {
 
     @Inject
     AccountManager _accountMgr;
@@ -212,6 +212,46 @@ public class AssignToLoadBalancerTest {
         _lbMgr._vmDao = userVmDao;
         _lbMgr._nicSecondaryIpDao = nicSecIpDao;
         _lbvmMapList = new ArrayList<>();
+        _lbMgr._rulesMgr = _rulesMgr;
+        _lbMgr._networkModel = _networkModel;
+
+        when(lbDao.findById(anyLong())).thenReturn(lbVO);
+        when(userVmDao.findById(anyLong())).thenReturn(Mockito.mock(UserVmVO.class));
+        when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+        when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+    }
+
+
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVmIdAlreadyExist() throws ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
+
+        AssignToLoadBalancerRuleCmd assignLbRuleCmd = Mockito.mock(AssignToLoadBalancerRuleCmd.class);
+
+        Map<Long, List<String>> vmIdIpMap = new HashMap<Long, List<String>>();
+        List<String> secIp = new ArrayList<String>();
+        secIp.add("10.1.1.175");
+        vmIdIpMap.put(1L,secIp);
+
+        List<Long> vmIds = new ArrayList<Long>();
+        vmIds.add(2L);
+
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
+
+        LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
+        LoadBalancerVMMapDao lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
+        UserVmDao userVmDao = Mockito.mock(UserVmDao.class);
+        NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+        LoadBalancerVMMapVO lbVmMapVO = new LoadBalancerVMMapVO(1L, 1L, "10.1.1.175", false);
+
+        _lbMgr._lbDao = lbDao;
+        _lbMgr._lb2VmMapDao = lb2VmMapDao;
+        _lbMgr._vmDao = userVmDao;
+        _lbMgr._nicSecondaryIpDao = nicSecIpDao;
+        _lbvmMapList = new ArrayList<>();
+        _lbvmMapList.add(lbVmMapVO);
         _lbMgr._rulesMgr = _rulesMgr;
         _lbMgr._networkModel = _networkModel;
 

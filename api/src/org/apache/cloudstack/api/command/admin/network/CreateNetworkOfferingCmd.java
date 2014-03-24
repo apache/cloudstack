@@ -118,7 +118,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
                type = CommandType.BOOLEAN,
-               description = "true if default guest network egress policy is allow; false if default egress policy is deny")
+               description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
