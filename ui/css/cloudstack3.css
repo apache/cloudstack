@@ -6094,7 +6094,7 @@ label.error {
 }
 
 .instance-wizard .step.data-disk-offering.custom-iops-do .select-container {
-  height: 235px;
+  height: 165px;
 }
 
 .instance-wizard .step.data-disk-offering .custom-iops-do {
@@ -6108,7 +6108,7 @@ label.error {
 .instance-wizard .step.data-disk-offering .custom-iops-do .field {
   width: 30%;
   float: left;
-  margin-bottom: 13px;
+  margin-bottom: 5px;
 }
 
 .instance-wizard .step.data-disk-offering .custom-iops-do .field label {
