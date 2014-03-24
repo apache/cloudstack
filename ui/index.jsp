@@ -289,13 +289,11 @@
                                 <p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
                                 <p id="from_vpc_tier">
                                     <div class="specify-ip">
-                                        <form>
-                                            <label>
-                                                <fmt:message key="label.ip.address"/>
-                                                (<fmt:message key="label.optional"/>):
-                                            </label>
-                                            <input type="text" name="vpc-specify-ip" />
-                                        </form>
+                                        <label>
+                                            <fmt:message key="label.ip.address"/>
+                                            (<fmt:message key="label.optional"/>):
+                                        </label>
+                                        <input type="text" name="vpc-specify-ip" />
                                     </div>
                                 </p>
                             </div>
