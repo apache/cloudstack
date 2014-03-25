@@ -80,10 +80,6 @@
         </Component>
       </Directory>
     </DirectoryRef>
-    <!-- DirectoryRef Id="WEBAPPS"> <Directory Id="clientId" FileSource="client\WEB-INF\classes">
-      <Component Id="copyAllToConf" Guid="0e081e69-5c30-426e-b711-b7750115f62b"
-      KeyPath="yes"> <CopyFile Id="AllFiles" DestinationDirectory="CONF" SourceName="*"
-      /> </Component> </Directory> </DirectoryRef -->
     <DirectoryRef Id="WEBAPPS">
       <Component Id="copyToConf" Guid="99da8926-1eec-4a7f-ac7f-1326d8e73ea0"
         KeyPath="yes">
@@ -185,8 +181,6 @@
     </Component>
 
     <!-- Updating Tomcat's catalina base -->
-    <!-- Property Id='TomcatDirectory' Value="$(env.CATALINA_HOME)\bin\Tomcat6.exe"
-      / -->
     <Property Id='TOMCATDIRECTORY'>
       <RegistrySearch Id="TomcatSearch" Name="InstallPath"
         Root="HKLM" Key="SOFTWARE\Apache Software Foundation\Tomcat\6.0\Tomcat6"
@@ -195,16 +189,24 @@
     <CustomAction Id="TomcatPath" Property="TOMCATDIRECTORY1"
       Value="[TOMCATDIRECTORY]\bin\Tomcat6.exe">
     </CustomAction>
-
+	
     <Condition
       Message="Apache tomcat6 is not installed please do install tomcat6 first"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
     <CustomAction Id="UpdateTomcatCatalinaBase"
-      ExeCommand="//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m"
+      ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Djava.io.tmpdir=[INSTALLDIR]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+	<CustomAction Id="UpdateTomcatClassPath"
+      ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[INSTALLDIR]\conf'
+	  Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+    <CustomAction Id="DeleteFiles" Directory='INSTALLDIR'
+      ExeCommand="[SystemFolder]cmd.exe /c del [INSTALLDIR]\webapps\client\WEB-INF\classes\db.properties [INSTALLDIR]\webapps\client\WEB-INF\classes\log4j*.xml"
+      Execute="commit" Return="check" />
     <InstallExecuteSequence>
       <InstallServices Sequence="4999"></InstallServices>
-      <Custom Action="TomcatPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
+      <Custom Action="TomcatPath" Before="UpdateTomcatClassPath">NOT Installed</Custom>
+	  <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
       <Custom Action="UpdateTomcatCatalinaBase" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="DeleteFiles" Before="InstallFinalize">NOT Installed</Custom>
     </InstallExecuteSequence>
     <UIRef Id="WixUI_Mondo" />
     <Feature Id='Complete' Title='ACS' Description='The complete package.'
