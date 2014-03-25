@@ -5988,7 +5988,7 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .data-disk-offering .select-container {
-  height: 280px;
+  height: 300px;
   margin: -7px 6px 0 8px;
   /*+border-radius:6px;*/
   -moz-border-radius: 6px;
@@ -6093,8 +6093,28 @@ label.error {
   font-size: 10px;
 }
 
+.instance-wizard .step.data-disk-offering.custom-disk-size .select-container {
+  height: 272px;
+}
+
 .instance-wizard .step.data-disk-offering.custom-iops-do .select-container {
-  height: 165px;
+  height: 240px;
+}
+
+.instance-wizard .step.data-disk-offering.custom-disk-size.custom-iops-do .select-container {
+  height: 176px;
+}
+
+.instance-wizard .step.data-disk-offering.required.custom-disk-size .select-container {
+  height: 315px;
+}
+
+.instance-wizard .step.data-disk-offering.required.custom-iops-do .select-container {
+  height: 295px;
+}
+
+.instance-wizard .step.data-disk-offering.required.custom-disk-size.custom-iops-do .select-container {
+  height: 223px;
 }
 
 .instance-wizard .step.data-disk-offering .custom-iops-do {
