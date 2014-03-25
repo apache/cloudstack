@@ -274,7 +274,7 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("script: %s" % script+exec_cmd_params)
             self.debug("result: %s" % result)
 
-            if str(result).strip() == expected_result:
+            if str(result).strip() == unicode(expected_result):
                 exec_success = True
 
             if negative_test:
