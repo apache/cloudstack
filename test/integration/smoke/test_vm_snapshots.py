@@ -150,7 +150,7 @@ class TestVmSnapshot(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_01_create_vm_snapshots(self):
         """Test to create VM snapshots
         """
@@ -194,7 +194,7 @@ class TestVmSnapshot(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_02_revert_vm_snapshots(self):
         """Test to revert VM snapshots
         """
@@ -281,7 +281,7 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the random data is equal with the ramdom file!"
         )
 
-    @attr(tags=["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_03_delete_vm_snapshots(self):
         """Test to delete vm snapshots
         """

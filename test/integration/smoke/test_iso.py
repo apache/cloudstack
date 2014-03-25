@@ -83,7 +83,8 @@ class Services:
 
 
 class TestCreateIso(cloudstackTestCase):
-
+#TODO: SIMENH: check the existence of registered of ISO in secondary deploy a VM with registered ISO. can be added \
+# as another test
     def setUp(self):
         self.services = Services().services
         self.apiclient = self.testClient.getApiClient()
@@ -125,7 +126,7 @@ class TestCreateIso(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -279,7 +280,7 @@ class TestISO(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -344,7 +345,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
     def test_03_delete_iso(self):
         """Test delete ISO
         """
@@ -372,7 +373,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "provisioning"])
     def test_04_extract_Iso(self):
         "Test for extract ISO"
 
@@ -423,7 +424,7 @@ class TestISO(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "selfservice"])
     def test_05_iso_permissions(self):
         """Update & Test for ISO permissions"""
 
@@ -475,7 +476,7 @@ class TestISO(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "multizone", "provisioning"])
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 

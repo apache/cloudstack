@@ -101,7 +101,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'selfservice'])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
 
@@ -154,7 +154,7 @@ class TestDeployVM(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'selfservice'])
     def test_deploy_vm_multiple(self):
         """Test Multiple Deploy Virtual Machine
 

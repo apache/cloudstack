@@ -92,7 +92,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         user_data = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
         cls.services["virtual_machine"]["userdata"] = user_data
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    @attr(tags=["simulator", "devcloud", "basic", "advanced", "provisioning"])
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """
@@ -117,7 +117,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    @attr(tags=["simulator", "devcloud", "basic", "advanced", "provisioning"])
     def test_deployvm_userdata(self):
         """Test userdata as GET, size > 2k
         """
