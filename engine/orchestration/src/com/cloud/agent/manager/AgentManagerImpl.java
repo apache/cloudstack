@@ -187,6 +187,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Default size for DirectAgentPool", false);
     protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>(Float.class, "direct.agent.thread.cap", "Advanced", "0.1",
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
+    protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<Boolean>(
+        "Developer",
+        Boolean.class,
+        "check.txn.before.sending.agent.commands",
+        "false",
+        "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
+        true);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -378,7 +385,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (timeout <= 0) {
             timeout = Wait.value();
         }
-        assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
+
+        if (CheckTxnBeforeSending.value()) {
+            if (!noDbTxn()) {
+                throw new CloudRuntimeException("We do not allow transactions to be wrapped around commands sent to be executed on remote agents.  "
+                                                + "We cannot predict how long it takes a command to complete.  "
+                                                + "The transaction may be rolled back because the connection took too long.");
+            }
+        } else {
+            assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
+        }
 
         Command[] cmds = commands.toCommands();
 
@@ -1582,7 +1598,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {Workers, Port, PingInterval, PingTimeout, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize, DirectAgentThreadCap};
+        return new ConfigKey<?>[] {CheckTxnBeforeSending, Workers, Port, PingInterval, PingTimeout, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize, DirectAgentThreadCap};
     }
 
 }
