@@ -3493,10 +3493,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
                 if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                    s_logger.debug("VM " + vmName + " is in Running status");
                     task = null;
                     return;
                 }
-                throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in RUNNING state");
+                throw new CloudRuntimeException("Start VM " + vmName + " catch HandleInvalid and VM is not in RUNNING state");
+            } catch (Types.BadAsyncResult e) {
+                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                    s_logger.debug("VM " + vmName + " is in Running status");
+                    task = null;
+                    return;
+                }
+                throw new CloudRuntimeException("Start VM " + vmName + " catch BadAsyncResult and VM is not in RUNNING state");
             }
         } catch (XenAPIException e) {
             String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid + ") due to " + e.toString();
