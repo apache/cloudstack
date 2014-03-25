@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,7 +94,7 @@ public class XenServerConnectionPool {
     }
 
     protected XenServerConnectionPool() {
-        _retries = 3;
+        _retries = 1;
         _interval = 3;
     }
 
@@ -242,19 +241,32 @@ public class XenServerConnectionPool {
         }
     }
 
-    public Connection connect(String hostUuid, String poolUuid, String ipAddress, String username, Queue<String> password, int wait) {
+    public Connection connect(String hostUuid, String poolUuid, String ipAddress,
+            String username, Queue<String> password, int wait) {
         XenServerConnection mConn = null;
         if (hostUuid == null || poolUuid == null || ipAddress == null || username == null || password == null) {
-            String msg = "Connect some parameter are null hostUuid:" + hostUuid + " ,poolUuid:" + poolUuid + " ,ipAddress:" + ipAddress;
+            String msg = "Connect some parameter are null hostUuid:" + hostUuid + " ,poolUuid:" + poolUuid
+                    + " ,ipAddress:" + ipAddress;
             s_logger.debug(msg);
             throw new CloudRuntimeException(msg);
         }
         synchronized (poolUuid.intern()) {
-            // Let's see if it is an existing connection.
             mConn = getConnect(poolUuid);
             if (mConn != null){
                 try{
-                    Host.getByUuid(mConn, hostUuid);
+                    Host host = Host.getByUuid(mConn, hostUuid);
+                    if (!host.getEnabled(mConn)) {
+                        String msg = "Cannot connect this host " + ipAddress + " due to the host is not enabled";
+                        s_logger.debug(msg);
+                        if (mConn.getIp().equalsIgnoreCase(ipAddress)) {
+                            removeConnect(poolUuid);
+                            mConn = null;
+                        }
+                        throw new CloudRuntimeException(msg);
+                    }
+                    return mConn;
+                } catch (CloudRuntimeException e) {
+                        throw e;
                 } catch (Exception e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("connect through IP(" + mConn.getIp() + " for pool(" + poolUuid + ") is broken due to " + e.toString());
@@ -265,20 +277,44 @@ public class XenServerConnectionPool {
             }
 
             if ( mConn == null ) {
-                mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait);
                 try {
+                    Connection conn = new Connection(getURL(ipAddress), 5);
+                    Session sess = loginWithPassword(conn, username, password, APIVersion.latest().toString());
+                    Host host = sess.getThisHost(conn);
+                    Boolean hostenabled = host.getEnabled(conn);
+                    if( sess != null ){
+                        try{
+                            Session.logout(conn);
+                        } catch (Exception e) {
+                        }
+                        conn.dispose();
+                    }
+                    if (!hostenabled) {
+                        String msg = "Unable to create master connection, due to master Host " + ipAddress + " is not enabled";
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
+                    }
+                    mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait);
                     loginWithPassword(mConn, username, password, APIVersion.latest().toString());
                 }  catch (Types.HostIsSlave e) {
                     String maddress = e.masterIPAddress;
                     mConn = new XenServerConnection(getURL(maddress), maddress, username, password, _retries, _interval, wait);
                     try {
-                        loginWithPassword(mConn, username, password, APIVersion.latest().toString());
+                        Session session = loginWithPassword(mConn, username, password, APIVersion.latest().toString());
+                        Host host = session.getThisHost(mConn);
+                        if (!host.getEnabled(mConn)) {
+                            String msg = "Unable to create master connection, due to master Host " + maddress + " is not enabled";
+                            s_logger.debug(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
                     }  catch (Exception e1) {
                         String msg = "Unable to create master connection to host(" + maddress +") , due to " + e1.toString();
                         s_logger.debug(msg);
                         throw new CloudRuntimeException(msg, e1);
 
                     }
+                } catch (CloudRuntimeException e) {
+                        throw e;
                 } catch (Exception e) {
                     String msg = "Unable to create master connection to host(" + ipAddress +") , due to " + e.toString();
                     s_logger.debug(msg);
@@ -287,9 +323,10 @@ public class XenServerConnectionPool {
                 addConnect(poolUuid, mConn);
             }
         }
-
         return mConn;
     }
+
+
 
     protected Session slaveLocalLoginWithPassword(Connection conn, String username, Queue<String> password) throws BadServerResponse, XenAPIException, XmlRpcException {
         Session s = null;
@@ -466,77 +503,34 @@ public class XenServerConnectionPool {
         }
 
         @Override
-        protected Map dispatch(String methodCall, Object[] methodParams) throws XmlRpcException, XenAPIException {
-            if (methodCall.equals("session.local_logout") || methodCall.equals("session.slave_local_login_with_password") || methodCall.equals("session.logout")) {
-                return super.dispatch(methodCall, methodParams);
+        protected Map dispatch(String methodcall, Object[] methodparams)  throws XmlRpcException, XenAPIException {
+            if (methodcall.equals("session.local_logout")
+                    || methodcall.equals("session.slave_local_login_with_password")
+                    || methodcall.equals("session.logout")
+                    || methodcall.equals("session.login_with_password")) {
+                return super.dispatch(methodcall, methodparams);
             }
 
-            if (methodCall.equals("session.login_with_password")) {
-                int retries = 0;
-                while (retries++ < _retries) {
-                    try {
-                        return super.dispatch(methodCall, methodParams);
-                    } catch (XmlRpcException e) {
-                        Throwable cause = e.getCause();
-                        if (cause == null || !(cause instanceof SocketException)) {
-                            throw e;
-                        }
-                        if (retries >= _retries) {
-                            throw e;
-                        }
-                        s_logger.debug("Unable to login...retrying " + retries);
-                    }
-                    try {
-                        Thread.sleep(_interval);
-                    } catch (InterruptedException e) {
-                        s_logger.debug("Man....I was just getting comfortable there....who woke me up?");
-                    }
-                }
-            } else {
-                int retries = 0;
-                while (retries++ < _retries) {
-                    try {
-                        return super.dispatch(methodCall, methodParams);
-                    } catch (Types.SessionInvalid e) {
-                        s_logger.debug("Session is invalid for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
-                        if (retries >= _retries) {
-                            removeConnect(_poolUuid);
-                            throw e;
-                        }
-                        loginWithPassword(this, _username, _password, APIVersion.latest().toString());
-                        methodParams[0] = getSessionReference();
-                    } catch (XmlRpcClientException e) {
-                        s_logger.debug("XmlRpcClientException for method: " + methodCall + " due to " + e.getMessage());
-                        removeConnect(_poolUuid);
-                        throw e;
-                    } catch (XmlRpcException e) {
-                        s_logger.debug("XmlRpcException for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
-                        if (retries >= _retries) {
-                            removeConnect(_poolUuid);
-                            throw e;
-                        }
-                        Throwable cause = e.getCause();
-                        if (cause == null || !(cause instanceof SocketException)) {
-                            removeConnect(_poolUuid);
-                            throw e;
-                        }
-                    } catch (Types.HostIsSlave e) {
-                        s_logger.debug("HostIsSlave Exception for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
-                        removeConnect(_poolUuid);
-                        throw e;
-                    }
-                    try {
-                        Thread.sleep(_interval);
-                    } catch (InterruptedException e) {
-                        s_logger.info("Who woke me from my slumber?");
-                    }
-                }
-                assert false : "We should never get here";
+            try {
+                return super.dispatch(methodcall, methodparams);
+            } catch (Types.SessionInvalid e) {
+                s_logger.debug("Session is invalid for method: " + methodcall + " due to " + e.toString());
                 removeConnect(_poolUuid);
+                throw e;
+            } catch (XmlRpcClientException e) {
+                s_logger.debug("XmlRpcClientException for method: " + methodcall + " due to " + e.toString());
+                removeConnect(_poolUuid);
+                throw e;
+            } catch (XmlRpcException e) {
+                s_logger.debug("XmlRpcException for method: " + methodcall + " due to " + e.toString());
+                removeConnect(_poolUuid);
+                throw e;
+            } catch (Types.HostIsSlave e) {
+                 s_logger.debug("HostIsSlave Exception for method: " + methodcall + " due to " + e.toString());
+                 removeConnect(_poolUuid);
+                 throw e;
             }
-            throw new CloudRuntimeException("After " + _retries + " retries, we cannot contact the host ");
         }
-
     }
 
     public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
