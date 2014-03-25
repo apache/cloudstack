@@ -31,8 +31,10 @@ public class MessageDetector implements MessageSubscriber {
     }
 
     public boolean waitAny(long timeoutInMiliseconds) {
-        _signalled = false;
         synchronized (this) {
+            if (_signalled)
+                return true;
+
             try {
                 wait(timeoutInMiliseconds);
             } catch (InterruptedException e) {

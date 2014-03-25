@@ -445,9 +445,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     CallContext.registerPlaceHolderContext();
 
                 if (job.getRelated() != null && !job.getRelated().isEmpty())
-                    NDC.push("Job-" + job.getRelated() + "/" + "Job-" + job.getId());
+                    NDC.push("job-" + job.getRelated() + "/" + "job-" + job.getId());
                 else
-                    NDC.push("Job-" + job.getId());
+                    NDC.push("job-" + job.getId());
                 try {
                     super.run();
                 } finally {
@@ -560,17 +560,41 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setSyncSource(item);
 
-            job.setExecutingMsid(getMsid());
-            _jobDao.update(job.getId(), job);
+            //
+            // TODO: a temporary solution to work-around DB deadlock situation
+            //
+            // to live with DB deadlocks, we will give a chance for job to be rescheduled
+            // in case of exceptions (most-likely DB deadlock exceptions)
+            try {
+                job.setExecutingMsid(getMsid());
+                _jobDao.update(job.getId(), job);
+            } catch (Exception e) {
+                s_logger.warn("Unexpected exception while dispatching job-" + item.getContentId(), e);
+
+                try {
+                    _queueMgr.returnItem(item.getId());
+                } catch (Throwable thr) {
+                    s_logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", thr);
+                }
+            }
 
             try {
                 scheduleExecution(job);
             } catch (RejectedExecutionException e) {
                 s_logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
-                _queueMgr.returnItem(item.getId());
 
-                job.setExecutingMsid(null);
-                _jobDao.update(job.getId(), job);
+                try {
+                    _queueMgr.returnItem(item.getId());
+                } catch (Exception e2) {
+                    s_logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", e2);
+                }
+
+                try {
+                    job.setExecutingMsid(null);
+                    _jobDao.update(job.getId(), job);
+                } catch (Exception e3) {
+                    s_logger.warn("Unexpected exception while update job-" + item.getContentId() + " msid for bookkeeping");
+                }
             }
 
         } else {
