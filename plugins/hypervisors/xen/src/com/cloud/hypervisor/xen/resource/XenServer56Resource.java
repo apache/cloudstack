@@ -28,6 +28,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.ssh.SSHCmdHelper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
@@ -208,15 +209,37 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
     }
 
+    protected Boolean check_heartbeat(String hostuuid) {
+        com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.ip, 22);
+        try {
+            sshConnection.connect(null, 60000, 60000);
+            if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
+                throw new CloudRuntimeException("Unable to authenticate");
+            }
+
+            String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " "
+                          + Integer.toString(_heartbeatInterval * 2);
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, shcmd)) {
+                s_logger.debug("Heart beat is gone so dead.");
+                return false;
+            }
+            s_logger.debug("Heart beat is still going");
+            return true;
+        }  catch (Exception e) {
+            s_logger.debug("health check failed due to catch exception " + e.toString());
+            return null;
+        } finally {
+            sshConnection.close();
+        }
+    }
+
     protected FenceAnswer execute(FenceCommand cmd) {
         Connection conn = getConnection();
         try {
-            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHostGuid(), "interval", Integer.toString(_heartbeatInterval * 2));
-            if (!result.contains("> DEAD <")) {
+            if (check_heartbeat(cmd.getHostGuid())) {
                 s_logger.debug("Heart beat is still going so unable to fence");
                 return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
             }
-
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
             for (VM vm : vms) {
                 synchronized (_cluster.intern()) {
@@ -235,6 +258,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
+
 
     @Override
     protected boolean transferManagementNetwork(Connection conn, Host host, PIF src, PIF.Record spr, PIF dest) throws XmlRpcException, XenAPIException {
@@ -269,32 +293,28 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     public StartupCommand[] initialize() {
-        pingXenServer();
+        pingXAPI();
         StartupCommand[] cmds = super.initialize();
         return cmds;
     }
 
+
     @Override
     protected CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
-        try {
-            Connection conn = getConnection();
-            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHost().getGuid(), "interval", Integer.toString(_heartbeatInterval * 2));
-            if (result == null) {
-                return new CheckOnHostAnswer(cmd, "Unable to call plugin");
-            }
-            if (result.contains("> DEAD <")) {
-                s_logger.debug("Heart beat is gone so dead.");
-                return new CheckOnHostAnswer(cmd, false, "Heart Beat is done");
-            } else if (result.contains("> ALIVE <")) {
-                s_logger.debug("Heart beat is still going");
-                return new CheckOnHostAnswer(cmd, true, "Heartbeat is still going");
-            }
-            return new CheckOnHostAnswer(cmd, null, "Unable to determine");
-        } catch (Exception e) {
-            s_logger.warn("Unable to fence", e);
-            return new CheckOnHostAnswer(cmd, e.getMessage());
+        Boolean alive = check_heartbeat(cmd.getHost().getGuid());
+        String msg = "";
+        if (alive == null) {
+                msg = " cannot determine ";
+        } else if ( alive == true) {
+                msg = "Heart beat is still going";
+        } else {
+                msg = "Heart beat is gone so dead.";
         }
+        s_logger.debug(msg);
+        return new CheckOnHostAnswer(cmd, alive, msg);
+
     }
+
 
     public XenServer56Resource() {
         super();
