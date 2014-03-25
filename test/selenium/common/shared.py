@@ -42,7 +42,7 @@ def try_except_decor(func):
             print repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
         except TimeoutException as err:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            print "Element error. Function: {0}, error: {1}".format(func.func_code, err)
+            print "Timeout error. Function: {0}, error: {1}".format(func.func_code, err)
             print repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
 
     return try_except
@@ -53,8 +53,6 @@ class Shared(object):
     @try_except_decor
     def option_selection(browser, element_type, element_name, option_text, wait_element_type = '', wait_element_name = ''):
 
-        import pdb
-        pdb.set_trace()
         ret = False
         Shared.wait_for_element(browser, element_type, element_name)
         if element_type == 'id':

@@ -20,12 +20,13 @@ from selenium.common.exceptions import *
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
 from selenium.webdriver.common.action_chains import ActionChains as action
 from common import Global_Locators
+from cspages.cspage import CloudStackPage
 
 from common.shared import *
 
 import pdb
 
-class LoginPage(object):
+class LoginPage(CloudStackPage):
     def __init__(self, browser):
         self.browser = browser
         self.username = ""
@@ -76,11 +77,9 @@ class LoginPage(object):
     @try_except_decor
     def logout(self, directly_logout = False):
 
-#       self.browser.set_window_size(1200,980)
         Shared.wait_for_element(self.browser, 'id', 'user')
 
         # must click this icon options first
-#       pdb.set_trace()
         if directly_logout == False:
             try:
                 ele = self.browser.find_element_by_xpath("//div[@id='user-options' and @style='display: block;']")
@@ -88,10 +87,8 @@ class LoginPage(object):
                     ele1 = self.browser.find_element_by_xpath("//div[@id='user' and @class='button']/div[@class='icon options']/div[@class='icon arrow']").click()
             except NoSuchElementException as err:
                 ele1 = self.browser.find_element_by_xpath("//div[@id='user' and @class='button']/div[@class='icon options']/div[@class='icon arrow']").click()
+        time.sleep(1)
 
-        # this is for cs 4.2.0-2
-#       ele2 = self.browser.find_element_by_xpath("//div[@id='header']/div[@id='user-options']")
-        # this is for cs 4.4.0
         ele2 = self.browser.find_element_by_xpath("//div[@id='user' and @class='button']/div[@id='user-options']/a[1]").click()
 
         Shared.wait_for_element(self.browser, 'class_name', 'login')

@@ -22,9 +22,8 @@ smokecfg = {
             'browser':         'Firefox',
 #           'window position': '10, 10',        # upper left coordinates
 #           'window size':     '2000, 1500',
-#           'cssite':          'http://127.0.0.1:8080/client/',
-#           'cssite':          'http://10.88.91.68:8080/client/',
-            'cssite':          'http://192.168.1.31:8080/client/',
+            'cssite':          'http://127.0.0.1:8080/client/',
+#           'cssite':          'http://192.168.1.31:8080/client/',
             'username':        'admin',
             'password':        'password',
             'badusername':     'badname',
@@ -35,6 +34,30 @@ smokecfg = {
             'sqlinjection_4':  '\'; drop table user--\'',
             'sqlinjection_5':  '\'OR\' \'=\'',
             'language':        'English',
-           }
 
+            # add a new user account
+            'new user account':{'username':   'JohnD',
+                                'password':   'password',
+                                'email':      'johndoe@aol.com',
+                                'firstname':  'John',
+                                'lastname':   'Doe',
+                                'domain':     'ROOT',
+                                'type':       'User',                   # either 'User' or 'Admin'
+                                'timezone':   'US/Eastern [Eastern Standard Time]',
+                               },
+            # add a new user under JohnD
+            'account':         {'username':   'JohnD',
+                                'domain':     'ROOT',
+                                'type':       'User',
+                               },
+            # add a new user
+            'new user':        {'username':   'JaneD',
+                                'password':   'password',
+                                'email':      'janedoe@aol.com',
+                                'firstname':  'Jane',
+                                'lastname':   'Doe',
+                                'timezone':   'US/Eastern [Eastern Standard Time]',
+                               },
+
+           }
 

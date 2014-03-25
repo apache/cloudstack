@@ -20,10 +20,11 @@ from selenium.common.exceptions import *
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
 from selenium.webdriver.common.action_chains import ActionChains as action
 from common import Global_Locators
+from cspages.cspage import CloudStackPage
 
 from common.shared import *
 
-class DashboardPage(object):
+class DashboardPage(CloudStackPage):
 
     def __init__(self, browser):
         self.browser = browser
