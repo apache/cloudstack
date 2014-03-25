@@ -18,16 +18,20 @@
  */
 package org.apache.cloudstack.storage.image.datastore;
 
+import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.Ternary;
 
 public interface ImageStoreEntity extends DataStore, ImageStore {
     TemplateInfo getTemplate(long templateId);
@@ -43,4 +47,8 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
     String getMountPoint(); // get the mount point on ssvm.
 
     String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject);  // get the entity download URL
+
+    List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj);
+
+    Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback);
 }

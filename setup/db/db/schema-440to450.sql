@@ -223,3 +223,5 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
+
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `parent_template_id` bigint(20) unsigned DEFAULT NULL COMMENT 'If datadisk template, then id of the root template this template belongs to';

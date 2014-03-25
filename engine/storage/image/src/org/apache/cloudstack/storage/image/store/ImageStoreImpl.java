@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.image.store;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
@@ -35,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -47,6 +50,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 
 public class ImageStoreImpl implements ImageStoreEntity {
@@ -203,4 +207,14 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return driver.createEntityExtractUrl(this, installPath, format, dataObject);
     }
 
+    @Override
+    public List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj) {
+        return driver.getDatadiskTemplates(obj);
+    }
+
+    @Override
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback) {
+        return driver.createDataDiskTemplateAsync(dataDiskTemplate, path, fileSize, callback);
+
+    }
 }

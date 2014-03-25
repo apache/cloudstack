@@ -27,7 +27,9 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 
 public interface VmwareStorageManager {
@@ -48,6 +50,10 @@ public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd);
 
     Answer execute(VmwareHostService hostService, RevertToVMSnapshotCommand cmd);
+
+    Answer execute(VmwareHostService hostService, CreateDatadiskTemplateCommand cmd);
+
+    Answer execute(VmwareHostService hostService, GetDatadisksCommand cmd);
 
     boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
 

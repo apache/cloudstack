@@ -85,7 +85,6 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
 import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
@@ -104,7 +103,6 @@ public class HypervisorHostHelper {
 
     // make vmware-base loosely coupled with cloud-specific stuff, duplicate VLAN.UNTAGGED constant here
     private static final String UNTAGGED_VLAN_NAME = "untagged";
-    private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
@@ -140,6 +138,10 @@ public class HypervisorHostHelper {
             morDs = hyperHost.findDatastore(uuidName);
 
         return morDs;
+    }
+
+    public static String getSecondaryDatastoreUUID(String storeUrl) {
+        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
     }
 
     public static DatastoreMO getHyperHostDatastoreMO(VmwareHypervisorHost hyperHost, String datastoreName) throws Exception {
@@ -1188,10 +1190,13 @@ public class HypervisorHostHelper {
         return false;
     }
 
-    public static List<Ternary<String, Long, Boolean>> readOVF(VmwareHypervisorHost host, String ovfFilePath, DatastoreMO dsMo, ManagedObjectReference morRp,
-            ManagedObjectReference morHost) throws Exception {
+    public static List<Pair<String, Boolean>> readOVF(VmwareHypervisorHost host, String ovfFilePath, DatastoreMO dsMo) throws Exception {
+        List<Pair<String, Boolean>> ovfVolumeInfos = new ArrayList<Pair<String, Boolean>>();
+        List<String> files = new ArrayList<String>();
 
+        ManagedObjectReference morRp = host.getHyperHostOwnerResourcePool();
         assert (morRp != null);
+        ManagedObjectReference morHost = host.getMor();
 
         String importEntityName = UUID.randomUUID().toString();
         OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();
@@ -1211,7 +1216,7 @@ public class HypervisorHostHelper {
             throw new Exception(msg);
         }
 
-        if(!ovfImportResult.getError().isEmpty()) {
+        if (!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
                 s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
             }
@@ -1224,8 +1229,7 @@ public class HypervisorHostHelper {
             }
         }
 
-        VirtualMachineImportSpec importSpec = new VirtualMachineImportSpec();
-        importSpec = (VirtualMachineImportSpec)ovfImportResult.getImportSpec();
+        VirtualMachineImportSpec importSpec = (VirtualMachineImportSpec)ovfImportResult.getImportSpec();
         if (importSpec == null) {
             String msg = "createImportSpec() failed to create import specification for OVF template at " + ovfFilePath;
             s_logger.error(msg);
@@ -1233,15 +1237,8 @@ public class HypervisorHostHelper {
         }
 
         File ovfFile = new File(ovfFilePath);
-        int diskCount = 0;
-        long sizeKb = 0;
-        List<Ternary<String, Long, Boolean>> ovfVolumeInfos = new ArrayList<Ternary<String, Long, Boolean>>();
-        Ternary<String, Long, Boolean> ovfVolumeInfo = null;
-        List<String> files = new ArrayList<String>();
-        String absFile = null;
-
         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
-            absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
+            String absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
             files.add(absFile);
         }
 
@@ -1256,19 +1253,21 @@ public class HypervisorHostHelper {
             }
         }
 
-        Boolean osDisk = true;
+        int diskCount = 0;
+        int deviceCount = 0;
         List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
         for (VirtualDeviceConfigSpec deviceSpec : deviceConfigList) {
+            Boolean osDisk = false;
             VirtualDevice device = deviceSpec.getDevice();
             if (device instanceof VirtualDisk) {
-                sizeKb = ((VirtualDisk)device).getCapacityInKB();
-                if (diskCount == osDiskSeqNumber) {
+                if ((osDiskSeqNumber == 0 && diskCount == 0) || osDiskSeqNumber == deviceCount) {
                     osDisk = true;
                 }
-                diskCount++;
-                ovfVolumeInfo = new Ternary<String, Long, Boolean>(files.get(diskCount), sizeKb, osDisk);
+                Pair<String, Boolean> ovfVolumeInfo = new Pair<String, Boolean>(files.get(diskCount), osDisk);
                 ovfVolumeInfos.add(ovfVolumeInfo);
+                diskCount++;
             }
+            deviceCount++;
         }
         return ovfVolumeInfos;
     }
@@ -1338,46 +1337,48 @@ public class HypervisorHostHelper {
         return paramVal;
     }
 
-    public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String dir, long size, ManagedObjectReference morDs) throws Exception {
+    public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String datastorePath, String templatePath, long diskCapacity, long fileSize,
+            ManagedObjectReference morDs) throws Exception {
         VmwareContext context = host.getContext();
+        ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
         VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
         if (workerVmMo == null)
             throw new Exception("Unable to find just-created worker VM");
 
-        String[] disks = {dir + File.separator + diskFileName};
-        boolean bSuccess = false;
+        String[] disks = {datastorePath + File.separator + diskFileName};
         try {
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-            VirtualDisk device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
-            device.setCapacityInKB(size);
-
+            // Reconfigure worker VM with datadisk
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
             deviceConfigSpec.setDevice(device);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
             workerVmMo.configureVm(vmConfigSpec);
+
+            // Write OVF descriptor file
+            OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
             String deviceId = File.separator + workerVmMo.getMor().getValue() + File.separator + "VirtualIDEController0:0";
-            bSuccess = true;
             OvfFile ovfFile = new OvfFile();
             ovfFile.setPath(diskFileName);
             ovfFile.setDeviceId(deviceId);
-            ovfFile.setSize(size);
-            // write OVF descriptor file
-            OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
+            ovfFile.setSize(fileSize);
+            ovfFile.setCapacity(diskCapacity);
             ovfDescParams.getOvfFiles().add(ovfFile);
-            ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
             OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
 
-            String ovfPath = dir + File.separator + ovfName + ".ovf";
-            FileWriter out = new FileWriter(ovfPath);
-            out.write(ovfCreateDescriptorResult.getOvfDescriptor());
-            out.close();
-        } finally {
-            if (!bSuccess) {
-                workerVmMo.detachAllDisks();
-                workerVmMo.destroy();
+            String ovfPath = templatePath + File.separator + ovfName + ".ovf";
+            try {
+                FileWriter out = new FileWriter(ovfPath);
+                out.write(ovfCreateDescriptorResult.getOvfDescriptor());
+                out.close();
+            } catch (Exception e) {
+                throw e;
             }
+        } finally {
+            workerVmMo.detachAllDisks();
+            workerVmMo.destroy();
         }
     }
 

@@ -91,6 +91,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -134,6 +135,8 @@ public class TemplateServiceImpl implements TemplateService {
     ConfigurationDao _configDao;
     @Inject
     StorageCacheManager _cacheMgr;
+    @Inject
+    TemplateDataFactory imageFactory;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -886,5 +889,75 @@ public class TemplateServiceImpl implements TemplateService {
                 _vmTemplateStoreDao.persist(tmpltStore);
             }
         }
+    }
+
+    @Override
+    public List<Ternary<String, Long, Long>> getDatadiskTemplates(TemplateInfo template) {
+        List<Ternary<String, Long, Long>> dataDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
+        ImageStoreEntity tmpltStore = (ImageStoreEntity)template.getDataStore();
+        dataDiskDetails = tmpltStore.getDatadiskTemplates(template);
+        return dataDiskDetails;
+    }
+
+    private class CreateDataDiskTemplateContext<T> extends AsyncRpcContext<T> {
+        private final DataObject dataDiskTemplate;
+        private final AsyncCallFuture<TemplateApiResult> future;
+
+        public CreateDataDiskTemplateContext(AsyncCompletionCallback<T> callback, DataObject dataDiskTemplate, AsyncCallFuture<TemplateApiResult> future) {
+            super(callback);
+            this.dataDiskTemplate = dataDiskTemplate;
+            this.future = future;
+        }
+
+        public AsyncCallFuture<TemplateApiResult> getFuture() {
+            return this.future;
+        }
+    }
+
+    @Override
+    public AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, long fileSize) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        // Make an entry for Datadisk template in template_store_ref table
+        DataStore store = parentTemplate.getDataStore();
+        TemplateObject dataDiskTemplateOnStore = (TemplateObject)store.create(dataDiskTemplate);
+        dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+        try {
+            CreateDataDiskTemplateContext<TemplateApiResult> context = new CreateDataDiskTemplateContext<TemplateApiResult>(null, dataDiskTemplateOnStore, future);
+            AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createDataDiskTemplateCallback(null, null)).setContext(context);
+            ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
+            tmpltStore.createDataDiskTemplateAsync(dataDiskTemplate, path, fileSize, caller);
+        } catch (CloudRuntimeException ex) {
+            dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            TemplateApiResult result = new TemplateApiResult(dataDiskTemplate);
+            result.setResult(ex.getMessage());
+            if (future != null) {
+                future.complete(result);
+            }
+        }
+        return future;
+    }
+
+    protected Void createDataDiskTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, CreateDataDiskTemplateContext<TemplateApiResult> context) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Performing create datadisk template cross callback after completion");
+        }
+        DataObject dataDiskTemplate = context.dataDiskTemplate;
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        CreateCmdResult result = callback.getResult();
+        TemplateApiResult dataDiskTemplateResult = new TemplateApiResult((TemplateObject)dataDiskTemplate);
+        try {
+            if (result.isSuccess()) {
+                dataDiskTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+            } else {
+                dataDiskTemplate.processEvent(Event.OperationFailed);
+                dataDiskTemplateResult.setResult(result.getResult());
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to process copy template cross zones callback", e);
+            dataDiskTemplateResult.setResult(e.toString());
+        }
+        future.complete(dataDiskTemplateResult);
+        return null;
     }
 }

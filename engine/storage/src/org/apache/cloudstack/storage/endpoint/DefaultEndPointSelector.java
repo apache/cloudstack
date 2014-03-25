@@ -47,6 +47,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
@@ -66,6 +67,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and"
             + " h.id = s.host_id and s.pool_id = ? ";
     private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
+    private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -346,9 +348,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
-    public EndPoint selectHypervisorHost(Scope scope) {
+    public EndPoint selectHypervisorHostByType(Scope scope, HypervisorType htype) {
         StringBuilder sbuilder = new StringBuilder();
-        sbuilder.append(findOneHypervisorHostInScope);
+        if (htype != null) {
+            sbuilder.append(findOneHypervisorHostInScopeByType);
+        } else {
+            sbuilder.append(findOneHypervisorHostInScope);
+        }
         if (scope.getScopeType() == ScopeType.ZONE) {
             sbuilder.append(" and h.data_center_id = ");
             sbuilder.append(scope.getScopeId());
@@ -366,6 +372,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
         try {
             pstmt = txn.prepareStatement(sql);
+            if (htype != null) {
+                pstmt.setString(1, htype.toString());
+            }
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);

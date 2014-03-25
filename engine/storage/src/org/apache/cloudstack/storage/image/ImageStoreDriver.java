@@ -18,12 +18,22 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import java.util.List;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.Ternary;
 
 public interface ImageStoreDriver extends DataStoreDriver {
     String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject);
+
+    List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj);
+
+    Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback);
 }

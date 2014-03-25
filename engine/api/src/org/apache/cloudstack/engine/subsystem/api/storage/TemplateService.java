@@ -18,12 +18,15 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.Ternary;
 
 public interface TemplateService {
 
@@ -65,4 +68,8 @@ public interface TemplateService {
     void associateTemplateToZone(long templateId, Long zoneId);
 
     void associateCrosszoneTemplatesToZone(long dcId);
+
+    List<Ternary<String, Long, Long>> getDatadiskTemplates(TemplateInfo template);
+
+    AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, long fileSize);
 }

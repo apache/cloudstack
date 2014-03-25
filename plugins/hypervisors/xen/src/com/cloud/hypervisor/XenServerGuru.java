@@ -145,7 +145,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
-                    EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
+                    EndPoint ep = endPointSelector.selectHypervisorHostByType(new ZoneScope(host.getDataCenterId()), null);
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
                     String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);

@@ -100,4 +100,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
     Map getDetails();
 
     boolean isDynamicallyScalable();
+
+    Long getParentTemplateId();
 }

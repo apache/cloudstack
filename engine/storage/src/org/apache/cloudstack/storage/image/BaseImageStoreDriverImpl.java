@@ -20,7 +20,9 @@ package org.apache.cloudstack.storage.image;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -33,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
@@ -43,18 +46,27 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.GetDatadisksAnswer;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Ternary;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
@@ -69,9 +81,17 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     TemplateDataStoreDao _templateStoreDao;
     @Inject
+    VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
     EndPointSelector _epSelector;
     @Inject
-    ConfigurationDao configDao;
+    ConfigurationDao configDao;;
+    @Inject
+    DefaultEndPointSelector _defaultEpSelector;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
     protected String _proxy = null;
 
     protected Proxy getHttpProxy() {
@@ -143,6 +163,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
 
+        VMTemplateVO vmTemplate = _templateDao.findById(obj.getId());
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -182,7 +203,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
                 _templateDao.update(obj.getId(), templateDaoBuilder);
             }
-
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
@@ -270,5 +290,55 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    }
+
+    @Override
+    public List<Ternary<String, Long, Long>> getDatadiskTemplates(DataObject obj) {
+        List<Ternary<String, Long, Long>> dataDiskDetails = new ArrayList<Ternary<String, Long, Long>>();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Get the data disks present in the OVA template");
+        }
+        DataStore store = obj.getDataStore();
+        GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO());
+        EndPoint ep = _defaultEpSelector.selectHypervisorHostByType(store.getScope(), HypervisorType.VMware);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+        if (answer != null && answer.getResult()) {
+            GetDatadisksAnswer getDatadisksAnswer = (GetDatadisksAnswer)answer;
+            dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size
+        }
+        return dataDiskDetails;
+    }
+
+    @Override
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, long fileSize,
+            AsyncCompletionCallback<CreateCmdResult> callback) {
+        Answer answer = null;
+        String errMsg = null;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
+        }
+        CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, fileSize);
+        EndPoint ep = _defaultEpSelector.selectHypervisorHostByType(dataDiskTemplate.getDataStore().getScope(), HypervisorType.VMware);
+        if (ep == null) {
+            errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+        if (answer != null && !answer.getResult()) {
+            errMsg = answer.getDetails();
+        }
+        CreateCmdResult result = new CreateCmdResult(null, answer);
+        result.setResult(errMsg);
+        callback.complete(result);
+        return null;
     }
 }

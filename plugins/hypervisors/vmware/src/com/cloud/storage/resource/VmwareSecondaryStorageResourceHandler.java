@@ -33,7 +33,9 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
@@ -98,6 +100,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof CreateEntityDownloadURLCommand) {
                 answer = execute((CreateEntityDownloadURLCommand)cmd);
+            } else if (cmd instanceof CreateDatadiskTemplateCommand) {
+                answer = execute((CreateDatadiskTemplateCommand)cmd);
+            } else if (cmd instanceof GetDatadisksCommand) {
+                answer = execute((GetDatadisksCommand)cmd);
             } else {
                 answer = _resource.defaultAction(cmd);
             }
@@ -171,6 +177,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             s_logger.debug("Executing resource CreateVolumeFromSnapshotCommand: " + _gson.toJson(cmd));
         }
 
+        return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(CreateDatadiskTemplateCommand cmd) {
+        return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(GetDatadisksCommand cmd) {
         return _storageMgr.execute(this, cmd);
     }
 

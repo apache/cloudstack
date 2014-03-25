@@ -680,6 +680,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
+        // Verify template is not Datadisk template
+        if (template.getTemplateType().equals(TemplateType.DATADISK)) {
+            throw new InvalidParameterValueException("Template " + template.getId() + " is of type Datadisk. Cannot copy Datadisk templates.");
+        }
+
         DataStore srcSecStore = null;
         if (sourceZoneId != null) {
             // template is on zone-wide secondary storage

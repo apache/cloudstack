@@ -19,6 +19,7 @@ package com.cloud.template;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -72,9 +74,13 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = TemplateAdapter.class)
@@ -95,6 +101,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     TemplateManager templateMgr;
     @Inject
     AlertManager alertMgr;
+    @Inject
+    TemplateDataStoreDao _tmplStoreDao;
     @Inject
     VMTemplateZoneDao templateZoneDao;
     @Inject
@@ -290,6 +298,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
+            // Check if OVA contains additional data disks. If yes, create Datadisk templates for each of the additional datadisk present in the OVA
+            if (template.getFormat().equals(ImageFormat.OVA)) {
+                createDataDiskTemplates(template);
+            }
             // need to grant permission for public templates
             if (tmplt.isPublicTemplate()) {
                 _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
@@ -329,6 +341,60 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
 
         return null;
+    }
+
+    private void createDataDiskTemplates(TemplateInfo parentTemplate) {
+        TemplateApiResult result = null;
+        VMTemplateVO template = _tmpltDao.findById(parentTemplate.getId());
+        DataStore imageStore = parentTemplate.getDataStore();
+        List<Ternary<String, Long, Long>> dataDiskTemplates = imageService.getDatadiskTemplates(parentTemplate);
+        s_logger.error("Found " + dataDiskTemplates.size() + " Datadisk templates for template: " + parentTemplate.getId());
+        int diskCount = 1;
+        for (Ternary<String, Long, Long> dataDiskTemplate : dataDiskTemplates) {
+            // Make an entry in vm_template table
+            final long templateId = _templateDao.getNextInSequence(Long.class, "id");
+            VMTemplateVO templateVO = new VMTemplateVO(templateId, template.getName() + "-DataDiskTemplate-" + diskCount, template.getFormat(), false, false, false,
+                    TemplateType.DATADISK, template.getUrl(), template.requiresHvm(), template.getBits(), template.getAccountId(), null,
+                    template.getDisplayText() + "-DataDiskTemplate", false, 0, false, template.getHypervisorType(), null, null, false, false);
+            templateVO.setParentTemplateId(template.getId());
+            templateVO.setSize(dataDiskTemplate.second());
+            templateVO = _templateDao.persist(templateVO);
+            // Make sync call to create Datadisk templates in image store
+            TemplateInfo dataDiskTemplateInfo = imageFactory.getTemplate(templateVO.getId(), imageStore);
+            AsyncCallFuture<TemplateApiResult> future = imageService.createDatadiskTemplateAsync(parentTemplate, dataDiskTemplateInfo, dataDiskTemplate.first(),
+                    dataDiskTemplate.third());
+            try {
+                result = future.get();
+                if (result.isSuccess()) {
+                    // Make an entry in template_zone_ref table
+                    if (imageStore.getScope().getScopeType() == ScopeType.REGION) {
+                        imageService.associateTemplateToZone(templateId, null);
+                    } else if (imageStore.getScope().getScopeType() == ScopeType.ZONE) {
+                        Long zoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
+                        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                        _tmpltZoneDao.persist(templateZone);
+                    }
+                    _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
+                } else {
+                    // Cleanup Datadisk template enries in case of failure
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            _tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
+                            _tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
+                            _tmpltDao.expunge(templateId);
+                        }
+                    });
+                    // Continue to create the remaining Datadisk templates even if creation of 1 Datadisk template failes
+                    s_logger.error("Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
+                    continue;
+                }
+            } catch (Exception e) {
+                s_logger.error("Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
+                continue;
+            }
+            diskCount++;
+        }
     }
 
     @Override
