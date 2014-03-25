@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
@@ -97,6 +98,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
@@ -173,7 +175,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     FirewallRulesDao _firewallDao;
     @Inject
     DomainManager _domainMgr;
-
+    @Inject
+    AccountManager _accountMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
@@ -1563,6 +1566,27 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
                     owner.getDomainId());
             }
+        }
+    }
+
+    @Override
+    public void checkNetworkPermissions(Account owner, Network network, AccessType accessType) {
+        if (network == null) {
+            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
+        }
+
+        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+        if (networkOwner == null) {
+            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
+                    + ", network does not have an owner");
+        }
+        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
+                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
+                        + ", permission denied");
+            }
+        } else {
+            _accountMgr.checkAccess(owner, accessType, true, network);
         }
     }
 

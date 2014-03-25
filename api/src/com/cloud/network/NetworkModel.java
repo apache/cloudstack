@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -273,4 +275,6 @@ public interface NetworkModel {
     boolean isNetworkReadyForGc(long networkId);
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
+
+    void checkNetworkPermissions(Account owner, Network network, AccessType accessType);
 }

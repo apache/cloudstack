@@ -363,10 +363,10 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         Boolean isRecursive = (Boolean) params.get(ApiConstants.SUBDOMAIN_ACCESS);
 
         if (entityType == Network.class) {
-            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType.toString(),
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide network", entityType.getSimpleName(),
                     entityId, "listNetworks", AccessType.UseEntry, domainId, isRecursive);
         } else if (entityType == AffinityGroup.class) {
-            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide affinityGroup", entityType.toString(),
+            createPolicyAndAddToDomainGroup("DomainWideNetwork-" + entityId, "domain wide affinityGroup", entityType.getSimpleName(),
                     entityId, "listAffinityGroups", AccessType.UseEntry, domainId, isRecursive);
         }
 

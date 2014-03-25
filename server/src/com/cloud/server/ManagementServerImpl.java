@@ -2756,6 +2756,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListIpForwardingRulesCmd.class);
         cmdList.add(CreateNetworkACLCmd.class);
         cmdList.add(CreateNetworkCmd.class);
+        cmdList.add(CreateNetworkCmdByAdmin.class);
         cmdList.add(DeleteNetworkACLCmd.class);
         cmdList.add(DeleteNetworkCmd.class);
         cmdList.add(ListNetworkACLsCmd.class);
