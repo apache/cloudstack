@@ -427,6 +427,11 @@
       <artifactId>javax.inject</artifactId>
       <version>1</version>
     </dependency>
+    <dependency>
+      <groupId>com.kpelykh</groupId>
+      <artifactId>docker-java</artifactId>
+      <version>0.8.2-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <build>
