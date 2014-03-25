@@ -16,6 +16,19 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.network.VirtualNetworkApplianceService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
@@ -567,7 +580,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        return new GetDomRVersionAnswer(cmd, null, null, null);
+        String template_version = "CloudStack Release "+ VirtualNetworkApplianceService._minVRVersion.toString();
+        return new GetDomRVersionAnswer(cmd, null, template_version, UUID.randomUUID().toString());
     }
 
     @Override
