@@ -160,7 +160,7 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:is-ovs-tun-network=False"])
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:is-ovs_vpc_distributed_vr_network=True"])
+                   "other-config:is-ovs-vpc-distributed-vr-network=True"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
@@ -302,7 +302,7 @@ def create_tunnel(session, args):
         ovs_vpc_distributed_vr_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
                            "uuid=%s" % xs_nw_uuid,
                            "param-name=other-config",
-                           "param-key=is-ovs_vpc_distributed_vr_network", "--minimal"])
+                           "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
         if ovs_tunnel_network == 'True':
             # add flow entryies for dropping broadcast coming in from gre tunnel
             lib.add_flow(bridge, priority=1000, in_port=tun_ofport,

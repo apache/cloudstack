@@ -102,7 +102,7 @@ def main(command, vif_raw):
         ovs_vpc_distributed_vr_network = pluginlib.do_cmd([pluginlib.XE_PATH,"network-param-get",
 						       "uuid=%s" % xs_nw_uuid,
 						       "param-name=other-config",
-						       "param-key=is-ovs_vpc_distributed_vr_network", "--minimal"])
+						       "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
     except:
         pass
 
@@ -157,7 +157,7 @@ def main(command, vif_raw):
 
             if port.startswith('t'):
                 # check tunnel port is in same network as that of plugged vif
-                if vif_network_id != pluginlib.get_network_id_for_tunnel_port(port):
+                if vif_network_id != pluginlib.get_network_id_for_tunnel_port(port)[1:-1]:
                     continue
                 vnet_tunnelif_ofports.append(if_ofport)
                 vnet_all_ofports.append(if_ofport)
