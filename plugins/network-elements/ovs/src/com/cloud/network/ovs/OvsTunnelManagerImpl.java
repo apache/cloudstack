@@ -557,6 +557,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         boolean bridgeNotSetup = true;
 
         for (Network vpcNetwork: vpcNetworks) {
+            if (vpcNetwork.getState() != Network.State.Implemented &&
+                    vpcNetwork.getState() != Network.State.Implementing && vpcNetwork.getState() != Network.State.Setup)
+                continue;
             int key = getGreKey(vpcNetwork);
             List<Long> toHostIds = new ArrayList<Long>();
             List<Long> fromHostIds = new ArrayList<Long>();
@@ -670,19 +673,10 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
 
         if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
-            }
             handleVmStateChange((VMInstanceVO)vm);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
-            }
             handleVmStateChange((VMInstanceVO)vm);
         } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
-            }
             handleVmStateChange((VMInstanceVO)vm);
         }
 
