@@ -187,7 +187,7 @@ class TestPublicIP(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate public IP address for admin account"""
 
@@ -237,7 +237,7 @@ class TestPublicIP(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_public_ip_user_account(self):
         """Test for Associate/Disassociate public IP address for user account"""
 
@@ -347,7 +347,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
     def test_01_port_fwd_on_src_nat(self):
         """Test for port forwarding on source NAT"""
 
@@ -470,7 +470,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
     def test_02_port_fwd_on_non_src_nat(self):
         """Test for port forwarding on non source NAT"""
 
@@ -680,7 +680,7 @@ class TestRebootRouter(cloudstackTestCase):
                         ]
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
     def test_reboot_router(self):
         """Test for reboot router"""
 
@@ -835,7 +835,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_releaseIP(self):
         """Test for release public IP address"""
 
@@ -960,7 +960,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_delete_account(self):
         """Test for delete account"""
 

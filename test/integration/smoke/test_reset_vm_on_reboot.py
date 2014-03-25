@@ -146,8 +146,9 @@ class TestResetVmOnReboot(cloudstackTestCase):
         return
 
     @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic", "selfservice"])
     def test_01_reset_vm_on_reboot(self):
+    #TODO: SIMENH: add new test to check volume contents
         """Test reset virtual machine on reboot
         """
         # Validate the following

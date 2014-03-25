@@ -280,7 +280,7 @@ class TestVMIam(cloudstackTestCase):
 
     
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_01_list_own_vm(self):
         #  listVM command should return owne's VM
 
@@ -357,7 +357,7 @@ class TestVMIam(cloudstackTestCase):
                 
         return
         
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_02_grant_domain_vm(self):
  
         # Validate the following
@@ -406,7 +406,7 @@ class TestVMIam(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_03_grant_account_vm(self):
  
         # Validate the following
@@ -459,7 +459,7 @@ class TestVMIam(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_04_revoke_account_vm(self):
  
         # Validate the following
@@ -502,7 +502,7 @@ class TestVMIam(cloudstackTestCase):
         return
     
     
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_05_revoke_domain_vm(self):
  
         # Validate the following
@@ -543,7 +543,7 @@ class TestVMIam(cloudstackTestCase):
          
         return    
     
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_06_grant_resource_vm(self):
  
         # Validate the following
@@ -590,7 +590,7 @@ class TestVMIam(cloudstackTestCase):
                 
         return    
     
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_07_revoke_resource_vm(self):
  
         # Validate the following
@@ -632,7 +632,7 @@ class TestVMIam(cloudstackTestCase):
         return      
     
     
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_08_policy_attach_account(self):
  
         # Validate the following
@@ -680,7 +680,7 @@ class TestVMIam(cloudstackTestCase):
                 
         return     
     
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_09_policy_detach_account(self):
  
         # Validate the following

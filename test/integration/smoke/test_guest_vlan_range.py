@@ -99,12 +99,13 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release"])
+    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release", "selfservice"])
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """
 
         """Assume a physical network is available
+        """
         """
         # Validate the following:
         # 1. List the available physical network using ListPhysicalNetwork
@@ -114,7 +115,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         # 5. Release the dedicated guest vlan range back to the system
         # 6. Verify guest vlan range has been released, verify with listDedicatedGuestVlanRanges
         # 7. Remove the added guest vlan range using UpdatePhysicalNetwork
-
+        """
         self.debug("Adding guest vlan range")
 
 

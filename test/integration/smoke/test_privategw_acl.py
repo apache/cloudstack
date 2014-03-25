@@ -39,8 +39,9 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.privateGwId = None
 
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_privategw_acl(self):
+        #TODO: SIMENH: add a new test to verification of ACL rules
 
         # 1) Create VPC
         self.createVPC()

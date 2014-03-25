@@ -98,7 +98,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
 
@@ -197,7 +197,7 @@ class TestDeployVM(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.apiclient.hypervisor)
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0 
         """
@@ -225,7 +225,7 @@ class TestDeployVM(cloudstackTestCase):
         else:
             self.debug("test 01 does not support hypervisor type " + self.apiclient.hypervisor);
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'provisioning'])
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
