@@ -148,13 +148,15 @@
             },
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.name',
+                    truncate: true
                 },
                 instancename: {
                     label: 'label.internal.name'
                 },
                 displayname: {
-                    label: 'label.display.name'
+                    label: 'label.display.name',
+                    truncate: true
                 },
                 zonename: {
                     label: 'label.zone.name'
