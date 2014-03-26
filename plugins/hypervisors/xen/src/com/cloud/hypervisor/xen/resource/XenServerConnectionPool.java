@@ -148,65 +148,6 @@ public class XenServerConnectionPool {
         }
     }
 
-    public boolean joinPool(Connection conn, String hostIp, String masterIp, String username, Queue<String> password) {
-        try {
-            join(conn, masterIp, username, password);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host(" + hostIp + ") Join the pool at " + masterIp);
-            }
-            try {
-                // slave will restart xapi in 10 sec
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-            }
-            for (int i = 0; i < 15; i++) {
-                Connection slaveConn = null;
-                Session slaveSession = null;
-                try {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Logging on as the slave to " + hostIp);
-                    }
-                    slaveConn = new Connection(getURL(hostIp), 10);
-                    slaveSession = slaveLocalLoginWithPassword(slaveConn, username, password);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Slave logon successful. session= " + slaveSession);
-                    }
-                    Pool.Record pr = getPoolRecord(slaveConn);
-                    Host master = pr.master;
-                    String ma = master.getAddress(slaveConn);
-                    if (ma.trim().equals(masterIp.trim())) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Host(" + hostIp + ") Joined the pool at " + masterIp);
-                        }
-                        return true;
-                    }
-                } catch (Exception e) {
-                } finally {
-                    if (slaveSession != null) {
-                        try {
-                            Session.logout(slaveConn);
-                        } catch (Exception e) {
-                        }
-                        slaveConn.dispose();
-                    }
-                }
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                }
-            }
-
-        } catch (Exception e) {
-            String msg = "Catch " + e.getClass().getName() + " Unable to allow host " + hostIp + " to join pool " + masterIp + " due to " + e.toString();
-            s_logger.warn(msg, e);
-        }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Host(" + hostIp + ") unable to Join the pool at " + masterIp);
-        }
-        return false;
-    }
-
-
     public Connection getConnect(String ip, String username, Queue<String> password) {
         Connection conn = new Connection(getURL(ip), 10);
         try {
