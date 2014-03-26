@@ -1412,9 +1412,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
-            Map<String, String> iqnToPath = new HashMap<String, String>();
 
-            HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, iqnToPath, cmd);
+            HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, cmd);
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
                 String msg = "Unable to locate datastore details of the volumes to be attached";
                 s_logger.error(msg);
@@ -1471,9 +1470,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
-                            DataStoreTO primaryStore = vol.getData().getDataStore();
-                            /** @todo Mike T. update this in 4.4 to support root disks on managed storage */
-                            rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+                            Map<String, String> details = vol.getDetails();
+                            boolean managed = false;
+
+                            if (details != null) {
+                                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                            }
+
+                            if (managed) {
+                                String datastoreName = VmwareResource.getDatastoreName(details.get(DiskTO.IQN));
+
+                                rootDiskDataStoreDetails = dataStoresDetails.get(datastoreName);
+                            }
+                            else {
+                                DataStoreTO primaryStore = vol.getData().getDataStore();
+
+                                rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+                            }
                         }
                     }
 
@@ -1759,7 +1772,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMask));
             postNvpConfigBeforeStart(vmMo, vmSpec);
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey);
+
+            Map<String, String> iqnToPath = new HashMap<String, String>();
+
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToPath);
 
             //
             // Power-on VM
@@ -1891,7 +1907,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String datastoreDiskPath;
 
         if (isManaged) {
-            datastoreDiskPath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+            if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
+                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, dsMo.getName());
+            }
+            else {
+                datastoreDiskPath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+            }
         } else {
             datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
         }
@@ -2177,9 +2198,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return controllerKey;
     }
 
-    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey, int scsiControllerKey)
-            throws Exception {
-
+    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
+            int scsiControllerKey, Map<String, String> iqnToPath) throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
@@ -2194,14 +2214,45 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String[] diskChain = diskInfo.getDiskChain();
             assert (diskChain.length > 0);
 
+            Map<String, String> details = vol.getDetails();
+            boolean managed = false;
+
+            if (details != null) {
+                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            }
+
             DatastoreFile file = new DatastoreFile(diskChain[0]);
-            if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
-                if (s_logger.isInfoEnabled())
-                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+
+            if (managed) {
+                DatastoreFile originalFile = new DatastoreFile(volumeTO.getPath());
+
+                if (!file.getFileBaseName().equalsIgnoreCase(originalFile.getFileBaseName())) {
+                    if (s_logger.isInfoEnabled())
+                        s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + diskChain[0]);
+                }
+            }
+            else {
+                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
+                    if (s_logger.isInfoEnabled())
+                        s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+                }
             }
 
             VolumeObjectTO volInSpec = getVolumeInSpec(vmSpec, volumeTO);
-            volInSpec.setPath(file.getFileBaseName());
+
+            if (managed) {
+                String datastoreVolumePath = diskChain[0];
+
+                iqnToPath.put(details.get(DiskTO.IQN), datastoreVolumePath);
+
+                vol.setPath(datastoreVolumePath);
+                volumeTO.setPath(datastoreVolumePath);
+                volInSpec.setPath(datastoreVolumePath);
+            }
+            else {
+                volInSpec.setPath(file.getFileBaseName());
+            }
+
             volInSpec.setChainInfo(_gson.toJson(diskInfo));
         }
     }
@@ -2263,7 +2314,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context,
-            DiskTO[] disks, Map<String, String> iqnToPath, Command cmd) throws Exception {
+            DiskTO[] disks, Command cmd) throws Exception {
         HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> mapIdToMors = new HashMap<String, Pair<ManagedObjectReference, DatastoreMO>>();
 
         assert (hyperHost != null) && (context != null);
@@ -2298,8 +2349,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
                             String datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
-
-                            iqnToPath.put(iScsiName, datastoreVolumePath);
 
                             volumeTO.setPath(datastoreVolumePath);
                             vol.setPath(datastoreVolumePath);
@@ -3462,6 +3511,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         addRemoveInternetScsiTargetsToAllHosts(false, lstManagedTargets, lstHosts);
+
+        rescanAllHosts(lstHosts);
     }
 
     private void addRemoveInternetScsiTargetsToAllHosts(final boolean add, final List<HostInternetScsiHbaStaticTarget> lstTargets,
@@ -4281,7 +4332,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     public Answer execute(DeleteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource DeleteCommand: " + _gson.toJson(cmd));
         }
 
         /*
