@@ -40,7 +40,6 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -730,34 +729,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
-        if (host.getClusterId() != null) {
-            List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(com.cloud.host.Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-            boolean success = true;
-            for (HostVO thost : hosts) {
-                if (thost.getId() == host.getId()) {
-                    continue;
-                }
-
-                long thostId = thost.getId();
-                PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
-                Answer answer = _agentMgr.easySend(thostId, eject);
-                if (answer != null && answer.getResult()) {
-                    s_logger.debug("Eject Host: " + host.getId() + " from " + thostId + " Succeed");
-                    success = true;
-                    break;
-                } else {
-                    success = false;
-                    s_logger.warn("Eject Host: " + host.getId() + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
-                }
-            }
-            if (!success) {
-                String msg =
-                        "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid() +
-                        "in this host " + host.getPrivateIpAddress();
-                s_logger.warn(msg);
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
-            }
-        }
         return new DeleteHostAnswer(true);
     }
 
