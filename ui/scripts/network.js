@@ -1084,6 +1084,7 @@
                                     confirm: function(args) {
                                         return 'message.action.delete.network';
                                     },
+				    isWarning: true,
                                     notification: function(args) {
                                         return 'label.action.delete.network';
                                     }

@@ -311,6 +311,7 @@
                     if (messages && messages.confirm) {
                         cloudStack.dialog.confirm({
                             message: messages.confirm(messageArgs),
+			    isWarning: messages.isWarning,
                             action: function() {
                                 performAction({
                                     id: id

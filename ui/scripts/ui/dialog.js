@@ -79,7 +79,7 @@
                 $('.overlay').remove();
 
                 return $formContainer.dialog({
-                    dialogClass: 'create-form',
+                    dialogClass: args.form.isWarning ? 'create-form warning' : 'create-form',
                     closeOnEscape: false,
                     draggable: false,
                     width: 400,
@@ -844,7 +844,7 @@
                 )
             ).dialog({
                 title: _l('label.confirmation'),
-                dialogClass: 'confirm',
+                dialogClass: args.isWarning ? 'confirm warning': 'confirm',
                 closeOnEscape: false,
                 zIndex: 5000,
                 buttons: [{

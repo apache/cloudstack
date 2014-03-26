@@ -574,6 +574,7 @@
                         createForm: {
                             title: 'label.action.destroy.instance', 
                             desc: 'label.action.destroy.instance',
+			    isWarning: true,
                             preFilter: function(args) {
                             	if (isAdmin() || isDomainAdmin()) {
                             		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');

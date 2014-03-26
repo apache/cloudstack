@@ -3986,6 +3986,10 @@ Dialogs*/
   background: url(../images/icons.png) no-repeat 0px -255px;
 }
 
+.ui-dialog.warning .ui-dialog-title {
+    background: url(../images/icons.png) no-repeat 0px -286px;
+}
+
 .ui-dialog.confirm .ui-button {
   /*+placement:shift 0px -8px;*/
   position: relative;
