@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -1420,10 +1421,17 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return new CreateObjectAnswer(newSnapshot);
     }
 
+    // format: [datastore_name] file_name.vmdk (the '[' and ']' chars should only be used to denote the datastore)
+    private String getManagedDatastoreNameFromPath(String path) {
+        int lastIndexOf = path.lastIndexOf("]");
+
+        return path.substring(1, lastIndexOf);
+    }
+
     @Override
     public Answer deleteVolume(DeleteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
+            s_logger.info("Executing resource DeleteCommand: " + _gson.toJson(cmd));
         }
 
         try {
@@ -1431,8 +1439,23 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
             DataStoreTO store = vol.getDataStore();
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO)store;
 
-            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
+            Map<String, String> details = primaryDataStoreTO.getDetails();
+            boolean isManaged = false;
+            String managedDatastoreName = null;
+
+            if (details != null) {
+                isManaged = Boolean.parseBoolean(details.get(PrimaryDataStoreTO.MANAGED));
+
+                if (isManaged) {
+                    managedDatastoreName = getManagedDatastoreNameFromPath(vol.getPath());
+                }
+            }
+
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
+                isManaged ? managedDatastoreName : store.getUuid());
+
             if (morDs == null) {
                 String msg = "Unable to find datastore based on volume mount point " + store.getUuid();
                 s_logger.error(msg);

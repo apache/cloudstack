@@ -29,10 +29,16 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -48,6 +54,7 @@ import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
@@ -76,7 +83,10 @@ import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
@@ -123,6 +133,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VMInstanceDao _vmDao;
     @Inject
     private ClusterManager _clusterMgr;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    VolumeDataFactory _volFactory;
 
     protected VMwareGuru() {
         super();
@@ -475,5 +491,44 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory};
+    }
+
+    @Override
+    public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
+        List<Command> commands = new ArrayList<Command>();
+
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+
+        if (volumes != null) {
+            for (VolumeVO volume : volumes) {
+                StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+                // storagePool should be null if we are expunging a volume that was never
+                // attached to a VM that was started (the "trick" for storagePool to be null
+                // is that none of the VMs this volume may have been attached to were ever started,
+                // so the volume was never assigned to a storage pool)
+                if (storagePool != null && storagePool.isManaged() && volume.getVolumeType() == Volume.Type.ROOT) {
+                    VolumeInfo volumeInfo = _volFactory.getVolume(volume.getId());
+                    PrimaryDataStore primaryDataStore = (PrimaryDataStore)volumeInfo.getDataStore();
+                    Map<String, String> details = primaryDataStore.getDetails();
+
+                    if (details == null) {
+                        details = new HashMap<String, String>();
+
+                        primaryDataStore.setDetails(details);
+                    }
+
+                    details.put(DiskTO.MANAGED, Boolean.TRUE.toString());
+
+                    DeleteCommand cmd = new DeleteCommand(volumeInfo.getTO());
+
+                    commands.add(cmd);
+
+                    break;
+                }
+            }
+        }
+
+        return commands;
     }
 }
