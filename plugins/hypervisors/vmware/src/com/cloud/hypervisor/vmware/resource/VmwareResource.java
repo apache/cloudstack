@@ -162,7 +162,6 @@ import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
@@ -465,8 +464,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((CheckOnHostCommand)cmd);
             } else if (clz == ModifySshKeysCommand.class) {
                 answer = execute((ModifySshKeysCommand)cmd);
-            } else if (clz == PoolEjectCommand.class) {
-                answer = execute((PoolEjectCommand)cmd);
             } else if (clz == NetworkUsageCommand.class) {
                 answer = execute((NetworkUsageCommand)cmd);
             } else if (clz == StartCommand.class) {
@@ -4161,13 +4158,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd);
     }
 
-    protected Answer execute(PoolEjectCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PoolEjectCommand: " + _gson.toJson(cmd));
-        }
-
-        return new Answer(cmd, false, "PoolEjectCommand is not available for vmware");
-    }
 
     @Override
     public PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {

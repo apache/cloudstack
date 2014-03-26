@@ -87,7 +87,6 @@ import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
@@ -499,8 +498,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckOnHostCommand)cmd);
         } else if (clazz == ModifySshKeysCommand.class) {
             return execute((ModifySshKeysCommand)cmd);
-        } else if (clazz == PoolEjectCommand.class) {
-            return execute((PoolEjectCommand)cmd);
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand)cmd);
         } else if (clazz == CheckSshCommand.class) {
@@ -7053,58 +7050,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public void setAgentControl(IAgentControl agentControl) {
         _agentControl = agentControl;
-    }
-
-    protected Answer execute(PoolEjectCommand cmd) {
-        Connection conn = getConnection();
-        String hostuuid = cmd.getHostuuid();
-        try {
-            Host host = Host.getByUuid(conn, hostuuid);
-            if (isRefNull(host)) {
-                s_logger.debug("host " + hostuuid + " has already been ejected from pool " + _host.pool);
-                return new Answer(cmd);
-            }
-            // remove all tags cloud stack add before eject
-            Host.Record hr = host.getRecord(conn);
-            Iterator<String> it = hr.tags.iterator();
-            while (it.hasNext()) {
-                String tag = it.next();
-                if (tag.contains("cloud")) {
-                    it.remove();
-                }
-            }
-            host.setTags(conn, hr.tags);
-            Pool pool = Pool.getByUuid(conn, _host.pool);
-            Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record hostr = poolr.master.getRecord(conn);
-            if (_host.uuid.equals(hostr.uuid)) {
-                Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
-                if (hostMap.size() > 1) {
-                    String msg = "This host is XS master, please designate a new XS master throught XenCenter before you delete this host from CS";
-                    s_logger.debug(msg);
-                    return new Answer(cmd, false, msg);
-                }
-            }
-
-            // eject from pool
-            try {
-                Pool.eject(conn, host);
-                try {
-                    Thread.sleep(10 * 1000);
-                } catch (InterruptedException e) {
-                }
-            } catch (XenAPIException e) {
-                String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
-                s_logger.warn(msg);
-                host.destroy(conn);
-            }
-            return new Answer(cmd);
-        } catch (Exception e) {
-            String msg = "Exception Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        }
     }
 
     private Answer execute(CleanupNetworkRulesCmd cmd) {
