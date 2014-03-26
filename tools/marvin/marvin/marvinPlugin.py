@@ -61,6 +61,7 @@ class MarvinPlugin(Plugin):
         self.__startTime = None
         self.__testName = None
         self.__tcRunLogger = None
+        self.__testModName = None
         Plugin.__init__(self)
 
     def configure(self, options, conf):
@@ -80,7 +81,7 @@ class MarvinPlugin(Plugin):
         self.__zoneForTests = options.zone
         self.conf = conf
         if self.startMarvin() == FAILED:
-            print "\nExiting Marvin. Please Check"
+            print "\nStarting Marvin Failed, exiting. Please Check"
             exit(1)
 
     def options(self, parser, env):
@@ -147,9 +148,9 @@ class MarvinPlugin(Plugin):
             self._injectClients(cls)
 
     def beforeTest(self, test):
+        #self.__testModName = test.__str__()
         self.__testName = test.__str__().split()[0]
-        self.__testClient.identifier = '-'.\
-            join([self.__identifier, self.__testName])
+        self.__testClient.identifier = '-'.join([self.__identifier, self.__testName])
         if self.__tcRunLogger:
             self.__tcRunLogger.name = test.__str__()
 
@@ -164,7 +165,7 @@ class MarvinPlugin(Plugin):
         self.__startTime = time.time()
 
     def printMsg(self, status, tname, err):
-        if self.__tcRunLogger:
+        if status in [FAILED, EXCEPTION] and self.__tcRunLogger:
             self.__tcRunLogger.\
                 fatal("%s: %s: %s" % (status,
                                       tname,
@@ -173,11 +174,11 @@ class MarvinPlugin(Plugin):
         self.__resultStream.write(write_str)
         print write_str
 
-    def addSuccess(test):
+    def addSuccess(self, test, capt):
         '''
         Adds the Success Messages to logs
         '''
-        printMsg(SUCCESS, self.__testName, "Test Case Passed")
+        self.printMsg(SUCCESS, self.__testName, "Test Case Passed")
         self.__testresult = SUCCESS
 
     def handleError(self, test, err):
@@ -222,19 +223,19 @@ class MarvinPlugin(Plugin):
         '''
         try:
             obj_marvininit = MarvinInit(self.__configFile,
-                                       self.__deployDcFlag,
-                                       None,
-                                       self.__zoneForTests)
+                                        self.__deployDcFlag,
+                                        None,
+                                        self.__zoneForTests)
             if obj_marvininit and obj_marvininit.init() == SUCCESS:
-                self.__testClient = temp_obj.getTestClient()
-                self.__tcRunLogger = temp_obj.getLogger()
-                self.__parsedConfig = temp_obj.getParsedConfig()
-                self.__resultStream = temp_obj.getResultFile()
-                self.__logFolderPath = temp_obj.getLogFolderPath()
+                self.__testClient = obj_marvininit.getTestClient()
+                self.__tcRunLogger = obj_marvininit.getLogger()
+                self.__parsedConfig = obj_marvininit.getParsedConfig()
+                self.__resultStream = obj_marvininit.getResultFile()
+                self.__logFolderPath = obj_marvininit.getLogFolderPath()
                 self.__testRunner = nose.core.\
-                        TextTestRunner(stream=self.__resultStream,
-                                       descriptions=True,
-                                       verbosity=2)
+                    TextTestRunner(stream=self.__resultStream,
+                                   descriptions=True,
+                                   verbosity=2)
                 return SUCCESS
             return FAILED
         except Exception as e:
@@ -274,3 +275,9 @@ class MarvinPlugin(Plugin):
             self.__testClient.getUserApiClient(test.UserName,
                                                test.DomainName,
                                                test.AcctType)
+
+    def finalize(self, result):
+        src = self.__logFolderPath.strip("//")
+        dst = os.path.split(src)[0] + "/" + self.__testModName
+        os.system("mv " + src + " " + dst)
+        print "===Final Results: %s===" % str(dst)

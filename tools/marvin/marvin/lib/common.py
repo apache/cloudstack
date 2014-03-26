@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 """Common functions
 """
 
-#Import Local Modules
+# Import Local Modules
 from marvin.cloudstackAPI import (listConfigurations,
                                   listPhysicalNetworks,
                                   listRegions,
@@ -58,13 +58,13 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listResourceLimits,
                                   listVPCOfferings)
 from marvin.lib.base import (Configurations,
-                                         NetScaler,
-                                         Template,
-                                         Resources,
-                                         PhysicalNetwork,
-                                         Host)
+                             NetScaler,
+                             Template,
+                             Resources,
+                             PhysicalNetwork,
+                             Host)
 from marvin.lib.utils import (get_process_status,
-                                          xsplit)
+                              xsplit)
 
 from marvin.sshClient import SshClient
 import random
@@ -73,7 +73,7 @@ from base import *
 from marvin.codes import PASS
 from marvin.lib.utils import validateList
 
-#Import System modules
+# Import System modules
 import time
 
 
@@ -83,8 +83,13 @@ def is_config_suitable(apiclient, name, value):
     @return: true if value is set, else false
     """
     configs = Configurations.list(apiclient, name=name)
-    assert(configs is not None and isinstance(configs, list) and len(configs) > 0)
+    assert(
+        configs is not None and isinstance(
+            configs,
+            list) and len(
+            configs) > 0)
     return configs[0].value == value
+
 
 def wait_for_cleanup(apiclient, configs=None):
     """Sleeps till the cleanup configs passed"""
@@ -109,6 +114,7 @@ def wait_for_cleanup(apiclient, configs=None):
         time.sleep(int(config_desc.value))
     return
 
+
 def add_netscaler(apiclient, zoneid, NSservice):
     """ Adds Netscaler device and enables NS provider"""
 
@@ -116,11 +122,11 @@ def add_netscaler(apiclient, zoneid, NSservice):
     cmd.zoneid = zoneid
     physical_networks = apiclient.listPhysicalNetworks(cmd)
     if isinstance(physical_networks, list):
-       physical_network = physical_networks[0]
+        physical_network = physical_networks[0]
 
     cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
     cmd.name = 'Netscaler'
-    cmd.physicalnetworkid=physical_network.id
+    cmd.physicalnetworkid = physical_network.id
     nw_service_providers = apiclient.listNetworkServiceProviders(cmd)
 
     if isinstance(nw_service_providers, list):
@@ -132,17 +138,18 @@ def add_netscaler(apiclient, zoneid, NSservice):
         netscaler_provider = apiclient.addNetworkServiceProvider(cmd1)
 
     netscaler = NetScaler.add(
-                    apiclient,
-                    NSservice,
-                    physicalnetworkid=physical_network.id
-                    )
+        apiclient,
+        NSservice,
+        physicalnetworkid=physical_network.id
+    )
     if netscaler_provider.state != 'Enabled':
-      cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-      cmd.id = netscaler_provider.id
-      cmd.state =  'Enabled'
-      apiclient.updateNetworkServiceProvider(cmd)
+        cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+        cmd.id = netscaler_provider.id
+        cmd.state = 'Enabled'
+        apiclient.updateNetworkServiceProvider(cmd)
 
     return netscaler
+
 
 def get_region(apiclient, region_id=None, region_name=None):
     '''
@@ -181,9 +188,9 @@ def get_domain(apiclient, domain_id=None, domain_name=None):
         cmd.id = domain_id
     cmd_out = apiclient.listDomains(cmd)
     if validateList(cmd_out)[0] != PASS:
-	 return FAILED
-    
-    if (domain_id is None and domain_name is None): 
+        return FAILED
+
+    if (domain_id is None and domain_name is None):
         return cmd_out[0]
     else:
         return cmd_out
@@ -206,16 +213,16 @@ def get_zone(apiclient, zone_name=None, zone_id=None):
 
     cmd_out = apiclient.listZones(cmd)
 
-    if validateList(cmd_out)[0] != PASS: return FAILED
+    if validateList(cmd_out)[0] != PASS:
+        return FAILED
     '''
     Check if input zone name and zone id is None,
     then return first element of List Zones command
     '''
-    if (zone_name is None and zone_id is None): 
+    if (zone_name is None and zone_id is None):
         return cmd_out[0]
     else:
         return cmd_out
-
 
 
 def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
@@ -239,20 +246,23 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
 
     cmd_out = apiclient.listPods(cmd)
 
-    if validateList(cmd_out)[0] != PASS: return FAILED
-    
-    if (pod_id is None and pod_name is None): 
+    if validateList(cmd_out)[0] != PASS:
+        return FAILED
+
+    if (pod_id is None and pod_name is None):
         return cmd_out[0]
     else:
         return cmd_out
 
-def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
-                 template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
-                 hypervisor=None):
+
+def get_template(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
     '''
     @Name : get_template
     @Desc : Retrieves the template Information based upon inputs provided
-            Template is retrieved based upon either of the inputs matched 
+            Template is retrieved based upon either of the inputs matched
             condition
     @Input : returns a template"
     @Output : FAILED in case of any failure
@@ -279,15 +289,14 @@ def get_template(apiclient, zone_id=None, ostype_desc=None, template_filter="fea
     Get the Templates pertaining
     '''
     list_templatesout = apiclient.listTemplates(cmd)
-    if validateList(list_templatesout)[0] != PASS: return FAILED
+    if validateList(list_templatesout)[0] != PASS:
+        return FAILED
 
     for template in list_templatesout:
         if template.isready and template.templatetype == template_type:
             return template
-    '''
-    Return Failed if None of the templates matched
-    '''
-    return FAILED
+    return list_templatesout[0]
+
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
@@ -295,29 +304,29 @@ def download_systemplates_sec_storage(server, services):
     try:
         # Login to management server
         ssh = SshClient(
-                        server["ipaddress"],
-                        server["port"],
-                        server["username"],
-                        server["password"]
-                       )
+            server["ipaddress"],
+            server["port"],
+            server["username"],
+            server["password"]
+        )
     except Exception:
         raise Exception("SSH access failed for server with IP address: %s" %
-                                                            server["ipaddess"])
+                        server["ipaddess"])
     # Mount Secondary Storage on Management Server
     cmds = [
-            "mkdir -p %s" % services["mnt_dir"],
-            "mount -t nfs %s:/%s %s" % (
-                                        services["sec_storage"],
-                                        services["path"],
-                                        services["mnt_dir"]
-                                        ),
-            "%s -m %s -u %s -h %s -F" % (
-                                         services["command"],
-                                         services["mnt_dir"],
-                                         services["download_url"],
-                                         services["hypervisor"]
-                                        )
-            ]
+        "mkdir -p %s" % services["mnt_dir"],
+        "mount -t nfs %s:/%s %s" % (
+            services["sec_storage"],
+            services["path"],
+            services["mnt_dir"]
+        ),
+        "%s -m %s -u %s -h %s -F" % (
+            services["command"],
+            services["mnt_dir"],
+            services["download_url"],
+            services["hypervisor"]
+        )
+    ]
     for c in cmds:
         result = ssh.execute(c)
 
@@ -339,84 +348,86 @@ def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
     time.sleep(interval)
     timeout = 40
     while True:
-            list_ssvm_response = list_ssvms(
-                                        apiclient,
-                                        systemvmtype='secondarystoragevm',
-                                        zoneid=zoneid,
-                                        podid=podid
-                                        )
-            ssvm = list_ssvm_response[0]
-            if ssvm.state != 'Running':
-                # Sleep to ensure SSVMs are Up and Running
-                time.sleep(interval)
-                timeout = timeout - 1
-            elif ssvm.state == 'Running':
-                break
-            elif timeout == 0:
-                raise Exception("SSVM failed to come up")
-                break
+        list_ssvm_response = list_ssvms(
+            apiclient,
+            systemvmtype='secondarystoragevm',
+            zoneid=zoneid,
+            podid=podid
+        )
+        ssvm = list_ssvm_response[0]
+        if ssvm.state != 'Running':
+            # Sleep to ensure SSVMs are Up and Running
+            time.sleep(interval)
+            timeout = timeout - 1
+        elif ssvm.state == 'Running':
+            break
+        elif timeout == 0:
+            raise Exception("SSVM failed to come up")
+            break
 
     timeout = 40
     while True:
-            list_ssvm_response = list_ssvms(
-                                        apiclient,
-                                        systemvmtype='consoleproxy',
-                                        zoneid=zoneid,
-                                        podid=podid
-                                        )
-            cpvm = list_ssvm_response[0]
-            if cpvm.state != 'Running':
-                # Sleep to ensure SSVMs are Up and Running
-                time.sleep(interval)
-                timeout = timeout - 1
-            elif cpvm.state == 'Running':
-                break
-            elif timeout == 0:
-                raise Exception("CPVM failed to come up")
-                break
+        list_ssvm_response = list_ssvms(
+            apiclient,
+            systemvmtype='consoleproxy',
+            zoneid=zoneid,
+            podid=podid
+        )
+        cpvm = list_ssvm_response[0]
+        if cpvm.state != 'Running':
+            # Sleep to ensure SSVMs are Up and Running
+            time.sleep(interval)
+            timeout = timeout - 1
+        elif cpvm.state == 'Running':
+            break
+        elif timeout == 0:
+            raise Exception("CPVM failed to come up")
+            break
     return
+
 
 def get_builtin_template_info(apiclient, zoneid):
     """Returns hypervisor specific infor for templates"""
 
     list_template_response = Template.list(
-                                    apiclient,
-                                    templatefilter='featured',
-                                    zoneid=zoneid,
-                                    )
+        apiclient,
+        templatefilter='featured',
+        zoneid=zoneid,
+    )
 
     for b_template in list_template_response:
-            if b_template.templatetype == 'BUILTIN':
-                break
+        if b_template.templatetype == 'BUILTIN':
+            break
 
     extract_response = Template.extract(apiclient,
-                                            b_template.id,
-                                            'HTTP_DOWNLOAD',
-                                            zoneid)
+                                        b_template.id,
+                                        'HTTP_DOWNLOAD',
+                                        zoneid)
 
     return extract_response.url, b_template.hypervisor, b_template.format
 
+
 def download_builtin_templates(apiclient, zoneid, hypervisor, host,
-                                                linklocalip, interval=60):
+                               linklocalip, interval=60):
     """After setup wait till builtin templates are downloaded"""
 
     # Change IPTABLES Rules
     get_process_status(
-                        host["ipaddress"],
-                        host["port"],
-                        host["username"],
-                        host["password"],
-                        linklocalip,
-                        "iptables -P INPUT ACCEPT"
-                    )
+        host["ipaddress"],
+        host["port"],
+        host["username"],
+        host["password"],
+        linklocalip,
+        "iptables -P INPUT ACCEPT"
+    )
     time.sleep(interval)
     # Find the BUILTIN Templates for given Zone, Hypervisor
     list_template_response = list_templates(
-                                    apiclient,
-                                    hypervisor=hypervisor,
-                                    zoneid=zoneid,
-                                    templatefilter='self'
-                                    )
+        apiclient,
+        hypervisor=hypervisor,
+        zoneid=zoneid,
+        templatefilter='self'
+    )
 
     if not isinstance(list_template_response, list):
         raise Exception("Failed to download BUILTIN templates")
@@ -425,18 +436,18 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host,
     templateid = None
     for template in list_template_response:
         if template.templatetype == "BUILTIN":
-                templateid = template.id
+            templateid = template.id
 
     # Sleep to ensure that template is in downloading state after adding
     # Sec storage
     time.sleep(interval)
     while True:
         template_response = list_templates(
-                                    apiclient,
-                                    id=templateid,
-                                    zoneid=zoneid,
-                                    templatefilter='self'
-                                    )
+            apiclient,
+            id=templateid,
+            zoneid=zoneid,
+            templatefilter='self'
+        )
         template = template_response[0]
         # If template is ready,
         # template.status = Download Complete
@@ -455,7 +466,7 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host,
 
 
 def update_resource_limit(apiclient, resourcetype, account=None,
-                                    domainid=None, max=None, projectid=None):
+                          domainid=None, max=None, projectid=None):
     """Updates the resource limit to 'max' for given account"""
 
     cmd = updateResourceLimit.updateResourceLimitCmd()
@@ -729,6 +740,7 @@ def list_resource_limits(apiclient, **kwargs):
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listResourceLimits(cmd))
 
+
 def list_vpc_offerings(apiclient, **kwargs):
     """ Lists VPC offerings """
 
@@ -736,62 +748,66 @@ def list_vpc_offerings(apiclient, **kwargs):
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listVPCOfferings(cmd))
 
+
 def update_resource_count(apiclient, domainid, accountid=None,
                           projectid=None, rtype=None):
-        """updates the resource count
-            0     - VM
-            1     - Public IP
-            2     - Volume
-            3     - Snapshot
-            4     - Template
-            5     - Projects
-            6     - Network
-            7     - VPC
-            8     - CPUs
-            9     - RAM
-            10    - Primary (shared) storage (Volumes)
-            11    - Secondary storage (Snapshots, Templates & ISOs)
-        """
+    """updates the resource count
+        0     - VM
+        1     - Public IP
+        2     - Volume
+        3     - Snapshot
+        4     - Template
+        5     - Projects
+        6     - Network
+        7     - VPC
+        8     - CPUs
+        9     - RAM
+        10    - Primary (shared) storage (Volumes)
+        11    - Secondary storage (Snapshots, Templates & ISOs)
+    """
 
-        Resources.updateCount(apiclient,
-                              domainid=domainid,
-                              account=accountid if accountid else None,
-                              projectid=projectid if projectid else None,
-                              resourcetype=rtype if rtype else None
-                              )
-        return
+    Resources.updateCount(apiclient,
+                          domainid=domainid,
+                          account=accountid if accountid else None,
+                          projectid=projectid if projectid else None,
+                          resourcetype=rtype if rtype else None
+                          )
+    return
+
 
 def find_suitable_host(apiclient, vm):
-        """Returns a suitable host for VM migration"""
+    """Returns a suitable host for VM migration"""
 
-        hosts = Host.list(apiclient,
-                          virtualmachineid=vm.id,
-                          listall=True)
+    hosts = Host.list(apiclient,
+                      virtualmachineid=vm.id,
+                      listall=True)
 
-        if isinstance(hosts, list):
-            assert len(hosts) > 0, "List host should return valid response"
-        else:
-            raise Exception("Exception: List host should return valid response")
-        return hosts[0]
+    if isinstance(hosts, list):
+        assert len(hosts) > 0, "List host should return valid response"
+    else:
+        raise Exception("Exception: List host should return valid response")
+    return hosts[0]
+
 
 def get_resource_type(resource_id):
-        """Returns resource type"""
+    """Returns resource type"""
 
-        lookup = {  0: "VM",
-                    1: "Public IP",
-                    2: "Volume",
-                    3: "Snapshot",
-                    4: "Template",
-                    5: "Projects",
-                    6: "Network",
-                    7: "VPC",
-                    8: "CPUs",
-                    9: "RAM",
-                    10: "Primary (shared) storage (Volumes)",
-                    11: "Secondary storage (Snapshots, Templates & ISOs)"
-                 }
+    lookup = {0: "VM",
+              1: "Public IP",
+              2: "Volume",
+              3: "Snapshot",
+              4: "Template",
+              5: "Projects",
+              6: "Network",
+              7: "VPC",
+              8: "CPUs",
+              9: "RAM",
+              10: "Primary (shared) storage (Volumes)",
+              11: "Secondary storage (Snapshots, Templates & ISOs)"
+              }
 
-        return lookup[resource_id]
+    return lookup[resource_id]
+
 
 def get_portable_ip_range_services(config):
     """ Reads config values related to portable ip and fills up
@@ -828,6 +844,7 @@ def get_portable_ip_range_services(config):
 
     return services
 
+
 def get_free_vlan(apiclient, zoneid):
     """
     Find an unallocated VLAN outside the range allocated to the physical network.
@@ -837,23 +854,25 @@ def get_free_vlan(apiclient, zoneid):
     @return: physical_network, shared_vlan_tag
     """
     list_physical_networks_response = PhysicalNetwork.list(
-            apiclient,
-            zoneid=zoneid
-        )
+        apiclient,
+        zoneid=zoneid
+    )
     assert isinstance(list_physical_networks_response, list)
-    assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+    assert len(
+        list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
 
     physical_network = list_physical_networks_response[0]
 
-    networks = list_networks(apiclient, zoneid= zoneid, type='Shared')
+    networks = list_networks(apiclient, zoneid=zoneid, type='Shared')
     usedVlanIds = []
 
     if isinstance(networks, list) and len(networks) > 0:
-        usedVlanIds = [int(nw.vlan) for nw in networks if nw.vlan!="untagged"]
+        usedVlanIds = [int(nw.vlan)
+                       for nw in networks if nw.vlan != "untagged"]
 
     if hasattr(physical_network, "vlan") is False:
         while True:
-            shared_ntwk_vlan = random.randrange(1,4095)
+            shared_ntwk_vlan = random.randrange(1, 4095)
             if shared_ntwk_vlan in usedVlanIds:
                 continue
             else:
@@ -862,9 +881,11 @@ def get_free_vlan(apiclient, zoneid):
         vlans = xsplit(physical_network.vlan, ['-', ','])
 
         assert len(vlans) > 0
-        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+        assert int(vlans[0]) < int(
+            vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
 
-        retriesCount = 20 #Assuming random function will give different integer each time
+        # Assuming random function will give different integer each time
+        retriesCount = 20
 
         shared_ntwk_vlan = None
 
@@ -886,6 +907,7 @@ def get_free_vlan(apiclient, zoneid):
 
     return physical_network, shared_ntwk_vlan
 
+
 def setNonContiguousVlanIds(apiclient, zoneid):
     """
     Form the non contiguous ranges based on currently assigned range in physical network
@@ -898,14 +920,16 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         zoneid=zoneid
     )
     assert isinstance(list_physical_networks_response, list)
-    assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+    assert len(
+        list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
 
     for physical_network in list_physical_networks_response:
 
         vlans = xsplit(physical_network.vlan, ['-', ','])
 
         assert len(vlans) > 0
-        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+        assert int(vlans[0]) < int(
+            vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
 
         # Keep some gap between existing vlan and the new vlans which we are going to add
         # So that they are non contiguous
@@ -914,30 +938,38 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         non_contig_start_vlan_id = int(vlans[0]) - 6
 
         # Form ranges which are consecutive to existing ranges but not immediately contiguous
-        # There should be gap in between existing range and new non contiguous ranage
+        # There should be gap in between existing range and new non contiguous
+        # ranage
 
         # If you can't add range after existing range, because it's crossing 4095, then
         # select VLAN ids before the existing range such that they are greater than 0, and
         # then add this non contiguoud range
-        vlan = { "partial_range": ["",""], "full_range": ""}
+        vlan = {"partial_range": ["", ""], "full_range": ""}
 
         if non_contig_end_vlan_id < 4095:
-            vlan["partial_range"][0] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id - 3)
-            vlan["partial_range"][1] = str(non_contig_end_vlan_id - 1) + '-' + str(non_contig_end_vlan_id)
-            vlan["full_range"] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id)
+            vlan["partial_range"][0] = str(
+                non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id - 3)
+            vlan["partial_range"][1] = str(
+                non_contig_end_vlan_id - 1) + '-' + str(non_contig_end_vlan_id)
+            vlan["full_range"] = str(
+                non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id)
             NonContigVlanIdsAcquired = True
 
         elif non_contig_start_vlan_id > 0:
-            vlan["partial_range"][0] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 1)
-            vlan["partial_range"][1] = str(non_contig_start_vlan_id + 3) + '-' + str(non_contig_start_vlan_id + 4)
-            vlan["full_range"] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 4)
+            vlan["partial_range"][0] = str(
+                non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 1)
+            vlan["partial_range"][1] = str(
+                non_contig_start_vlan_id + 3) + '-' + str(non_contig_start_vlan_id + 4)
+            vlan["full_range"] = str(
+                non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 4)
             NonContigVlanIdsAcquired = True
 
         else:
             NonContigVlanIdsAcquired = False
 
         # If failed to get relevant vlan ids, continue to next physical network
-        # else break from loop as we have hot the non contiguous vlan ids for the test purpose
+        # else break from loop as we have hot the non contiguous vlan ids for
+        # the test purpose
 
         if not NonContigVlanIdsAcquired:
             continue
