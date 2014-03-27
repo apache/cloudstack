@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -3720,7 +3721,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
         }
 
-        HypervisorType destHypervisorType = _clusterDao.findById(destPool.getClusterId()).getHypervisorType();
+        HypervisorType destHypervisorType = destPool.getHypervisor();
+        if (destHypervisorType == null) {
+            destHypervisorType = _clusterDao.findById(
+                destPool.getClusterId()).getHypervisorType();
+        }
+
         if (vm.getHypervisorType() != destHypervisorType) {
             throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
         }
