@@ -42,4 +42,8 @@ public final class CreateObjectCommand extends Command implements StorageSubSyst
         return this.data;
     }
 
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }
