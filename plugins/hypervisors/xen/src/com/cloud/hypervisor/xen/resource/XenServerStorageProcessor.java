@@ -144,7 +144,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 throw new CloudRuntimeException("Unable to find CD-ROM VBD for VM: " + vmName);
             } else {
                 // If an ISO is already inserted, eject it
-                if (isoVBD.getEmpty(conn) == false) {
+                if (!isoVBD.getEmpty(conn)) {
                     isoVBD.eject(conn);
                 }
 
@@ -1349,8 +1349,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
         // By default assume failure
         String details = null;
         String snapshotBackupUuid = null;
-        boolean fullbackup = true;
         Long physicalSize = null;
+        Map<String, String> options = cmd.getOptions();
+        boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
         try {
             SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
             if (primaryStorageSR == null) {
@@ -1362,7 +1363,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
             String snapshotPaUuid = null;
-            if (prevBackupUuid != null) {
+
+            if ( prevSnapshotUuid != null && !fullbackup) {
                 try {
                     snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
                     if (snapshotPaUuid != null) {
@@ -1370,6 +1372,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
                         String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
                         if (snashotPaPaPaUuid != null && prevSnashotPaUuid != null && prevSnashotPaUuid.equals(snashotPaPaPaUuid)) {
                             fullbackup = false;
+                        } else {
+                            fullbackup = true;
                         }
                     }
                 } catch (Exception e) {
