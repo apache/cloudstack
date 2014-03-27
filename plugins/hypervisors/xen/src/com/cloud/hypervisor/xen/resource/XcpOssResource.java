@@ -80,7 +80,7 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
+    protected synchronized VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
         if (_host.localSRuuid != null) {
             //create an iso vdi on it
             String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
