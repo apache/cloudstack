@@ -23,16 +23,10 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.ws.rs.HEAD;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -49,7 +43,12 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
@@ -77,11 +76,13 @@ public class XcpOssResource extends CitrixResourceBase {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
-            return "Debian Squeeze 6.0 (64-bit)";
+    	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
+    		return "Debian Squeeze 6.0 (64-bit)";
+    	} else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
+            return "CentOS 5 (64-bit)";
         } else {
-            return CitrixHelper.getXcpGuestOsType(stdType);
-        }
+    		return CitrixHelper.getXcpGuestOsType(stdType);
+    	}
     }
 
     @Override
