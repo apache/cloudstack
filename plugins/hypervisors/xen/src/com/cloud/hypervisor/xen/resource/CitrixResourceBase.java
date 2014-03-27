@@ -4127,8 +4127,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected Pair<Long, Integer> parseTimestamp(String timeStampStr) {
         String[] tokens = timeStampStr.split("-");
-        assert (tokens.length == 3) : "It's our timestamp but it doesn't fit our format: " + timeStampStr;
+        if (tokens.length != 3) {
+            s_logger.debug("timeStamp in network has wrong pattern: " + timeStampStr);
+            return null;
+        }
         if (!tokens[0].equals("CsCreateTime")) {
+            s_logger.debug("timeStamp in network doesn't start with CsCreateTime: " + timeStampStr);
             return null;
         }
         return new Pair<Long, Integer>(Long.parseLong(tokens[1]), Integer.parseInt(tokens[2]));
