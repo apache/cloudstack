@@ -274,17 +274,19 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("script: %s" % script+exec_cmd_params)
             self.debug("result: %s" % result)
 
-            if str(result).strip() == unicode(expected_result):
+            str_result = str(str(result).strip())
+            str_expected_result = str(expected_result).strip()
+            if str_result == str_expected_result:
                 exec_success = True
 
             if negative_test:
                 self.assertEqual(exec_success,
                                  True,
-                                 "Script result is %s matching with %s" % (result, expected_result))
+                                 "Script result is %s matching with %s" % (str_result, str_expected_result))
             else:
                 self.assertEqual(exec_success,
                                  True,
-                                 "Script result is %s is not matching with %s" % (result, expected_result))
+                                 "Script result is %s is not matching with %s" % (str_result, str_expected_result))
 
         except Exception as e:
             self.debug('Error=%s' % e)
