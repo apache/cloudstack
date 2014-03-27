@@ -74,6 +74,11 @@ public class XcpOssResource extends CitrixResourceBase {
         cmd.setCaps(cmd.getCapabilities() + " , hvm");
     }
 
+    @Override
+    protected boolean launchHeartBeat(Connection conn) {
+        return true;
+    }
+
     protected StartupStorageCommand initializeLocalSR(Connection conn) {
         SR extsr = getLocalEXTSR(conn);
         if (extsr != null) {
