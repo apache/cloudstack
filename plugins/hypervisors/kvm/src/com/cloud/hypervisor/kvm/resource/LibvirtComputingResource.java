@@ -5458,4 +5458,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
 
+    public HypervisorType getHypervisorType(){
+        return _hypervisorType;
+    }
+
 }
