@@ -302,6 +302,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         if (result.isFailed()) {
             try {
                 destSnapshot.processEvent(Event.OperationFailed);
+                //if backup snapshot failed, mark srcSnapshot in snapshot_store_ref as failed also
+                srcSnapshot.processEvent(Event.DestroyRequested);
+                srcSnapshot.processEvent(Event.OperationSuccessed);
+
                 srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to update state: " + e.toString());

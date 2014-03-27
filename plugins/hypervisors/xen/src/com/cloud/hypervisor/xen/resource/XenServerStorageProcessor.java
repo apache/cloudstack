@@ -30,19 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
+import javax.ws.rs.HEAD;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -87,6 +75,19 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -475,11 +476,15 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 Boolean isISCSI = IsISCSI(type);
                 String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
 
-                String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
-                if (snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
-                    // this is empty snapshot, remove it
-                    snapshot.destroy(conn);
-                    snapshotUUID = preSnapshotUUID;
+                try {
+                    String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
+                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                        // this is empty snapshot, remove it
+                        snapshot.destroy(conn);
+                        snapshotUUID = preSnapshotUUID;
+                    }
+                } catch(Exception e) {
+                    s_logger.debug("Failed to get parent snapshot", e);
                 }
             }
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
@@ -1368,6 +1373,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
                         }
                     }
                 } catch (Exception e) {
+                    s_logger.debug("Failed to get parent snapshots, take full snapshot", e);
+                    fullbackup = true;
                 }
             }
 
