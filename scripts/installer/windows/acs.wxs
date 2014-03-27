@@ -131,13 +131,6 @@
         <File Id="db.properties" Source="client\WEB-INF\classes\db.properties"
           Checksum="no">
           <CopyFile Id="dbproperties" DestinationName="db.properties"
-            DestinationDirectory="LIB"/>
-        </File>
-        <File Id="cloudmanagementserver.keystore"
-          Source="client\WEB-INF\classes\cloudmanagementserver.keystore"
-          Checksum="no">
-          <CopyFile Id="cloudmanagementserverkeystore"
-            DestinationName="cloud.keystore"
             DestinationDirectory="LIB" />
         </File>
       </Component>
@@ -149,7 +142,7 @@
         </Component>
       </Directory>
     </DirectoryRef>
-	<DirectoryRef Id="INSTALLDIR">
+    <DirectoryRef Id="INSTALLDIR">
       <Directory Id="LIB" Name="lib">
         <Component Id="libFolder" Guid="d338841e-2ea4-48b3-ab48-9c42e2961600">
           <CreateFolder />
@@ -189,24 +182,29 @@
     <CustomAction Id="TomcatPath" Property="TOMCATDIRECTORY1"
       Value="[TOMCATDIRECTORY]\bin\Tomcat6.exe">
     </CustomAction>
-	
+
     <Condition
       Message="Apache tomcat6 is not installed please do install tomcat6 first"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
     <CustomAction Id="UpdateTomcatCatalinaBase"
       ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Djava.io.tmpdir=[INSTALLDIR]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
-	<CustomAction Id="UpdateTomcatClassPath"
+    <CustomAction Id="UpdateTomcatClassPath"
       ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[INSTALLDIR]\conf'
-	  Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
+      Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
     <CustomAction Id="DeleteFiles" Directory='INSTALLDIR'
       ExeCommand="[SystemFolder]cmd.exe /c del [INSTALLDIR]\webapps\client\WEB-INF\classes\db.properties [INSTALLDIR]\webapps\client\WEB-INF\classes\log4j*.xml"
       Execute="commit" Return="check" />
+    <CustomAction Id="GeneralSSLKey" Directory='INSTALLDIR'
+      ExeCommand="python [INSTALLDIR]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [INSTALLDIR]\lib"
+      Execute="commit" Return="check" />
+
     <InstallExecuteSequence>
       <InstallServices Sequence="4999"></InstallServices>
       <Custom Action="TomcatPath" Before="UpdateTomcatClassPath">NOT Installed</Custom>
-	  <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
+      <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
       <Custom Action="UpdateTomcatCatalinaBase" Before="InstallFinalize">NOT Installed</Custom>
-      <Custom Action="DeleteFiles" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="DeleteFiles" Before="GeneralSSLKey">NOT Installed</Custom>
+      <Custom Action="GeneralSSLKey" Before="InstallFinalize">NOT Installed</Custom>
     </InstallExecuteSequence>
     <UIRef Id="WixUI_Mondo" />
     <Feature Id='Complete' Title='ACS' Description='The complete package.'
