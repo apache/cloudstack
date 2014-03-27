@@ -919,11 +919,18 @@ cloudStack.converters = {
             var disconnected = new Date();
             disconnected.setISO8601(UtcDate);
 
-            if (g_timezoneoffset != null)
+            if (g_timezoneoffset != null) {
                 localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
-            else
-                localDate = disconnected.toUTCString();
-            // localDate = disconnected.getTimePlusTimezoneOffset(0);
+            } else {                
+            	var browserDate = new Date();
+            	var browserTimezoneoffset = browserDate.getTimezoneOffset();            	
+            	if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {            		
+            		localDate = disconnected.toUTCString();
+            	} else {
+            		g_timezoneoffset = (browserTimezoneoffset/60) * (-1);
+            		localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
+            	}       
+            }
         }
         return localDate;
     },
