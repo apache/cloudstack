@@ -31,7 +31,6 @@ vmops=..,0755,/usr/lib/xcp/plugins
 ovsgre=..,0755,/usr/lib/xcp/plugins
 ovstunnel=..,0755,/usr/lib/xcp/plugins
 vmopsSnapshot=..,0755,/usr/lib/xcp/plugins
-hostvmstats.py=..,0755,/usr/lib/xcp/sm
 systemvm.iso=../../../../../vms,0644,/usr/share/xcp/packages/iso/
 id_rsa.cloud=../../../systemvm,0600,/root/.ssh
 network_info.sh=..,0755,/opt/cloud/bin

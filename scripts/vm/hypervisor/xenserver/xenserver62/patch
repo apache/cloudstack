@@ -34,7 +34,6 @@ cloudstack_plugins.conf=..,0644,/etc/xensource
 cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
 ovstunnel=..,0755,/etc/xapi.d/plugins
 cloud-plugin-storage=,0755,/etc/xapi.d/plugins
-hostvmstats.py=..,0755,/opt/xensource/sm
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 id_rsa.cloud=../../../systemvm,0600,/root/.ssh
 network_info.sh=..,0755,/opt/cloud/bin
