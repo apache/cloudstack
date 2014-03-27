@@ -38,6 +38,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -955,8 +956,23 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 diskdef = new DiskDef();
                 if (attachingPool.getType() == StoragePoolType.RBD) {
-                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
-                        attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD, DiskDef.diskFmtType.RAW);
+                    if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
+                        // For LXC, map image to host and then attach to Vm
+                        String mapRbd = Script.runSimpleBashScript("rbd map " + attachingDisk.getPath() + " --id "+attachingPool.getAuthUserName());
+                        //Split pool and image details from disk path
+                        String[] splitPoolImage = attachingDisk.getPath().split("/");
+                        //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
+                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: "+device);
+                            diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
+                        } else {
+                            throw new InternalErrorException("Error while mapping disk "+attachingDisk.getPath()+" on host");
+                        }
+                    } else {
+                        diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
+                                attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD, DiskDef.diskFmtType.RAW);
+                    }
                 } else if (attachingPool.getType() == StoragePoolType.Gluster) {
                     String mountpoint = attachingPool.getLocalPath();
                     String path = attachingDisk.getPath();
