@@ -204,6 +204,11 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "the chain info of the volume", since = "4.4")
     String chainInfo;
 
+    @SerializedName(ApiConstants.SNAPSHOT_QUIESCEVM)
+    @Param(description = "need quiesce vm or not when taking snapshot", since="4.3")
+    private boolean needQuiescevm;
+
+
     public String getPath() {
         return path;
     }
@@ -425,4 +430,18 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     public void setChainInfo(String chainInfo) {
         this.chainInfo = chainInfo;
     }
+
+    public String getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public void setNeedQuiescevm(boolean quiescevm) {
+        this.needQuiescevm = quiescevm;
+    }
+
+    public boolean isNeedQuiescevm() {
+        return this.needQuiescevm;
+    }
+
+
 }
