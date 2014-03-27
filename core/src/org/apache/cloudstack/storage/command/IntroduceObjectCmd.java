@@ -36,4 +36,9 @@ public class IntroduceObjectCmd extends Command implements StorageSubSystemComma
     public boolean executeInSequence() {
         return false;
     }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }

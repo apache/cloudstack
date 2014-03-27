@@ -87,4 +87,9 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
     public int getStoragePort() {
         return _storagePort;
     }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }

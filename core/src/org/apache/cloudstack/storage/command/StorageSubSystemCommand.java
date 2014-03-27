@@ -19,5 +19,5 @@
 package org.apache.cloudstack.storage.command;
 
 public interface StorageSubSystemCommand {
-
+    void setExecuteInSequence(boolean inSeq);
 }

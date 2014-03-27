@@ -36,4 +36,9 @@ public class ForgetObjectCmd extends Command implements StorageSubSystemCommand 
     public boolean executeInSequence() {
         return false;
     }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }
