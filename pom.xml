@@ -891,6 +891,9 @@
             <xmlOutput>true</xmlOutput>
             <failOnError>false</failOnError>
             <maxHeap>2048</maxHeap>
+            <excludeFilterFile>
+              findbugsCharEncodingFilter.xml
+            </excludeFilterFile>
           </configuration>
           <executions>
             <execution>
