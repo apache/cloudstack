@@ -627,7 +627,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS.',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS',
         externalLink: ''
     },
     helpPrimaryStorageServer: {
@@ -1197,7 +1197,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpUploadVolumeFormat: {
-        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2.',
+        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2. Hyper-V is VHD.',
         externalLink: ''
     },
     helpUploadVolumeURL: {
