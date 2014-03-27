@@ -3078,7 +3078,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
             ExecutorService executor = Executors.newFixedThreadPool(1);
-            Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, vmName, cmd.getDestinationIp());
+            Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, xmlDesc, vmName, cmd.getDestinationIp());
             Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -3173,12 +3173,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private class MigrateKVMAsync implements Callable<Domain> {
         Domain dm = null;
         Connect dconn = null;
+        String dxml = "";
         String vmName = "";
         String destIp = "";
 
-        MigrateKVMAsync(Domain dm, Connect dconn, String vmName, String destIp) {
+        MigrateKVMAsync(Domain dm, Connect dconn, String dxml, String vmName, String destIp) {
             this.dm = dm;
             this.dconn = dconn;
+            this.dxml = dxml;
             this.vmName = vmName;
             this.destIp = destIp;
         }
@@ -3187,9 +3189,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         public Domain call() throws LibvirtException {
             // set compression flag for migration if libvirt version supports it
             if (dconn.getLibVirVersion() < 1003000) {
-                return dm.migrate(dconn, (1 << 0), vmName, "tcp:" + destIp, _migrateSpeed);
+                return dm.migrate(dconn, (1 << 0), dxml, vmName, "tcp:" + destIp, _migrateSpeed);
             } else {
-                return dm.migrate(dconn, (1 << 0)|(1 << 11), vmName, "tcp:" + destIp, _migrateSpeed);
+                return dm.migrate(dconn, (1 << 0)|(1 << 11), dxml, vmName, "tcp:" + destIp, _migrateSpeed);
             }
         }
     }
