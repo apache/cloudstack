@@ -4700,6 +4700,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected boolean launchHeartBeat(Connection conn) {
+        String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
+                .toString(_heartbeatInterval));
+        if (result == null || !result.contains("> DONE <")) {
+            s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
+            return false;
+        }
+        return true;
+    }
+
     protected SetupAnswer execute(SetupCommand cmd) {
         Connection conn = getConnection();
         setupServer(conn);
@@ -4720,9 +4730,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             }
 
-            String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer.toString(_heartbeatInterval));
-            if (result == null || !result.contains("> DONE <")) {
-                s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
+
+            boolean r = launchHeartBeat(conn);
+            if (!r) {
                 return null;
             }
             cleanupTemplateSR(conn);
@@ -4737,8 +4747,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } catch (Types.MapDuplicateKey e) {
                 s_logger.debug("multipath is already set");
             }
-            if (cmd.needSetup()) {
-                result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
+
+            if (cmd.needSetup() ) {
+                String result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
+
                 if (!result.contains("> DONE <")) {
                     s_logger.warn("Unable to setup iscsi: " + result);
                     return new SetupAnswer(cmd, result);
