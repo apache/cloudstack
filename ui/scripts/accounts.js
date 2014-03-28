@@ -1375,10 +1375,12 @@
                                         label: 'label.state'
                                     },
                                     apikey: {
-                                        label: 'label.api.key'
+                                        label: 'label.api.key',
+                                        isCopyPaste: true
                                     },
                                     secretkey: {
-                                        label: 'label.secret.key'
+                                        label: 'label.secret.key',
+                                        isCopyPaste: true
                                     },
                                     account: {
                                         label: 'label.account.name'
