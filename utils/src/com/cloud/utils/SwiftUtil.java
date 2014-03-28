@@ -20,6 +20,7 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -182,7 +183,7 @@ public class SwiftUtil {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed")) {
-                    String errMsg = "swiftDownload failed , err=" + lines.toString();
+                    String errMsg = "swiftDownload failed , err=" + Arrays.toString(lines);
                     logger.debug(errMsg);
                     throw new CloudRuntimeException("Failed to get object: " + swiftPath);
                 }
