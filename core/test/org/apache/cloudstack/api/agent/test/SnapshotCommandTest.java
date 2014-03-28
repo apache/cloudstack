@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.agent.api.SnapshotCommand;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -146,7 +147,14 @@ public class SnapshotCommandTest {
         public boolean isInMaintenance() {
             // TODO Auto-generated method stub
             return false;
-        };
+        }
+
+        @Override
+        public Hypervisor.HypervisorType getHypervisor() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        ;
     };
 
     SnapshotCommand ssc = new SnapshotCommand(pool, "http://secondary.Storage.Url", "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "snapshotName", 101L, 102L, 103L);

@@ -24,8 +24,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -47,6 +45,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -389,6 +388,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public boolean isInMaintenance() {
         return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance ||
             getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+    }
+
+    @Override
+    public HypervisorType getHypervisor() {
+       return pdsv.getHypervisor();
     }
 
     @Override
