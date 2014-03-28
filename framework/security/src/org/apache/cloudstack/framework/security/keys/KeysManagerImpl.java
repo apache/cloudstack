@@ -61,7 +61,7 @@ public class KeysManagerImpl implements KeysManager, Configurable {
     public String getHashKey() {
         String value = HashKey.value();
         if (value == null) {
-            _configDepot.set(HashKey, getBase64EncodedRandomKey(128));
+            _configDao.getValueAndInitIfNotExist(HashKey.key(), HashKey.category(), getBase64EncodedRandomKey(128), HashKey.description());
         }
 
         return HashKey.value();
@@ -71,7 +71,8 @@ public class KeysManagerImpl implements KeysManager, Configurable {
     public String getEncryptionKey() {
         String value = EncryptionKey.value();
         if (value == null) {
-            _configDepot.set(EncryptionKey, getBase64EncodedRandomKey(128));
+            _configDao.getValueAndInitIfNotExist(EncryptionKey.key(), EncryptionKey.category(), getBase64EncodedRandomKey(128),
+                    EncryptionKey.description());
         }
         return EncryptionKey.value();
     }
@@ -80,7 +81,8 @@ public class KeysManagerImpl implements KeysManager, Configurable {
     public String getEncryptionIV() {
         String value = EncryptionIV.value();
         if (value == null) {
-            _configDepot.set(EncryptionIV, getBase64EncodedRandomKey(128));
+            _configDao.getValueAndInitIfNotExist(EncryptionIV.key(), EncryptionIV.category(), getBase64EncodedRandomKey(128),
+                    EncryptionIV.description());
         }
         return EncryptionIV.value();
     }
