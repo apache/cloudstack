@@ -43,9 +43,14 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS) @Param(description="true if regular user is allowed to create projects")
     private Boolean allowUsersCreateProjects;
 
-    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
-            "create disk from disk offering with custom size")
+    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MIN_SIZE)
+    @Param(description = "minimum size that can be specified when " + "create disk from disk offering with custom size")
+    private Long diskOffMinSize;
+
+    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE)
+    @Param(description = "maximum size that can be specified when " + "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
+
     @SerializedName("regionsecondaryenabled") @Param(description = "true if region wide secondary is enabled, false otherwise")
     private boolean regionSecondaryEnabled;
 
@@ -81,6 +86,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUsersCreateProjects(Boolean allowUsersCreateProjects) {
         this.allowUsersCreateProjects = allowUsersCreateProjects;
+    }
+
+    public void setDiskOffMinSize(Long diskOffMinSize) {
+        this.diskOffMinSize = diskOffMinSize;
     }
 
     public void setDiskOffMaxSize(Long diskOffMaxSize) {

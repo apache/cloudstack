@@ -1046,17 +1046,22 @@
                     $futureSteps.removeClass('loaded');
                 });
 
+                var minCustomDiskSize = args.minDiskOfferingSize ?
+                                    args.minDiskOfferingSize() : 1;
+
                 var maxCustomDiskSize = args.maxDiskOfferingSize ?
                     args.maxDiskOfferingSize() : 100;
 
                 // Setup tabs and slider
+                $wizard.find('.section.custom-size .size.min span').html(minCustomDiskSize);
+                $wizard.find('.section.custom-size input[type=text]').val(minCustomDiskSize);
                 $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
 
                     $slider.slider({
-                        min: 1,
+                        min: minCustomDiskSize,
                         max: maxCustomDiskSize,
                         start: function(event) {
                             $slider.closest('.section.custom-size').find('input[type=radio]').click();

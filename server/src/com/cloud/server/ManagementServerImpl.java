@@ -3318,6 +3318,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        long diskOffMinSize = _volumeMgr.CustomDiskOfferingMinSize.value();
         long diskOffMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
@@ -3341,6 +3342,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
+        capabilities.put("customDiskOffMinSize", diskOffMinSize);
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);

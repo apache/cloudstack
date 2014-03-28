@@ -241,7 +241,7 @@
                                     <label><fmt:message key="label.disk.size"/></label>
 
                                     <!-- Slider -->
-                                    <label class="size">1 GB</label>
+                                    <label class="size min"><span></span> GB</label>
                                     <div class="slider custom-size"></div>
                                     <label class="size max"><span></span> GB</label>
 
