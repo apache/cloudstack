@@ -49,7 +49,6 @@ setup_heartbeat_file.sh=..,0755,/opt/cloud/bin
 check_heartbeat.sh=..,0755,/opt/cloud/bin
 xenheartbeat.sh=..,0755,/opt/cloud/bin
 launch_hb.sh=..,0755,/opt/cloud/bin
-vhd-util=..,0755,/opt/cloud/bin
 upgrade_snapshot.sh=..,0755,/opt/cloud/bin
 cloud-clean-vlan.sh=..,0755,/opt/cloud/bin
 cloud-prepare-upgrade.sh=..,0755,/opt/cloud/bin
