@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
-import javax.ws.rs.HEAD;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -113,13 +112,13 @@ public class XcpOssResource extends CitrixResourceBase {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
-    		return "Debian Squeeze 6.0 (64-bit)";
-    	} else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
+        if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
+            return "Debian Squeeze 6.0 (64-bit)";
+        } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
             return "CentOS 5 (64-bit)";
         } else {
-    		return CitrixHelper.getXcpGuestOsType(stdType);
-    	}
+            return CitrixHelper.getXcpGuestOsType(stdType);
+        }
     }
 
     @Override
@@ -172,7 +171,7 @@ public class XcpOssResource extends CitrixResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand)cmd);
+            return execute((NetworkUsageCommand) cmd);
         } else {
             return super.executeRequest(cmd);
         }
