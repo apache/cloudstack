@@ -1835,6 +1835,58 @@ div.list-view td.state.off span {
   float: left;
   width: 245px;
 }
+.detail-group .main-groups table td.value > span.copypasteenabledvalue {
+  text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.detail-group .main-groups table td.value > .copypasteactive {
+  display: auto;
+  white-space: nowrap;
+  overflow: none;
+}
+
+div.copypasteicon {
+  background: url("../images/sprites.png") no-repeat scroll -271px -65px;
+  float: left;
+  height: 21px;
+  margin-left: 6px;
+  margin-top: 0px;
+  width: 18px;
+}
+
+div.copypasteicon:hover {
+  background: url("../images/sprites.png") no-repeat scroll -271px -646px;
+}
+
+.detail-group .main-groups table td.value > span.copypasteenabledvalue {
+  text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.detail-group .main-groups table td.value > .copypasteactive {
+  display: auto;
+  white-space: nowrap;
+  overflow: none;
+}
+
+div.copypasteicon {
+  background: url("../images/sprites.png") no-repeat scroll -271px -65px;
+  float: left;
+  height: 21px;
+  margin-left: 6px;
+  margin-top: 0px;
+  width: 18px;
+}
+
+div.copypasteicon:hover {
+  background: url("../images/sprites.png") no-repeat scroll -271px -646px;
+}
+
 
 .detail-group .main-groups table td.value > span select {
   width: 100% !important;
