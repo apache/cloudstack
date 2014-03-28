@@ -73,7 +73,7 @@ import com.cloud.hypervisor.xen.resource.XenServer602Resource;
 import com.cloud.hypervisor.xen.resource.XenServer610Resource;
 import com.cloud.hypervisor.xen.resource.XenServer620Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
-import com.cloud.hypervisor.xen.resource.Xenserver625Resource;
+import com.cloud.hypervisor.xen.resource.XenServer625Resource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
@@ -384,7 +384,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XcpServerResource();
         } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
             return new XcpServer16Resource();
-        } // Citrix Xenserver group of hypervisors
+        } // Citrix XenServer group of hypervisors
         else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
             return new XenServer56Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
@@ -403,7 +403,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }*/
             boolean hotfix = xenserverHotFixEnabled();
             if (hotfix) {
-                return new Xenserver625Resource();
+                return new XenServer625Resource();
             } else {
                 return new XenServer620Resource();
             }
@@ -419,7 +419,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         String msg =
-                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, XenServer 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
                         prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
@@ -562,7 +562,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
             String hotfix = details.get("Xenserer620HotFix");
             if (hotfix != null && hotfix.equalsIgnoreCase("Xenserver-Vdi-Copy-HotFix")) {
-                resource = Xenserver625Resource.class.getName();
+                resource = XenServer625Resource.class.getName();
             } else {
                 resource = XenServer620Resource.class.getName();
             }
@@ -579,7 +579,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
         if (resource == null) {
             String msg =
-                    "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                    "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and XenServer 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " +
                             prodBrand + " " + prodVersion;
             s_logger.debug(msg);
             throw new RuntimeException(msg);
