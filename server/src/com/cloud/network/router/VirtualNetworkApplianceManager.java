@@ -50,7 +50,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String RouterTemplateVmwareCK = "router.template.vmware";
     static final String RouterTemplateHyperVCK = "router.template.hyperv";
     static final String RouterTemplateLxcCK = "router.template.lxc";
-    static final String RouterTemplateDockerCK = "router.template.docker";    
+    static final String RouterTemplateDockerCK = "router.template.docker";
     static final String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
 
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",

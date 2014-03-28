@@ -18,7 +18,7 @@ public class DockerGuru extends HypervisorGuruBase implements HypervisorGuru {
     public HypervisorType getHypervisorType() {
         return HypervisorType.Docker;
     }
-    
+
     protected DockerGuru() {
         super();
     }
@@ -33,7 +33,7 @@ public class DockerGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         return to;
     }
-    
+
     @Override
     public boolean trackVmHostChange() {
         return false;

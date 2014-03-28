@@ -213,7 +213,7 @@ public class Upgrade421to430 implements DbUpgrade {
                         case LXC:       hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
                             break;
                         case Docker:    hypervisorsListInUse.add(Hypervisor.HypervisorType.Docker);
-                        	break;
+                            break;
                     }
                 }
             } catch (SQLException e) {

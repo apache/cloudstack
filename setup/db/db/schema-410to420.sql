@@ -661,7 +661,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT'
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id';
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `uuid` varchar(40) UNIQUE;
 
--- START: support for LXC and Docker
+-- START: support for LXC
  
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES (UUID(), 'LXC', 'default', 50, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled) VALUES (UUID(), 'Docker', 'default', 50, 1);
@@ -673,12 +673,10 @@ UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Docker' W
  
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
      VALUES (10, UUID(), 'routing-10', 'SystemVM Template (LXC)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (LXC)', 'QCOW2', 15, 0, 1, 'LXC');
-INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-     VALUES (10, UUID(), 'routing-10', 'SystemVM Template (Docker)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2', '2755de1f9ef2ce4d6f2bee2efbb4da92', 0, 'SystemVM Template (Docker)', 'QCOW2', 15, 0, 1, 'Docker');
 
 ALTER TABLE `cloud`.`user_vm` MODIFY user_data TEXT(32768);
 
--- END: support for LXC and Docker
+-- END: support for LXC
 
 CREATE TABLE `cloud`.`vm_snapshots` (
   `id` bigint(20) unsigned NOT NULL auto_increment COMMENT 'Primary Key',
