@@ -15,12 +15,45 @@
 
     <Package Id='*' Keywords='Installer' Description="Apache Cloud Stack Installer"
       Comments='Foobar is a registered trademark of Acme Ltd.'
-      Manufacturer='Apache' InstallerVersion='100' Languages='1033'
-      Compressed='yes' SummaryCodepage='1252' />
+      Manufacturer='Apache' Languages='1033' Compressed='yes'
+      SummaryCodepage='1252' Platform="x64" InstallerVersion="500" />
 
     <Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
     <Property Id='DiskPrompt' Value="Apache Cloud Stack Installation program" />
-    <Condition Message="Java Is not Installed. Please set the JAVA_HOME"><![CDATA[%JAVA_HOME]]></Condition>
+
+    <!-- Get JAVA_HOME here -->
+    <Property Id='JAVA_HOME'>
+      <RegistrySearch Id="JavaHomeSearch" Name="JavaHome"
+        Root="HKLM" Key="SOFTWARE\JavaSoft\Java Development Kit\1.7"
+        Type="raw" Win64="yes" />
+    </Property>
+    <Condition
+      Message="Java 7 Is not Installed. Please Install Java 7 and then try"><![CDATA[(Installed OR JAVA_HOME)]]></Condition>
+
+    <!-- Get Tomcat6 installation path -->
+    <Property Id='TOMCATDIRECTORY'>
+      <RegistrySearch Id="TomcatSearch" Name="InstallPath"
+        Root="HKLM" Key="SOFTWARE\Apache Software Foundation\Tomcat\6.0\Tomcat6"
+        Type="raw" Win64="yes" />
+    </Property>
+    <Condition
+      Message="Apache tomcat6 is not installed please do install tomcat6 and then try"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
+
+    <!-- Get Python installation path -->
+    <Property Id='PYTHON_HOME'>
+      <RegistrySearch Id="PythonSearch" Root="HKLM"
+        Key="SOFTWARE\Python\PythonCore\2.7\InstallPath" Type="raw"
+        Win64="yes" />
+    </Property>
+    <Condition
+      Message="Python 2.7 is not installed Please do install python and then try"><![CDATA[(Installed OR PYTHON_HOME)]]></Condition>
+
+    <!-- Get 7Z installation path -->
+    <Property Id='SEVENZ_HOME'>
+      <RegistrySearch Id="SecenZSearch" Name="Path" Root="HKLM"
+        Key="SOFTWARE\7-Zip" Type="raw" Win64="yes" />
+    </Property>
+    <Condition Message="7Z is not installed please do install 7z and then try"><![CDATA[(Installed OR SEVENZ_HOME)]]></Condition>
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
@@ -38,7 +71,9 @@
               <Environment Id="CATALINA_OPTS" Action="set"
                 Name="CATALINA_OPTS" Permanent="no" System="yes"
                 Value="-XX:MaxPermSize=512m -Xmx1024m -Xms256m" />
-
+              <Environment Id="Path" Action="set" Name="Path"
+                Permanent="yes" System="yes" Part="last"
+                Value="[JAVA_HOME]\bin;[PYTHON_HOME];[SEVENZ_HOME]" />
             </Component>
           </Directory>
         </Directory>
@@ -174,17 +209,9 @@
     </Component>
 
     <!-- Updating Tomcat's catalina base -->
-    <Property Id='TOMCATDIRECTORY'>
-      <RegistrySearch Id="TomcatSearch" Name="InstallPath"
-        Root="HKLM" Key="SOFTWARE\Apache Software Foundation\Tomcat\6.0\Tomcat6"
-        Type="raw" Win64="yes" />
-    </Property>
     <CustomAction Id="TomcatPath" Property="TOMCATDIRECTORY1"
       Value="[TOMCATDIRECTORY]\bin\Tomcat6.exe">
     </CustomAction>
-
-    <Condition
-      Message="Apache tomcat6 is not installed please do install tomcat6 first"><![CDATA[(Installed OR TOMCATDIRECTORY)]]></Condition>
     <CustomAction Id="UpdateTomcatCatalinaBase"
       ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Djava.io.tmpdir=[INSTALLDIR]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
@@ -194,17 +221,17 @@
     <CustomAction Id="DeleteFiles" Directory='INSTALLDIR'
       ExeCommand="[SystemFolder]cmd.exe /c del [INSTALLDIR]\webapps\client\WEB-INF\classes\db.properties [INSTALLDIR]\webapps\client\WEB-INF\classes\log4j*.xml"
       Execute="commit" Return="check" />
-    <CustomAction Id="GeneralSSLKey" Directory='INSTALLDIR'
-      ExeCommand="python [INSTALLDIR]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [INSTALLDIR]\lib"
+    <CustomAction Id="GenerateSSLKey" Directory='INSTALLDIR'
+      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [INSTALLDIR]\lib"
       Execute="commit" Return="check" />
 
     <InstallExecuteSequence>
       <InstallServices Sequence="4999"></InstallServices>
       <Custom Action="TomcatPath" Before="UpdateTomcatClassPath">NOT Installed</Custom>
       <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
-      <Custom Action="UpdateTomcatCatalinaBase" Before="InstallFinalize">NOT Installed</Custom>
-      <Custom Action="DeleteFiles" Before="GeneralSSLKey">NOT Installed</Custom>
-      <Custom Action="GeneralSSLKey" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="UpdateTomcatCatalinaBase" Before="DeleteFiles">NOT Installed</Custom>
+      <Custom Action="DeleteFiles" Before="GenerateSSLKey">NOT Installed</Custom>
+      <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed</Custom>
     </InstallExecuteSequence>
     <UIRef Id="WixUI_Mondo" />
     <Feature Id='Complete' Title='ACS' Description='The complete package.'
