@@ -358,7 +358,7 @@ def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
         for host in vpc_spanning_hosts:
             if str(this_host_id) == str(host.hostid):
                 continue
-            other_host_vms = get_vms_on_host(vpconfig, host.hostid)
+            other_host_vms = get_vms_on_host(vpconfig, str(host.hostid))
             for vm in other_host_vms:
                 for nic in vm.nics:
                     mac_addr = nic.macaddress
@@ -397,8 +397,9 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
         return "FAILURE:IMPROPER_JSON_CONFG_FILE"
 
     try:
-        # First flush current egress ACL's before re-applying the ACL's
+        # First flush current ingress and egress ACL's before re-applying the ACL's
         del_flows(bridge, table=3)
+        del_flows(bridge, table=5)
 
         egress_rules_added = False
         ingress_rules_added = False
@@ -419,15 +420,22 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
                 source_cidrs = acl_item.sourcecidrs
                 acl_priority = 1000 + number
                 for source_cidr in source_cidrs:
-                    if direction is "ingress":
+                    if direction == "ingress":
                         ingress_rules_added = True
-
                         if source_port_start is None and source_port_end is None:
-                            if action is "deny":
-                                add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr,
+                            if source_cidr.startswith('0.0.0.0'):
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=5, nw_dst=tier_cidr,
                                          nw_proto=protocol, actions='drop')
-                            if action is "allow":
-                                add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr,
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=5, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            else:
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='drop')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr,
                                          nw_proto=protocol, actions='resubmit(,1)')
                             continue
 
@@ -435,36 +443,59 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
                         # source_cidr and destination ip is in tier_cidr
                         port = source_port_start
                         while (port < source_port_end):
-                            if action is "deny":
-                                add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                            if source_cidr.startswith('0.0.0.0'):
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=5, nw_dst=tier_cidr, tp_dst=port,
                                          nw_proto=protocol, actions='drop')
-                            if action is "allow":
-                                add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=5, nw_dst=tier_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='resubmit(,1)')
+                            else:
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
+                                         nw_proto=protocol, actions='drop')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=5, nw_src=source_cidr, nw_dst=tier_cidr, tp_dst=port,
                                          nw_proto=protocol, actions='resubmit(,1)')
                             port = port + 1
 
-                    elif direction in "egress":
+                    elif direction == "egress":
                         egress_rules_added = True
-
                         if source_port_start is None and source_port_end is None:
-                            if action is "deny":
-                                add_flow(bridge, priority= acl_priority, table=3, nw_src=source_cidr, nw_dst=tier_cidr,
+                            if source_cidr.startswith('0.0.0.0'):
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=tier_cidr,
                                          nw_proto=protocol, actions='drop')
-                            if action is "allow":
-                                add_flow(bridge, priority= acl_priority,table=3, nw_src=source_cidr, nw_dst=tier_cidr,
-                                         nw_proto=protocol, actions='resubmit(,1)')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=3, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='resubmit(,4)')
+                            else:
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='drop')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority,table=3, nw_src=source_cidr, nw_dst=tier_cidr,
+                                         nw_proto=protocol, actions='resubmit(,4)')
                             continue
 
                         # add flow rule to do action (allow/deny) for flows where destination IP of the packet is in
                         # source_cidr and source ip is in tier_cidr
                         port = source_port_start
                         while (port < source_port_end):
-                            if action is "deny":
-                                add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='drop')
-                            if action is "allow":
-                                add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
-                                         nw_proto=protocol, actions='resubmit(,1)')
+                            if source_cidr.startswith('0.0.0.0'):
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=source_cidr, tp_dst=port,
+                                             nw_proto=protocol, actions='drop')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_dst=source_cidr, tp_dst=port,
+                                             nw_proto=protocol, actions='resubmit(,4)')
+                            else:
+                                if action == "deny":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                             nw_proto=protocol, actions='drop')
+                                if action == "allow":
+                                    add_flow(bridge, priority= acl_priority, table=3, nw_src=tier_cidr, nw_dst=source_cidr, tp_dst=port,
+                                             nw_proto=protocol, actions='resubmit(,4)')
                             port = port + 1
 
         if egress_rules_added is False:
@@ -472,8 +503,11 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
             add_flow(bridge, priority=0, table=3, actions='resubmit(,4)')
 
         if ingress_rules_added is False:
-            # add a default rule in egress table drop packets
+            # add a default rule in ingress table drop packets
             add_flow(bridge, priority=0, table=5, actions='drop')
+
+        return "SUCCESS: successfully configured bridge as per the later routing policies of the VPC"
+
     except:
         logging.debug("An unexpected error occurred while configuring bridge as per VPC's routing policies.")
         raise
