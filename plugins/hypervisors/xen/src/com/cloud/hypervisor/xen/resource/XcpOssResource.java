@@ -31,15 +31,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
@@ -180,25 +175,6 @@ public class XcpOssResource extends CitrixResourceBase {
         } else {
             return super.executeRequest(cmd);
         }
-    }
-
-    @Override
-    public StartAnswer execute(StartCommand cmd) {
-        StartAnswer answer = super.execute(cmd);
-
-        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
-            Connection conn = getConnection();
-            String publicIp = null;
-            for (NicTO nic : vmSpec.getNics()) {
-                if (nic.getType() == TrafficType.Guest) {
-                    publicIp = nic.getIp();
-                }
-            }
-            callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
-        }
-
-        return answer;
     }
 
     @Override
