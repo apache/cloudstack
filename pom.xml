@@ -892,7 +892,7 @@
             <failOnError>false</failOnError>
             <maxHeap>2048</maxHeap>
             <excludeFilterFile>
-              findbugsCharEncodingFilter.xml
+              ${basedir}/findbugsExcludeFilter.xml
             </excludeFilterFile>
           </configuration>
           <executions>
