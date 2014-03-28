@@ -660,8 +660,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
 
-            //delete the account from group
-            _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
+            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+                // delete the account from group
+                _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
+            }
 
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
