@@ -74,6 +74,7 @@ import com.cloud.hypervisor.xen.resource.XenServer610Resource;
 import com.cloud.hypervisor.xen.resource.XenServer620Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.Xenserver625Resource;
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
@@ -93,8 +94,12 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
+import com.xensource.xenapi.PoolPatch;
+import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.Types.UuidInvalid;
+
 
 @Local(value = Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -143,10 +148,35 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
     }
 
-    protected boolean xenserverHotFixEnabled() {
-        //temporary fix, we should call xenserver api to get the hot fix is enabled or not.
-        return Boolean.parseBoolean(_configDao.getValue(Config.XenServerHotFix.name()));
+    protected boolean poolHasHotFix(Connection conn, String hostIp) {
+        try {
+            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
+            for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
+
+                Host.Record re = entry.getValue();
+                if (!re.address.equalsIgnoreCase(hostIp)){
+                    continue;
+                }
+                Set<HostPatch> patches = re.patches;
+                PoolPatch poolPatch = PoolPatch.getByUuid(conn, XenserverConfigs.FixFoxUuid);
+                for(HostPatch patch : patches) {
+                    PoolPatch pp = patch.getPoolPatch(conn);
+                    if (pp.equals(poolPatch) && patch.getApplied(conn)) {
+                        s_logger.debug("host " + hostIp + " does have Fox Hotfix");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch (UuidInvalid e) {
+            s_logger.debug("host " + hostIp + " doesn't have Fox Hotfix");
+        } catch (Exception e) {
+            s_logger.debug("can't get patches information, consider it doesn't have Fox Hotfix");
+        }
+        return false;
     }
+
+
 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
@@ -195,6 +225,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             Pool.Record pr = pool.getRecord(conn);
             String poolUuid = pr.uuid;
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
+            boolean xsHotFixFoxEnabled = poolHasHotFix(conn, hostIp);
 
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
@@ -260,8 +291,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     hostOS = record.softwareVersion.get("platform_name");
                 }
 
-                //Boolean xs620hotfix = record.tags.contains(xs620snapshothotfix);
-                Boolean xs620hotfix = xenserverHotFixEnabled();
                 String hostOSVer = prodVersion;
                 String hostKernelVer = record.softwareVersion.get("linux");
 
@@ -270,7 +299,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     continue;
                 }
 
-                CitrixResourceBase resource = createServerResource(dcId, podId, record);
+                CitrixResourceBase resource = createServerResource(dcId, podId, record, xsHotFixFoxEnabled);
                 s_logger.info("Found host " + record.hostname + " ip=" + record.address + " product version=" + prodVersion);
 
                 Map<String, String> details = new HashMap<String, String>();
@@ -291,7 +320,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put(HostInfo.HOST_OS_VERSION, hostOSVer);
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
                 details.put(HostInfo.HYPERVISOR_VERSION, xenVersion);
-                details.put(HostInfo.XS620_SNAPSHOT_HOTFIX, xs620hotfix.toString());
 
                 String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.XenServer);
                 String storageNetworkLabel = _networkMgr.getDefaultStorageTrafficLabel(dcId, HypervisorType.XenServer);
@@ -364,7 +392,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
 
-    protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record) {
+    protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record, boolean hotfix) {
         String prodBrand = record.softwareVersion.get("product_brand");
         if (prodBrand == null) {
             prodBrand = record.softwareVersion.get("platform_name").trim();
@@ -394,14 +422,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            /*
-            Set<String> tags =record.tags;
-            if (tags.contains(xs620snapshothotfix)) {
-                return new Xenserver625Resource();
-            } else {
-                return new XenServer620Resource();
-            }*/
-            boolean hotfix = xenserverHotFixEnabled();
             if (hotfix) {
                 return new Xenserver625Resource();
             } else {

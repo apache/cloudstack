@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -185,6 +186,8 @@ import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostCpu;
 import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.HostPatch;
+import com.xensource.xenapi.PoolPatch;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PGPU;
@@ -852,7 +855,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String revertToSnapshot(Connection conn, VM vmSnapshot, String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID) throws XenAPIException,
+    protected String revertToSnapshot(Connection conn, VM vmSnapshot, String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID) throws XenAPIException,
     XmlRpcException {
 
         String results =
@@ -5600,6 +5603,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return ConnPool.connect(_host.uuid, _host.pool, _host.ip, _username, _password, _wait);
     }
 
+
+    protected boolean hostHasFixFox(Connection conn) {
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            Host.Record re = host.getRecord(conn);
+            Set<HostPatch> patches = re.patches;
+            PoolPatch poolPatch = PoolPatch.getByUuid(conn, XenserverConfigs.FixFoxUuid);
+            for(HostPatch patch : patches) {
+                PoolPatch pp = patch.getPoolPatch(conn);
+                if (pp.equals(poolPatch) && patch.getApplied(conn)) {
+                    return true;
+                }
+            }
+         } catch (Exception e) {
+            s_logger.debug("can't get patches information", e);
+        }
+        return false;
+    }
+
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         final StringBuilder caps = new StringBuilder();
         try {
@@ -5618,6 +5640,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.productVersion);
+            Boolean hasFixFox = hostHasFixFox(conn);
+            details.put(XenserverConfigs.XSHasFixFox, hasFixFox.toString());
 
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
