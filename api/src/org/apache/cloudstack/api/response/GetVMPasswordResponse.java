@@ -23,7 +23,8 @@ import com.google.gson.annotations.SerializedName;
 
 public class GetVMPasswordResponse extends BaseResponse {
 
-    @SerializedName("encryptedpassword") @Param(description="The encrypted password of the VM")
+    @SerializedName("encryptedpassword")
+    @Param(description = "The base64 encoded encrypted password of the VM")
     private String encryptedPassword;
 
     public GetVMPasswordResponse() {}
