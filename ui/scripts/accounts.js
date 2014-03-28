@@ -1374,14 +1374,6 @@
                                     state: {
                                         label: 'label.state'
                                     },
-                                    apikey: {
-                                        label: 'label.api.key',
-                                        isCopyPaste: true
-                                    },
-                                    secretkey: {
-                                        label: 'label.secret.key',
-                                        isCopyPaste: true
-                                    },
                                     account: {
                                         label: 'label.account.name'
                                     },
@@ -1393,6 +1385,14 @@
                                     },
                                     domain: {
                                         label: 'label.domain'
+                                    },
+                                    apikey: {
+                                        label: 'label.api.key',
+                                        isCopyPaste: true
+                                    },
+                                    secretkey: {
+                                        label: 'label.secret.key',
+                                        isCopyPaste: true
                                     },
                                     email: {
                                         label: 'label.email',
