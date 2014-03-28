@@ -227,7 +227,7 @@ class TestOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_01_service_offerings(self):
         """ Test service offerings in a project
         """
@@ -269,7 +269,7 @@ class TestOfferings(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_02_project_disk_offerings(self):
         """ Test project disk offerings
         """
@@ -403,7 +403,7 @@ class TestNetwork(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_03_network_create(self):
         """ Test create network in project
         """
@@ -628,7 +628,7 @@ class TestTemplates(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
     def test_04_public_template_use_in_project(self):
         """Test Templates creation in projects
         """
@@ -686,7 +686,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
     def test_05_use_private_template_in_project(self):
         """Test use of private template in a project
         """
@@ -852,7 +852,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
     def test_06_create_snapshots_in_project(self):
         """Test create snapshots in project
         """
@@ -1008,7 +1008,7 @@ class TestPublicIpAddress(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_07_associate_public_ip(self):
         """Test associate public IP within the project
         """

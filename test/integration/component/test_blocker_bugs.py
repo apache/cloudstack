@@ -149,7 +149,7 @@ class TestTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_01_create_template(self):
         """TS_BUG_002-Test to create and deploy VM using password enabled template
         """
@@ -308,7 +308,7 @@ class TestNATRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_firewall_rules_port_fw(self):
         """"Checking firewall rules deletion after static NAT disable"""
 
@@ -515,7 +515,7 @@ class TestRouters(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_01_list_routers_admin(self):
         """TS_BUG_007-Check listRouters() using Admin User
         """
@@ -630,7 +630,7 @@ class TestRouterRestart(cloudstackTestCase):
         # No need
         return
 
-    @attr(tags = ["advanced", "advancedns", "eip"])
+    @attr(tags=["advanced", "advancedns", "eip", "selfservice"])
     def test_01_restart_network_cleanup(self):
         """TS_BUG_008-Test restart network
         """
@@ -793,7 +793,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_01_check_template_size(self):
         """TS_BUG_009-Test the size of template created from root disk
         """
@@ -821,7 +821,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_02_check_size_snapshotTemplate(self):
         """TS_BUG_010-Test check size of snapshot and template
         """
@@ -902,7 +902,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "eip", "provisioning"])
     def test_03_reuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
         """

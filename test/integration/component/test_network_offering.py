@@ -215,7 +215,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
@@ -460,7 +460,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
@@ -798,7 +798,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
@@ -998,7 +998,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
@@ -1218,7 +1218,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_create_network_with_snat(self):
         """Test to create a network with SourceNAT service only"""
 

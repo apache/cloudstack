@@ -120,7 +120,7 @@ class TestAllocationState(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_01_zones(self):
         """Check the status of zones"""
 
@@ -146,7 +146,7 @@ class TestAllocationState(cloudstackTestCase):
                              )
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_02_pods(self):
         """Check the status of pods"""
 
@@ -172,7 +172,7 @@ class TestAllocationState(cloudstackTestCase):
                              )
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_03_clusters(self):
         """Check the status of clusters"""
 
@@ -198,7 +198,7 @@ class TestAllocationState(cloudstackTestCase):
                              )
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_04_hosts(self):
         """Check the status of hosts"""
 
@@ -225,7 +225,7 @@ class TestAllocationState(cloudstackTestCase):
                              )
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_05_storage_pools(self):
         """Check the status of Storage pools"""
 
@@ -251,7 +251,7 @@ class TestAllocationState(cloudstackTestCase):
                              )
         return
 
-    @attr(tags = ["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_06_secondary_storage(self):
         """Check the status of secondary storage"""
 

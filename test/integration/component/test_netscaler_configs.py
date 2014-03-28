@@ -192,7 +192,7 @@ class TestAddNetScaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
@@ -318,7 +318,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_invalid_cred(self):
         """Test add netscaler device with invalid credential
         """
@@ -387,7 +387,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_invalid_public_interface(self):
         """Test add netscaler device with invalid public interface
         """
@@ -454,7 +454,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_invalid_private_interface(self):
         """Test add netscaler device with invalid private interface
         """

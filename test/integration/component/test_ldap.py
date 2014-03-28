@@ -128,7 +128,7 @@ class TestLdap(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic", "selfservice"])
     def test_01_addLdapConfiguration(self):
         """
         This test configures LDAP and attempts to authenticate as a user.
