@@ -147,6 +147,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
         List<Long> groupIds = _aclGroupAccountMapDao.customSearch(groupSc, null);
 
+        if (groupIds == null || groupIds.isEmpty()) {
+            return new ArrayList<IAMGroup>();
+        }
         SearchBuilder<IAMGroupVO> sb = _aclGroupDao.createSearchBuilder();
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<IAMGroupVO> sc = sb.create();
