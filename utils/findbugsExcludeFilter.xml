@@ -23,7 +23,7 @@
 
      <!-- Match all XYZ violations. -->
      <Match>
-       <Class name="SshCmdHelper" />
+       <Class name="SSHCmdHelper" />
        <Method name="sshExecuteCmdOneShotWithExitCode" />
        <Bug pattern="DM_DEFAULT_ENCODING" />
      </Match>

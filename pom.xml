@@ -891,9 +891,7 @@
             <xmlOutput>true</xmlOutput>
             <failOnError>false</failOnError>
             <maxHeap>2048</maxHeap>
-            <excludeFilterFile>
-              ${basedir}/findbugsExcludeFilter.xml
-            </excludeFilterFile>
+            <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
           </configuration>
           <executions>
             <execution>
@@ -916,6 +914,7 @@
         <configuration>
           <threshold>Low</threshold><!-- High|Normal|Low|Exp|Ignore -->
           <effort>Default</effort><!-- Min|Default|Max -->
+          <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
         </configuration>
       </plugin>
       <plugin>
