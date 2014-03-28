@@ -61,7 +61,7 @@ class TestRegionsAccounts(cloudstackTestCase):
         cls.cleanup = []
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createAccountWithUUID(self):
         """Test for creating account by passing id parameter
 
@@ -101,7 +101,7 @@ class TestRegionsAccounts(cloudstackTestCase):
         self.cleanup.append(account)
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createUserWithUUID(self):
         """Test for creating User by passing id parameter
 
@@ -152,7 +152,7 @@ class TestRegionsAccounts(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_createdomainWithUUID(self):
         """Test for creating Domain by passing id parameter
 

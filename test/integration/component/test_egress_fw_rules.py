@@ -384,7 +384,7 @@ class TestEgressFWRules(cloudstackTestCase):
         except Exception as e:
             self.fail("Warning! Cleanup failed: %s" % e)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_01_egress_fr1(self):
         """Test By-default the communication from guest n/w to public n/w is allowed.
         """
@@ -399,7 +399,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_01_1_egress_fr1(self):
         """Test By-default the communication from guest n/w to public n/w is NOT allowed.
         """
@@ -415,7 +415,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_02_egress_fr2(self):
         """Test Allow Communication using Egress rule with CIDR + Port Range + Protocol.
         """
@@ -432,7 +432,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_02_1_egress_fr2(self):
         """Test Allow Communication using Egress rule with CIDR + Port Range + Protocol.
         """
@@ -449,7 +449,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_03_egress_fr3(self):
         """Test Communication blocked with network that is other than specified
         """
@@ -470,7 +470,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "[]",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_03_1_egress_fr3(self):
         """Test Communication blocked with network that is other than specified
         """
@@ -491,7 +491,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['failed:']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_04_egress_fr4(self):
         """Test Create Egress rule and check the Firewall_Rules DB table
         """
@@ -528,7 +528,7 @@ class TestEgressFWRules(cloudstackTestCase):
                          "DB results not matching, expected: 1, found: %s" % qresultset[0][0])
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_04_1_egress_fr4(self):
         """Test Create Egress rule and check the Firewall_Rules DB table
         """
@@ -565,7 +565,7 @@ class TestEgressFWRules(cloudstackTestCase):
                          "DB results not matching, expected: 0, found: %s" % qresultset[0][0])
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_05_egress_fr5(self):
         """Test Create Egress rule and check the IP tables
         """
@@ -584,7 +584,7 @@ class TestEgressFWRules(cloudstackTestCase):
 
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_05_1_egress_fr5(self):
         """Test Create Egress rule and check the IP tables
         """
@@ -602,7 +602,7 @@ class TestEgressFWRules(cloudstackTestCase):
         #TODO: Query VR for expected route rules.
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_06_egress_fr6(self):
         """Test Create Egress rule without CIDR
         """
@@ -618,7 +618,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_06_1_egress_fr6(self):
         """Test Create Egress rule without CIDR
         """
@@ -634,7 +634,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_07_egress_fr7(self):
         """Test Create Egress rule without End Port
         """
@@ -650,7 +650,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['failed:']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_07_1_egress_fr7(self):
         """Test Create Egress rule without End Port
         """
@@ -667,7 +667,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_08_egress_fr8(self):
         """Test Port Forwarding and Egress Conflict
         """
@@ -679,7 +679,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.createEgressRule()
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_08_1_egress_fr8(self):
         """Test Port Forwarding and Egress Conflict
         """
@@ -691,7 +691,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.createEgressRule()
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_09_egress_fr9(self):
         """Test Delete Egress rule
         """
@@ -715,7 +715,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_09_1_egress_fr9(self):
         """Test Delete Egress rule
         """
@@ -740,7 +740,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_10_egress_fr10(self):
         """Test Invalid CIDR and Invalid Port ranges
         """
@@ -751,7 +751,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.create_vm()
         self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_10_1_egress_fr10(self):
         """Test Invalid CIDR and Invalid Port ranges
         """
@@ -763,7 +763,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_11_egress_fr11(self):
         """Test Regression on Firewall + PF + LB + SNAT
         """
@@ -773,7 +773,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         self.create_vm(pfrule=True)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_11_1_egress_fr11(self):
         """Test Regression on Firewall + PF + LB + SNAT
         """
@@ -783,7 +783,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         self.create_vm(pfrule=True, egress_policy=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_12_egress_fr12(self):
         """Test Reboot Router
         """
@@ -800,7 +800,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_12_1_egress_fr12(self):
         """Test Reboot Router
         """
@@ -817,7 +817,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_13_egress_fr13(self):
         """Test Redundant Router : Master failover
         """
@@ -872,7 +872,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_13_1_egress_fr13(self):
         """Test Redundant Router : Master failover
         """

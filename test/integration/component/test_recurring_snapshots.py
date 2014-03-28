@@ -216,7 +216,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "selfservice"])
     def test_recurring_snapshot_root_disk(self):
         """Test Recurring Snapshot Root Disk
         """
@@ -309,7 +309,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "selfservice"])
     def test_recurring_snapshot_data_disk(self):
         """Test Recurring Snapshot data Disk
         """

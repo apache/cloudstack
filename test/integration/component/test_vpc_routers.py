@@ -343,7 +343,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          " still %s" % (host.id, router.hostid))
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_01_stop_start_router_after_creating_vpc(self):
         """ Test to stop and start router after creation of VPC
         """
@@ -421,7 +421,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_reboot_router_after_creating_vpc(self):
         """ Test to reboot the router after creating a VPC
         """
@@ -470,7 +470,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_03_migrate_router_after_creating_vpc(self):
         """ Test migration of router to another host after creating VPC """
 
@@ -491,7 +491,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.migrate_router(routers[0])
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_change_service_offerring_vpc(self):
         """ Tests to change service offering of the Router after
             creating a vpc
@@ -552,7 +552,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                         ) 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_destroy_router_after_creating_vpc(self):
         """ Test to destroy the router after creating a VPC
 	    """
@@ -980,7 +980,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioining"])
     def test_01_start_stop_router_after_addition_of_one_guest_network(self):
         """ Test start/stop of router after addition of one guest network
 	    """
@@ -1075,7 +1075,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_reboot_router_after_addition_of_one_guest_network(self):
         """ Test reboot of router after addition of one guest network
 	    """
@@ -1142,7 +1142,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "provisioning"])
     def test_03_migrate_router_after_addition_of_one_guest_network(self):
         """ Test migrate of router after addition of one guest network
 	    """
@@ -1185,7 +1185,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.migrate_router(routers[0])
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_chg_srv_off_router_after_addition_of_one_guest_network(self):
         """ Test to change service offering of router after addition of one guest network
 	    """
@@ -1263,7 +1263,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                         ) 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_destroy_router_after_addition_of_one_guest_network(self):
         """ Test destroy of router after addition of one guest network
         """

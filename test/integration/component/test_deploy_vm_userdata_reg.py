@@ -100,7 +100,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
 
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    @attr(tags=["simulator", "devcloud", "basic", "advanced", "provisioning"])
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """

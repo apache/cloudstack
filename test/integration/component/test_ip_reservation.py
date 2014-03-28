@@ -215,7 +215,7 @@ class TestIpReservation(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
         return virtual_machine
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_network_not_implemented(self):
         # steps
         # 1. update guestvmcidr of isolated network (non persistent)
@@ -228,7 +228,7 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.debug("Network Update of guest VM CIDR should fail as there is no VM deployed in network")
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_vm_create_after_reservation(self):
         # steps
         # 1. create vm in persistent isolated network with ip in guestvmcidr
@@ -263,7 +263,7 @@ class TestIpReservation(cloudstackTestCase):
         except Exception as e:
             self.skipTest("VM creation fails, cannot validate the condition")
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_reservation_after_router_restart(self):
         # steps
         # 1. update guestvmcidr of persistent isolated network
@@ -297,7 +297,7 @@ class TestIpReservation(cloudstackTestCase):
                     )
         self.assertEqual(networks[0].cidr, guest_vm_cidr, "guestvmcidr should match after router reboot")
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "selfservice"])
     def test_vm_create_outside_cidr_after_reservation(self):
         # steps
         # 1. update guestvmcidr of persistent isolated network

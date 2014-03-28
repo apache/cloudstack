@@ -227,7 +227,7 @@ class TestAddMultipleNetScaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags=["advancedns", "provisioning"])
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
@@ -385,7 +385,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns", "multizone"])
+    @attr(tags=["advancedns", "multizone", "provisioning"])
     def test_add_mul_netscaler_diff_zone(self):
         """Test add netscaler devices in different zones
         """

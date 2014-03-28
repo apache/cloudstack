@@ -216,7 +216,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                         "Check project name from list response")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_project_vmlifecycle_start_stop_instance(self):
 
         # Validate the following
@@ -273,7 +273,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                          "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_02_project_vmlifecycle_migrate_instance(self):
 
         # Validate the following
@@ -314,7 +314,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                          "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_project_vmlifecycle_delete_instance(self):
 
         # Validate the following

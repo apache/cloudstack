@@ -239,7 +239,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
                     (responses.domain, responses.domainid, responses.max))
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_deploy_vm_domain_limit_reached(self):
         """Test Try to deploy VM with admin account where account has not used
            the resources but @ domain they are not available"""
@@ -266,7 +266,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
                               service_off=self.service_offering, api_client=api_client)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_02_deploy_vm_account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
            the resources but @ domain they are available"""
@@ -296,7 +296,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
                               service_off=self.service_offering, api_client=api_client)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_deploy_vm_project_limit_reached(self):
         """Test TTry to deploy VM with admin account where account has not used
         the resources but @ project they are not available"""
@@ -320,7 +320,7 @@ class TestMaxMemoryLimits(cloudstackTestCase):
                             service_off=self.service_offering, api_client=api_client)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_04_deployVm__account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
            the resources but @ project they are available"""

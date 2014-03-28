@@ -178,7 +178,7 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:
@@ -352,7 +352,7 @@ class TestAntiAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vmware_anti_affinity(self):
         """ Test Set up anti-affinity rules
 
@@ -587,7 +587,7 @@ class TestAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags = ["advanced", "vmware", "multihost"])
+    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
     def test_vmware_affinity(self):
         """ Test Set up affinity rules
 

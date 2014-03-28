@@ -169,7 +169,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_01_admin_create_aff_grp(self):
         """
         Test create affinity group as admin
@@ -184,7 +184,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.assert_(list_aff_grps[0].id == aff_grp.id)
         self.cleanup.append(aff_grp)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_02_doadmin_create_aff_grp(self):
         """
         Test create affinity group as domain admin
@@ -204,7 +204,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         aff_grp.delete(domainapiclient)
 
     #@attr(tags=["simulator", "basic", "advanced"])
-    @attr(tags=["vogxn", "simulator", "basic", "advanced"])
+    @attr(tags=["vogxn", "simulator", "basic", "advanced", "selfservice"])
     def test_03_user_create_aff_grp(self):
         """
         Test create affinity group as user
@@ -222,7 +222,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         aff_grp.delete(userapiclient)
 
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_04_user_create_aff_grp_existing_name(self):
         """
         Test create affinity group that exists (same name)
@@ -243,7 +243,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.debug("Deleted Affinity Group: %s" %aff_grp.name)
         aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_05_create_aff_grp_same_name_diff_acc(self):
         """
         Test create affinity group with existing name but within different account
@@ -265,7 +265,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.debug("Deleted Affinity Group: %s" %aff_grp.name)
         aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_06_create_aff_grp_nonexisting_type(self):
         """
         Test create affinity group of non-existing type
@@ -391,7 +391,7 @@ class TestListAffinityGroups(cloudstackTestCase):
                          msg="VM is not in Running state")
         return vm, vm_response.hostid
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_01_list_aff_grps_for_vm(self):
         """
            List affinity group for a vm
@@ -413,7 +413,7 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_02_list_multiple_aff_grps_for_vm(self):
         """
            List multiple affinity groups associated with a vm
@@ -442,7 +442,7 @@ class TestListAffinityGroups(cloudstackTestCase):
         aff_grp_01.delete(self.api_client)
         aff_grp_02.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_03_list_aff_grps_by_id(self):
         """
            List affinity groups by id
@@ -457,7 +457,7 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_04_list_aff_grps_by_name(self):
         """
             List Affinity Groups by name
@@ -471,7 +471,7 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_05_list_aff_grps_by_non_existing_id(self):
         """
             List Affinity Groups by non-existing id
@@ -485,7 +485,7 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_06_list_aff_grps_by_non_existing_name(self):
         """
             List Affinity Groups by non-existing name
@@ -499,7 +499,7 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_07_list_all_vms_in_aff_grp(self):
         """
            List affinity group should list all for a vms associated with that group
@@ -642,7 +642,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.deleteAffinityGroup(cmd)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_01_delete_aff_grp_by_name(self):
         """
             Delete Affinity Group by name
@@ -653,7 +653,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         self.delete_aff_group(self.api_client, name=aff_0.name)
         self.assert_(AffinityGroup.list(self.api_client, name=aff_0.name) is None)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_02_delete_aff_grp_for_acc(self):
         """
             Delete Affinity Group as admin for an account
@@ -669,7 +669,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
             self.create_vm_in_aff_grps([aff_0.name], account_name=self.account.name, domain_id=self.domain.id)
         aff_1.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_03_delete_aff_grp_with_vms(self):
         """
             Delete Affinity Group which has vms in it
@@ -687,7 +687,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         aff_1.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_05_delete_aff_grp_id(self):
         """
             Delete Affinity Group with id which does not belong to this user
@@ -723,7 +723,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_0.delete(self.api_client)
         aff_1.delete(userapiclient)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_06_delete_aff_grp_name(self):
         """
             Delete Affinity Group by name which does not belong to this user
@@ -759,7 +759,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_0.delete(self.api_client)
         aff_1.delete(userapiclient)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_08_delete_aff_grp_by_id(self):
         """
             Delete Affinity Group by id.
@@ -771,7 +771,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_grp_1.delete(self.api_client)
         aff_grp_2.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_09_delete_aff_grp_root_admin(self):
         """
             Root admin should be able to delete affinity group of other users
@@ -909,7 +909,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
 
         return vm, vm_response.hostid
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_01_update_aff_grp_by_ids(self):
         """
             Update the list of affinityGroups by using affinity groupids
@@ -957,7 +957,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in self.aff_grp:
             aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_02_update_aff_grp_by_names(self):
         """
             Update the list of affinityGroups by using affinity groupnames
@@ -1000,7 +1000,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in self.aff_grp:
             aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_03_update_aff_grp_for_vm_with_no_aff_grp(self):
         """
             Update the list of affinityGroups for vm which is not associated
@@ -1033,7 +1033,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             aff_grp.delete(self.api_client)
 
     @unittest.skip("Skip - Failing - work in progress")
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
     def test_04_update_aff_grp_remove_all(self):
         """
             Update the list of Affinity Groups to empty list
@@ -1059,7 +1059,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_05_update_aff_grp_on_running_vm(self):
         """
             Update the list of Affinity Groups on running vm
@@ -1195,7 +1195,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
 
         return vm, vm_response.hostid
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_01_deploy_vm_without_aff_grp(self):
         """
             Deploy VM without affinity group
@@ -1206,7 +1206,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_02_deploy_vm_by_aff_grp_name(self):
         """
             Deploy VM by aff grp name
@@ -1218,7 +1218,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_03_deploy_vm_by_aff_grp_id(self):
         """
             Deploy VM by aff grp id
@@ -1234,7 +1234,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_04_deploy_vm_anti_affinity_group(self):
         """
         test DeployVM in anti-affinity groups
@@ -1255,7 +1255,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_05_deploy_vm_by_id(self):
         """
             Deploy vms by affinity group id
@@ -1277,7 +1277,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         self.aff_grp[0].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_06_deploy_vm_aff_grp_of_other_user_by_name(self):
         """
             Deploy vm in affinity group of another user by name
@@ -1310,7 +1310,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.aff_grp[0].delete(self.api_client)
         self.aff_grp[1].delete(userapiclient)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_07_deploy_vm_aff_grp_of_other_user_by_id(self):
         """
             Deploy vm in affinity group of another user by id
@@ -1346,7 +1346,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.aff_grp[0].delete(self.api_client)
         self.aff_grp[1].delete(userapiclient)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_08_deploy_vm_multiple_aff_grps(self):
         """
             Deploy vm in multiple affinity groups
@@ -1375,7 +1375,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.aff_grp[0].delete(self.api_client)
         self.aff_grp[1].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_09_deploy_vm_multiple_aff_grps(self):
         """
             Deploy multiple vms in multiple affinity groups
@@ -1410,7 +1410,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         self.aff_grp[0].delete(self.api_client)
         self.aff_grp[1].delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_10_deploy_vm_by_aff_grp_name_and_id(self):
         """
             Deploy VM by aff grp name and id
@@ -1540,7 +1540,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
 
         return vm, vm_response.hostid
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_01_deploy_vm_another_user(self):
         """
             Deploy vm as Admin in Affinity Group belonging to regular user (should fail)
@@ -1578,7 +1578,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         aff_grp.delete(self.apiclient)
 
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "selfservice"])
     def test_03_list_aff_grp_all_users(self):
         """
             List Affinity Groups as admin for all the users
@@ -1601,7 +1601,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
                          "Groups of users")
         aff_grp.delete(userapiclient)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_04_list_all_admin_aff_grp(self):
         """
             List Affinity Groups belonging to admin user
@@ -1628,7 +1628,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         aff_grp1.delete(self.api_client)
         aff_grp2.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_05_list_all_users_aff_grp(self):
         """
             List Affinity Groups belonging to regular user passing account id and domain id
@@ -1664,7 +1664,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         aff_grp1.delete(self.api_client)
         aff_grp2.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_06_list_all_users_aff_grp_by_id(self):
         """
             List Affinity Groups belonging to regular user passing group id
@@ -1696,7 +1696,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
 
         aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
     def test_07_delete_aff_grp_of_other_user(self):
         """
             Delete Affinity Group belonging to regular user

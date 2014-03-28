@@ -242,7 +242,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_02_snapshot_data_disk(self):
         """Test Snapshot Data Disk
         """
@@ -289,7 +289,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_01_volume_from_snapshot(self):
         """Test Creating snapshot from volume having spaces in name(KVM)
         """
@@ -534,7 +534,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
     def test_04_delete_snapshot(self):
         """Test Delete Snapshot
         """
@@ -593,7 +593,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
@@ -719,7 +719,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
+    @attr(tags=["advanced", "advancedns", "smoke", "xen", "provisioning"])
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -969,7 +969,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
@@ -1176,7 +1176,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_05_snapshot_events(self):
         """Test snapshot events
         """
