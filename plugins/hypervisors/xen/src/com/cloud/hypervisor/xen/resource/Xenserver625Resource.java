@@ -39,10 +39,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @Local(value=ServerResource.class)
-public class XenServer625Resource extends XenServerResourceNewBase {
-    private static final Logger s_logger = Logger.getLogger(XenServer625Resource.class);
+public class Xenserver625Resource extends XenServerResourceNewBase {
+    private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);
 
-    public XenServer625Resource() {
+    public Xenserver625Resource() {
         super();
     }
 
@@ -102,7 +102,7 @@ public class XenServer625Resource extends XenServerResourceNewBase {
 
     @Override
     protected StorageSubsystemCommandHandler getStorageHandler() {
-        XenServerStorageProcessor processor = new XenServer625StorageProcessor(this);
+        XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
     }
 

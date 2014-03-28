@@ -54,10 +54,10 @@ import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VDI;
 
-public class XenServer625StorageProcessor extends XenServerStorageProcessor {
+public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
 
-    public XenServer625StorageProcessor(CitrixResourceBase resource) {
+    public Xenserver625StorageProcessor(CitrixResourceBase resource) {
         super(resource);
     }
     protected boolean mountNfs(Connection conn, String remoteDir, String localDir) {
