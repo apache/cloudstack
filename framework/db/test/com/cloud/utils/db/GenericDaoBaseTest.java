@@ -19,8 +19,7 @@ package com.cloud.utils.db;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -73,7 +72,7 @@ public class GenericDaoBaseTest {
         Mockito.when(resultSet.getObject(1)).thenReturn(0.1f);
         Mockito.when(resultSet.getFloat(1)).thenReturn(0.1f);
         Assert.assertEquals(0.1f,
-                GenericDaoBase.getObject(Float.class, resultSet, 1));
+                GenericDaoBase.getObject(Float.class, resultSet, 1), 0.1);
         Mockito.verify(resultSet).getFloat(1);
     }
 
@@ -82,7 +81,7 @@ public class GenericDaoBaseTest {
         Mockito.when(resultSet.getObject(1)).thenReturn(0.1f);
         Mockito.when(resultSet.getFloat(1)).thenReturn(0.1f);
         Assert.assertEquals(0.1f,
-                GenericDaoBase.getObject(float.class, resultSet, 1));
+                GenericDaoBase.getObject(float.class, resultSet, 1), 0.1);
         Mockito.verify(resultSet).getFloat(1);
     }
 
@@ -91,7 +90,7 @@ public class GenericDaoBaseTest {
         Mockito.when(resultSet.getObject(1)).thenReturn(0.1d);
         Mockito.when(resultSet.getDouble(1)).thenReturn(0.1d);
         Assert.assertEquals(0.1d,
-                GenericDaoBase.getObject(double.class, resultSet, 1));
+                GenericDaoBase.getObject(double.class, resultSet, 1), 0.1);
         Mockito.verify(resultSet).getDouble(1);
     }
 
@@ -100,7 +99,7 @@ public class GenericDaoBaseTest {
         Mockito.when(resultSet.getObject(1)).thenReturn(0.1d);
         Mockito.when(resultSet.getDouble(1)).thenReturn(0.1d);
         Assert.assertEquals(0.1d,
-                GenericDaoBase.getObject(Double.class, resultSet, 1));
+                GenericDaoBase.getObject(Double.class, resultSet, 1), 0.1);
         Mockito.verify(resultSet).getDouble(1);
     }
 
@@ -120,6 +119,24 @@ public class GenericDaoBaseTest {
         Assert.assertEquals((Long) 1l,
                 GenericDaoBase.getObject(long.class, resultSet, 1));
         Mockito.verify(resultSet).getLong(1);
+    }
+
+    @Test
+    public void getObjectPrimitiveInt() throws SQLException {
+        Mockito.when(resultSet.getObject(1)).thenReturn(1l);
+        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+        Assert.assertEquals((Integer) 1,
+                GenericDaoBase.getObject(int.class, resultSet, 1));
+        Mockito.verify(resultSet).getInt(1);
+    }
+
+    @Test
+    public void getObjectInteger() throws SQLException {
+        Mockito.when(resultSet.getObject(1)).thenReturn(1l);
+        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+        Assert.assertEquals((Integer) 1,
+                GenericDaoBase.getObject(Integer.class, resultSet, 1));
+        Mockito.verify(resultSet).getInt(1);
     }
 
     @Test

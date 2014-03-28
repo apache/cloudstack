@@ -686,12 +686,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return null;
             }
         } else if (type == int.class) {
-            return (M)new Integer(rs.getInt(index));
+            return (M) (Integer) rs.getInt(index);
         } else if (type == Integer.class) {
             if (rs.getObject(index) == null) {
                 return null;
             } else {
-                return (M)new Integer(rs.getInt(index));
+                return (M) (Integer) rs.getInt(index);
             }
         } else if (type == long.class) {
             return (M) (Long) rs.getLong(index);
