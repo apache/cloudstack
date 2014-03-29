@@ -28,7 +28,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -58,6 +57,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
@@ -126,17 +127,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
         }
 
-        try {
-            checkFormat(cmd.getFormat(), url);
-        } catch (InvalidParameterValueException ex) {
-            checkFormat(cmd.getFormat(), path);
-        }
+//        Don't check with Docker template
+        if (!cmd.getHypervisor().equals(Hypervisor.HypervisorType.Docker)) {
+            try {
+                checkFormat(cmd.getFormat(), url);
+            } catch (InvalidParameterValueException ex) {
+                checkFormat(cmd.getFormat(), path);
+            }
 
-        UriUtils.validateUrl(url);
+            UriUtils.validateUrl(url);
+            // Check that the resource limit for secondary storage won't be exceeded
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+
+        }
         profile.setUrl(url);
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
-                ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         return profile;
     }
 
@@ -181,6 +185,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         if (template == null) {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
+        }
+
+        //skip the rest in case of Docker
+        if (profile.getHypervisorType().equals(HypervisorType.Docker)) {
+            return template;
         }
 
         // find all eligible image stores for this zone scope
