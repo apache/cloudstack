@@ -81,6 +81,12 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             throw new InvalidParameterValueException("Entity and action cannot be both NULL in checkAccess!");
         }
 
+        // if a Project entity, skip
+        Account entityAccount = _accountService.getAccount(entity.getAccountId());
+        if (entityAccount != null && entityAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            return false;
+        }
+
         String entityType = null;
         if (entity.getEntityType() != null) {
             entityType = entity.getEntityType().getSimpleName();
@@ -128,6 +134,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
         if (!policies.isEmpty()) { // Since we reach this point, none of the
                                    // roles granted access
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Account " + caller + " does not have permission to access resource " + entity
                         + " for access type: " + accessType);
