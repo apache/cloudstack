@@ -1825,12 +1825,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     @Override
+    public ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
+            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String chapTargetUsername, String chapTargetSecret) throws Exception {
+        return getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
+                VmwareResource.trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+    }
+
+    @Override
     public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
             String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
-        ManagedObjectReference morDs = getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName),
-                storageHost, storagePort, VmwareResource.trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret,
-                chapTargetUsername, chapTargetSecret);
+        ManagedObjectReference morDs = prepareManagedDatastore(hyperHost, iScsiName, storageHost, storagePort,
+                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
 
         DatastoreMO dsMo = new DatastoreMO(getServiceContext(null), morDs);
 
@@ -1908,7 +1915,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (isManaged) {
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
-                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, dsMo.getName());
+                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getName());
             }
             else {
                 datastoreDiskPath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");

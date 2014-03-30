@@ -29,6 +29,7 @@ import com.cloud.storage.StoragePool;
 public interface PrimaryDataStoreInfo extends StoragePool {
     static final String MANAGED = "managed";
     static final String STORAGE_HOST= "storageHost";
+    static final String STORAGE_PORT = "storagePort";
     static final String MANAGED_STORE_TARGET = "managedStoreTarget";
     static final String MANAGED_STORE_TARGET_ROOT_VOLUME = "managedStoreTargetRootVolume";
     static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";

@@ -911,7 +911,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 String chapInitiatorSecret = null;
 
                 if (destDataStoreTo instanceof PrimaryDataStoreTO) {
-                    PrimaryDataStoreTO destPrimaryDataStoreTo = (PrimaryDataStoreTO) destDataStoreTo;
+                    PrimaryDataStoreTO destPrimaryDataStoreTo = (PrimaryDataStoreTO)destDataStoreTo;
 
                     Map<String, String> details = destPrimaryDataStoreTo.getDetails();
 

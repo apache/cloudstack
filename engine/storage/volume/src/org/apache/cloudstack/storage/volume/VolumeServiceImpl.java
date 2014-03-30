@@ -527,7 +527,10 @@ public class VolumeServiceImpl implements VolumeService {
             TemplateObjectTO templateObjectTo = (TemplateObjectTO)answer.getNewData();
 
             volume.setPath(templateObjectTo.getPath());
-            volume.setFormat(templateObjectTo.getFormat());
+
+            if (templateObjectTo.getFormat() != null) {
+                volume.setFormat(templateObjectTo.getFormat());
+            }
 
             volDao.update(volume.getId(), volume);
         }
@@ -682,6 +685,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             details.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
             details.put(PrimaryDataStore.STORAGE_HOST, destPrimaryDataStore.getHostAddress());
+            details.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(destPrimaryDataStore.getPort()));
             // for managed storage, the storage repository (XenServer) or datastore (ESX) name is based off of the iScsiName property of a volume
             details.put(PrimaryDataStore.MANAGED_STORE_TARGET, volumeInfo.get_iScsiName());
             details.put(PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME, volumeInfo.getName());
