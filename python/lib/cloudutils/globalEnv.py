@@ -42,3 +42,5 @@ class globalEnv:
         self.distribution = None
         # bridgeType
         self.bridgeType = "native"
+        # hypervisorType
+        self.hypervisorType = None

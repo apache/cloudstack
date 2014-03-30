@@ -57,7 +57,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.", length=4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")
+    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")
     private String format;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="the target hypervisor for the template")

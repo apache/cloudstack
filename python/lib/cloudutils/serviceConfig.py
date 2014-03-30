@@ -384,6 +384,10 @@ class nfsConfig(serviceCfgBase):
         self.serviceName = "Nfs"
 
     def config(self):
+        # Docker
+        if self.syscfg.env.hypervisorType == "docker":
+            return True
+        # end Docker
         try:
             if not os.path.exists("/etc/nfsmount.conf"):
                 return True
@@ -412,6 +416,9 @@ class securityPolicyConfigUbuntu(serviceCfgBase):
         self.serviceName = "Apparmor"
 
     def config(self):
+        # Docker
+        if self.syscfg.env.hypervisorType == "docker":
+            return True
         try:
             cmd = bash("service apparmor status")
             if not cmd.isSuccess() or cmd.getStdout() == "":
@@ -532,6 +539,9 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l -d'")
 
     def config(self):
+        # Docker
+        if self.syscfg.env.hypervisorType == "docker":
+            return True
         try:
             self.setupLiveMigration()
 
@@ -568,6 +578,9 @@ class firewallConfigUbuntu(serviceCfgBase):
             ports = "22 1798 16509".split()
             for p in ports:
                 bash("ufw allow %s"%p)
+            #Docker
+            bash("ufw allow 5555")
+            #end Docker
             bash("ufw allow proto tcp from any to any port 5900:6100")
             bash("ufw allow proto tcp from any to any port 49152:49216")
             self.syscfg.svo.stopService("ufw")
@@ -678,7 +691,12 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("guid", str(self.syscfg.env.uuid))
             if cfo.getEntry("local.storage.uuid") == "":
                 cfo.addEntry("local.storage.uuid", str(bash("uuidgen").getStdout()))
-            cfo.addEntry("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource")
+            # Docker
+            if self.syscfg.env.hypervisorType == "docker":
+                cfo.addEntry("resource", "com.cloud.hypervisor.docker.resource.DockerResource")
+            else:
+                cfo.addEntry("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource")
+            # end Docker
             cfo.save()
 
             self.syscfg.svo.stopService("cloudstack-agent")

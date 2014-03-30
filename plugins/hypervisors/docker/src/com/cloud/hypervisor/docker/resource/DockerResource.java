@@ -21,17 +21,17 @@ import com.cloud.resource.ServerResourceBase;
 
 @Local(value = {ServerResource.class})
 public class DockerResource extends ServerResourceBase implements ServerResource {
-	private static final Logger s_logger = Logger.getLogger(DockerResource.class);
+    private static final Logger s_logger = Logger.getLogger(DockerResource.class);
 
-	@Override
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		return true;
-	}
-	
-	@Override
-	public Answer executeRequest(Command cmd) {
-		try {
-			if (cmd instanceof StopCommand) {
+        return true;
+    }
+
+    @Override
+    public Answer executeRequest(Command cmd) {
+        try {
+            if (cmd instanceof StopCommand) {
                 return execute((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
                 return execute((RebootCommand)cmd);
@@ -44,72 +44,68 @@ public class DockerResource extends ServerResourceBase implements ServerResource
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         }
-	}
-	
-	protected Answer execute(StopCommand cmd) {
-		
-	}
-	
-	private Answer execute(RebootCommand cmd) {
-		
-	}
-	
-	protected StartAnswer execute(StartCommand cmd) {
-		
-	}
-	
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    protected Answer execute(StopCommand cmd) {
+        return null;
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private Answer execute(RebootCommand cmd) {
+        return null;
+    }
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    protected StartAnswer execute(StartCommand cmd) {
+        return null;
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public StartupCommand[] initialize() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> arg0) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setName(String arg0) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	protected String getDefaultScriptsDir() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
+    @Override
+    public void setRunLevel(int arg0) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public PingCommand getCurrentStatus(long arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Type getType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public StartupCommand[] initialize() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    protected String getDefaultScriptsDir() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

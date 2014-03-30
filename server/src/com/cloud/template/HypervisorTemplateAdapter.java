@@ -118,17 +118,16 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
-        String url = profile.getUrl();
-        String path = null;
-        try {
-            URL str = new URL(url);
-            path = str.getPath();
-        } catch (MalformedURLException ex) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
-        }
-
-//        Don't check with Docker template
-        if (!cmd.getHypervisor().equals(Hypervisor.HypervisorType.Docker)) {
+//      Don't check with Docker template
+        if (!HypervisorType.getType(cmd.getHypervisor()).equals(HypervisorType.Docker)) {
+	        String url = profile.getUrl();
+	        String path = null;
+	        try {
+	            URL str = new URL(url);
+	            path = str.getPath();
+	        } catch (MalformedURLException ex) {
+	            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
+	        }
             try {
                 checkFormat(cmd.getFormat(), url);
             } catch (InvalidParameterValueException ex) {
@@ -139,8 +138,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // Check that the resource limit for secondary storage won't be exceeded
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 
-        }
         profile.setUrl(url);
+        }
         return profile;
     }
 
