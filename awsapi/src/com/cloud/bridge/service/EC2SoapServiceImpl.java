@@ -999,7 +999,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
         if (null != fst) {
             String[] timeFilters = new String[1];
-            timeFilters[0] = new String("start-time");
+            timeFilters[0] = "start-time";
             request = toSnapshotFilterSet(request, fst, timeFilters);
         }
 
@@ -1035,8 +1035,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
         if (null != fst) {
             String[] timeFilters = new String[2];
-            timeFilters[0] = new String("attachment.attach-time");
-            timeFilters[1] = new String("create-time");
+            timeFilters[0] = "attachment.attach-time";
+            timeFilters[1] = "create-time";
             request = toVolumeFilterSet(request, fst, timeFilters);
         }
 
@@ -2070,24 +2070,24 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     public static String toAmazonStateName(String cloudState) {
         if (null == cloudState)
-            return new String("terminated");
+            return "terminated";
 
         if (cloudState.equalsIgnoreCase("Destroyed"))
-            return new String("terminated");
+            return "terminated";
         else if (cloudState.equalsIgnoreCase("Stopped"))
-            return new String("stopped");
+            return "stopped";
         else if (cloudState.equalsIgnoreCase("Running"))
-            return new String("running");
+            return "running";
         else if (cloudState.equalsIgnoreCase("Starting"))
-            return new String("pending");
+            return "pending";
         else if (cloudState.equalsIgnoreCase("Stopping"))
-            return new String("stopping");
+            return "stopping";
         else if (cloudState.equalsIgnoreCase("Error"))
-            return new String("error");
+            return "error";
         else if (cloudState.equalsIgnoreCase("Expunging"))
-            return new String("terminated");
+            return "terminated";
         else
-            return new String("running");
+            return "running";
     }
 
     public static StopInstancesResponse toStopInstancesResponse(EC2StopInstancesResponse engineResponse) {
