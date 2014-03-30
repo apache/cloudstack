@@ -33,9 +33,14 @@ public interface VmwareHostService {
 
     String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
 
+    ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
+            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String chapTargetUsername, String chapTargetSecret) throws Exception;
+
     ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
             String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception;
+
     void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;
 
     void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception;

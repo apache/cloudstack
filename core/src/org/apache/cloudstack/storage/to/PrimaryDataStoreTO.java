@@ -27,6 +27,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String MANAGED = PrimaryDataStore.MANAGED;
     public static final String STORAGE_HOST = PrimaryDataStore.STORAGE_HOST;
+    public static final String STORAGE_PORT = PrimaryDataStore.STORAGE_PORT;
     public static final String MANAGED_STORE_TARGET = PrimaryDataStore.MANAGED_STORE_TARGET;
     public static final String MANAGED_STORE_TARGET_ROOT_VOLUME = PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME;
     public static final String CHAP_INITIATOR_USERNAME = PrimaryDataStore.CHAP_INITIATOR_USERNAME;

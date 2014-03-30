@@ -142,6 +142,23 @@ public class DatastoreMO extends BaseMO {
         return path;
     }
 
+    public boolean deleteFolder(String folder, ManagedObjectReference morDc) throws Exception {
+        ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
+        ManagedObjectReference morTask = _context.getService().deleteDatastoreFileTask(morFileManager, folder, morDc);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+
+            return true;
+        } else {
+            s_logger.error("VMware deleteDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
+
     public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence) throws Exception {
         String datastoreName = getName();
         ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
