@@ -38,7 +38,7 @@ public interface VmwareHostService {
             String chapTargetUsername, String chapTargetSecret) throws Exception;
 
     ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception;
 
     void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;

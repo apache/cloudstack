@@ -323,7 +323,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
     @Override
     public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
         throw new OperationNotSupportedException();
     }
