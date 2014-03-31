@@ -48,7 +48,7 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "the ID of the device to map the volume to within the guest OS. "
-        + "If no deviceId is passed in, the next available deviceId will be chosen. " + "Possible values for a Linux OS are:" + "* 1 - /dev/xvdb" + "* 2 - /dev/xvdc"
+            + "If no deviceId is passed in, the next available deviceId will be chosen. " + "Possible values for a Linux OS are:" + "* 0 - /dev/xvda" + "* 1 - /dev/xvdb" + "* 2 - /dev/xvdc"
         + "* 4 - /dev/xvde" + "* 5 - /dev/xvdf" + "* 6 - /dev/xvdg" + "* 7 - /dev/xvdh" + "* 8 - /dev/xvdi" + "* 9 - /dev/xvdj")
     private Long deviceId;
 

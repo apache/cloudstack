@@ -1161,6 +1161,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM");
         }
 
+        // don't allow to start vm that doesn't have a root volume
+        if (_volsDao.findByInstanceAndType(vmProfile.getId(), Volume.Type.ROOT).isEmpty()) {
+            throw new CloudRuntimeException("Unable to prepare volumes for vm as ROOT volume is missing");
+        }
+
         // for each volume find list of suitable storage pools by calling the
         // allocators
         Set<Long> originalAvoidPoolSet = avoid.getPoolsToAvoid();
