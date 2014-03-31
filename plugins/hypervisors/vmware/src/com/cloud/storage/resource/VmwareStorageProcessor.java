@@ -277,10 +277,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         managed ? managedStoragePoolRootVolumeName : templateUuidName);
 
                 if (managed) {
-                    String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName, managedStoragePoolRootVolumeName,
-                        VmwareStorageLayoutType.VMWARE, false);
-                    String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, managedStoragePoolRootVolumeName,
-                        VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
+                    String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName,
+                        managedStoragePoolRootVolumeName, VmwareStorageLayoutType.VMWARE, false);
+                    String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null,
+                        managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
                     dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
@@ -1254,7 +1254,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (isAttach && isManaged) {
                 Map<String, String> details = disk.getDetails();
 
-                morDs = hostService.prepareManagedStorage(hyperHost, iScsiName, storageHost, storagePort,
+                morDs = hostService.prepareManagedStorage(hyperHost, iScsiName, storageHost, storagePort, null,
                             details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
                             details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
                             volumeTO.getSize(), cmd);

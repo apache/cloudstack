@@ -1834,14 +1834,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
         ManagedObjectReference morDs = prepareManagedDatastore(hyperHost, iScsiName, storageHost, storagePort,
                 chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
 
         DatastoreMO dsMo = new DatastoreMO(getServiceContext(null), morDs);
 
-        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
+        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeName != null ? volumeName : dsMo.getName());
 
         if (!dsMo.fileExists(volumeDatastorePath)) {
             createVmdk(cmd, dsMo, volumeDatastorePath, size);
@@ -2350,12 +2350,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (morDatastore == null) {
                             morDatastore = prepareManagedStorage(hyperHost, iScsiName,
                                     details.get(DiskTO.STORAGE_HOST), Integer.parseInt(details.get(DiskTO.STORAGE_PORT)),
+                                    volumeTO.getVolumeType() == Volume.Type.ROOT ? volumeTO.getName() : null,
                                     details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
                                     details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
                                     Long.parseLong(details.get(DiskTO.VOLUME_SIZE)), cmd);
 
                             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
-                            String datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+                            String datastoreVolumePath = dsMo.getDatastorePath((volumeTO.getVolumeType() == Volume.Type.ROOT ? volumeTO.getName() : dsMo.getName()) + ".vmdk");
 
                             volumeTO.setPath(datastoreVolumePath);
                             vol.setPath(datastoreVolumePath);
@@ -3433,7 +3434,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDs = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                morDs = prepareManagedStorage(hyperHost, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(),
+                morDs = prepareManagedStorage(hyperHost, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(), null,
                         cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
                         cmd.getChapTargetUsername(), cmd.getChapTargetPassword(), cmd.getVolumeSize(), cmd);
             }
