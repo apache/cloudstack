@@ -189,11 +189,7 @@ def get_domain(apiclient, domain_id=None, domain_name=None):
     cmd_out = apiclient.listDomains(cmd)
     if validateList(cmd_out)[0] != PASS:
         return FAILED
-
-    if (domain_id is None and domain_name is None):
-        return cmd_out[0]
-    else:
-        return cmd_out
+    return cmd_out[0]
 
 
 def get_zone(apiclient, zone_name=None, zone_id=None):
@@ -219,10 +215,7 @@ def get_zone(apiclient, zone_name=None, zone_id=None):
     Check if input zone name and zone id is None,
     then return first element of List Zones command
     '''
-    if (zone_name is None and zone_id is None):
-        return cmd_out[0]
-    else:
-        return cmd_out
+    return cmd_out[0]
 
 
 def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
@@ -248,11 +241,7 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
 
     if validateList(cmd_out)[0] != PASS:
         return FAILED
-
-    if (pod_id is None and pod_name is None):
-        return cmd_out[0]
-    else:
-        return cmd_out
+    return cmd_out[0]
 
 
 def get_template(
@@ -286,7 +275,7 @@ def get_template(
         cmd.account = account
 
     '''
-    Get the Templates pertaining
+    Get the Templates pertaining to the inputs provided
     '''
     list_templatesout = apiclient.listTemplates(cmd)
     if validateList(list_templatesout)[0] != PASS:
@@ -295,6 +284,9 @@ def get_template(
     for template in list_templatesout:
         if template.isready and template.templatetype == template_type:
             return template
+    '''
+    Return default first template, if no template matched
+    '''
     return list_templatesout[0]
 
 

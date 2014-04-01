@@ -31,7 +31,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestDedicatePublicIPRange, cls).getClsTestClient()
-	cls.apivlient = cls.testClient.getApiClient()
+	cls.apiclient = cls.testClient.getApiClient()
         cls.services =  cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain
         cls.domain = get_domain(cls.apiclient)

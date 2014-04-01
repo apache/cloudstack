@@ -67,6 +67,9 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         user_data = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
         cls.services["virtual_machine"]["userdata"] = user_data
 
+    def setup(self):
+        self.hypervisor = self.testClient.getHypervisorInfo()
+
     @attr(tags=["simulator", "devcloud", "basic", "advanced", "post"])
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
