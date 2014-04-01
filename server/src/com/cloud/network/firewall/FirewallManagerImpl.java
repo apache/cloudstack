@@ -27,12 +27,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
@@ -271,7 +272,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for firewall rules yet");
             }
-            _accountMgr.checkAccess(caller, null, true, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -463,7 +464,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
 
             // Validate ip address
-            _accountMgr.checkAccess(caller, null, true, ipAddress);
+            _accountMgr.checkAccess(caller, null, ipAddress);
         }
 
         //network id either has to be passed explicitly, or implicitly as a part of ipAddress object
@@ -475,7 +476,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         assert network != null : "Can't create rule as network associated with public ip address is null?";
 
         if (trafficType == FirewallRule.TrafficType.Egress) {
-            _accountMgr.checkAccess(caller, null, true, network);
+            _accountMgr.checkAccess(caller, null, network);
         }
 
         // Verify that the network guru supports the protocol specified
@@ -638,7 +639,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, rules.toArray(new FirewallRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRuleVO[rules.size()]));
         }
 
         try {
@@ -692,7 +693,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Only root admin can delete the system wide firewall rule");
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         revokeRule(rule, caller, userId, false);
 
@@ -742,7 +743,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Only root admin can update the system wide firewall rule");
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         if (customId != null) {
             rule.setUuid(customId);
@@ -761,7 +762,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @DB
     public void revokeRule(final FirewallRuleVO rule, Account caller, long userId, final boolean needUsageEvent) {
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, rule);
+            _accountMgr.checkAccess(caller, null, rule);
         }
 
         Transaction.execute(new TransactionCallbackNoReturn() {

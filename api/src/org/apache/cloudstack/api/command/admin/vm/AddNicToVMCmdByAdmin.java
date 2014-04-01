@@ -32,8 +32,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
-
+@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AddNicToVMCmdByAdmin extends AddNicToVMCmd {
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmdByAdmin.class);
 

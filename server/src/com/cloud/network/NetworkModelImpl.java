@@ -1586,7 +1586,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         + ", permission denied");
             }
         } else {
-            _accountMgr.checkAccess(owner, accessType, true, network);
+            _accountMgr.checkAccess(owner, accessType, network);
         }
     }
 

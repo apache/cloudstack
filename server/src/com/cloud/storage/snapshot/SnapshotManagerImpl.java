@@ -286,7 +286,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
 
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
@@ -391,7 +391,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+        _accountMgr.checkAccess(caller, null, snapshotCheck);
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
@@ -450,7 +450,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (volumeId != null) {
             VolumeVO volume = _volsDao.findById(volumeId);
             if (volume != null) {
-                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
             }
         }
 
@@ -624,7 +624,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
 
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
 
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
@@ -723,7 +723,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
         Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId);
         return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
     }
@@ -999,7 +999,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
 
-            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, volume);
         }
 
         boolean success = true;
@@ -1030,12 +1030,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
-        Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         supportedByHypervisor(volume);
 
-        // Verify permissions
-        _accountMgr.checkAccess(caller, null, true, volume);
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
 

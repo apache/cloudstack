@@ -240,7 +240,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("Unable to find " + paramName);
         }
 
-        _accountMgr.checkAccess(caller, null, false, (ControlledEntity)vo);
+        _accountMgr.checkAccess(caller, null, (ControlledEntity)vo);
 
         return vo;
     }
@@ -342,7 +342,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         Account owner = _accountDao.findById(cmd.getAccountId());
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
@@ -527,7 +527,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                     ControlledEntity[] sameOwnerEntities = conditions.toArray(new ControlledEntity[conditions.size() + 1]);
                     sameOwnerEntities[sameOwnerEntities.length - 1] = autoScalePolicyVO;
-                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEntities);
 
                     if (conditionIds.size() != conditions.size()) {
                         // TODO report the condition id which could not be found
@@ -621,7 +621,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             idList.add(ApiDBUtils.findDomainById(domainId).getUuid());
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specifed domainId");
         }
-        _accountMgr.checkAccess(caller, null, false, owner);
+        _accountMgr.checkAccess(caller, null, owner);
     }
 
     private class SearchWrapper<VO extends ControlledEntity> {
@@ -980,7 +980,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         ControlledEntity[] sameOwnerEntities = policies.toArray(new ControlledEntity[policies.size() + 2]);
         sameOwnerEntities[sameOwnerEntities.length - 2] = loadBalancer;
         sameOwnerEntities[sameOwnerEntities.length - 1] = profileVO;
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEntities);
 
         return Transaction.execute(new TransactionCallback<AutoScaleVmGroupVO>() {
             @Override

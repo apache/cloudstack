@@ -27,11 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -519,7 +520,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             return true;
         }
 
-        _accountMgr.checkAccess(caller, null, true, internalLbVm);
+        _accountMgr.checkAccess(caller, null, internalLbVm);
 
         _itMgr.expunge(internalLbVm.getUuid());
         _internalLbVmDao.remove(internalLbVm.getId());
@@ -534,7 +535,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         //check permissions
-        _accountMgr.checkAccess(caller, null, true, internalLbVm);
+        _accountMgr.checkAccess(caller, null, internalLbVm);
 
         return stopInternalLbVm(internalLbVm, forced, caller, callerUserId);
     }
@@ -912,7 +913,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         //check permissions
-        _accountMgr.checkAccess(caller, null, true, internalLbVm);
+        _accountMgr.checkAccess(caller, null, internalLbVm);
 
         return startInternalLbVm(internalLbVm, caller, callerUserId, null);
     }
