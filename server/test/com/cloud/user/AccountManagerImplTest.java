@@ -17,11 +17,15 @@
 package com.cloud.user;
 
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.ArrayList;
 
 import javax.inject.Inject;
 
+import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.utils.Pair;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -88,6 +92,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AccountManagerImplTest {
@@ -197,6 +202,9 @@ public class AccountManagerImplTest {
     @Mock
     SecurityChecker securityChecker;
 
+    @Mock
+    private UserAuthenticator userAuthenticator;
+
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
@@ -213,6 +221,7 @@ public class AccountManagerImplTest {
                 }
             }
         }
+        ReflectionTestUtils.setField(accountManager, "_userAuthenticators", Arrays.asList(userAuthenticator));
         accountManager.setSecurityCheckers(Arrays.asList(securityChecker));
         CallContext.register(callingUser, callingAccount);
     }
@@ -311,5 +320,39 @@ public class AccountManagerImplTest {
         // assert that this was NOT a clean delete
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(
                 Mockito.eq(42l));
+    }
+
+
+    @Test
+    public void testAuthenticateUser() throws UnknownHostException {
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> successAuthenticationPair = new Pair<>(true, null);
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> failureAuthenticationPair = new Pair<>(false,
+                                                                                                             UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+
+        UserAccountVO userAccountVO = new UserAccountVO();
+        userAccountVO.setSource(User.Source.UNKNOWN);
+        userAccountVO.setState(Account.State.disabled.toString());
+        Mockito.when(_userAccountDao.getUserAccount("test", 1L)).thenReturn(userAccountVO);
+        Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, null)).thenReturn(failureAuthenticationPair);
+        Mockito.when(userAuthenticator.authenticate("test", null, 1L, null)).thenReturn(successAuthenticationPair);
+        Mockito.when(userAuthenticator.authenticate("test", "", 1L, null)).thenReturn(successAuthenticationPair);
+
+        //Test for incorrect password. authentication should fail
+        UserAccount userAccount = accountManager.authenticateUser("test", "fail", 1L, InetAddress.getByName("127.0.0.1"), null);
+        Assert.assertNull(userAccount);
+
+        //Test for null password. authentication should fail
+        userAccount = accountManager.authenticateUser("test", null, 1L, InetAddress.getByName("127.0.0.1"), null);
+        Assert.assertNull(userAccount);
+
+        //Test for empty password. authentication should fail
+        userAccount = accountManager.authenticateUser("test", "", 1L, InetAddress.getByName("127.0.0.1"), null);
+        Assert.assertNull(userAccount);
+
+        //Verifying that the authentication method is only called when password is specified
+        Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, null);
+        Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", null, 1L, null);
+        Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
+
     }
 }
