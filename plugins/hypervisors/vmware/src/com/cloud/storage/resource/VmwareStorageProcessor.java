@@ -1585,7 +1585,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                         // let vmMo.destroy to delete volume for us
                         // vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
-                        vmMo.destroy();
+
+                        if (isManaged) {
+                            vmMo.unregisterVm();
+                        }
+                        else {
+                            vmMo.destroy();
+                        }
 
                         // this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
                         if (managedIqns != null && !managedIqns.isEmpty()) {
