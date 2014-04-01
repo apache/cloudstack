@@ -1175,7 +1175,7 @@ namespace HypervResource
                     VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
                     PrimaryDataStoreTO primary = volume.primaryDataStore;
                     ulong volumeSize = volume.size;
-                    string volumeName = volume.uuid + ".vhd";
+                    string volumeName = volume.uuid + ".vhdx";
                     string volumePath = null;
 
                     if (primary.isLocal)
