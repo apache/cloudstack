@@ -102,7 +102,7 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account can access multiple objects.
-     * 
+     *
      * @param caller
      *            account to check against.
      * @param entities
