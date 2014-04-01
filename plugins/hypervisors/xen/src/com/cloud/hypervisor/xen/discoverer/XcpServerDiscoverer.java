@@ -72,6 +72,7 @@ import com.cloud.hypervisor.xen.resource.XenServer600Resource;
 import com.cloud.hypervisor.xen.resource.XenServer602Resource;
 import com.cloud.hypervisor.xen.resource.XenServer610Resource;
 import com.cloud.hypervisor.xen.resource.XenServer620Resource;
+import com.cloud.hypervisor.xen.resource.XenServer620SP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.Xenserver625Resource;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
@@ -148,7 +149,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
     }
 
-    protected boolean poolHasHotFix(Connection conn, String hostIp) {
+    protected boolean poolHasHotFix(Connection conn, String hostIp, String hotFixUuid) {
         try {
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
             for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
@@ -158,20 +159,20 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     continue;
                 }
                 Set<HostPatch> patches = re.patches;
-                PoolPatch poolPatch = PoolPatch.getByUuid(conn, XenserverConfigs.FixFoxUuid);
+                PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
                 for(HostPatch patch : patches) {
                     PoolPatch pp = patch.getPoolPatch(conn);
                     if (pp.equals(poolPatch) && patch.getApplied(conn)) {
-                        s_logger.debug("host " + hostIp + " does have Fox Hotfix");
+                        s_logger.debug("host " + hostIp + " does have " + hotFixUuid +" Hotfix.");
                         return true;
                     }
                 }
             }
             return false;
         } catch (UuidInvalid e) {
-            s_logger.debug("host " + hostIp + " doesn't have Fox Hotfix");
+            s_logger.debug("host " + hostIp + " doesn't have " + hotFixUuid + " Hotfix");
         } catch (Exception e) {
-            s_logger.debug("can't get patches information, consider it doesn't have Fox Hotfix");
+            s_logger.debug("can't get patches information, consider it doesn't have " + hotFixUuid + " Hotfix");
         }
         return false;
     }
@@ -225,7 +226,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             Pool.Record pr = pool.getRecord(conn);
             String poolUuid = pr.uuid;
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
-            boolean xsHotFixFoxEnabled = poolHasHotFix(conn, hostIp);
+            String latestHotFix = "";
+            if (poolHasHotFix(conn, hostIp, XenserverConfigs.XSHotFix62ESP1004)) {
+                latestHotFix = XenserverConfigs.XSHotFix62ESP1004;
+            } else if (poolHasHotFix(conn, hostIp, XenserverConfigs.XSHotFix62ESP1)) {
+                latestHotFix = XenserverConfigs.XSHotFix62ESP1;
+            }
 
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
@@ -299,7 +305,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     continue;
                 }
 
-                CitrixResourceBase resource = createServerResource(dcId, podId, record, xsHotFixFoxEnabled);
+                CitrixResourceBase resource = createServerResource(dcId, podId, record, latestHotFix);
                 s_logger.info("Found host " + record.hostname + " ip=" + record.address + " product version=" + prodVersion);
 
                 Map<String, String> details = new HashMap<String, String>();
@@ -392,7 +398,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
 
-    protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record, boolean hotfix) {
+    protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record, String hotfix) {
         String prodBrand = record.softwareVersion.get("product_brand");
         if (prodBrand == null) {
             prodBrand = record.softwareVersion.get("platform_name").trim();
@@ -422,8 +428,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            if (hotfix) {
+            if (hotfix.equals(XenserverConfigs.XSHotFix62ESP1004)) {
                 return new Xenserver625Resource();
+            } else if (hotfix.equals(XenserverConfigs.XSHotFix62ESP1)) {
+                return new XenServer620SP1Resource();
             } else {
                 return new XenServer620Resource();
             }
@@ -580,9 +588,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0")) {
             resource = XenServer610Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            String hotfix = details.get("Xenserer620HotFix");
-            if (hotfix != null && hotfix.equalsIgnoreCase("Xenserver-Vdi-Copy-HotFix")) {
+            String hotfix = details.get("XS620HotFix");
+            if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHasHotFix62ESP1004)) {
                 resource = Xenserver625Resource.class.getName();
+            } else if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1)){
+                resource = XenServer620SP1Resource.class.getName();
             } else {
                 resource = XenServer620Resource.class.getName();
             }

@@ -39,7 +39,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.hypervisor.xen.resource.XenServer610Resource;
+import com.cloud.hypervisor.xen.resource.XenServer620SP1Resource;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -65,7 +65,7 @@ import com.cloud.vm.VirtualMachineName;
  *     polling.
  *
  */
-public class XenServerResourceNewBase extends XenServer610Resource {
+public class XenServerResourceNewBase extends XenServer620SP1Resource {
     private static final Logger s_logger = Logger.getLogger(XenServerResourceNewBase.class);
     protected VmEventListener _listener = null;
 
