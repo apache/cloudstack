@@ -216,7 +216,6 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
      }
 
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
-
         AccessType accessType = null;
         Class<?>[] entityTypes = null;
         if (cmdClass != null) {
