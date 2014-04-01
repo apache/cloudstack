@@ -1465,7 +1465,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     public List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic) {
         List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
         // add PF rules
-        result.addAll(_portForwardingDao.listByDestIpAddr(nic.getIp4Address()));
+        result.addAll(_portForwardingDao.listByVmidAndDestIpAddr(nic.getIp4Address(),nic.getInstanceId()));
         // add static NAT rules
         List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(nic.getInstanceId());
         for (FirewallRuleVO rule : staticNatRules) {
