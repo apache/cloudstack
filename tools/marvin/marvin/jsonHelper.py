@@ -18,11 +18,13 @@
 import cloudstackException
 import json
 import inspect
-from cloudstackAPI import *
+from marvin.cloudstackAPI import *
 
 
 class jsonLoader(object):
+
     '''The recursive class for building and representing objects with.'''
+
     def __init__(self, obj):
         for k in obj:
             v = obj[k]
@@ -52,6 +54,7 @@ class jsonLoader(object):
 
 
 class jsonDump(object):
+
     @staticmethod
     def __serialize(obj):
         """Recursively walk object's hierarchy."""
@@ -247,7 +250,7 @@ due to missing parameter jobid"
 }'''
     try:
         asynJob = getResultObj(result)
-    except cloudstackException.CloudstackAPIException, e:
+    except cloudstackException.CloudstackAPIException as e:
         print e
 
     result = '{ "queryasyncjobresultresponse" : {}  }'

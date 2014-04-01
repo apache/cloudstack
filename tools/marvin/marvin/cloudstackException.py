@@ -21,6 +21,7 @@ from marvin.codes import (INVALID_INPUT, EXCEPTION_OCCURRED)
 
 
 class CloudstackAPIException(Exception):
+
     def __init__(self, cmd="", result=""):
         self.errorMsg = "Execute cmd: %s failed, due to: %s" % (cmd, result)
 
@@ -29,6 +30,7 @@ class CloudstackAPIException(Exception):
 
 
 class InvalidParameterException(Exception):
+
     def __init__(self, msg=''):
         self.errorMsg = msg
 
@@ -37,6 +39,7 @@ class InvalidParameterException(Exception):
 
 
 class dbException(Exception):
+
     def __init__(self, msg=''):
         self.errorMsg = msg
 
@@ -45,6 +48,7 @@ class dbException(Exception):
 
 
 class internalError(Exception):
+
     def __init__(self, msg=''):
         self.errorMsg = msg
 

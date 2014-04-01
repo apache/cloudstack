@@ -5,7 +5,8 @@ test_data = {
                 "regionendpoint": "http://region2:8080/client"
         },
         "zone": "NA",
-        "domain": { "name": "domain" },
+        "hypervisor": "XenServer",
+        "vdomain": { "name": "domain" },
 	"email" : "test@test.com",
 	"gateway" : "172.1.1.1",
         "netmask" : "255.255.255.0",

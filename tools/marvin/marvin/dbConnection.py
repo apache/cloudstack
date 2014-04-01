@@ -26,6 +26,7 @@ import os
 
 
 class DbConnection(object):
+
     def __init__(self, host="localhost", port=3306, user='cloud',
                  passwd='cloud', db='cloud'):
         self.host = host
@@ -51,7 +52,7 @@ class DbConnection(object):
                 try:
                     resultRow = cursor.fetchall()
                 except errors.InterfaceError:
-                    #Raised on empty result - DML
+                    # Raised on empty result - DML
                     resultRow = []
         return resultRow
 

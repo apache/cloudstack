@@ -15,23 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from cloudstackConnection import CSConnection
-import asyncJobMgr
-from dbConnection import DbConnection
-from cloudstackAPI import *
-import random
-import string
-import hashlib
-from codes import (FAILED, PASS, ADMIN, DOMAIN_ADMIN,
-                   USER, SUCCESS, XEN_SERVER)
-from configGenerator import ConfigManager
-from marvin.lib import utils
+from marvin.cloudstackConnection import CSConnection
+from marvin.asyncJobMgr import asyncJobMgr
+from marvin.dbConnection import DbConnection
+from marvin.cloudstackAPI import *
+from marvin.codes import (FAILED, PASS, ADMIN, DOMAIN_ADMIN,
+                          USER, SUCCESS, XEN_SERVER)
+from marvin.configGenerator import ConfigManager
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.lib.utils import (random_gen, validateList)
 from marvin.cloudstackAPI.cloudstackAPIClient import CloudStackAPIClient
 
 
 class CSTestClient(object):
+
     '''
     @Desc  : CloudStackTestClient is encapsulated entity for creating and
          getting various clients viz., apiclient,
@@ -46,13 +43,14 @@ class CSTestClient(object):
          logger : provides logging facilities for this library
          zone : The zone on which test suites using this test client will run
     '''
+
     def __init__(self, mgmt_details,
                  dbsvr_details,
                  async_timeout=3600,
-                 default_worker_threads=10,
                  logger=None,
                  test_data_filepath=None,
-                 zone=None):
+                 zone=None,
+                 hypervisor_type=None):
         self.__mgmtDetails = mgmt_details
         self.__dbSvrDetails = dbsvr_details
         self.__csConnection = None
@@ -60,15 +58,15 @@ class CSTestClient(object):
         self.__testClient = None
         self.__asyncTimeOut = async_timeout
         self.__logger = logger
-        self.__defaultWorkerThreads = default_worker_threads
         self.__apiClient = None
         self.__userApiClient = None
         self.__asyncJobMgr = None
         self.__id = None
-        self.__hypervisor = None 
+        self.__hypervisor = hypervisor_type
         self.__testDataFilePath = test_data_filepath
         self.__parsedTestDataConfig = None
         self.__zone = zone
+        self.__setHypervisorInfo()
 
     @property
     def identifier(self):
@@ -96,36 +94,30 @@ class CSTestClient(object):
                 Even, if  it is not available, return None
         @Output : Returns the Zone Name
         '''
-        if self.__zone is None:
-            if self.__parsedTestDataConfig:
-                ret = self.__parsedTestDataConfig.get("zone")
-                if ret != "NA":
-                    self.__zone = ret
         return self.__zone
 
     def getHypervisorInfo(self):
         '''
         @Name : getHypervisorInfo
         @Desc : Provides the hypervisor Information to test users
+        @Output : Return Hypervisor Information
         '''
-        if not self.__hypervisor: 
-            if self.__mgmtDetails.hypervisor:
-                self.__hypervisor = self.__mgmtDetails.hypervisor
-            else:
-                self.__hypervisor = XEN_SERVER
         return self.__hypervisor
-            
 
-    def __setHypervisorToClient(self):
+    def __setHypervisorInfo(self):
         '''
-        @Name : ___setHypervisorToClient
-        @Desc:  Set the HyperVisor Details under API Client;
-                default to Xen
+        @Name : __setHypervisorInfo
+        @Desc:  Set the HyperVisor details;
+                default to XenServer
         '''
-        if self.__mgmtDetails.hypervisor:
-            self.__apiClient.hypervisor = self.__mgmtDetails.hypervisor
-        else:
-            self.__apiClient.hypervisor = XEN_SERVER
+        try:
+            if not self.__hypervisor:
+                self.__hypervisor = XEN_SERVER
+            return SUCCESS
+        except Exception as e:
+            print "\n Exception Occurred Under __setHypervisorInfo " \
+                  "%s" % GetDetailExceptionInfo(e)
+            return FAILED
 
     def __createApiClient(self):
         try:
@@ -178,12 +170,8 @@ class CSTestClient(object):
                                                    self.__asyncTimeOut,
                                                    self.__logger)
                 self.__apiClient = CloudStackAPIClient(self.__csConnection)
-            '''
-            Set the HyperVisor Details to Client default to Xen
-            '''
-            self.__setHypervisorToClient()
             return SUCCESS
-        except Exception, e:
+        except Exception as e:
             self.__logger.exception(" Exception Occurred Under "
                                     "__createApiClient: %s" %
                                     GetDetailExceptionInfo(e))
@@ -210,16 +198,18 @@ class CSTestClient(object):
         '''
         @Name : ___getKeys
         @Desc : Retrieves the API and Secret Key for the provided Userid
+        @Input: userid: Userid to register
+        @Output: FAILED or tuple with apikey and secretkey
         '''
         try:
             register_user = registerUserKeys.registerUserKeysCmd()
             register_user.id = userid
             register_user_res = \
                 self.__apiClient.registerUserKeys(register_user)
-            if register_user_res == FAILED:
+            if not register_user_res:
                 return FAILED
             return (register_user_res.apikey, register_user_res.secretkey)
-        except Exception, e:
+        except Exception as e:
             self.__logger.exception("Exception Occurred Under __geKeys : "
                                     "%s" % GetDetailExceptionInfo(e))
             return FAILED
@@ -247,14 +237,21 @@ class CSTestClient(object):
                configuration file. They can overwrite it with
                providing their own configuration file as well.
             '''
+            '''
+            1. Check Config,Zone,Hypervisor Information
+            '''
             self.__configObj = ConfigManager(self.__testDataFilePath)
-            if self.__configObj:
-                self.__parsedTestDataConfig = self.__configObj.getConfig()
-                self.__logger.debug("Parsing Test data successful")
-            else:
-                self.__logger.error("createTestClient : Not able to create "
+
+            if not self.__configObj or not self.__hypervisor:
+                self.__logger.error("createTestClient : "
+                                    "Either Hypervisor is None or "
+                                    "Not able to create "
                                     "ConfigManager Object")
                 return FAILED
+
+            self.__parsedTestDataConfig = self.__configObj.getConfig()
+            self.__logger.debug("Parsing Test data successful")
+
             '''
             2. Create DB Connection
             '''
@@ -265,12 +262,12 @@ class CSTestClient(object):
             ret = self.__createApiClient()
             if ret == FAILED:
                 self.__logger.\
-                    error("********Test Client Creation Failed********")
+                    error("==== Test Client Creation Failed ====")
             else:
                 self.__logger.\
-                    debug("********Test Client Creation Successful********")
+                    debug("==== Test Client Creation Successful ====")
             return ret
-        except Exception, e:
+        except Exception as e:
             self.__logger.exception("Exception Occurred "
                                     "Under createTestClient "
                                     ": %s" % GetDetailExceptionInfo(e))
@@ -302,6 +299,10 @@ class CSTestClient(object):
         @Name : ___createUserApiClient
         @Desc : Creates a User API Client with given
                 UserName\DomainName Parameters
+        @Input: UserName: Username to be created in cloudstack
+                DomainName: Domain under which the above account be created
+                accType: Type of Account EX: Root,Non Root etc
+        @Output: Return the API client for the user
         '''
         try:
             if not self.isAdminContext():
@@ -364,9 +365,9 @@ class CSTestClient(object):
                              self.__csConnection.logger)
             self.__userApiClient = CloudStackAPIClient(newUserConnection)
             self.__userApiClient.connection = newUserConnection
-            self.__userApiClient.hypervisor = self.__apiClient.hypervisor
+            self.__userApiClient.hypervisor = self.__hypervisor
             return self.__userApiClient
-        except Exception, e:
+        except Exception as e:
             self.__logger.exception("Exception Occurred "
                                     "Under getUserApiClient : %s" %
                                     GetDetailExceptionInfo(e))
@@ -399,16 +400,12 @@ class CSTestClient(object):
     def getUserApiClient(self, account, domain, type=0):
         """
         @Name : getUserApiClient
-        @Desc : Provides the User API Client to Users
+        @Desc : Provides the User API Client to test Users
         0 - user ; 1 - admin;2 - domain admin
         @OutPut : FAILED In case of an issue
                   else User API Client
         """
-        return FAILED if (self.__createUserApiClient(account,
-                                                     domain,
-                                                     type)
-                          == FAILED) \
-            else self.__userApiClient
+        return self.__createUserApiClient(account, domain, type)
 
     def submitCmdsAndWait(self, cmds, workers=1):
         '''

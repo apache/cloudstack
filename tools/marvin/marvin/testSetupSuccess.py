@@ -23,6 +23,7 @@ from time import sleep as delay
 
 
 class TestSetupSuccess(cloudstackTestCase):
+
     """
     Test to verify if the cloudstack is ready to launch tests upon
     1. Verify that system VMs are up and running in all zones

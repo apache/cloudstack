@@ -23,6 +23,7 @@ from functools import partial
 
 
 class TestCaseExecuteEngine(object):
+
     def __init__(self, testclient, config, tc_logger=None, debug_stream=None):
         """
         Initialize the testcase execution engine, just the basics here
@@ -53,7 +54,7 @@ class TestCaseExecuteEngine(object):
             if isinstance(test, unittest.BaseTestSuite):
                 self.injectTestCase(test)
             else:
-                #inject testclient and logger into each unittest
+                # inject testclient and logger into each unittest
                 self.tcRunLogger.name = test.__str__()
                 setattr(test, "testClient", self.testclient)
                 setattr(test, "config", self.config)

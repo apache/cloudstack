@@ -26,12 +26,14 @@ import datetime
 
 
 class job(object):
+
     def __init__(self):
         self.id = None
         self.cmd = None
 
 
 class jobStatus(object):
+
     def __init__(self):
         self.result = None
         self.status = None
@@ -47,6 +49,7 @@ class jobStatus(object):
 
 
 class workThread(threading.Thread):
+
     def __init__(self, in_queue, outqueue, apiClient, db=None, lock=None):
         threading.Thread.__init__(self)
         self.inqueue = in_queue
@@ -62,7 +65,7 @@ class workThread(threading.Thread):
         try:
             self.lock.acquire()
             result = self.connection.poll(job.jobId, job.responsecls).jobresult
-        except cloudstackException.CloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException as e:
             result = str(e)
         finally:
             self.lock.release()
@@ -102,7 +105,7 @@ class workThread(threading.Thread):
                     except:
                         pass
                     jobstatus.status = True
-        except cloudstackException.CloudstackAPIException, e:
+        except cloudstackException.CloudstackAPIException as e:
             jobstatus.result = str(e)
             jobstatus.status = False
         except:
@@ -129,6 +132,7 @@ class workThread(threading.Thread):
 
 
 class jobThread(threading.Thread):
+
     def __init__(self, inqueue, interval):
         threading.Thread.__init__(self)
         self.inqueue = inqueue
@@ -149,12 +153,14 @@ class jobThread(threading.Thread):
 
 
 class outputDict(object):
+
     def __init__(self):
         self.lock = threading.Condition()
         self.dict = {}
 
 
 class asyncJobMgr(object):
+
     def __init__(self, apiClient, db):
         self.inqueue = Queue.Queue()
         self.output = outputDict()

@@ -61,7 +61,8 @@ class MarvinPlugin(Plugin):
         self.__startTime = None
         self.__testName = None
         self.__tcRunLogger = None
-        self.__testModName = None
+        self.__testModName = ''
+        self.__hypervisorType = None
         Plugin.__init__(self)
 
     def configure(self, options, conf):
@@ -70,15 +71,15 @@ class MarvinPlugin(Plugin):
         self.enabled (True|False) determines whether marvin's tests will run.
         By default non-default plugins like marvin will be disabled
         """
+        self.enabled = True
         if hasattr(options, self.enableOpt):
             if not getattr(options, self.enableOpt):
                 self.enabled = False
                 return
-            else:
-                self.enabled = True
         self.__configFile = options.configFile
         self.__deployDcFlag = options.deployDc
         self.__zoneForTests = options.zone
+        self.__hypervisorType = options.hypervisor_type
         self.conf = conf
         if self.startMarvin() == FAILED:
             print "\nStarting Marvin Failed, exiting. Please Check"
@@ -105,6 +106,11 @@ class MarvinPlugin(Plugin):
                           default=None,
                           dest="zone",
                           help="Runs all tests against this specified zone")
+        parser.add_option("--hypervisor", action="store",
+                          default=None,
+                          dest="hypervisor_type",
+                          help="Runs all tests against the specified "
+                               "zone and hypervisor Type")
         Plugin.options(self, parser, env)
 
     def wantClass(self, cls):
@@ -148,9 +154,10 @@ class MarvinPlugin(Plugin):
             self._injectClients(cls)
 
     def beforeTest(self, test):
-        #self.__testModName = test.__str__()
+        self.__testModName = test.__str__()
         self.__testName = test.__str__().split()[0]
-        self.__testClient.identifier = '-'.join([self.__identifier, self.__testName])
+        self.__testClient.identifier = '-'.\
+            join([self.__identifier, self.__testName])
         if self.__tcRunLogger:
             self.__tcRunLogger.name = test.__str__()
 
@@ -199,19 +206,6 @@ class MarvinPlugin(Plugin):
         self.printMsg(FAILED, self.__testName, GetDetailExceptionInfo(err))
         self.__testResult = FAILED
 
-    def __getModName(self, inp, type='file'):
-        '''
-        @Desc : Returns the module name from the path
-        @Output: trimmed down module name, used for logging
-        @Input: type:Whether the type is file or dir
-                inp:input element
-        '''
-        if type == 'file':
-            temp = os.path.splitext(inp)[0]
-            return os.path.split(temp)[-1]
-        if type == 'dir':
-            return os.path.split(inp)[-1]
-
     def startMarvin(self):
         '''
         @Name : startMarvin
@@ -225,7 +219,8 @@ class MarvinPlugin(Plugin):
             obj_marvininit = MarvinInit(self.__configFile,
                                         self.__deployDcFlag,
                                         None,
-                                        self.__zoneForTests)
+                                        self.__zoneForTests,
+                                        self.__hypervisorType)
             if obj_marvininit and obj_marvininit.init() == SUCCESS:
                 self.__testClient = obj_marvininit.getTestClient()
                 self.__tcRunLogger = obj_marvininit.getLogger()

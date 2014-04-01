@@ -28,19 +28,21 @@ import time
 from marvin.cloudstackException import (
     internalError,
     GetDetailExceptionInfo
-    )
+)
 import contextlib
 import logging
 from marvin.codes import (
     SUCCESS, FAILED, INVALID_INPUT, EXCEPTION_OCCURRED
-    )
+)
 from contextlib import closing
 
 
 class SshClient(object):
+
     '''
     Added timeout flag for ssh connect calls.Default to 3.0 seconds
     '''
+
     def __init__(self, host, port, user, passwd, retries=20, delay=30,
                  log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0):
         self.host = None
@@ -58,8 +60,8 @@ class SshClient(object):
         ch.setLevel(log_lvl)
         self.logger.addHandler(ch)
 
-        #Check invalid host value and raise exception
-        #Atleast host is required for connection
+        # Check invalid host value and raise exception
+        # Atleast host is required for connection
         if host is not None and host != '':
             self.host = host
         if retries is not None and retries > 0:
@@ -126,15 +128,15 @@ class SshClient(object):
                                   % (str(self.host), str(self.port)))
                 ret = SUCCESS
                 break
-            except BadHostKeyException, e:
+            except BadHostKeyException as e:
                 except_msg = GetDetailExceptionInfo(e)
-            except AuthenticationException, e:
+            except AuthenticationException as e:
                 except_msg = GetDetailExceptionInfo(e)
-            except SSHException, e:
+            except SSHException as e:
                 except_msg = GetDetailExceptionInfo(e)
-            except socket.error, e:
+            except socket.error as e:
                 except_msg = GetDetailExceptionInfo(e)
-            except Exception, e:
+            except Exception as e:
                 except_msg = GetDetailExceptionInfo(e)
             finally:
                 if self.retryCnt == 0 or ret == SUCCESS:
@@ -188,7 +190,7 @@ class SshClient(object):
         sftp = SFTPClient.from_transport(transport)
         try:
             sftp.put(srcFile, destPath)
-        except IOError, e:
+        except IOError as e:
             raise e
 
     def __del__(self):

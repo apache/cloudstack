@@ -24,26 +24,17 @@ for starting it.
    3. Deploys the Data Center based upon input.
 
 '''
-import marvin
-from marvin import configGenerator
+from marvin.configGenerator import getSetupConfig
 from marvin.marvinLog import MarvinLog
 from marvin.deployDataCenter import DeployDataCenters
 from marvin.cloudstackTestClient import CSTestClient
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.codes import(
-    PASS,
-    YES,
-    NO,
+    XEN_SERVER,
     SUCCESS,
     FAILED
 )
-import sys
-import time
 import os
-import logging
-import string
-import random
-from sys import exit
 
 
 class MarvinInit:
@@ -51,7 +42,8 @@ class MarvinInit:
     def __init__(self, config_file,
                  deploy_dc_flag=None,
                  test_mod_name="deploydc",
-                 zone=None):
+                 zone=None,
+                 hypervisor_type=None):
         self.__configFile = config_file
         self.__deployFlag = deploy_dc_flag
         self.__logFolderPath = None
@@ -62,6 +54,7 @@ class MarvinInit:
         self.__testDataFilePath = None
         self.__zoneForTests = zone
         self.__parsedConfig = None
+        self.__hypervisorType = hypervisor_type
 
     def __parseConfig(self):
         '''
@@ -74,8 +67,7 @@ class MarvinInit:
             if not os.path.isfile(self.__configFile):
                 print "\n=== Marvin Parse Config Init Failed ==="
                 return FAILED
-            self.__parsedConfig = configGenerator.\
-                getSetupConfig(self.__configFile)
+            self.__parsedConfig = getSetupConfig(self.__configFile)
             print "\n=== Marvin Parse Config Successful ==="
             return SUCCESS
         except Exception as e:
@@ -107,6 +99,26 @@ class MarvinInit:
                                        "/results.txt", "w")
             return self.__tcResultFile
 
+    def __setHypervisorAndZoneInfo(self):
+        '''
+        @Name : __setHypervisorAndZoneInfo
+        @Desc:  Set the HyperVisor and Zone details;
+                default to XenServer
+        '''
+        try:
+            if not self.__hypervisorType:
+                self.__hypervisorType = XEN_SERVER
+            if not self.__zoneForTests:
+                if self.__parsedConfig:
+                    for zone in self.__parsedConfig.zones:
+                        self.__zoneForTests = zone.name
+                        break
+            return SUCCESS
+        except Exception as e:
+            print "\n Exception Occurred Under init " \
+                  "%s" % GetDetailExceptionInfo(e)
+            return FAILED
+
     def init(self):
         '''
         @Name : init
@@ -120,6 +132,7 @@ class MarvinInit:
         '''
         try:
             if ((self.__parseConfig() != FAILED) and
+                (self.__setHypervisorAndZoneInfo())and
                (self.__setTestDataPath() != FAILED) and
                (self.__initLogging() != FAILED) and
                (self.__createTestClient() != FAILED) and
@@ -153,7 +166,7 @@ class MarvinInit:
                 if ret != FAILED:
                     self.__logFolderPath = log_obj.getLogFolderPath()
                     self.__tcRunLogger = log_obj.getLogger()
-                    print "\n=== Marvin Init Logging Sccessful==="
+                    print "\n=== Marvin Init Logging Successful==="
                     return SUCCESS
             return FAILED
         except Exception as e:
@@ -175,11 +188,12 @@ class MarvinInit:
                                              logger=self.__tcRunLogger,
                                              test_data_filepath=
                                              self.__testDataFilePath,
-                                             zone=self.__zoneForTests)
+                                             zone=self.__zoneForTests,
+                                             hypervisor_type=
+                                             self.__hypervisorType)
             if self.__testClient:
                 return self.__testClient.createTestClient()
-            else:
-                return FAILED
+            return FAILED
         except Exception as e:
             print "\n Exception Occurred Under __createTestClient : %s" % \
                   GetDetailExceptionInfo(e)
@@ -195,7 +209,7 @@ class MarvinInit:
             if ((self.__parsedConfig.TestData is not None) and
                     (self.__parsedConfig.TestData.Path is not None)):
                 self.__testDataFilePath = self.__parsedConfig.TestData.Path
-            print "\n=== Marvin TestData Successful==="
+            print "\n=== Marvin Setting TestData Successful==="
             return SUCCESS
         except Exception as e:
             print "\nException Occurred Under __setTestDataPath : %s" % \

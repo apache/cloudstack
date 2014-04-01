@@ -28,6 +28,7 @@ from marvin.cloudstackException import GetDetailExceptionInfo
 
 
 class MarvinLog:
+
     '''
     @Name  : MarvinLog
     @Desc  : provides interface for logging to marvin
@@ -89,7 +90,7 @@ class MarvinLog:
             stream.setLevel(log_level)
             self.__logger.addHandler(stream)
             return SUCCESS
-        except Exception, e:
+        except Exception as e:
             print "\nException Occurred Under " \
                   "__setLogHandler %s" % GetDetailExceptionInfo(e)
             return FAILED
@@ -104,7 +105,7 @@ class MarvinLog:
         try:
             if os.path.isdir(logfolder_to_remove):
                 os.rmdir(logfolder_to_remove)
-        except Exception, e:
+        except Exception as e:
             print "\n Exception Occurred Under __cleanPreviousLogs :%s" % \
                   GetDetailExceptionInfo(e)
             return FAILED
@@ -151,8 +152,8 @@ class MarvinLog:
                     log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
 
             self.__logFolderDir = temp_dir + "//" + temp_path
-            print "\n*********Log Folder Path: %s. " \
-                  "All logs will be available here **************" \
+            print "\n==== Log Folder Path: %s. " \
+                  "All logs will be available here ====" \
                   % str(self.__logFolderDir)
             os.makedirs(self.__logFolderDir)
 
@@ -171,7 +172,7 @@ class MarvinLog:
                                      log_level=logging.FATAL)
                 return SUCCESS
             return FAILED
-        except Exception, e:
+        except Exception as e:
             print "\n Exception Occurred Under createLogs :%s" % \
                   GetDetailExceptionInfo(e)
             return FAILED

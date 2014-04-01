@@ -24,6 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+import time
 
 
 class Services:
@@ -619,11 +620,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_enabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,
@@ -751,11 +748,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_disabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,

@@ -21,9 +21,9 @@ import base64
 import hmac
 import hashlib
 import time
-from cloudstackAPI import *
-import jsonHelper
-from codes import (
+from .cloudstackAPI import *
+from . import jsonHelper
+from .codes import (
     FAILED,
     INVALID_RESPONSE,
     INVALID_INPUT,
@@ -42,12 +42,14 @@ from marvin.cloudstackException import GetDetailExceptionInfo
 
 
 class CSConnection(object):
+
     '''
     @Desc: Connection Class to make API\Command calls to the
            CloudStack Management Server
            Sends the GET\POST requests to CS based upon the
            information provided and retrieves the parsed response.
     '''
+
     def __init__(self, mgmtDet, asyncTimeout=3600, logger=None,
                  path='client/api'):
         self.apiKey = mgmtDet.apiKey
@@ -56,10 +58,9 @@ class CSConnection(object):
         self.port = mgmtDet.port
         self.user = mgmtDet.user
         self.passwd = mgmtDet.passwd
+        self.certPath = ()
         if mgmtDet.certCAPath != "NA" and mgmtDet.certPath != "NA":
             self.certPath = (mgmtDet.certCAPath, mgmtDet.certPath)
-        else:
-            self.certPath = ()
         self.logger = logger
         self.path = path
         self.retries = 5
@@ -94,28 +95,33 @@ class CSConnection(object):
             cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
             cmd.jobid = jobid
             timeout = self.asyncTimeout
-
+            start_time = time.time()
+            end_time = time.time()
+            async_response = FAILED
+            self.logger.debug("=== Jobid: %s Started ===" % (str(jobid)))
             while timeout > 0:
                 async_response = self.\
                     marvinRequest(cmd, response_type=response_cmd)
                 if async_response != FAILED:
                     job_status = async_response.jobstatus
-                    if job_status in [JOB_FAILED, JOB_CANCELLED]:
-                        self.logger.debug("=====JobId:%s Either "
-                                          "got Cancelled or Failed======"
-                                          % (str(jobid)))
-                        return FAILED
-                    if job_status == JOB_SUCCEEDED:
-                        self.logger.debug("======JobId:%s Succeeded====="
-                                          % (str(jobid)))
-                        return async_response
+                    if job_status in [JOB_FAILED,
+                                      JOB_CANCELLED,
+                                      JOB_SUCCEEDED]:
+                        break
                 time.sleep(5)
                 timeout -= 5
                 self.logger.debug("JobId:%s is Still Processing, "
                                   "Will TimeOut in:%s" % (str(jobid),
                                                           str(timeout)))
-            return FAILED
-        except Exception, e:
+            end_time = time.time()
+            tot_time = int(start_time - end_time)
+            self.logger.debug(
+                "===Jobid:%s ; StartTime:%s ; EndTime:%s ; "
+                "TotalTime:%s===" %
+                (str(jobid), str(time.ctime(start_time)),
+                 str(time.ctime(end_time)), str(tot_time)))
+            return async_response
+        except Exception as e:
             self.__lastError = GetDetailExceptionInfo(e)
             self.logger.exception("__poll: Exception Occurred :%s" %
                                   self.__lastError)
@@ -165,11 +171,11 @@ class CSConnection(object):
                                      cert=self.certPath,
                                      verify=self.httpsFlag)
             return response
-        except Exception, e:
-            self.__lastError = GetDetailExceptionInfo(e)
+        except Exception as e:
+            self.__lastError = e
             self.logger.\
                 exception("__sendPostReqToCS : Exception "
-                          "Occurred: %s" % self.__lastError)
+                          "Occurred: %s" % str(self.__lastError))
             return FAILED
 
     def __sendGetReqToCS(self, url, payload):
@@ -187,10 +193,10 @@ class CSConnection(object):
                                     cert=self.certPath,
                                     verify=self.httpsFlag)
             return response
-        except Exception, e:
-            self.__lastError = GetDetailExceptionInfo(e)
+        except Exception as e:
+            self.__lastError = e
             self.logger.exception("__sendGetReqToCS : Exception Occurred: %s" %
-                                  self.__lastError)
+                                  str(self.__lastError))
             return FAILED
 
     def __sendCmdToCS(self, command, auth=True, payload={}, method='GET'):
@@ -213,8 +219,9 @@ class CSConnection(object):
                 payload["apiKey"] = self.apiKey
                 payload["signature"] = self.__sign(payload)
 
-            #Verify whether protocol is "http", then call the request over http
-            if self.protocol == "http" or self.protocol == "https":
+            # Verify whether protocol is "http" or "https", then send the
+            # request
+            if self.protocol in ["http", "https"]:
                 self.logger.debug("Payload: %s" % str(payload))
                 if method == 'POST':
                     self.logger.debug("=======Sending POST Cmd : %s======="
@@ -227,7 +234,7 @@ class CSConnection(object):
             else:
                 self.logger.exception("__sendCmdToCS: Invalid Protocol")
                 return FAILED
-        except Exception, e:
+        except Exception as e:
             self.logger.exception("__sendCmdToCS: Exception:%s" %
                                   GetDetailExceptionInfo(e))
             return FAILED
@@ -276,7 +283,7 @@ class CSConnection(object):
                                     payload["%s[%d].%s" % (param, i, k)] = v
                                 i += 1
             return cmd_name.strip(), isAsync, payload
-        except Exception, e:
+        except Exception as e:
             self.logger.\
                 exception("__sanitizeCmd: CmdName : "
                           "%s : Exception:%s" % (cmd_name,
@@ -352,10 +359,13 @@ class CSConnection(object):
             4. Check if the Command Response received above is valid or Not.
                If not return Invalid Response
             '''
-            return self.__parseAndGetResponse(cmd_response,
-                                              response_type,
-                                              is_async)
-        except Exception, e:
+            ret = self.__parseAndGetResponse(cmd_response,
+                                             response_type,
+                                             is_async)
+            if ret == FAILED:
+                raise self.__lastError
+            return ret
+        except Exception as e:
             self.logger.exception("marvinRequest : CmdName: %s Exception: %s" %
                                   (str(cmd), GetDetailExceptionInfo(e)))
             return FAILED
