@@ -25,7 +25,6 @@ from marvin.config.test_data import test_data
 
 
 class managementServer(object):
-
     def __init__(self):
         self.mgtSvrIp = None
         self.port = 8096
@@ -37,7 +36,6 @@ class managementServer(object):
 
 
 class dbServer(object):
-
     def __init__(self):
         self.dbSvr = None
         self.port = 3306
@@ -87,7 +85,6 @@ class zone(object):
 
 
 class trafficType(object):
-
     def __init__(self, typ, labeldict=None):
         self.typ = typ  # Guest/Management/Public
         if labeldict:
@@ -100,7 +97,6 @@ class trafficType(object):
 
 
 class pod(object):
-
     def __init__(self):
         self.gateway = None
         self.name = None
@@ -115,7 +111,6 @@ class pod(object):
 
 
 class VmwareDc(object):
-
     def __init__(self):
         self.zoneid = None
         self.name = None
@@ -125,7 +120,6 @@ class VmwareDc(object):
 
 
 class cluster(object):
-
     def __init__(self):
         self.clustername = None
         self.clustertype = None
@@ -140,7 +134,6 @@ class cluster(object):
 
 
 class host(object):
-
     def __init__(self):
         self.hypervisor = None
         self.password = None
@@ -158,7 +151,6 @@ class host(object):
 
 
 class physicalNetwork(object):
-
     def __init__(self):
         self.name = None
         self.tags = []
@@ -173,7 +165,6 @@ class physicalNetwork(object):
 
 
 class provider(object):
-
     def __init__(self, name=None):
         self.name = name
         self.state = None
@@ -184,7 +175,6 @@ class provider(object):
 
 
 class network(object):
-
     def __init__(self):
         self.displaytext = None
         self.name = None
@@ -197,7 +187,6 @@ class network(object):
 
 
 class iprange(object):
-
     def __init__(self):
         '''tagged/untagged'''
         self.gateway = None
@@ -211,14 +200,12 @@ class iprange(object):
 
 
 class primaryStorage(object):
-
     def __init__(self):
         self.name = None
         self.url = None
 
 
 class secondaryStorage(object):
-
     def __init__(self):
         self.url = None
         self.provider = None
@@ -226,7 +213,6 @@ class secondaryStorage(object):
 
 
 class cacheStorage(object):
-
     def __init__(self):
         self.url = None
         self.provider = None
@@ -234,7 +220,6 @@ class cacheStorage(object):
 
 
 class s3(object):
-
     def __init__(self):
         self.accesskey = None
         self.secretkey = None
@@ -247,7 +232,6 @@ class s3(object):
 
 
 class netscaler(object):
-
     def __init__(self, hostname=None, username='nsroot', password='nsroot'):
         self.hostname = hostname
         self.username = username
@@ -264,12 +248,11 @@ class netscaler(object):
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
-                                               for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
 
 
 class srx(object):
-
     def __init__(self, hostname=None, username='root', password='admin'):
         self.hostname = hostname
         self.username = username
@@ -288,12 +271,11 @@ class srx(object):
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
-                                               for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
 
 
 class bigip(object):
-
     def __init__(self, hostname=None, username='root', password='default'):
         self.hostname = hostname
         self.username = username
@@ -310,12 +292,11 @@ class bigip(object):
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
-                                               for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
 
 
 class ConfigManager(object):
-
     '''
     @Name: ConfigManager
     @Desc: 1. It provides the basic configuration facilities to marvin.
@@ -347,7 +328,6 @@ class ConfigManager(object):
            8. Users can use their own configuration file passed to
               "getConfig" API,once configObj is returned.
     '''
-
     def __init__(self, cfg_file=None):
         self.__filePath = cfg_file
         self.__parsedCfgDict = None
@@ -384,8 +364,8 @@ class ConfigManager(object):
                             configLines.append(ws)
                 config = json.loads("\n".join(configLines))
                 config_dict = config
-        except Exception as e:
-            # Will replace with log once we have logging done
+        except Exception, e:
+            #Will replace with log once we have logging done
             print "\n Exception occurred under ConfigManager:__parseConfig" \
                   " :%s", GetDetailExceptionInfo(e)
         finally:
@@ -433,9 +413,9 @@ class ConfigManager(object):
 def getDeviceUrl(obj):
     req = zip(obj.__dict__.keys(), obj.__dict__.values())
     if obj.hostname:
-        return "http://" + obj.hostname + "?" + "&".join(["=".join([r[0],
-                                                                    r[1]])
-                                                          for r in req])
+        return "http://" + obj.hostname+"?" + "&".join(["=".join([r[0],
+                                                                  r[1]])
+                                                        for r in req])
     else:
         return None
 
@@ -450,11 +430,11 @@ def descSetupInBasicMode():
         z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
-        z.name = "test" + str(l)
+        z.name = "test"+str(l)
         z.networktype = 'Basic'
         z.securitygroupenabled = 'True'
 
-        # If security groups are reqd
+        #If security groups are reqd
         sgprovider = provider()
         sgprovider.broadcastdomainrange = 'Pod'
         sgprovider.name = 'SecurityGroupProvider'
@@ -480,15 +460,15 @@ def descSetupInBasicMode():
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
-                ip.startip = "192.168.%d.%d" % (i, j * 20)
-                ip.endip = "192.168.%d.%d" % (i, j * 20 + 10)
+                ip.startip = "192.168.%d.%d" % (i, j*20)
+                ip.endip = "192.168.%d.%d" % (i, j*20+10)
 
                 p.guestIpRanges.append(ip)
 
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
-                c.clustername = "test" + str(l) + str(i) + str(j)
+                c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
 
@@ -497,16 +477,15 @@ def descSetupInBasicMode():
                     h = host()
                     h.username = "root"
                     h.password = "password"
-                    memory = 8 * 1024 * 1024 * 1024
-                    localstorage = 1 * 1024 * 1024 * 1024 * 1024
+                    memory = 8*1024*1024*1024
+                    localstorage = 1*1024*1024*1024*1024
                     h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
 
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
-                    primary.name = "primary" + \
-                        str(l) + str(i) + str(j) + str(m)
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
                     primary.url = "nfs://localhost/path%s" % (str(l) + str(i) +
                                                               str(j) + str(m))
                     c.primaryStorages.append(primary)
@@ -518,7 +497,7 @@ def descSetupInBasicMode():
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
-            secondary.url = "nfs://localhost/path" + str(l) + str(i)
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
 
         zs.zones.append(z)
@@ -560,7 +539,7 @@ def descSetupInEipMode():
         z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
-        z.name = "test" + str(l)
+        z.name = "test"+str(l)
         z.networktype = 'Basic'
 
         ips = iprange()
@@ -571,7 +550,7 @@ def descSetupInEipMode():
         ips.netmask = "255.255.255.0"
         z.ipranges.append(ips)
 
-        # If security groups are reqd
+        #If security groups are reqd
         sgprovider = provider()
         sgprovider.broadcastdomainrange = 'Pod'
         sgprovider.name = 'SecurityGroupProvider'
@@ -605,15 +584,15 @@ def descSetupInEipMode():
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
-                ip.startip = "192.168.%d.%d" % (i, j * 20)
-                ip.endip = "192.168.%d.%d" % (i, j * 20 + 10)
+                ip.startip = "192.168.%d.%d" % (i, j*20)
+                ip.endip = "192.168.%d.%d" % (i, j*20+10)
 
                 p.guestIpRanges.append(ip)
 
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
-                c.clustername = "test" + str(l) + str(i) + str(j)
+                c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
 
@@ -628,8 +607,7 @@ def descSetupInEipMode():
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
-                    primary.name = "primary" + \
-                        str(l) + str(i) + str(j) + str(m)
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
                     primary.url = "nfs://localhost/path%s" % (str(l) + str(i)
                                                               + str(j)
                                                               + str(m))
@@ -642,7 +620,7 @@ def descSetupInEipMode():
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
-            secondary.url = "nfs://localhost/path" + str(l) + str(i)
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
 
         zs.zones.append(z)
@@ -682,7 +660,7 @@ def descSetupInAdvancedMode():
         z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
-        z.name = "test" + str(l)
+        z.name = "test"+str(l)
         z.networktype = 'Advanced'
         z.guestcidraddress = "10.1.1.0/24"
         z.vlan = "100-2000"
@@ -718,7 +696,7 @@ def descSetupInAdvancedMode():
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
-                c.clustername = "test" + str(l) + str(i) + str(j)
+                c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
 
@@ -729,7 +707,7 @@ def descSetupInAdvancedMode():
                     h.password = "password"
                     memory = 8 * 1024 * 1024 * 1024
                     localstorage = 1 * 1024 * 1024 * 1024 * 1024
-                    # h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
                     #    memory=%d&localstorage=%d"%(l, i, j, k, memory,
                     #                                localstorage)
                     h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
@@ -738,9 +716,8 @@ def descSetupInAdvancedMode():
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
-                    primary.name = "primary" + \
-                        str(l) + str(i) + str(j) + str(m)
-                    # primary.url = "nfs://localhost/path%s/size=%d" %
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
+                    #primary.url = "nfs://localhost/path%s/size=%d" %
                     #    (str(l) + str(i) + str(j) + str(m), size)
                     primary.url = "nfs://localhost/path%s" % (str(l) + str(i)
                                                               + str(j)
@@ -754,7 +731,7 @@ def descSetupInAdvancedMode():
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
-            secondary.url = "nfs://localhost/path" + str(l) + str(i)
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
 
         '''add default public network'''
@@ -804,7 +781,7 @@ def descSetupInAdvancedsgMode():
         z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
-        z.name = "test" + str(l)
+        z.name = "test"+str(l)
         z.networktype = 'Advanced'
         z.vlan = "100-2000"
         z.securitygroupenabled = "true"
@@ -813,7 +790,7 @@ def descSetupInAdvancedsgMode():
         pn.name = "test-network"
         pn.traffictypes = [trafficType("Guest"), trafficType("Management")]
 
-        # If security groups are reqd
+        #If security groups are reqd
         sgprovider = provider()
         sgprovider.broadcastdomainrange = 'ZONE'
         sgprovider.name = 'SecurityGroupProvider'
@@ -833,7 +810,7 @@ def descSetupInAdvancedsgMode():
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
-                c.clustername = "test" + str(l) + str(i) + str(j)
+                c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
 
@@ -844,18 +821,17 @@ def descSetupInAdvancedsgMode():
                     h.password = "password"
                     memory = 8 * 1024 * 1024 * 1024
                     localstorage = 1 * 1024 * 1024 * 1024 * 1024
-                    # h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
-                        # memory=%d&localstorage=%d" % (l, i, j, k, memory,
-                        # localstorage)
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
+                        #memory=%d&localstorage=%d" % (l, i, j, k, memory,
+                        #localstorage)
                     h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
 
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
-                    primary.name = "primary" + \
-                        str(l) + str(i) + str(j) + str(m)
-                    # primary.url = "nfs://localhost/path%s/size=%d" % \
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
+                    #primary.url = "nfs://localhost/path%s/size=%d" % \
                         #(str(l) + str(i) + str(j) + str(m), size)
                     primary.url = "nfs://localhost/path%s" % \
                         (str(l) + str(i) + str(j) + str(m))
@@ -868,7 +844,7 @@ def descSetupInAdvancedsgMode():
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
-            secondary.url = "nfs://localhost/path" + str(l) + str(i)
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
 
         '''add default guest network'''
@@ -928,7 +904,7 @@ def getSetupConfig(file):
                     configLines.append(ws)
         config = json.loads("\n".join(configLines))
         return jsonHelper.jsonLoader(config)
-    except Exception as e:
+    except Exception, e:
         print "\nException Occurred under getSetupConfig %s" % \
               GetDetailExceptionInfo(e)
 
