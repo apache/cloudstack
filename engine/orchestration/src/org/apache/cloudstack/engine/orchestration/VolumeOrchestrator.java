@@ -30,8 +30,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -113,10 +111,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.dao.UserVmDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
@@ -687,16 +687,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         } else if (hyperType == HypervisorType.Ovm) {
             return ImageFormat.RAW;
         } else if (hyperType == HypervisorType.Hyperv) {
-            return ImageFormat.VHD;
+            return ImageFormat.VHDX;
         } else {
             return null;
+        }
+    }
+
+    private boolean isSupportedImageFormatForCluster(VolumeInfo volume, HypervisorType rootDiskHyperType) {
+        ImageFormat volumeFormat = volume.getFormat();
+        if (rootDiskHyperType == HypervisorType.Hyperv) {
+            if (volumeFormat.equals(ImageFormat.VHDX) || volumeFormat.equals(ImageFormat.VHD)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return volume.getFormat().equals(getSupportedImageFormatForCluster(rootDiskHyperType));
         }
     }
 
     private VolumeInfo copyVolume(StoragePool rootDiskPool, VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate rootDiskTmplt, DataCenter dcVO, Pod pod,
             DiskOffering diskVO, ServiceOffering svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
 
-        if (!volume.getFormat().equals(getSupportedImageFormatForCluster(rootDiskHyperType))) {
+        if (!isSupportedImageFormatForCluster(volume, rootDiskHyperType)) {
             throw new InvalidParameterValueException("Failed to attach volume to VM since volumes format " + volume.getFormat().getFileExtension()
                     + " is not compatible with the vm hypervisor type");
         }
