@@ -295,7 +295,6 @@ test_data = {
                 "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
             }
         },
-
         "natrule": {
             "privateport": 22,
             "publicport": 2222,
@@ -350,6 +349,12 @@ test_data = {
         },
         "templatefilter": 'self',
 
+        "templates": {
+           "displaytext": 'Template',
+           "name": 'Template',
+           "ostype": "CentOS 5.3 (64-bit)",
+           "templatefilter": 'self',
+        },
         "security_group" : { "name": "custom_Sec_Grp" },
         "ingress_rule": {
             "protocol": "TCP",
@@ -414,5 +419,19 @@ test_data = {
             "displaytext": "vpc-tier2",
             "gateway" : "10.2.1.1",
             "netmask" : "255.255.255.192"
-        }
+        },
+        "server": {
+                "displayname": "TestVM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP'
+        },
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": 'TCP',
+        "forvirtualnetwork": "true"
 }

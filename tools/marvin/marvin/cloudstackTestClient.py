@@ -141,16 +141,14 @@ class CSTestClient(object):
                 list_user = listUsers.listUsersCmd()
                 list_user.account = "admin"
                 list_user_res = self.__apiClient.listUsers(list_user)
-                if list_user_res == FAILED or list_user_res is None or\
+                if list_user_res is None or\
                         (validateList(list_user_res)[0] != PASS):
                     self.__logger.error("__createApiClient: API "
                                         "Client Creation Failed")
                     return FAILED
-
                 user_id = list_user_res[0].id
                 api_key = list_user_res[0].apikey
                 security_key = list_user_res[0].secretkey
-
                 if api_key is None:
                     ret = self.__getKeys(user_id)
                     if ret != FAILED:
@@ -162,6 +160,10 @@ class CSTestClient(object):
                                             "Creation Failed while "
                                             "Registering User")
                         return FAILED
+                else:
+                    self.__mgmtDetails.port = 8080
+                    self.__mgmtDetails.apiKey = api_key
+                    self.__mgmtDetails.securityKey = security_key
                 '''
                 Now Create the Connection objects and Api Client using
                 new details

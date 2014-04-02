@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,33 +30,35 @@ except ImportError:
 VERSION = '0.1.0'
 
 import os
+
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read().strip()
 
 setup(name="Marvin",
-    version=VERSION,
-    description="Marvin - Python client for Apache CloudStack",
-    author="Edison Su",
-    author_email="Edison.Su@citrix.com",
-    maintainer="Prasanna Santhanam",
-    maintainer_email="tsp@apache.org",
-    long_description="Marvin is the Apache CloudStack python client written around the unittest framework",
-    platforms=("Any",),
-    url="https://builds.apache.org/job/cloudstack-marvin/",
-    packages=["marvin", "marvin.cloudstackAPI",
-              "marvin.lib", "marvin.config","marvin.sandbox",
-              "marvin.sandbox.advanced", "marvin.sandbox.advancedsg", "marvin.sandbox.basic"],
-    license="LICENSE.txt",
-    install_requires=[
-        "mysql-connector-python",
-        "requests",
-        "paramiko",
-        "nose",
-        "ddt >= 0.4.0"
-    ],
-    py_modules=['marvin.marvinPlugin'],
-    zip_safe=False,
-    entry_points={
-        'nose.plugins': ['marvinPlugin = marvin.marvinPlugin:MarvinPlugin']
-    },
-)
+      version=VERSION,
+      description="Marvin - Python client for Apache CloudStack",
+      author="Edison Su",
+      author_email="Edison.Su@citrix.com",
+      maintainer="Prasanna Santhanam",
+      maintainer_email="tsp@apache.org",
+      long_description="Marvin is the Apache CloudStack python client written around the unittest framework",
+      platforms=("Any",),
+      url="https://builds.apache.org/job/cloudstack-marvin/",
+      packages=["marvin", "marvin.cloudstackAPI",
+                "marvin.lib", "marvin.config", "marvin.sandbox",
+                "marvin.sandbox.advanced", "marvin.sandbox.advancedsg", "marvin.sandbox.basic"],
+      license="LICENSE.txt",
+      install_requires=[
+          "mysql-connector-python",
+          "requests",
+          "paramiko",
+          "nose",
+          "ddt >= 0.4.0"
+      ],
+      py_modules=['marvin.marvinPlugin'],
+      zip_safe=False,
+      entry_points={
+          'nose.plugins': ['marvinPlugin = marvin.marvinPlugin:MarvinPlugin']
+      },
+      )

@@ -21,9 +21,9 @@ import base64
 import hmac
 import hashlib
 import time
-from .cloudstackAPI import *
-from . import jsonHelper
-from .codes import (
+from cloudstackAPI import *
+import jsonHelper
+from marvin.codes import (
     FAILED,
     INVALID_RESPONSE,
     INVALID_INPUT,
@@ -110,8 +110,8 @@ class CSConnection(object):
                         break
                 time.sleep(5)
                 timeout -= 5
-                self.logger.debug("JobId:%s is Still Processing, "
-                                  "Will TimeOut in:%s" % (str(jobid),
+                self.logger.debug("=== JobId:%s is Still Processing, "
+                                  "Will TimeOut in:%s ====" % (str(jobid),
                                                           str(timeout)))
             end_time = time.time()
             tot_time = int(start_time - end_time)
@@ -122,9 +122,9 @@ class CSConnection(object):
                  str(time.ctime(end_time)), str(tot_time)))
             return async_response
         except Exception as e:
-            self.__lastError = GetDetailExceptionInfo(e)
-            self.logger.exception("__poll: Exception Occurred :%s" %
-                                  self.__lastError)
+            self.__lastError = e
+            self.logger.exception("==== __poll: Exception Occurred :%s ====" %
+                                  str(self.__lastError))
             return FAILED
 
     def getLastError(self):
@@ -353,7 +353,7 @@ class CSConnection(object):
                                               payload=payload,
                                               method=method)
             if cmd_response == FAILED:
-                return FAILED
+                raise self.__lastError
 
             '''
             4. Check if the Command Response received above is valid or Not.

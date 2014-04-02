@@ -25,6 +25,7 @@ from marvin.codes import (SUCCESS,
                           FAILED
                           )
 from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.lib.utils import random_gen
 
 
 class MarvinLog:
@@ -140,9 +141,9 @@ class MarvinLog:
             temp_ts = time.strftime("%b_%d_%Y_%H_%M_%S",
                                     time.localtime())
             if test_module_name is None:
-                temp_path = temp_ts
+                temp_path = temp_ts + "_" + random_gen()
             else:
-                temp_path = str(test_module_name) + "__" + str(temp_ts)
+                temp_path = str(test_module_name) + "__" + str(temp_ts) + "_" + random_gen()
 
             temp_dir = "MarvinLogs"
             if ((log_cfg is not None) and

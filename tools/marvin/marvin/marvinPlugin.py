@@ -26,6 +26,7 @@ from nose.plugins.base import Plugin
 from marvin.codes import (SUCCESS,
                           FAILED,
                           EXCEPTION)
+from marvin.lib.utils import random_gen
 from marvin.cloudstackException import GetDetailExceptionInfo
 
 
@@ -230,7 +231,8 @@ class MarvinPlugin(Plugin):
                 self.__testRunner = nose.core.\
                     TextTestRunner(stream=self.__resultStream,
                                    descriptions=True,
-                                   verbosity=2)
+                                   verbosity=2,
+                                   config=self.conf)
                 return SUCCESS
             return FAILED
         except Exception as e:
@@ -272,7 +274,13 @@ class MarvinPlugin(Plugin):
                                                test.AcctType)
 
     def finalize(self, result):
-        src = self.__logFolderPath.strip("//")
-        dst = os.path.split(src)[0] + "/" + self.__testModName
-        os.system("mv " + src + " " + dst)
-        print "===Final Results: %s===" % str(dst)
+        try:
+            src = self.__logFolderPath
+            log_cfg = self.__parsedConfig.logger
+            tmp = log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
+            dst = tmp + "/" + self.__testName + "_" + random_gen()
+            cmd = "mv " + src + " " + dst
+            os.system(cmd)
+            print "===Final Results: %s===" % str(dst)
+        except Exception, e:
+            print "=== Exception occurred under finalize :%s"%str(GetDetailExceptionInfo(e))

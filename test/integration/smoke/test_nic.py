@@ -65,10 +65,7 @@ class TestNic(cloudstackTestCase):
                                 zone.id,
                                 self.services["ostype"]
                                 )
-            if self.template == FAILED:
-                self.fail("get_template() failed to return template with description %s" % self.services["ostype"])
-
-              # Set Zones and disk offerings
+            # Set Zones and disk offerings
             self.services["small"]["zoneid"] = zone.id
             self.services["small"]["template"] = template.id
 

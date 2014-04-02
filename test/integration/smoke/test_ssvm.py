@@ -34,8 +34,6 @@ _multiprocess_shared_ = True
 class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):
-
-	self.testClient = super(TestSSVMs, cls).getClsTestClient()
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
