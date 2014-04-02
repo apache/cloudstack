@@ -252,7 +252,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
                         accessType = AccessType.ListEntry;
                         addAccountScopedUseEntry = true;
                     }
-                } else if (!(cmdObj instanceof BaseAsyncCreateCmd)) {
+                } else {
                     accessType = AccessType.OperateEntry;
                 }
             } catch (Exception e) {

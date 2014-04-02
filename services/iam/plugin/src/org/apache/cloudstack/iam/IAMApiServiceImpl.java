@@ -516,7 +516,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             } else {
                 accessType = AccessType.UseEntry;
             }
-        } else if (!(BaseAsyncCreateCmd.class.isAssignableFrom(cmdClass))) {
+        } else {
             accessType = AccessType.OperateEntry;
         }
         String accessTypeStr = (accessType != null) ? accessType.toString() : null;
