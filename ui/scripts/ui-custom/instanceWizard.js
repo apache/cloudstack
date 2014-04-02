@@ -491,7 +491,11 @@
                         return {
                             response: {
                                 success: function(args) {
+                                    var multiDisk = args.multiDisk;
+
+                                    $step.find('.multi-disk-select-container').remove();
                                     $step.removeClass('custom-disk-size');
+
                                     if (args.required) {
                                         $step.find('.section.no-thanks').hide();
                                         $step.addClass('required');
@@ -500,15 +504,62 @@
                                         $step.removeClass('required');
                                     }
 
-                                    $step.find('.content .select-container').append(
-                                        makeSelects('diskofferingid', args.data.diskOfferings, {
-                                            id: 'id',
-                                            name: 'name',
-                                            desc: 'displaytext'
-                                        }, {
-                                            'wizard-field': 'disk-offering'
-                                        })
-                                    );
+                                    var $selectContainer = $step.find('.content .select-container:not(.multi-disk)');
+
+                                    if (multiDisk) {
+                                        var $multiDiskSelect = $('<div>').addClass('multi-disk-select-container');
+
+                                        $(multiDisk).map(function(index, disk) {
+                                            var $group = $('<div>').addClass('disk-select-group');
+                                            var $header = $('<div>').addClass('disk-select-header').append(
+                                                $('<div>').addClass('title').html(disk.label)
+                                            ).appendTo($group);
+                                            var $checkbox = $('<input>').addClass('multi-disk-select')
+                                            .attr({
+                                                type: 'checkbox',
+                                                'disk-id': disk.id
+                                            })
+                                            .prependTo($header);
+                                            var $multiSelectContainer = $selectContainer.clone().append(
+                                                makeSelects('diskofferingid.' + disk.id, args.data.diskOfferings, {
+                                                id: 'id',
+                                                name: 'name',
+                                                desc: 'displaytext'
+                                            }, {
+                                                'wizard-field': 'disk-offering'
+                                            })
+                                            ).appendTo($group).addClass('multi-disk');
+
+                                            $group.appendTo($multiDiskSelect);
+
+                                            $checkbox.click(function() {
+                                                $group.toggleClass('selected');
+                                                $group.find('.select:first input[type=radio]').click();
+
+                                                if (!$multiDiskSelect.find('input[type=checkbox]:checked').size()) {
+                                                    $step.find('.no-thanks input[type=radio]').click();
+                                                } else {
+                                                    $step.find('.no-thanks input[type=radio]').attr('checked', false);
+                                                }
+                                            });
+                                        });
+                                        $multiDiskSelect.insertAfter($selectContainer);
+                                        $selectContainer.hide();
+
+                                        // Fix issue with containers always showing after reload
+                                        $multiDiskSelect.find('.select-container').attr('style', null); 
+                                    } else {
+                                        $selectContainer.show();
+                                        $step.find('.content .select-container').append(
+                                            makeSelects('diskofferingid', args.data.diskOfferings, {
+                                                id: 'id',
+                                                name: 'name',
+                                                desc: 'displaytext'
+                                            }, {
+                                                'wizard-field': 'disk-offering'
+                                            })
+                                        );
+                                    }
 
                                     $step.find('input[type=radio]').bind('change', function() {
                                         var $target = $(this);
@@ -517,8 +568,17 @@
                                             return elem.id == val;
                                         })[0];
 
+                                        // Uncheck any multi-select groups
+                                        if ($target.closest('.no-thanks').size() &&
+                                            $step.find('.multi-disk-select').size()) {
+                                            $step.find('.disk-select-group input[type=checkbox]:checked').click();
+                                            $(this).attr('checked', true);
+
+                                            return true;
+                                        }
+
                                         if (!item) {
-                                        	// handle removal of custom size controls
+                                            // handle removal of custom size controls
                                             $step.find('.section.custom-size').hide();
                                             $step.removeClass('custom-disk-size');
 
@@ -534,26 +594,26 @@
 
                                         if (custom) {
                                             $target.parent().find('.name')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(': ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(': ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $target.parent().find('.select-desc .desc')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(', ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(', ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $step.find('.section.custom-size').show();
                                             $step.addClass('custom-disk-size');
