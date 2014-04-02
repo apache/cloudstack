@@ -298,89 +298,89 @@
             var fields;
             
             if (hypervisor == 'VMware') {
-            	fields = {
-            		vSwitchName: {
-	                    label: 'vSwitch Name' ,
-	                    defaultValue: trafficData.vSwitchName
-	                },
-	                vlanId: { 
-	                	label: 'VLAN ID',
-	                	defaultValue: trafficData.vlanId
-	                }	                
-	            };  
-            	
-            	if(zoneType == 'Advanced') {
-	            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {            		
-	            		if(trafficData.vSwitchType == null) {
-	            			 var useDvs = false;
-	                         $.ajax({
-	                             url: createURL('listConfigurations'),
-	                             data: {
-	                                 name: 'vmware.use.dvswitch'
-	                             },
-	                             async: false,
-	                             success: function(json) {
-	                                 if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-	                                     useDvs = true;
-	                                 }
-	                             }
-	                         });    
-	                         if (useDvs == true) { 
-	                        	 var useNexusDvs = false;                                            
-	                             $.ajax({
-	                                 url: createURL('listConfigurations'),
-	                                 data: {
-	                                     name: 'vmware.use.nexus.vswitch'
-	                                 },
-	                                 async: false,
-	                                 success: function(json) {
-	                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-	                                         useNexusDvs = true;
-	                                     }
-	                                 }
-	                             });
-	                             if (useNexusDvs == true) {
-	                            	 trafficData.vSwitchType = 'nexusdvs';
-	                            	 fields.vSwitchName.defaultValue = 'epp0';
-	                             } else {
-	                            	 trafficData.vSwitchType = 'vmwaredvs';
-	                            	 fields.vSwitchName.defaultValue = 'dvSwitch0';
-	                             }   
-	                         } else { //useDvs == false
-	                        	 trafficData.vSwitchType = 'vmwaresvs';
-	                        	 fields.vSwitchName.defaultValue = 'vSwitch0';
-	                         }                         
-	            		}
-	            		
-	            		$.extend(fields, {
-	            		    vSwitchType: {
-	            		        label: 'vSwitch Type',
-	            		        select: function (args) {            		        	
-	            		            args.response.success({
-	            		                data: [{
-	            		                    id: 'nexusdvs',
-	            		                    description: 'Cisco Nexus 1000v Distributed Virtual Switch'
-	            		                }, {
-	            		                    id: 'vmwaresvs',
-	            		                    description: 'VMware vNetwork Standard Virtual Switch'
-	            		                }, {
-	            		                    id: 'vmwaredvs',
-	            		                    description: 'VMware vNetwork Distributed Virtual Switch'
-	            		                }]
-	            		            });
-	            		        },
-	    		                defaultValue: trafficData.vSwitchType
-	            		    }
-	            		});   
-	            	}  
-            	}
+                fields = {
+                    vSwitchName: {
+                        label: 'vSwitch Name' ,
+                        defaultValue: trafficData.vSwitchName
+                    },
+                    vlanId: { 
+                        label: 'VLAN ID',
+                        defaultValue: trafficData.vlanId
+                    }                   
+                };  
+                
+                if(zoneType == 'Advanced') {
+                    if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {                 
+                        if(trafficData.vSwitchType == null) {
+                             var useDvs = false;
+                             $.ajax({
+                                 url: createURL('listConfigurations'),
+                                 data: {
+                                     name: 'vmware.use.dvswitch'
+                                 },
+                                 async: false,
+                                 success: function(json) {
+                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                         useDvs = true;
+                                     }
+                                 }
+                             });    
+                             if (useDvs == true) { 
+                                 var useNexusDvs = false;                                            
+                                 $.ajax({
+                                     url: createURL('listConfigurations'),
+                                     data: {
+                                         name: 'vmware.use.nexus.vswitch'
+                                     },
+                                     async: false,
+                                     success: function(json) {
+                                         if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                             useNexusDvs = true;
+                                         }
+                                     }
+                                 });
+                                 if (useNexusDvs == true) {
+                                     trafficData.vSwitchType = 'nexusdvs';
+                                     fields.vSwitchName.defaultValue = 'epp0';
+                                 } else {
+                                     trafficData.vSwitchType = 'vmwaredvs';
+                                     fields.vSwitchName.defaultValue = 'dvSwitch0';
+                                 }   
+                             } else { //useDvs == false
+                                 trafficData.vSwitchType = 'vmwaresvs';
+                                 fields.vSwitchName.defaultValue = 'vSwitch0';
+                             }                         
+                        }
+                        
+                        $.extend(fields, {
+                            vSwitchType: {
+                                label: 'vSwitch Type',
+                                select: function (args) {                               
+                                    args.response.success({
+                                        data: [{
+                                            id: 'nexusdvs',
+                                            description: 'Cisco Nexus 1000v Distributed Virtual Switch'
+                                        }, {
+                                            id: 'vmwaresvs',
+                                            description: 'VMware vNetwork Standard Virtual Switch'
+                                        }, {
+                                            id: 'vmwaredvs',
+                                            description: 'VMware vNetwork Distributed Virtual Switch'
+                                        }]
+                                    });
+                                },
+                                defaultValue: trafficData.vSwitchType
+                            }
+                        });   
+                    }  
+                }
             } else {    
-	            fields = {
-	                label: {
-	                    label: hypervisor + ' ' + _l('label.traffic.label'),
-	                    defaultValue: trafficData.label
-	                }
-	            };
+                fields = {
+                    label: {
+                        label: hypervisor + ' ' + _l('label.traffic.label'),
+                        defaultValue: trafficData.label
+                    }
+                };
             }
 
             cloudStack.dialog.createForm({
@@ -1090,7 +1090,17 @@
                 if (typeof index == 'string') {
                     index = $wizard.find('[zone-wizard-step-id=' + index + ']').index() + 1;
                 }
-
+                var formState = getData($wizard, {
+                    all: true
+                });
+                //Docker: hide jump up to step5
+                if(formState != undefined && formState.hypervisor == 'Docker') {
+                    if(index == 11)
+                        index = 13;
+                    if(goBack && index == 12)
+                        index = 10;
+                }
+                //Docker: hide jump up to step5 - end
                 var targetIndex = index - 1;
 
                 if (index <= 1) targetIndex = 0;
@@ -1102,16 +1112,20 @@
                 $wizard.find('.buttons').show();
 
                 var $targetStep = $($steps[targetIndex]).show();
+                
                 var $uiCustom = $targetStep.find('[ui-custom]');
-                var formState = getData($wizard, {
-                    all: true
-                });
+                
                 var groupedFormState = getData($wizard);
                 var formID = $targetStep.attr('zone-wizard-form');
                 var stepPreFilter = cloudStack.zoneWizard.preFilters[
                     $targetStep.attr('zone-wizard-prefilter')
                 ];
-
+                //Docker: hide storage tabs
+                if(index > 8 && formState != undefined && formState.hypervisor == 'Docker') {
+                    $targetStep.find('.primary-storage').hide();
+                    $targetStep.find('.secondary-storage').hide();
+                }
+                //Docker: hide storage tabs - end
                 // Bypass step check
                 if (stepPreFilter && !stepPreFilter({
                     data: formState,
@@ -1344,8 +1358,7 @@
                             return false;
                         }
                     }
-                    //when hypervisor is BareMetal (end)
-
+                   
                     if (!$target.closest('.button.next.final').size())
                         showStep($steps.filter(':visible').index() + 2);
                     else {

@@ -4079,11 +4079,19 @@
                         type: "POST",
                         data: data,
                         success: function(json) {
-                            stepFns.addPrimaryStorage({
-                                data: $.extend(args.data, {
-                                    returnedHost: json.addhostresponse.host[0]
-                                })
-                            });
+                            //Docker: don't go to addPrimaryStorage
+                            if(data != undefined && data.hypervisor == 'Docker') {
+                                complete({
+                                    data: args.data
+                                });
+                            } else {
+                                stepFns.addPrimaryStorage({
+                                    data: $.extend(args.data, {
+                                        returnedHost: json.addhostresponse.host[0]
+                                    })
+                                });
+                            }
+                            //Docker: don't go to addPrimaryStorage - end
                         },
                         error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
