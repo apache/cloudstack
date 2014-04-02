@@ -405,7 +405,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 if (template.getFormat() == ImageFormat.ISO) {
                     volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vmFinal, template, owner);
-                } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+                } else if (template.getFormat() == ImageFormat.BAREMETAL || template.getHypervisorType() == HypervisorType.Docker) {
                     // Do nothing
                 } else {
                     volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), template, vmFinal, owner);

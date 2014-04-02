@@ -2578,7 +2578,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                 }
 
-                _networkModel.checkNetworkPermissions(owner, network);
+//                _networkModel.checkNetworkPermissions(owner, network);
 
                 // don't allow to use system networks
                 NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
@@ -2734,7 +2734,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (template.getHypervisorType() != null && template.getHypervisorType() != HypervisorType.BareMetal) {
+        if (template.getHypervisorType() != null && template.getHypervisorType() != HypervisorType.BareMetal
+        		&& template.getHypervisorType() != HypervisorType.Docker) {
             // check if we have available pools for vm deployment
             long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
             if (availablePools < 1) {
