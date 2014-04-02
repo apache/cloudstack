@@ -336,12 +336,13 @@
                             data: {
                                 diskOfferings: diskOfferingObjs
                             },
-                            multiDisk: args.currentData.serviceofferingid === "919ac1bb-be43-4811-8c73-b1c038aac5be" ? 
-                                [
-                                    { id: 1, label: 'vm-disk-1' },
-                                    { id: 2, label: 'vm-disk-2' },
-                                    { id: 3, label: 'vm-disk-3' }
-                                ] : null
+                            multiDisk: false
+                            // multiDisk:  
+                            // [ 
+                            //        { id: 1, label: 'vm-disk-1' },
+                            //        { id: 2, label: 'vm-disk-2' },
+                            //        { id: 3, label: 'vm-disk-3' }
+                            // ] 
                         });
                     }
                 });
