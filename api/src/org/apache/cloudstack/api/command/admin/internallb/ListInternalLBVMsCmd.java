@@ -40,7 +40,7 @@ import com.cloud.vm.VirtualMachine;
 public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLBVMsCmd.class.getName());
 
-    private static final String s_name = "listinternallbvmssresponse";
+    private static final String s_name = "listinternallbvmsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
