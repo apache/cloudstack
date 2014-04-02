@@ -52,6 +52,7 @@ public class XenServerConnectionPool {
     protected HashMap<String /* poolUuid */, XenServerConnection> _conns = new HashMap<String, XenServerConnection>();
     protected int _retries;
     protected int _interval;
+    protected int _connWait = 5;
     protected static long s_sleepOnError = 10 * 1000; // in ms
     static {
         File file = PropertiesUtil.findConfigFile("environment.properties");
@@ -149,12 +150,12 @@ public class XenServerConnectionPool {
     }
 
     public Connection getConnect(String ip, String username, Queue<String> password) {
-        Connection conn = new Connection(getURL(ip), 10);
+        Connection conn = new Connection(getURL(ip), 10, _connWait);
         try {
             loginWithPassword(conn, username, password, APIVersion.latest().toString());
         }  catch (Types.HostIsSlave e) {
             String maddress = e.masterIPAddress;
-            conn = new Connection(getURL(maddress), 10);
+            conn = new Connection(getURL(maddress), 10, _connWait);
             try {
                 loginWithPassword(conn, username, password, APIVersion.latest().toString());
             }  catch (Exception e1) {
@@ -219,7 +220,7 @@ public class XenServerConnectionPool {
 
             if ( mConn == null ) {
                 try {
-                    Connection conn = new Connection(getURL(ipAddress), 5);
+                    Connection conn = new Connection(getURL(ipAddress), 5, _connWait);
                     Session sess = loginWithPassword(conn, username, password, APIVersion.latest().toString());
                     Host host = sess.getThisHost(conn);
                     Boolean hostenabled = host.getEnabled(conn);
@@ -235,11 +236,11 @@ public class XenServerConnectionPool {
                         s_logger.debug(msg);
                         throw new CloudRuntimeException(msg);
                     }
-                    mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait);
+                    mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait, _connWait);
                     loginWithPassword(mConn, username, password, APIVersion.latest().toString());
                 }  catch (Types.HostIsSlave e) {
                     String maddress = e.masterIPAddress;
-                    mConn = new XenServerConnection(getURL(maddress), maddress, username, password, _retries, _interval, wait);
+                    mConn = new XenServerConnection(getURL(maddress), maddress, username, password, _retries, _interval, wait, _connWait);
                     try {
                         Session session = loginWithPassword(mConn, username, password, APIVersion.latest().toString());
                         Host host = session.getThisHost(mConn);
@@ -417,8 +418,8 @@ public class XenServerConnectionPool {
         Queue<String> _password;
         String _poolUuid;
 
-        public XenServerConnection(URL url, String ip, String username, Queue<String> password, int retries, int interval, int wait) {
-            super(url, wait);
+        public XenServerConnection(URL url, String ip, String username, Queue<String> password, int retries, int interval, int wait, int connwait) {
+            super(url, wait, connwait);
             _ip = ip;
             _retries = retries;
             _username = username;
