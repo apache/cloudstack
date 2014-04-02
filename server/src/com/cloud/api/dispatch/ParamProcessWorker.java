@@ -263,8 +263,8 @@ public class ParamProcessWorker implements DispatchWorker {
             }
 
             if (!entitiesToOperate.isEmpty()) {
-                _accountMgr.checkAccess(owner, AccessType.OperateEntry, apiName,
-                        (ControlledEntity[]) entitiesToOperate.toArray());
+                _accountMgr.checkAccess(caller, AccessType.OperateEntry, false, apiName,
+                        entitiesToOperate.toArray(new ControlledEntity[entitiesToOperate.size()]));
             }
 
         }
