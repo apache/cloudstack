@@ -1307,9 +1307,16 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 throw new ConfigurationException(msg);
             }
         }
-
-        _loadScanner = new SystemVmLoadScanner<Long>(this);
-        _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+        
+        String useServiceVM = _configDao.getValue("console.proxy.vm");
+        boolean _useServiceVM = false;
+        if ("true".equalsIgnoreCase(useServiceVM)) {
+            _useServiceVM = true;
+        }
+        if (_useServiceVM) {
+            _loadScanner = new SystemVmLoadScanner<Long>(this);
+            _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+        }
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 
         _staticPublicIp = _configDao.getValue("consoleproxy.static.publicIp");
