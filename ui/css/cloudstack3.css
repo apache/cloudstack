@@ -6126,6 +6126,10 @@ label.error {
   height: 0;
 }
 
+.multi-wizard.instance-wizard .data-disk-offering .disk-select-group.custom-size .section.custom-size {
+  display: block !important;
+}
+
 .multi-wizard.instance-wizard .data-disk-offering .disk-select-group .select input {
   margin: 13px 12px 12px;
 }
