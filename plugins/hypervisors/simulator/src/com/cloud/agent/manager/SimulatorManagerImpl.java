@@ -369,7 +369,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
-            } else if (cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand) {
+            } else if (cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand ||
+                    cmd instanceof FinishAggregationCommand || cmd instanceof StartAggregationCommand) {
                 return new Answer(cmd);
             } else {
                 s_logger.error("Simulator does not implement command of type " + cmd.toString());
