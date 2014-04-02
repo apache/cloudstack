@@ -146,71 +146,62 @@ public class ParamProcessWorker implements DispatchWorker {
                 final CommandType fieldType = parameterAnnotation.type();
 
                 if (checkAccess != null) {
-                    // Verify that caller can perform actions in behalf of vm owner
-                    //acumulate all Controlled Entities together.
+                    // Verify that caller can perform actions in behalf of vm
+                    // owner acumulate all Controlled Entities together.
+                    // parse the array of resource types and in case of map
+                    // check access on key or value or both as specified in @acl
+                    // implement external dao for classes that need findByName
+                    // for maps, specify access to be checkd on key or value.
+                    // Find the controlled entity DBid by uuid
 
-                    //parse the array of resource types and in case of map check access on key or value or both as specified in @acl
-                    //implement external dao for classes that need findByName
-                    //for maps, specify access to be checkd on key or value.
-
-                    // find the controlled entity DBid by uuid
                     if (parameterAnnotation.entityType() != null) {
                         final Class<?>[] entityList = parameterAnnotation.entityType()[0].getAnnotation(EntityReference.class).value();
 
-                        for (final Class entity : entityList) {
-                            // Check if the parameter type is a single
-                            // Id or list of id's/name's
-                            switch (fieldType) {
-                                case LIST:
-                                    final CommandType listType = parameterAnnotation.collectionType();
-                                    switch (listType) {
-                                        case LONG:
-                                        case UUID:
-                                            final List<Long> listParam = (List<Long>)field.get(cmd);
-                                            for (final Long entityId : listParam) {
+                        // Check if the parameter type is a single
+                        // Id or list of id's/name's
+                        switch (fieldType) {
+                            case LIST:
+                                final CommandType listType = parameterAnnotation.collectionType();
+                                switch (listType) {
+                                    case LONG:
+                                    case UUID:
+                                        final List<Long> listParam = (List<Long>) field.get(cmd);
+                                        for (final Long entityId : listParam) {
+                                            for (final Class entity : entityList) {
                                                 final Object entityObj = _entityMgr.findById(entity, entityId);
-                                                entitiesToAccess.put(entityObj, checkAccess.accessType());
+                                                if(entityObj != null){
+                                                    entitiesToAccess.put(entityObj, checkAccess.accessType());
+                                                    break;
+                                                }
                                             }
-                                            break;
-                                        /*
-                                         * case STRING: List<String> listParam =
-                                         * new ArrayList<String>(); listParam =
-                                         * (List)field.get(cmd); for(String
-                                         * entityName: listParam){
-                                         * ControlledEntity entityObj =
-                                         * (ControlledEntity
-                                         * )daoClassInstance(entityId);
-                                         * entitiesToAccess.add(entityObj); }
-                                         * break;
-                                         */
-                                        default:
-                                            break;
+                                        }
+                                        break;
+                                    /*
+                                     * case STRING: List<String> listParam = new
+                                     * ArrayList<String>(); listParam =
+                                     * (List)field.get(cmd); for(String entityName:
+                                     * listParam){ ControlledEntity entityObj =
+                                     * (ControlledEntity )daoClassInstance(entityId);
+                                     * entitiesToAccess.add(entityObj); } break;
+                                     */
+                                    default:
+                                        break;
+                                }
+                                break;
+                            case LONG:
+                            case UUID:
+                                for (final Class entity : entityList) {
+                                    final Object entityObj = _entityMgr.findById(entity, (Long) field.get(cmd));
+                                    if(entityObj != null){
+                                        entitiesToAccess.put(entityObj, checkAccess.accessType());
+                                        break;
                                     }
-                                    break;
-                                case LONG:
-                                case UUID:
-                                    final Object entityObj = _entityMgr.findById(entity, (Long)field.get(cmd));
-                                    entitiesToAccess.put(entityObj, checkAccess.accessType());
-                                    break;
-                                default:
-                                    break;
-                            }
-
-                            if (ControlledEntity.class.isAssignableFrom(entity)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("ControlledEntity name is:" + entity.getName());
                                 }
-                            }
-
-                            if (InfrastructureEntity.class.isAssignableFrom(entity)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("InfrastructureEntity name is:" + entity.getName());
-                                }
-                            }
+                                break;
+                            default:
+                                break;
                         }
-
                     }
-
                 }
 
             } catch (final IllegalArgumentException e) {
