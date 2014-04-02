@@ -1099,8 +1099,7 @@ namespace HypervResource
             string[] rasds = null;
             if (sasd != null)
             {
-                rasds = new string[sasd.Length];
-                uint index = 0;
+                rasds = new string[1];
                 foreach (StorageAllocationSettingData item in sasd)
                 {
                     string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
@@ -1109,9 +1108,9 @@ namespace HypervResource
                         string newVhdPath = Path.Combine(destination, Path.GetFileName(item.HostResource[0]));
                         item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
                         item.LateBoundObject["PoolId"] = "";
+                        rasds[0] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                        break;
                     }
-
-                    rasds[index++] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
                 }
             }
 
