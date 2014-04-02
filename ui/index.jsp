@@ -250,7 +250,7 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size">
+                                <div class="section custom-size custom-disk-size">
                                     <label><fmt:message key="label.disk.size"/></label>
 
                                     <!-- Slider -->

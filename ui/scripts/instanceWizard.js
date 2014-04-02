@@ -335,7 +335,14 @@
                             customIopsDoFlag: 'iscustomizediops',
                             data: {
                                 diskOfferings: diskOfferingObjs
-                            }
+                            },
+                            multiDisk: false
+                            // multiDisk:  
+                            // [ 
+                            //        { id: 1, label: 'vm-disk-1' },
+                            //        { id: 2, label: 'vm-disk-2' },
+                            //        { id: 3, label: 'vm-disk-3' }
+                            // ] 
                         });
                     }
                 });
