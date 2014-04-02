@@ -23,10 +23,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -41,7 +37,6 @@ import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
 import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.vm.VirtualMachine;
@@ -81,23 +76,6 @@ public class ApiDispatcher {
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
         asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
         CallContext.current().setEventDisplayEnabled(cmd.isDisplayResourceEnabled());
-    }
-
-    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
-        Account caller = CallContext.current().getCallingAccount();
-
-        APICommand commandAnnotation = cmd.getClass().getAnnotation(APICommand.class);
-        String apiName = commandAnnotation != null ? commandAnnotation.name() : null;
-
-        if (!entitiesToAccess.isEmpty()) {
-            for (Object entity : entitiesToAccess.keySet()) {
-                if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), false, apiName, (ControlledEntity) entity);
-                } else if (entity instanceof InfrastructureEntity) {
-                    //FIXME: Move this code in adapter, remove code from Account manager
-                }
-            }
-        }
     }
 
     public void dispatch(final BaseCmd cmd, final Map<String, String> params, final boolean execute) throws Exception {

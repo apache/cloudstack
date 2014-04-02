@@ -35,12 +35,13 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "enableStaticNat", description = "Enables static nat for given ip address", responseObject = SuccessResponse.class,
-        entityType = {IpAddress.class, VirtualMachine.class},
+        entityType = {IpAddress.class, VirtualMachine.class, Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableStaticNatCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
