@@ -40,7 +40,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
