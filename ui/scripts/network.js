@@ -2131,12 +2131,15 @@
                                 	$.ajax({
                                 		url: createURL('listRegions'),
                                 		success: function(json) {
+                                			var selectedRegionName = $(".region-switcher .title").text();
+                                			if ( selectedRegionName == undefined || selectedRegionName.length == 0) {
+                                				selectedRegionName = "Local";
+                                			}                                			
                                 		    var items = json.listregionsresponse.region;	
                                 		    if(items != null) {
-                                		    	for(var i = 0; i < items.length; i++) {
-                                		    		var region = items[0];  
-                                		    		if(region.name == 'Local') {
-	                                    		    	if(region.portableipserviceenabled == true) {
+                                		    	for(var i = 0; i < items.length; i++) {   		
+                                		    		if(items[i].name == selectedRegionName) {
+	                                    		    	if(items[i].portableipserviceenabled == true) {
 	                                    		    		args.$form.find('.form-item[rel=isportable]').css('display', 'inline-block');
 	                                    		    	} else {
 	                                    		    		args.$form.find('.form-item[rel=isportable]').hide();
