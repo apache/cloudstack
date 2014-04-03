@@ -59,6 +59,24 @@
                     });
                     data['new-network-ip'] = $form.find('.new-network .select.advanced .specify-ip input[type=text]').val();
 
+                    // Handle multi-disk service offerings
+                    if ($form.find('.multi-disk-select-container').size()) {
+                        data['disk-offerings-multi'] = [];
+
+                        var $diskGroups = $form.find('.disk-select-group');
+                        var $selectedDisks = $.grep($diskGroups, function (diskGroup) {
+                            return $(diskGroup).find('input[type=checkbox]:checked').size();
+                        });
+
+                        $selectedDisks.map(function (disk) {
+                            data['disk-offerings-multi'].push(
+                                $.extend($(disk).data('json-obj'), {
+                                    _diskOfferingId: $(disk).find('input[type=radio]:checked').val()
+                                })
+                            );
+                        });
+                    }
+
                     args.action({
                         // Populate data
                         context: context,
@@ -531,6 +549,7 @@
                                             ).appendTo($group).addClass('multi-disk');
 
                                             $group.appendTo($multiDiskSelect);
+                                            $group.data('json-obj', disk);
 
                                             // Show-hide disk group selects
                                             $checkbox.click(function() {
