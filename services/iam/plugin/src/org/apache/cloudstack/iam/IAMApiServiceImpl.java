@@ -40,7 +40,6 @@ import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.iam.AddAccountToIAMGroupCmd;
