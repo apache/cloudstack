@@ -289,7 +289,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1A_apikey
         self.apiclient.connection.securityKey = self.user_1A_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -312,7 +313,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -336,7 +338,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_2A_apikey
         self.apiclient.connection.securityKey = self.user_2A_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -378,7 +381,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -426,7 +430,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -479,7 +484,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -522,7 +528,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -563,7 +570,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -610,7 +618,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -653,7 +662,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),
@@ -695,7 +705,8 @@ class TestVMIam(cloudstackTestCase):
         self.apiclient.connection.apiKey = self.user_1B_apikey
         self.apiclient.connection.securityKey = self.user_1B_secretkey
         list_vm_response = list_virtual_machines(
-                                            self.apiclient
+                                            self.apiclient,
+                                            listall=True
                                             )
         self.assertEqual(
                             isinstance(list_vm_response, list),

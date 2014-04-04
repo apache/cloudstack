@@ -39,7 +39,8 @@ public abstract class BaseListDomainResourcesCmd extends BaseListCmd {
     }
 
     public boolean isRecursive() {
-        return recursive == null ? false : recursive;
+        // if listAll is true, recursive is not specified, then recursive should default to true.
+        return recursive == null ? (listAll() ? true : false) : recursive;
     }
 
     public Long getDomainId() {

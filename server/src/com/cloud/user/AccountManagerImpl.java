@@ -2164,39 +2164,47 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts,
             List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
             String action) {
-        //TODO: need to handle listAll flag
+
         Long domainId = domainIdRecursiveListProject.first();
-        if (domainId != null) {
-            // look for entity in the given domain
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-            }
-            // check permissions
-            checkAccess(caller, domain);
-        }
-
-        if (accountName != null) {
-            if (projectId != null) {
-                throw new InvalidParameterValueException("Account and projectId can't be specified together");
-            }
-
-            Account userAccount = null;
-            Domain domain = null;
+        if (id == null) {
+            // if id is specified, it will ignore all other parameters
             if (domainId != null) {
-                userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                domain = _domainDao.findById(domainId);
-            } else {
-                userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
-                domain = _domainDao.findById(caller.getDomainId());
+                // look for entity in the given domain
+                Domain domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+                }
+                // check permissions
+                checkAccess(caller, domain);
             }
 
-            if (userAccount != null) {
-                //check permissions
-                checkAccess(caller, null, userAccount);
-                permittedAccounts.add(userAccount.getId());
-            } else {
-                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+            // specific account is specified
+            if (accountName != null) {
+                if (projectId != null) {
+                    throw new InvalidParameterValueException("Account and projectId can't be specified together");
+                }
+
+                Account userAccount = null;
+                Domain domain = null;
+                if (domainId != null) {
+                    userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    domain = _domainDao.findById(domainId);
+                } else {
+                    userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+                    domain = _domainDao.findById(caller.getDomainId());
+                }
+
+                if (userAccount != null) {
+                    //check permissions
+                    checkAccess(caller, null, userAccount);
+                    permittedAccounts.add(userAccount.getId());
+                } else {
+                    throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+                }
+            } else if (!listAll && domainId == null) {
+                // listAll=false with no domain specified will only show caller owned resources
+                // if domainId is specified, we will filter the list based caller visible resources (owned + granted)
+                permittedAccounts.add(caller.getId());
             }
         }
 
@@ -2233,7 +2241,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             QuerySelector qs = _querySelectors.get(0);
             boolean grantedAll = qs.isGrantedAll(caller, action);
             if ( grantedAll ){
-                if ( domainId != null ){
+                if (permittedAccounts.isEmpty() && domainId != null) {
                     permittedDomains.add(domainId);
                 }
             }
@@ -2253,6 +2261,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                                 permittedAccounts.add(acctId);
                             }
                         }
+                        //TODO: we should also filter granted resources based on domainId passed.
+                        // potential bug, if domainId is passed, it may show some granted resources that may not be in that domain.
+                        // to fix this, we need to change the interface to also pass ControlledEntity class to use EntityManager to find
+                        // ControlledEntity instance to check domainId. But this has some issues for those non controlled entities,
+                        // like NetworkACLItem
                         permittedResources.addAll(grantedResources);
                     }
                 } else if (permittedAccounts.isEmpty()) {
