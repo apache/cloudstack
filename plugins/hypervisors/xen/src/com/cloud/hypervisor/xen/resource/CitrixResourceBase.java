@@ -170,6 +170,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -558,10 +559,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args, int timeout) {
-        Connection conn = getConnection();
-        String rc = callHostPluginAsync(conn, "vmops", "routerProxy", timeout, "args", script + " " + routerIP + " " + args);
-        // Fail case would be start with "fail#"
-        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
+        Pair<Boolean, String> result;
+        try {
+            result = SshHelper.sshExecute(_host.ip, 22, _username, null, _password.peek(), "/opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args,
+                    60000, 60000, timeout * 1000);
+        } catch (Exception e) {
+            return new ExecutionResult(false, e.getMessage());
+        }
+        return new ExecutionResult(result.first(), result.second());
     }
 
     @Override
