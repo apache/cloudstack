@@ -15,18 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostPatch;
+import com.xensource.xenapi.PoolPatch;
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
 public class XenServer620Resource extends XenServer610Resource {
@@ -39,19 +41,6 @@ public class XenServer620Resource extends XenServer610Resource {
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         return CitrixHelper.getXenServer620GuestOsType(stdType, bootFromCD);
-    }
-
-    @Override
-    protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        File file = new File(patchfilePath);
-        files.add(file);
-        return files;
     }
 
     @Override
@@ -82,5 +71,38 @@ public class XenServer620Resource extends XenServer610Resource {
             s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
         }
         return dynamicMinRam;
+    }
+
+    protected boolean hostHasHotFix(Connection conn, String hotFixUuid) {
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            Host.Record re = host.getRecord(conn);
+            Set<HostPatch> patches = re.patches;
+            PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
+            for(HostPatch patch : patches) {
+                PoolPatch pp = patch.getPoolPatch(conn);
+                if (pp.equals(poolPatch) && patch.getApplied(conn)) {
+                    return true;
+                }
+            }
+         } catch (Exception e) {
+            s_logger.debug("can't get patches information for hotFix: " + hotFixUuid);
+        }
+        return false;
+    }
+
+    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+        super.fillHostInfo(conn, cmd);
+        Map<String, String> details = cmd.getHostDetails();
+        Boolean hotFix62ESP1004 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1004);
+        if( hotFix62ESP1004 != null && hotFix62ESP1004 ) {
+            details.put(XenserverConfigs.XS620HotFix , XenserverConfigs.XSHotFix62ESP1004);
+        } else {
+            Boolean hotFix62ESP1 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1);
+            if( hotFix62ESP1 != null && hotFix62ESP1 ) {
+                details.put(XenserverConfigs.XS620HotFix , XenserverConfigs.XSHotFix62ESP1);
+            }
+        }
+        cmd.setHostDetails(details);
     }
 }
