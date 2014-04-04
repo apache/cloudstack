@@ -67,7 +67,7 @@ class TestCreateVolume(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["template"] = template.id
         cls.services["customdiskofferingid"] = cls.custom_disk_offering.id
-
+        cls.services["diskname"] = cls.services["volume"]["diskname"]
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.apiclient,

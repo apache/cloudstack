@@ -69,7 +69,7 @@ class TestNic(cloudstackTestCase):
             self.services["small"]["zoneid"] = zone.id
             self.services["small"]["template"] = template.id
 
-            self.services["iso_1"]["zoneid"] = zone.id
+            self.services["iso1"]["zoneid"] = zone.id
             self.services["network"]["zoneid"] = zone.id
 
             # Create Account, VMs, NAT Rules etc
