@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import com.cloud.resource.ServerResource;
 
 @Local(value = ServerResource.class)
-public class XenServer602Resource extends XenServer56FP1Resource {
+public class XenServer602Resource extends XenServer600Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer602Resource.class);
 
     public XenServer602Resource() {

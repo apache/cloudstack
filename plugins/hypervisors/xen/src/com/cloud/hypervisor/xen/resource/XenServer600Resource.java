@@ -29,7 +29,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
-public class XenServer600Resource extends XenServer56FP1Resource {
+public class XenServer600Resource extends XenServer56SP2Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer600Resource.class);
 
     public XenServer600Resource() {
