@@ -187,6 +187,8 @@ class TestSecStorageServices(cloudstackTestCase):
                                         listall=True,
                                         account='system'
                                         )
+                self.assertEqual(validateList(list_template_response)[0], PASS,\
+                        "templates list validation failed")
 
                 # Ensure all BUILTIN templates are downloaded
                 templateid = None

@@ -230,10 +230,9 @@ class TestPortForwarding(cloudstackTestCase):
         testClient = super(TestPortForwarding, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
-        
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         template = get_template(
                             cls.apiclient,
                             cls.zone.id,

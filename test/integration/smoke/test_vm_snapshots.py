@@ -40,7 +40,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     cls.zone.id,
                     cls.services["ostype"]
                     )
-        if cls.template == FAILED:
+        if template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
@@ -68,7 +68,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     accountid=cls.account.name,
                     domainid=cls.account.domainid,
                     serviceofferingid=cls.service_offering.id,
-                    mode=cls.services["mode"]
+                    mode=cls.zone.networktype
                     )
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
