@@ -888,7 +888,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                                     for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                                         UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
                                         Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(ulb.getNetworkId(), vm.getId());
-                                        String dstIp = nic.getIp4Address();
+                                        String dstIp = lbVmMap.getInstanceIp() == null ? nic.getIp4Address(): lbVmMap.getInstanceIp();
+
                                         for (int i = 0; i < lbto.getDestinations().length; i++) {
                                             LoadBalancerTO.DestinationTO des = lbto.getDestinations()[i];
                                             if (dstIp.equalsIgnoreCase(lbto.getDestinations()[i].getDestIp())) {
@@ -1068,8 +1069,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 for (Long vmId : vmIds) {
                     final List<String> lbVmIps = newMap.get(vmId);
                     for (String vmIp: lbVmIps) {
-                    LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vmId, vmIp, false);
-                    map = _lb2VmMapDao.persist(map);
+                        LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vmId, vmIp, false);
+                        map = _lb2VmMapDao.persist(map);
                     }
                 }
             }
@@ -1130,8 +1131,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription = "removing from load balancer", async = true)
-    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
-        return removeFromLoadBalancerInternal(loadBalancerId, instanceIds, true);
+    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpsMap) {
+        return removeFromLoadBalancerInternal(loadBalancerId, instanceIds, true, vmIdIpsMap);
     }
 
     @Override
@@ -1265,7 +1266,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
-    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack) {
+    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack, Map<Long, List<String>> vmIdIpMap) {
         CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
@@ -1275,17 +1276,65 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         _accountMgr.checkAccess(caller.getCallingAccount(), null, loadBalancer);
 
+        if (instanceIds == null && vmIdIpMap.isEmpty()) {
+            throw new InvalidParameterValueException("Both instanceids and vmidipmap  can't be null");
+        }
+
+        // instanceIds and vmIdipmap is passed
+        if (instanceIds != null && !vmIdIpMap.isEmpty()) {
+            for(long instanceId: instanceIds) {
+                if (!vmIdIpMap.containsKey(instanceId)) {
+                    vmIdIpMap.put(instanceId, null);
+                }
+            }
+        }
+
+        //only instanceids list passed
+        if (instanceIds != null && vmIdIpMap.isEmpty()){
+            vmIdIpMap = new HashMap<Long, List<String>>();
+            for (long instanceId: instanceIds){
+                vmIdIpMap.put(instanceId, null);
+            }
+        }
+
         boolean success = false;
         FirewallRule.State backupState = loadBalancer.getState();
+        Set<Long> vmIds = vmIdIpMap.keySet();
         try {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
 
-            for (long instanceId : instanceIds) {
-                LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
-                map.setRevoke(true);
-                _lb2VmMapDao.persist(map);
-                s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
+            for (long instanceId : vmIds) {
+                List<String> lbVmIps = vmIdIpMap.get(instanceId);
+
+                if (lbVmIps == null || lbVmIps.isEmpty()) {
+                    List<LoadBalancerVMMapVO> lbVms = _lb2VmMapDao.listByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
+                    if (lbVms == null) {
+                        throw new InvalidParameterValueException("The instance id: "+ instanceId +" is not configured "
+                                + " for LB rule id " + loadBalancerId);
+                    }
+
+                    for (LoadBalancerVMMapVO lbvm: lbVms) {
+                        lbvm.setRevoke(true);
+                        _lb2VmMapDao.persist(lbvm);
+                    }
+                    s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
+
+                } else {
+                    for (String vmIp: lbVmIps) {
+                        LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmIdVmIp (loadBalancerId, instanceId, vmIp);
+                        if (map == null) {
+                            throw new InvalidParameterValueException("The instance id: "+ instanceId +" is not configured "
+                                    + " for LB rule id " + loadBalancerId);
+                        }
+                        map.setRevoke(true);
+                        _lb2VmMapDao.persist(map);
+                        s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " +
+                                instanceId + ", vmip " + vmIp);
+
+                    }
+
+                }
             }
 
             if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
@@ -1307,11 +1356,23 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         } catch (ResourceUnavailableException e) {
             if (rollBack && isRollBackAllowedForProvider(loadBalancer)) {
 
-                for (long instanceId : instanceIds) {
-                    LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
-                    map.setRevoke(false);
-                    _lb2VmMapDao.persist(map);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " + instanceId);
+                for (long instanceId : vmIds) {
+                    List<String> lbVmIps = vmIdIpMap.get(instanceId);
+
+                    if (lbVmIps == null || lbVmIps.isEmpty()) {
+                        LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
+                        map.setRevoke(false);
+                        _lb2VmMapDao.persist(map);
+                        s_logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " + instanceId);
+                    }else {
+                        for (String vmIp: lbVmIps) {
+                            LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmIdVmIp (loadBalancerId, instanceId, vmIp);
+                            map.setRevoke(true);
+                            _lb2VmMapDao.persist(map);
+                            s_logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " +
+                                    instanceId + ", vmip " + vmIp);
+                        }
+                    }
                 }
 
                 loadBalancer.setState(backupState);
@@ -1356,7 +1417,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // Reapply all lbs that had the vm assigned
         if (lbsToReconfigure != null) {
             for (Map.Entry<Long, List<Long>> lb : lbsToReconfigure.entrySet()) {
-                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false)) {
+                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false, new HashMap<Long, List<String>>())) {
                     success = false;
                 }
             }
@@ -1801,12 +1862,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                             instanceIds.add(lbVmMap.getInstanceId());
+                            _lb2VmMapDao.remove(lb.getId(), lbVmMap.getInstanceId(), lbVmMap.getInstanceIp(), null);
+                            s_logger.debug("Load balancer rule id " + lb.getId() + " is removed for vm " +
+                                    lbVmMap.getInstanceId() + " instance ip " + lbVmMap.getInstanceIp());
                         }
 
-                        if (!instanceIds.isEmpty()) {
-                            _lb2VmMapDao.remove(lb.getId(), instanceIds, null);
-                            s_logger.debug("Load balancer rule id " + lb.getId() + " is removed for vms " + instanceIds);
-                        }
 
                         if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
                             lb.setState(FirewallRule.State.Add);
@@ -2094,6 +2154,18 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
         }
         return new Pair<List<? extends UserVm>, List<String>>(loadBalancerInstances, serviceStates);
+    }
+
+    @Override
+    public List<String> listLbVmIpAddress (long id, long vmId) {
+
+        List <LoadBalancerVMMapVO> listLbvmMapVo = _lb2VmMapDao.listByLoadBalancerIdAndVmId(id, vmId);
+
+        List <String> vmIps = new ArrayList<String>();
+        for (LoadBalancerVMMapVO lbVmVo : listLbvmMapVo) {
+            vmIps.add(lbVmVo.getInstanceIp());
+        }
+        return vmIps;
     }
 
     @Override

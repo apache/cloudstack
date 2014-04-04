@@ -1431,7 +1431,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<Long> lstVmId = new ArrayList<Long>();
         if (instanceId != -1)
             lstVmId.add(instanceId);
-        if (_loadBalancingRulesService.removeFromLoadBalancer(lbId, lstVmId))
+        if (_loadBalancingRulesService.removeFromLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>()))
             return instanceId;
         else
             return -1;
