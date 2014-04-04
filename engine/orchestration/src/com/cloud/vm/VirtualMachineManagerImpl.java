@@ -290,7 +290,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public void setHostAllocators(List<HostAllocator> hostAllocators) {
-        hostAllocators = hostAllocators;
+        this.hostAllocators = hostAllocators;
     }
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
