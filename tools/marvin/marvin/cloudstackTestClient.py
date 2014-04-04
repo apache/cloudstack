@@ -399,7 +399,7 @@ class CSTestClient(object):
             return self.__apiClient
         return None
 
-    def getUserApiClient(self, account, domain, type=0):
+    def getUserApiClient(self, UserName=None, DomainName=None, type=0):
         """
         @Name : getUserApiClient
         @Desc : Provides the User API Client to test Users
@@ -407,7 +407,9 @@ class CSTestClient(object):
         @OutPut : FAILED In case of an issue
                   else User API Client
         """
-        return self.__createUserApiClient(account, domain, type)
+        if UserName is None or DomainName is None:
+            return FAILED
+        return self.__createUserApiClient(UserName, DomainName, type)
 
     def submitCmdsAndWait(self, cmds, workers=1):
         '''
@@ -424,7 +426,7 @@ class CSTestClient(object):
                 ntimes, with nums_threads of threads
         '''
         if self.__asyncJobMgr is None:
-            self.__asyncJobMgr = asyncJobMgr.asyncJobMgr(self.__apiClient,
+            self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
                                                          self.__dbConnection)
         self.__asyncJobMgr.submitJobExecuteNtimes(job, ntimes,
                                                   nums_threads,
@@ -436,6 +438,6 @@ class CSTestClient(object):
                of threads
         '''
         if self.__asyncJobMgr is None:
-            self.__asyncJobMgr = asyncJobMgr.asyncJobMgr(self.__apiClient,
+            self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
                                                          self.__dbConnection)
         self.__asyncJobMgr.submitJobs(jobs, nums_threads, interval)

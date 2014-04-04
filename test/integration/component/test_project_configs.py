@@ -424,7 +424,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to false
         configs = Configurations.list(
@@ -574,7 +574,7 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to true
         configs = Configurations.list(
@@ -725,7 +725,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to true
         configs = Configurations.list(

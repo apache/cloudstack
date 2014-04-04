@@ -1110,7 +1110,7 @@ class TestVolumes(cloudstackTestCase):
         )
         self.assertTrue(domuser is not None)
 
-        domapiclient = self.testClient.getUserApiClient(account=domuser.name, domain=dom.name)
+        domapiclient = self.testClient.getUserApiClient(UserName=domuser.name, DomainName=dom.name)
 
         diskoffering = DiskOffering.list(self.apiclient)
         self.assertTrue(isinstance(diskoffering, list), msg="DiskOffering list is not a list?")

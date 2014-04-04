@@ -160,15 +160,13 @@ def get_region(apiclient, region_id=None, region_name=None):
     @Output : 1. Region  Information for the passed inputs else first Region
               2. FAILED In case the cmd failed
     '''
-    if region_id is None and region_name is None:
-        return FAILED
     cmd = listRegions.listRegionsCmd()
     if region_name is not None:
         cmd.name = region_name
     if region_id is not None:
         cmd.id = region_id
     cmd_out = apiclient.listRegions(cmd)
-    return FAILED if validateList(cmd_out)[0] != PASS else cmd_out
+    return FAILED if validateList(cmd_out)[0] != PASS else cmd_out[0]
 
 
 def get_domain(apiclient, domain_id=None, domain_name=None):

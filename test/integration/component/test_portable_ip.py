@@ -141,7 +141,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
@@ -279,7 +279,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
@@ -453,7 +453,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
@@ -579,7 +579,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
@@ -897,7 +897,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
@@ -1149,7 +1149,7 @@ class TestDeleteAccount(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
@@ -1365,7 +1365,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.region = get_region(cls.api_client, cls.services)
+        cls.region = get_region(cls.api_client)
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)

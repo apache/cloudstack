@@ -124,7 +124,7 @@ class TestProjectLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.testClient = super(TestAddNetScaler, cls).getClsTestClient()
+        cls.testClient = super(TestProjectLimits, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
