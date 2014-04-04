@@ -21,6 +21,7 @@ package com.cloud.hypervisor.xen.resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -32,7 +33,9 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
@@ -64,6 +67,14 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
         File file = new File(patchfilePath);
         files.add(file);
         return files;
+    }
+
+    @Override
+    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+        super.fillHostInfo(conn, cmd);
+        Map<String, String> details = cmd.getHostDetails();
+        details.put("XS620HotFix", XenserverConfigs.XSHotFix62ESP1004);
+        cmd.setHostDetails(details);
     }
 
     @Override
