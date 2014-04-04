@@ -40,7 +40,7 @@
         var instance = args.context.instances[0];
         var network = args.context.networks[0];
 
-        if (args.context.ipAddresses[0].isportable) {
+        if (args.context.ipAddresses[0].isportable) { //portable IP which has multiple NICs. Each NIC has a different network ID.
             $.ajax({
                 url: createURL('listNics'),
                 data: {
@@ -49,72 +49,73 @@
                 success: function(json) {
                     var nics = json.listnicsresponse.nic;
                     var ipSelection = [];
-
-                    $(nics).map(function(index, nic) {
-                        var ips = nic.secondaryip ? nic.secondaryip : [];
+                    
+                    $(nics).map(function(index, nic) { 
+                    	var primaryIp = nic.ipaddress;
+                        var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
                         var prefix = '[NIC ' + (index + 1) + '] ';
 
                         // Add primary IP as default
                         ipSelection.push({
                             id: nic.networkid + ',-1',
-                            description: prefix + nic.ipaddress + ' (Primary)'
+                            description: prefix + primaryIp + ' (Primary)'
                         });
                         
                         // Add secondary IPs
-                        $(ips).map(function(index, ip) {
+                        $(secondaryIps).map(function(index, secondaryIp) {
                             ipSelection.push({
-                                id: nic.networkid + ',' + ip.ipaddress,
-                                description: prefix + ip.ipaddress
+                                id: nic.networkid + ',' + secondaryIp.ipaddress,
+                                description: prefix + secondaryIp.ipaddress
                             });
                         });
                     });                  
-
 
                     args.response.success({
                         data: ipSelection
                     });
                 }
             });
-            
-            return;
+                        
+        } else { //non-portable IP which has only one NIC  
+	        /*
+        	var nic = $.grep(instance.nic, function(nic) {
+	            return nic.networkid == network.id;
+	        })[0];
+	        */
+        	
+	        // Get NIC IPs
+	        $.ajax({
+	            url: createURL('listNics'),
+	            data: {
+	                virtualmachineid: instance.id,
+	                nicId: instance.nic[0].id
+	            },
+	            success: function(json) {	            	
+	                var nic = json.listnicsresponse.nic[0];
+	                var primaryIp = nic.ipaddress;
+	                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+	                var ipSelection = [];
+	
+	                // Add primary IP as default
+	                ipSelection.push({
+	                    id: -1,
+	                    description: primaryIp + ' (Primary)'
+	                });
+	
+	                // Add secondary IPs
+	                $(secondaryIps).map(function(index, secondaryIp) {
+	                    ipSelection.push({
+	                        id: secondaryIp.ipaddress,
+	                        description: secondaryIp.ipaddress
+	                    });
+	                });
+		
+	                args.response.success({
+	                    data: ipSelection
+	                });
+	            }
+	        });
         }
-        
-        var nic = $.grep(instance.nic, function(nic) {
-            return nic.networkid == network.id;
-        })[0];
-
-        // Get NIC IPs
-        $.ajax({
-            url: createURL('listNics'),
-            data: {
-                virtualmachineid: instance.id,
-                nicId: nic.id
-            },
-            success: function(json) {
-                var nic = json.listnicsresponse.nic[0];
-                var ips = nic.secondaryip ? nic.secondaryip : [];
-                var ipSelection = [];
-
-                // Add primary IP as default
-                ipSelection.push({
-                    id: -1,
-                    description: nic.ipaddress + ' (Primary)'
-                });
-
-                // Add secondary IPs
-                $(ips).map(function(index, ip) {
-                    ipSelection.push({
-                        id: ip.ipaddress,
-                        description: ip.ipaddress
-                    });
-                });
-
-
-                args.response.success({
-                    data: ipSelection
-                });
-            }
-        })
     };
 
     //value of Primary IP in subselect dropdown is itself (not -1), for multiple VM selection (API parameter vmidipmap), e.g. assignToLoadBalancerRule API.
@@ -122,7 +123,7 @@
         var instance = args.context.instances[0];
         var network = args.context.networks[0];
 
-        if (args.context.ipAddresses[0].isportable) {
+        if (args.context.ipAddresses[0].isportable) { //portable IP which has multiple NICs. Each NIC has a different network ID.
             $.ajax({
                 url: createURL('listNics'),
                 data: {
@@ -132,71 +133,73 @@
                     var nics = json.listnicsresponse.nic;
                     var ipSelection = [];
 
+                    //portable IP has multiple NICs. Each NIC has a different network ID.
                     $(nics).map(function(index, nic) {
-                        var ips = nic.secondaryip ? nic.secondaryip : [];
+                        var primaryIp = nic.ipaddress;
+                    	var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
                         var prefix = '[NIC ' + (index + 1) + '] ';
 
                         // Add primary IP as default
                         ipSelection.push({
-                            id: nic.networkid + ',' + nic.ipaddress,
-                            description: prefix + nic.ipaddress + ' (Primary)'
+                            id: nic.networkid + ',' + primaryIp,
+                            description: prefix + primaryIp + ' (Primary)'
                         });
                         
                         // Add secondary IPs
-                        $(ips).map(function(index, ip) {
+                        $(secondaryIps).map(function(index, secondaryIp) {
                             ipSelection.push({
-                                id: nic.networkid + ',' + ip.ipaddress,
-                                description: prefix + ip.ipaddress
+                                id: nic.networkid + ',' + secondaryIp.ipaddress,
+                                description: prefix + secondaryIp.ipaddress
                             });
                         });
-                    });                  
+                    });  
+                    
+                    args.response.success({
+                        data: ipSelection
+                    });
+                }
+            });  
+            
+        } else { //non-portable IP which has only one NIC 
+            /*
+        	var nic = $.grep(instance.nic, function(nic) {
+                return nic.networkid == network.id;
+            })[0];
+            */
+        	
+            // Get NIC IPs
+            $.ajax({
+                url: createURL('listNics'),
+                data: {
+                    virtualmachineid: instance.id,
+                    nicId: instance.nic[0].id
+                },
+                success: function(json) {                	
+                    var nic = json.listnicsresponse.nic[0];
+                    var primaryIp = nic.ipaddress;
+                    var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                    var ipSelection = [];
 
+                    // Add primary IP as default
+                    ipSelection.push({
+                        id: primaryIp,
+                        description: primaryIp + ' (Primary)'
+                    });
+
+                    // Add secondary IPs
+                    $(secondaryIps).map(function(index, secondaryIp) {
+                        ipSelection.push({
+                            id: secondaryIp.ipaddress,
+                            description: secondaryIp.ipaddress
+                        });
+                    });
 
                     args.response.success({
                         data: ipSelection
                     });
                 }
             });
-            
-            return;
-        }
-        
-        var nic = $.grep(instance.nic, function(nic) {
-            return nic.networkid == network.id;
-        })[0];
-
-        // Get NIC IPs
-        $.ajax({
-            url: createURL('listNics'),
-            data: {
-                virtualmachineid: instance.id,
-                nicId: nic.id
-            },
-            success: function(json) {
-                var nic = json.listnicsresponse.nic[0];
-                var ips = nic.secondaryip ? nic.secondaryip : [];
-                var ipSelection = [];
-
-                // Add primary IP as default
-                ipSelection.push({
-                    id: nic.ipaddress,
-                    description: nic.ipaddress + ' (Primary)'
-                });
-
-                // Add secondary IPs
-                $(ips).map(function(index, ip) {
-                    ipSelection.push({
-                        id: ip.ipaddress,
-                        description: ip.ipaddress
-                    });
-                });
-
-
-                args.response.success({
-                    data: ipSelection
-                });
-            }
-        })
+        }        
     };
     
     var ipChangeNotice = function() {
@@ -3320,13 +3323,11 @@
                                                 filters: false,
                                                 
                                                 //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, uncomment the following commented 4 lines. 
-                                                /*
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
                                                     dataProvider: multipleVmSecondaryIPSubselect                                                     
                                                 },
-                                                */
-                                                
+                                                                                                
                                                 dataProvider: function(args) {
                                                     var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                                                         args.context.multiRule[0]['_itemData'] : [];
@@ -3591,17 +3592,16 @@
                                                         var jobID = data.createloadbalancerruleresponse.jobid;
                                                         var lbID = data.createloadbalancerruleresponse.id;
                                                         
-                                                        
+                                                        /*
                                                         var inputData = {
                                                             id: data.createloadbalancerruleresponse.id,
                                                             virtualmachineids: $.map(itemData, function(elem) {
                                                                 return elem.id;
                                                             }).join(',')
                                                         }; 
+                                                        */
                                                         //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, remove the above 6 lines and uncomment the commented section below.
-                                                        
-                                                        
-                                                        /*                                                       
+                                                                                                             
                                                         var inputData = {
                                                         	id: data.createloadbalancerruleresponse.id	
                                                         };   
@@ -3609,7 +3609,7 @@
                                                         	if (args.itemData != null) {
                                                         		for (var k = 0; k < args.itemData.length; k++) {                                                          			
                                                         			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
-                                                        			inputData['vmidipmap[' + k + '].ip'] = args.itemData[k]._subselect.split(',')[1];  
+                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect.split(',')[1];  
                                                         		}
                                                         	}       
                                                         	
@@ -3617,14 +3617,13 @@
                                                         	if (args.itemData != null) {
                                                         		for (var k = 0; k < args.itemData.length; k++) {                                                          			
                                                         			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
-                                                        			inputData['vmidipmap[' + k + '].ip'] = args.itemData[k]._subselect;  
+                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect;  
                                                         		}
                                                         	}                                                        	
                                                         }  
-                                                        */
+                                                       
                                                         //http://localhost:8080/client/api?command=assignToLoadBalancerRule&response=json&sessionkey=M6I8h6gBXuEMeBMb4pjSDTjYprc=&id=da97bae5-9389-4bbb-aef3-ccca8408a852&vmidipmap[0].vmid=667d1450-3cd9-4670-b22e-aebb77f521a3&vmidipmap[0].ip=10.1.1.23&vmidipmap[1].vmid=5128d30b-7747-4a05-bdbc-6262191d7642&vmidipmap[1].ip=10.1.1.82&vmidipmap[2].vmid=48c61d00-28d2-4048-aed5-774289470804&vmidipmap[2].ip=10.1.1.5&_=1393451067671
-                                                                                                                                                                  
-                                                        
+                                                               
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
                                                             data: inputData,                                                            
