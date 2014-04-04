@@ -589,7 +589,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XenServer610Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
             String hotfix = details.get("XS620HotFix");
-            if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHasHotFix62ESP1004)) {
+            if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
                 resource = Xenserver625Resource.class.getName();
             } else if (hotfix != null && hotfix.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1)){
                 resource = XenServer620SP1Resource.class.getName();
