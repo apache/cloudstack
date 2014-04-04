@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -183,8 +182,6 @@ import com.xensource.xenapi.Console;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostCpu;
 import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.HostPatch;
-import com.xensource.xenapi.PoolPatch;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
@@ -5533,24 +5530,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
 
-    protected boolean hostHasHotFix(Connection conn, String hotFixUuid) {
-        try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            Host.Record re = host.getRecord(conn);
-            Set<HostPatch> patches = re.patches;
-            PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
-            for(HostPatch patch : patches) {
-                PoolPatch pp = patch.getPoolPatch(conn);
-                if (pp.equals(poolPatch) && patch.getApplied(conn)) {
-                    return true;
-                }
-            }
-         } catch (Exception e) {
-            s_logger.debug("can't get patches information for hotFix: " + hotFixUuid);
-        }
-        return false;
-    }
-
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         final StringBuilder caps = new StringBuilder();
         try {
@@ -5569,9 +5548,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.productVersion);
-            Boolean hotFix62ESP1004 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1004);
-            details.put(XenserverConfigs.XSHasHotFix62ESP1004, hotFix62ESP1004.toString());
-
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));

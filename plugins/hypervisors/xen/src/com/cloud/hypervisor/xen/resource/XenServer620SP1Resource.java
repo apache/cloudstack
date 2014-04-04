@@ -18,17 +18,13 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -40,8 +36,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
@@ -84,9 +78,6 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     @Override
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
-        Map<String, String> details = cmd.getHostDetails();
-        details.put("XS620HotFix", XenserverConfigs.XSHotFix62ESP1);
-        cmd.setHostDetails(details);
         try {
             HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
             cmd.setGpuGroupDetails(groupDetails);
@@ -161,19 +152,6 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         return CitrixHelper.getXenServer620SP1GuestOsType(stdType, bootFromCD);
-    }
-
-    @Override
-    protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        File file = new File(patchfilePath);
-        files.add(file);
-        return files;
     }
 
     @Override

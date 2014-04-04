@@ -148,8 +148,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
-                    String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XSHasHotFix62ESP1004);
-                    if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase("true")) {
+                    String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
+                    if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
                         return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
                     }
                 }

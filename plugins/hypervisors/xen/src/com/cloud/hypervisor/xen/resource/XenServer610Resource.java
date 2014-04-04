@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +61,6 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = ServerResource.class)
@@ -76,19 +74,6 @@ public class XenServer610Resource extends XenServer56FP1Resource {
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         return CitrixHelper.getXenServer610GuestOsType(stdType, bootFromCD);
-    }
-
-    @Override
-    protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        File file = new File(patchfilePath);
-        files.add(file);
-        return files;
     }
 
     @Override
