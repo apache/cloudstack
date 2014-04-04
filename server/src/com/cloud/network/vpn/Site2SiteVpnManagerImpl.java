@@ -24,6 +24,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
@@ -37,8 +40,6 @@ import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
@@ -124,7 +125,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
-        _accountMgr.checkAccess(caller, null, false, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         Long vpcId = cmd.getVpcId();
         VpcVO vpc = _vpcDao.findById(vpcId);
@@ -174,7 +175,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
-        _accountMgr.checkAccess(caller, null, false, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
@@ -242,21 +243,21 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
-        _accountMgr.checkAccess(caller, null, false, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         Long customerGatewayId = cmd.getCustomerGatewayId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Unable to found specified Site to Site VPN customer gateway " + customerGatewayId + " !");
         }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        _accountMgr.checkAccess(caller, null, customerGateway);
 
         Long vpnGatewayId = cmd.getVpnGatewayId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
         }
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        _accountMgr.checkAccess(caller, null, vpnGateway);
 
         if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
             throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
@@ -366,7 +367,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
         }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        _accountMgr.checkAccess(caller, null, customerGateway);
 
         return doDeleteCustomerGateway(customerGateway);
     }
@@ -401,7 +402,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
         }
 
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        _accountMgr.checkAccess(caller, null, vpnGateway);
 
         doDeleteVpnGateway(vpnGateway);
         return true;
@@ -418,7 +419,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (gw == null) {
             throw new InvalidParameterValueException("Find to find customer gateway with id " + id);
         }
-        _accountMgr.checkAccess(caller, null, false, gw);
+        _accountMgr.checkAccess(caller, null, gw);
 
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (conns != null) {
@@ -508,7 +509,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to delete!");
         }
 
-        _accountMgr.checkAccess(caller, null, false, conn);
+        _accountMgr.checkAccess(caller, null, conn);
 
         if (conn.getState() == State.Connected) {
             stopVpnConnection(id);
@@ -557,7 +558,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to reset!");
         }
-        _accountMgr.checkAccess(caller, null, false, conn);
+        _accountMgr.checkAccess(caller, null, conn);
 
         if (conn.getState() == State.Pending) {
             throw new InvalidParameterValueException("VPN connection " + id + " cannot be reseted when state is Pending!");
@@ -821,7 +822,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id);
         }
 
-        _accountMgr.checkAccess(caller, null, false, conn);
+        _accountMgr.checkAccess(caller, null, conn);
         if (customId != null) {
             conn.setUuid(customId);
         }
@@ -844,7 +845,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id);
         }
 
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        _accountMgr.checkAccess(caller, null, vpnGateway);
         if (customId != null) {
             vpnGateway.setUuid(customId);
         }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import com.cloud.network.element.NetworkElement;
 import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -154,6 +153,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -4337,7 +4337,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Can't update system networks");
             }
 
-            _accountMgr.checkAccess(caller, null, true, network);
+            _accountMgr.checkAccess(caller, null, network);
 
             List<Long> offeringIds = _networkModel.listNetworkOfferingsForUpgrade(networkId);
 

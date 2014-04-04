@@ -24,14 +24,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -114,7 +115,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, guestNtwk);
+        _accountMgr.checkAccess(caller, AccessType.UseEntry, guestNtwk);
 
         Network sourceIpNtwk = _networkModel.getNetwork(sourceIpNetworkId);
         if (sourceIpNtwk == null) {
@@ -546,7 +547,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find load balancer " + id);
         }
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         if (customId != null) {
             rule.setUuid(customId);

@@ -103,7 +103,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find VPC");
         }
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
         return _networkAclMgr.createNetworkACL(name, description, vpcId, forDisplay);
     }
 
@@ -161,7 +161,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if (vpc == null) {
                 throw new InvalidParameterValueException("Unable to find VPC");
             }
-            _accountMgr.checkAccess(caller, null, true, vpc);
+            _accountMgr.checkAccess(caller, null, vpc);
             //Include vpcId 0 to list default ACLs
             sc.setParameters("vpcId", vpcId, 0);
         } else {
@@ -225,7 +225,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find specified VPC associated with the ACL");
         }
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
         return _networkAclMgr.deleteNetworkACL(acl);
     }
 
@@ -256,14 +256,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if (vpc == null) {
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
             }
-            _accountMgr.checkAccess(caller, null, true, vpc);
+            _accountMgr.checkAccess(caller, null, vpc);
             if (!gateway.getVpcId().equals(acl.getVpcId())) {
                 throw new InvalidParameterValueException("private gateway: " + privateGatewayId + " and ACL: " + aclId + " do not belong to the same VPC");
             }
         }
 
         PrivateGateway privateGateway = _vpcSvc.getVpcPrivateGateway(gateway.getId());
-        _accountMgr.checkAccess(caller, null, true, privateGateway);
+        _accountMgr.checkAccess(caller, null, privateGateway);
 
         return  _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
 
@@ -299,7 +299,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
             }
 
-            _accountMgr.checkAccess(caller, null, true, vpc);
+            _accountMgr.checkAccess(caller, null, vpc);
             if (!network.getVpcId().equals(acl.getVpcId())) {
                 throw new InvalidParameterValueException("Network: " + networkId + " and ACL: " + aclId + " do not belong to the same VPC");
             }
@@ -371,7 +371,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
         }
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         //Ensure that number is unique within the ACL
         if (aclItemCmd.getNumber() != null) {
@@ -546,7 +546,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 if (vpc == null) {
                     throw new InvalidParameterValueException("Unable to find VPC associated with acl");
                 }
-                _accountMgr.checkAccess(caller, null, true, vpc);
+                _accountMgr.checkAccess(caller, null, vpc);
             }
             sc.setParameters("aclId", aclId);
         } else {
@@ -615,7 +615,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             Account caller = CallContext.current().getCallingAccount();
 
-            _accountMgr.checkAccess(caller, null, true, vpc);
+            _accountMgr.checkAccess(caller, null, vpc);
 
             if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
@@ -642,7 +642,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         Account caller = CallContext.current().getCallingAccount();
 
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         if (number != null) {
             //Check if ACL Item with specified number already exists
@@ -664,7 +664,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         NetworkACLVO acl = _networkACLDao.findById(id);
         Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         if (customId != null) {
             acl.setUuid(customId);

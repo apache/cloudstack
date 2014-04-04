@@ -297,7 +297,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         // check access
-        _accountMgr.checkAccess(caller, null, true, userVmVo);
+        //_accountMgr.checkAccess(caller, null, userVmVo);
 
         // check max snapshot limit for per VM
         if (_vmSnapshotDao.findByVm(vmId).size() >= _vmSnapshotMax) {
@@ -448,7 +448,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             throw new InvalidParameterValueException("unable to find the vm snapshot with id " + vmSnapshotId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, vmSnapshot);
+        _accountMgr.checkAccess(caller, null, vmSnapshot);
 
         // check VM snapshot states, only allow to delete vm snapshots in created and error state
         if (VMSnapshot.State.Ready != vmSnapshot.getState() && VMSnapshot.State.Expunging != vmSnapshot.getState() && VMSnapshot.State.Error != vmSnapshot.getState()) {
@@ -513,7 +513,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             throw new InvalidParameterValueException("unable to find the vm snapshot with id " + vmSnapshotId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, vmSnapshot);
+        _accountMgr.checkAccess(caller, null, vmSnapshot);
 
         // check VM snapshot states, only allow to delete vm snapshots in created and error state
         if (VMSnapshot.State.Ready != vmSnapshot.getState() && VMSnapshot.State.Expunging != vmSnapshot.getState() && VMSnapshot.State.Error != vmSnapshot.getState()) {
@@ -564,7 +564,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         Account caller = getCaller();
-        _accountMgr.checkAccess(caller, null, true, vmSnapshotVo);
+        _accountMgr.checkAccess(caller, null, vmSnapshotVo);
 
         // VM should be in running or stopped states
         if (userVm.getState() != VirtualMachine.State.Running
@@ -646,7 +646,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         Account caller = getCaller();
-        _accountMgr.checkAccess(caller, null, true, vmSnapshotVo);
+        _accountMgr.checkAccess(caller, null, vmSnapshotVo);
 
         // VM should be in running or stopped states
         if (userVm.getState() != VirtualMachine.State.Running && userVm.getState() != VirtualMachine.State.Stopped) {

@@ -76,7 +76,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
         if (lb != null) {
             //check permissions
             Account caller = CallContext.current().getCallingAccount();
-            _accountService.checkAccess(caller, null, true, lb);
+            _accountService.checkAccess(caller, null, lb);
             List<? extends StickinessPolicy> stickinessPolicies = _lbService.searchForLBStickinessPolicies(this);
             LBStickinessResponse spResponse = _responseGenerator.createLBStickinessPolicyResponse(stickinessPolicies, lb);
             spResponses.add(spResponse);
@@ -84,7 +84,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
         }
 
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
 }

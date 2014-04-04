@@ -26,6 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -95,8 +98,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -1005,7 +1006,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (userVM == null) {
                 throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
             }
-            _accountMgr.checkAccess(caller, null, true, userVM);
+            _accountMgr.checkAccess(caller, null, userVM);
             return listSecurityGroupRulesByVM(instanceId.longValue(), cmd.getStartIndex(), cmd.getPageSizeVal());
         }
 
@@ -1847,7 +1848,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 throw new InvalidParameterValueException("Unable to find account by id " + accountId);
             }
 
-            _accountMgr.checkAccess(caller, null, true, account);
+            _accountMgr.checkAccess(caller, null, account);
         }
 
         if (domainId != null) {
@@ -1863,7 +1864,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
                     throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
                 }
-                _accountMgr.checkAccess(caller, null, true, account);
+                _accountMgr.checkAccess(caller, null, account);
             }
         }
 
@@ -2488,7 +2489,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 throw ex;
             }
 
-            _accountMgr.checkAccess(caller, null, true, vmInstance);
+            _accountMgr.checkAccess(caller, null, vmInstance);
 
             ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
@@ -2913,7 +2914,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && !_accountMgr.isRootAdmin(caller.getId())) {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, null, true, owner);
+                _accountMgr.checkAccess(caller, null, owner);
             }
 
             // if templateId is specified, then we will just use the id to
@@ -3181,7 +3182,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (userVM == null) {
                 throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance " + vmId + "; instance not found.");
             }
-            _accountMgr.checkAccess(caller, null, true, userVM);
+            _accountMgr.checkAccess(caller, null, userVM);
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 

@@ -41,10 +41,14 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -55,7 +59,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.alert.AlertService.AlertType;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -69,13 +73,12 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.routing.GetRouterAlertsCommand;
-import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
@@ -84,6 +87,7 @@ import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -183,6 +187,7 @@ import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
+import com.cloud.network.dao.OpRouterMonitorServiceVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
@@ -192,7 +197,6 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.dao.OpRouterMonitorServiceVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
@@ -281,7 +285,6 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
@@ -457,7 +460,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             return null;
         }
 
-        _accountMgr.checkAccess(caller, null, true, router);
+        _accountMgr.checkAccess(caller, null, router);
 
         _itMgr.expunge(router.getUuid());
         _routerDao.remove(router.getId());
@@ -476,7 +479,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             throw new InvalidParameterValueException("Unable to find router with id " + routerId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, router);
+        _accountMgr.checkAccess(caller, null, router);
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
             s_logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
@@ -591,7 +594,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
 
-        _accountMgr.checkAccess(account, null, true, router);
+        _accountMgr.checkAccess(account, null, router);
 
         final UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
 
@@ -650,7 +653,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             throw new InvalidParameterValueException("Unable to find domain router with id " + routerId + ".");
         }
 
-        _accountMgr.checkAccess(caller, null, true, router);
+        _accountMgr.checkAccess(caller, null, router);
 
         // Can reboot domain router only in Running state
         if (router == null || router.getState() != State.Running) {
@@ -3252,7 +3255,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
-        _accountMgr.checkAccess(caller, null, true, router);
+        _accountMgr.checkAccess(caller, null, router);
 
         final Account owner = _accountMgr.getAccount(router.getAccountId());
 

@@ -25,10 +25,12 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
@@ -162,7 +164,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
 
-        _accountMgr.checkAccess(caller, null, true, ipAddress, userVm);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, ipAddress, userVm);
 
         // validate that IP address and userVM belong to the same account
         if (ipAddress.getAllocatedToAccountId().longValue() != userVm.getAccountId()) {
@@ -187,7 +189,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return;
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule, userVm);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, rule, userVm);
 
         if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
@@ -680,7 +682,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         if (!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallingUserId(), apply)) {
             throw new CloudRuntimeException("Failed to delete port forwarding rule");
@@ -715,7 +717,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         if (!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallingUserId(), apply)) {
             throw new CloudRuntimeException("Failed to revoke forwarding rule");
@@ -791,7 +793,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for port forwarding rules yet");
             }
-            _accountMgr.checkAccess(caller, null, true, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -866,7 +868,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
 
         try {
@@ -895,7 +897,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, staticNatRules.toArray(new StaticNatRule[staticNatRules.size()]));
+            _accountMgr.checkAccess(caller, null, staticNatRules.toArray(new StaticNatRule[staticNatRules.size()]));
         }
 
         try {
@@ -919,7 +921,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
 
         try {
@@ -945,7 +947,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, rules.toArray(new FirewallRule[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRule[rules.size()]));
         }
 
         for (FirewallRuleVO rule : rules) {
@@ -973,7 +975,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, ips.toArray(new IPAddressVO[ips.size()]));
+            _accountMgr.checkAccess(caller, null, ips.toArray(new IPAddressVO[ips.size()]));
         }
 
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
@@ -1009,7 +1011,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for port forwarding rules yet");
             }
-            _accountMgr.checkAccess(caller, null, true, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
@@ -1385,7 +1387,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, true, sourceIp);
+            _accountMgr.checkAccess(caller, null, sourceIp);
         }
 
         // create new static nat rule
@@ -1504,7 +1506,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find " + id);
         }
-        _accountMgr.checkAccess(caller, null, true, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         if (customId != null) {
             rule.setUuid(customId);

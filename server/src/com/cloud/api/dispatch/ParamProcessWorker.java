@@ -43,11 +43,11 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -244,7 +244,7 @@ public class ParamProcessWorker implements DispatchWorker {
                     if (AccessType.OperateEntry == entitiesToAccess.get(entity)) {
                         entitiesToOperate.add((ControlledEntity) entity);
                     } else {
-                        _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), false, apiName,
+                        _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), apiName,
                                 (ControlledEntity) entity);
                     }
                 } else if (entity instanceof InfrastructureEntity) {

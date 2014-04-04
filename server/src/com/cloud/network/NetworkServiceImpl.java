@@ -40,7 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.lb.LoadBalancingRulesService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -123,6 +122,7 @@ import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -542,7 +542,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
                 if (zone.getNetworkType() == NetworkType.Advanced) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
+                        _accountMgr.checkAccess(caller, AccessType.UseEntry, network);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
@@ -554,7 +554,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
             }
         } else {
-            _accountMgr.checkAccess(caller, null, false, ipOwner);
+            _accountMgr.checkAccess(caller, null, ipOwner);
         }
 
         return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
@@ -585,7 +585,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
                 if (zone.getNetworkType() == NetworkType.Advanced) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
+                        _accountMgr.checkAccess(caller, AccessType.UseEntry, network);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
@@ -605,7 +605,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-        _accountMgr.checkAccess(caller, null, false, ipOwner);
+        _accountMgr.checkAccess(caller, null, ipOwner);
 
         return _ipAddrMgr.allocatePortableIp(ipOwner, caller, zoneId, null, null);
     }
@@ -671,7 +671,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         final Account ipOwner = _accountMgr.getAccount(vm.getAccountId());
 
         // verify permissions
-        _accountMgr.checkAccess(caller, null, true, vm);
+        _accountMgr.checkAccess(caller, null, vm);
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
@@ -767,7 +767,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("There is no vm with the given secondary ip");
         }
         // verify permissions
-        _accountMgr.checkAccess(caller, null, true, vm);
+        _accountMgr.checkAccess(caller, null, vm);
 
         Network network = _networksDao.findById(secIpVO.getNetworkId());
 
@@ -891,7 +891,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
-            _accountMgr.checkAccess(caller, null, true, ipVO);
+            _accountMgr.checkAccess(caller, null, ipVO);
         }
 
         if (ipVO.isSourceNat()) {
@@ -1620,7 +1620,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
         // Perform permission check
-        _accountMgr.checkAccess(caller, null, true, network);
+        _accountMgr.checkAccess(caller, null, network);
 
         if (forced && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Delete network with 'forced' option can only be called by root admins");
@@ -1664,7 +1664,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterException("Unable to restart a running SDN network.");
         }
 
-        _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(callerAccount, null, network);
 
         boolean success = _networkMgr.restartNetwork(networkId, callerAccount, callerUser, cleanup);
 
@@ -1800,7 +1800,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Can't allow networks which traffic type is not " + TrafficType.Guest);
         }
 
-        _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(callerAccount, null, network);
 
         if (name != null) {
             network.setName(name);
@@ -3845,7 +3845,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw ex;
             }
 
-        _accountMgr.checkAccess(caller, null, true, userVm);
+        _accountMgr.checkAccess(caller, null, userVm);
         return _networkMgr.listVmNics(vmId, nicId, networkId);
     }
 
@@ -3869,7 +3869,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
-            _accountMgr.checkAccess(caller, null, true, ipVO);
+            _accountMgr.checkAccess(caller, null, ipVO);
         } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new PermissionDeniedException("Only Root admin can update non-allocated ip addresses");
         }

@@ -38,6 +38,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -761,7 +762,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Account owner = _accountMgr.getAccount(vpcOwnerId);
 
         //Verify that caller can perform actions in behalf of vpc owner
-        _accountMgr.checkAccess(caller, null, false, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         //check resource limit
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
@@ -894,7 +895,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //verify permissions
-        _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, vpc);
 
         return destroyVpc(vpc, ctx.getCallingAccount(), ctx.getCallingUserId());
     }
@@ -962,7 +963,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
 
-        _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
+        _accountMgr.checkAccess(caller, null, vpcToUpdate);
 
         VpcVO vpc = _vpcDao.createForUpdate(vpcId);
 
@@ -1154,7 +1155,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //permission check
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
 
@@ -1214,7 +1215,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //permission check
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         //shutdown provider
         s_logger.debug("Shutting down vpc " + vpc);
@@ -1480,7 +1481,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         s_logger.debug("Restarting VPC " + vpc);
         boolean restartRequired = false;
@@ -1927,7 +1928,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Unable to find static route by id");
         }
 
-        _accountMgr.checkAccess(caller, null, false, route);
+        _accountMgr.checkAccess(caller, null, route);
 
         markStaticRouteForRevoke(route, caller);
 
@@ -1975,7 +1976,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpc == null) {
             throw new InvalidParameterValueException("Can't add static route to VPC that is being deleted");
         }
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         if (!NetUtils.isValidCIDR(cidr)) {
             throw new InvalidParameterValueException("Invalid format for cidr " + cidr);
@@ -2127,7 +2128,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected void markStaticRouteForRevoke(StaticRouteVO route, Account caller) {
         s_logger.debug("Revoking static route " + route);
         if (caller != null) {
-            _accountMgr.checkAccess(caller, null, false, route);
+            _accountMgr.checkAccess(caller, null, route);
         }
 
         if (route.getState() == StaticRoute.State.Staged) {
@@ -2191,7 +2192,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         IpAddress ipToAssoc = _ntwkModel.getIp(ipId);
         if (ipToAssoc != null) {
-            _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
             s_logger.debug("Unable to find ip address by id: " + ipId);
@@ -2204,7 +2204,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, true, owner, vpc);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, ipToAssoc, vpc);
 
         boolean isSourceNat = false;
         if (getExistingSourceNatInVpc(owner.getId(), vpcId) == null) {
@@ -2284,7 +2284,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             ex.addProxyObject(String.valueOf(vpcId), "VPC");
             throw ex;
         }
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(caller, null, vpc);
 
         if (networkDomain == null) {
             networkDomain = vpc.getNetworkDomain();
