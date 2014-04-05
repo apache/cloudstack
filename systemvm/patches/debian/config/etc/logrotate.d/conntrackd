@@ -1,0 +1,13 @@
+/var/log/conntrackd-stats.log {
+    daily
+    rotate 2
+    missingok
+    compress
+    delaycompress
+
+    postrotate
+        if [ -e /var/run/conntrackd.sock ]; then
+            invoke-rc.d conntrackd restart > /dev/null
+        fi
+    endscript
+}
