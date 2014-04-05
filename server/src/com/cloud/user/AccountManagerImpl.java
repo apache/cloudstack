@@ -2165,6 +2165,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
             String action) {
 
+        Account owner = null; // for impersonation
         Long domainId = domainIdRecursiveListProject.first();
         if (id == null) {
             // if id is specified, it will ignore all other parameters
@@ -2178,7 +2179,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkAccess(caller, domain);
             }
 
-            // specific account is specified
+            // specific account is specified, we need to impersonate that account instead of caller
             if (accountName != null) {
                 if (projectId != null) {
                     throw new InvalidParameterValueException("Account and projectId can't be specified together");
@@ -2197,14 +2198,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (userAccount != null) {
                     //check permissions
                     checkAccess(caller, null, userAccount);
-                    permittedAccounts.add(userAccount.getId());
+                    owner = userAccount;
                 } else {
                     throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
                 }
-            } else if (!listAll && domainId == null) {
-                // listAll=false with no domain specified will only show caller owned resources
-                // if domainId is specified, we will filter the list based caller visible resources (owned + granted)
-                permittedAccounts.add(caller.getId());
             }
         }
 
@@ -2229,6 +2226,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
+            if (owner == null) {
+                // no impersonation, so we directly check permission for caller
+                owner = caller;
+            }
+            AccessType accessType = AccessType.UseEntry;
+            if (listAll) {
+                // listAll = true should show all resources that owner has ListEntry access type
+                accessType = AccessType.ListEntry;
+            }
             domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
 
             // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
@@ -2239,18 +2245,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return; // no futher filtering
 
             QuerySelector qs = _querySelectors.get(0);
-            boolean grantedAll = qs.isGrantedAll(caller, action);
+            boolean grantedAll = qs.isGrantedAll(owner, action, accessType);
             if ( grantedAll ){
-                if (permittedAccounts.isEmpty() && domainId != null) {
+                if (domainId != null) {
                     permittedDomains.add(domainId);
                 }
             }
             else {
-                List<Long> grantedDomains = qs.getAuthorizedDomains(caller, action);
-                List<Long> grantedAccounts = qs.getAuthorizedAccounts(caller, action);
-                List<Long> grantedResources = qs.getAuthorizedResources(caller, action);
+                List<Long> grantedDomains = qs.getAuthorizedDomains(owner, action, accessType);
+                List<Long> grantedAccounts = qs.getAuthorizedAccounts(owner, action, accessType);
+                List<Long> grantedResources = qs.getAuthorizedResources(owner, action, accessType);
 
-                if (permittedAccounts.isEmpty() && domainId != null) {
+                if (domainId != null) {
                     // specific domain and no account is specified
                     if (grantedDomains.contains(domainId)) {
                         permittedDomains.add(domainId);
@@ -2268,7 +2274,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         // like NetworkACLItem
                         permittedResources.addAll(grantedResources);
                     }
-                } else if (permittedAccounts.isEmpty()) {
+                } else {
                     // neither domain nor account is not specified
                     permittedDomains.addAll(grantedDomains);
                     permittedAccounts.addAll(grantedAccounts);

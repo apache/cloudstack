@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.QuerySelector;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
@@ -41,14 +42,22 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     IAMService _iamService;
 
     @Override
-    public List<Long> getAuthorizedDomains(Account caller, String action) {
+    public List<Long> getAuthorizedDomains(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Domain scope
         List<Long> domainIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.DOMAIN.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            for (AccessType type : AccessType.values()) {
+                if (type.ordinal() >= accessType.ordinal()) {
+                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.DOMAIN.toString(), type));
+                }
+            }
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -65,14 +74,22 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public List<Long> getAuthorizedAccounts(Account caller, String action) {
+    public List<Long> getAuthorizedAccounts(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with Account scope
         List<Long> accountIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ACCOUNT.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            for (AccessType type : AccessType.values()) {
+                if (type.ordinal() >= accessType.ordinal()) {
+                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ACCOUNT.toString(), type));
+                }
+            }
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -89,8 +106,11 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public List<Long> getAuthorizedResources(Account caller, String action) {
+    public List<Long> getAuthorizedResources(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
 
@@ -107,7 +127,12 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         // for each policy, find granted permission with Resource scope
         List<Long> entityIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.RESOURCE.toString());
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            for (AccessType type : AccessType.values()) {
+                if (type.ordinal() >= accessType.ordinal()) {
+                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.RESOURCE.toString(), type));
+                }
+            }
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
@@ -120,15 +145,23 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
     }
 
     @Override
-    public boolean isGrantedAll(Account caller, String action) {
+    public boolean isGrantedAll(Account caller, String action, AccessType accessType) {
         long accountId = caller.getAccountId();
+        if (accessType == null) {
+            accessType = AccessType.UseEntry;  // default always show resources authorized to use
+        }
         // Get the static Policies of the Caller
         List<IAMPolicy> policies = _iamService.listIAMPolicies(accountId);
         // for each policy, find granted permission with ALL scope
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString());
-            if (pp != null && pp.size() > 0) {
-                return true;
+            List<IAMPolicyPermission> pp = new ArrayList<IAMPolicyPermission>();
+            for (AccessType type : AccessType.values()) {
+                if (type.ordinal() >= accessType.ordinal()) {
+                    pp.addAll(_iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString(), type));
+                }
+                if (pp != null && pp.size() > 0) {
+                    return true;
+                }
             }
         }
         return false;
