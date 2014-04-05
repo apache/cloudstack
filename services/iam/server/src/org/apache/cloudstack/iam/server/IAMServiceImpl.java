@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.iam.api.IAMGroup;
 import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
@@ -742,8 +743,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         // for each policy, find granted permission within the given scope
         List<Long> entityIds = new ArrayList<Long>();
         for (IAMPolicy policy : policies) {
-            List<IAMPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policy.getId(), action,
-                    scope);
+            List<IAMPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyActionAndScope(policy.getId(), action,
+                    scope, null);
             if (pp != null) {
                 for (IAMPolicyPermissionVO p : pp) {
                     if (p.getScopeId() != null) {
@@ -765,9 +766,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope) {
+    public List<IAMPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope, AccessType accessType) {
         @SuppressWarnings("rawtypes")
-        List pp = _policyPermissionDao.listGrantedByActionAndScope(policyId, action, scope);
+        List pp = _policyPermissionDao.listByPolicyActionAndScope(policyId, action, scope, accessType.toString());
         return pp;
     }
 
