@@ -137,7 +137,12 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                 String vmId = idIpsMap.get("vmid");
                 String vmIp = idIpsMap.get("vmip");
 
-                Long longVmId = new Long(vmId);
+                VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
+                if (lbvm == null) {
+                    throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
+                }
+
+                Long longVmId = lbvm.getId();
 
                 List<String> ipsList = null;
                 if (vmIdIpsMap.containsKey(longVmId)) {
