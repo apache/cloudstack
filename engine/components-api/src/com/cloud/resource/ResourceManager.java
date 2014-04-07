@@ -142,6 +142,13 @@ public interface ResourceManager extends ResourceService {
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId);
 
     /**
+     * Check if host is GPU enabled
+     * @param hostId the host to be checked
+     * @return true if host contains GPU card else false
+     */
+    boolean isHostGpuEnabled(long hostId);
+
+    /**
      * Check if host has GPU devices available
      * @param hostId the host to be checked
      * @param vgpuType the VGPU type
