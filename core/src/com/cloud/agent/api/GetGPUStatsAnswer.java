@@ -23,14 +23,14 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 @LogLevel(Log4jLevel.Trace)
 public class GetGPUStatsAnswer extends Answer {
 
-    private HashMap<String, HashMap<String, Long>> groupDetails;
+    private HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
 
-    public GetGPUStatsAnswer(GetGPUStatsCommand cmd, HashMap<String, HashMap<String, Long>> groupDetails) {
+    public GetGPUStatsAnswer(GetGPUStatsCommand cmd, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         super(cmd);
         this.groupDetails = groupDetails;
     }
 
-    public HashMap<String, HashMap<String, Long>> getGroupDetails() {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails() {
         return this.groupDetails;
     }
 }

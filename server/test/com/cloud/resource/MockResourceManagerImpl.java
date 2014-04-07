@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -576,12 +577,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, Long>> deviceDetails) {
+    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> deviceDetails) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public HashMap<String, HashMap<String, Long>> getGPUStatistics(HostVO host) {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host) {
         // TODO Auto-generated method stub
         return null;
     }

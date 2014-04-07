@@ -738,7 +738,13 @@ CREATE TABLE `cloud`.`vgpu_types` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `gpu_group_id` bigint(20) unsigned NOT NULL,
   `vgpu_type` varchar(40) NOT NULL COMMENT 'vgpu type supported by this gpu group',
-  `remaining_vm_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'remaining vgpu can be created with this vgpu_type on the given gpu group',
+  `video_ram` bigint(20) unsigned DEFAULT NULL COMMENT 'video RAM for this vgpu type',
+  `max_heads` bigint(20) unsigned DEFAULT NULL COMMENT 'maximum displays per user',
+  `max_resolution_x` bigint(20) unsigned DEFAULT NULL COMMENT 'maximum X resolution per display',
+  `max_resolution_y` bigint(20) unsigned DEFAULT NULL COMMENT 'maximum Y resolution per display',
+  `max_vgpu_per_pgpu` bigint(20) unsigned DEFAULT NULL COMMENT 'max number of vgpus per physical gpu (pgpu)',
+  `remaining_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'remaining vgpu can be created with this vgpu_type on the given gpu group',
+  `max_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'maximum vgpu can be created with this vgpu_type on the given gpu group',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vgpu_types__gpu_group_id` FOREIGN KEY (`gpu_group_id`) REFERENCES `host_gpu_groups` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB CHARSET=utf8;

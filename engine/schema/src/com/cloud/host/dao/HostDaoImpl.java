@@ -34,6 +34,7 @@ import javax.persistence.TableGenerator;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.dc.ClusterVO;
@@ -782,7 +783,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     protected void saveGpuRecords(HostVO host) {
-        HashMap<String, HashMap<String, Long>> groupDetails = host.getGpuGroupDetails();
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = host.getGpuGroupDetails();
         if (groupDetails != null) {
             // Create/Update GPU group entries
             _hostGpuGroupsDao.persist(host.getId(), new ArrayList<String>(groupDetails.keySet()));

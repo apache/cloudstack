@@ -18,13 +18,15 @@ package com.cloud.agent.api.to;
 
 import java.util.HashMap;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+
 public class GPUDeviceTO {
 
     private String gpuGroup;
     private String vgpuType;
-    private HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+    private HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
 
-    public GPUDeviceTO( String gpuGroup, String vgpuType, HashMap<String, HashMap<String, Long>> groupDetails) {
+    public GPUDeviceTO( String gpuGroup, String vgpuType, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         this.gpuGroup = gpuGroup;
         this.vgpuType = vgpuType;
         this.groupDetails = groupDetails;
@@ -46,11 +48,12 @@ public class GPUDeviceTO {
         this.vgpuType = vgpuType;
     }
 
-    public HashMap<String, HashMap<String, Long>> getGroupDetails() {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails() {
         return groupDetails;
     }
 
-    public void setGroupDetails(HashMap<String, HashMap<String, Long>> groupDetails) {
+    public void setGroupDetails(HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         this.groupDetails = groupDetails;
     }
+
 }

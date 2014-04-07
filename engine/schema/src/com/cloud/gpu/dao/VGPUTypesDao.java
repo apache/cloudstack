@@ -19,6 +19,7 @@ package com.cloud.gpu.dao;
 import java.util.HashMap;
 import java.util.List;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -44,5 +45,5 @@ public interface VGPUTypesDao extends GenericDao<VGPUTypesVO, Long> {
   * @param hostId the host
   * @param groupDetails with enabled VGPU types
   */
- void persist(long hostId, HashMap<String, HashMap<String, Long>> groupDetails);
+ void persist(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails);
 }

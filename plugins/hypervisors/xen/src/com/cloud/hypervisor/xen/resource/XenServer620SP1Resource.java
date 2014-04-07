@@ -34,6 +34,7 @@ import com.cloud.agent.api.GetGPUStatsAnswer;
 import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
@@ -43,6 +44,7 @@ import com.xensource.xenapi.PGPU;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VGPUType;
+import com.xensource.xenapi.VGPUType.Record;
 import com.xensource.xenapi.VM;
 
 @Local(value=ServerResource.class)
@@ -65,7 +67,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
 
     protected GetGPUStatsAnswer execute(GetGPUStatsCommand cmd) {
         Connection conn = getConnection();
-        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
         try {
             groupDetails = getGPUGroupDetails(conn);
         } catch (Exception e) {
@@ -79,7 +81,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
         try {
-            HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+            HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
             cmd.setGpuGroupDetails(groupDetails);
         } catch (Exception e) {
             if (s_logger.isDebugEnabled()) {
@@ -89,8 +91,8 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    protected HashMap<String, HashMap<String, Long>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
-        HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
         Host host = Host.getByUuid(conn, _host.uuid);
         Set<PGPU> pgpus = host.getPGPUs(conn);
         Iterator<PGPU> iter = pgpus.iterator();
@@ -99,7 +101,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
             GPUGroup gpuGroup = pgpu.getGPUGroup(conn);
             Set<VGPUType> enabledVGPUTypes = gpuGroup.getEnabledVGPUTypes(conn);
             String groupName = gpuGroup.getNameLabel(conn);
-            HashMap<String, Long> gpuCapacity = new HashMap<String, Long>();
+            HashMap<String, VgpuTypesInfo> gpuCapacity = new HashMap<String, VgpuTypesInfo>();
             if (groupDetails.get(groupName) != null) {
                 gpuCapacity = groupDetails.get(groupName);
             }
@@ -108,13 +110,20 @@ public class XenServer620SP1Resource extends XenServer620Resource {
                 Iterator<VGPUType> it = enabledVGPUTypes.iterator();
                 while (it.hasNext()) {
                     VGPUType type = it.next();
-                    String modelName = type.getModelName(conn);
+                    Record record = type.getRecord(conn);
                     Long remainingCapacity = pgpu.getRemainingCapacity(conn, type);
-                    if (gpuCapacity.get(modelName) != null) {
-                        long newRemainingCapacity = gpuCapacity.get(modelName) + remainingCapacity;
-                        gpuCapacity.put(modelName, newRemainingCapacity);
+                    Long maxCapacity = pgpu.getSupportedVGPUMaxCapacities(conn).get(type);
+                    VgpuTypesInfo entry;
+                    if ((entry = gpuCapacity.get(record.modelName)) != null) {
+                        remainingCapacity += entry.getRemainingCapacity();
+                        maxCapacity += entry.getMaxCapacity();
+                        entry.setRemainingCapacity(remainingCapacity);
+                        entry.setMaxVmCapacity(maxCapacity);
+                        gpuCapacity.put(record.modelName, entry);
                     } else {
-                        gpuCapacity.put(modelName, remainingCapacity);
+                        VgpuTypesInfo vgpuTypeRecord = new VgpuTypesInfo(record.modelName, record.framebufferSize, record.maxHeads,
+                                record.maxResolutionX, record.maxResolutionY, maxCapacity, remainingCapacity, maxCapacity);
+                        gpuCapacity.put(record.modelName, vgpuTypeRecord);
                     }
                 }
             }
