@@ -747,7 +747,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
         if (pool.getType() == StoragePoolType.RBD) {
             try {
-                s_logger.info("Unprotecting and Removing RBD snapshots of image " + pool.getSourcePort() + "/" + uuid + " prior to removing the image");
+                s_logger.info("Unprotecting and Removing RBD snapshots of image " + pool.getSourceDir() + "/" + uuid + " prior to removing the image");
 
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
@@ -759,9 +759,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 IoCTX io = r.ioCtxCreate(pool.getSourceDir());
                 Rbd rbd = new Rbd(io);
                 RbdImage image = rbd.open(uuid);
+                s_logger.debug("Fetching list of snapshots of RBD image " + pool.getSourceDir() + "/" + uuid);
                 List<RbdSnapInfo> snaps = image.snapList();
                 for (RbdSnapInfo snap : snaps) {
+                    s_logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
                     image.snapUnprotect(snap.name);
+                    s_logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
                     image.snapRemove(snap.name);
                 }
 
