@@ -103,8 +103,6 @@ def setup_ovs_bridge(session, args):
                                 "bridge=%s" % bridge, "--minimal"])
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:is-ovs-tun-network=True"])
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:is-ovs_vpc_distributed_vr_network=False"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
@@ -157,8 +155,6 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
         # been configured
         xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
                                 "bridge=%s" % bridge, "--minimal"])
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:is-ovs-tun-network=False"])
         lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
                    "other-config:is-ovs-vpc-distributed-vr-network=True"])
         conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
@@ -295,14 +291,24 @@ def create_tunnel(session, args):
         # find xs network for this bridge, verify is used for ovs tunnel network
         xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
 								   "bridge=%s" % bridge, "--minimal"])
-        ovs_tunnel_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
+        ovs_tunnel_network = False
+        try:
+            ovs_tunnel_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
 						       "uuid=%s" % xs_nw_uuid,
 						       "param-name=other-config",
 						       "param-key=is-ovs-tun-network", "--minimal"])
-        ovs_vpc_distributed_vr_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
+        except:
+            pass
+
+        ovs_vpc_distributed_vr_network = False
+        try:
+            ovs_vpc_distributed_vr_network = lib.do_cmd([lib.XE_PATH,"network-param-get",
                            "uuid=%s" % xs_nw_uuid,
                            "param-name=other-config",
                            "param-key=is-ovs-vpc-distributed-vr-network", "--minimal"])
+        except:
+            pass
+
         if ovs_tunnel_network == 'True':
             # add flow entryies for dropping broadcast coming in from gre tunnel
             lib.add_flow(bridge, priority=1000, in_port=tun_ofport,

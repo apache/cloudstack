@@ -506,7 +506,7 @@ def configure_ovs_bridge_for_routing_policies(bridge, json_config):
             # add a default rule in ingress table drop packets
             add_flow(bridge, priority=0, table=5, actions='drop')
 
-        return "SUCCESS: successfully configured bridge as per the later routing policies of the VPC"
+        return "SUCCESS: successfully configured bridge as per the latest routing policies of the VPC"
 
     except:
         logging.debug("An unexpected error occurred while configuring bridge as per VPC's routing policies.")
