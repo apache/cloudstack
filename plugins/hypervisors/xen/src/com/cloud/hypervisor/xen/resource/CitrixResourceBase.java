@@ -114,6 +114,7 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -1340,7 +1341,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return dynamicMinRam;
     }
 
-    protected HashMap<String, HashMap<String, Long>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
+    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
         return null;
     }
 
@@ -3665,7 +3666,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                 s_logger.debug("VM " + vmName + " does not have GPU support.");
                             }
                             if (vGPUs != null && !vGPUs.isEmpty()) {
-                                HashMap<String, HashMap<String, Long>> groupDetails = getGPUGroupDetails(conn);
+                                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
                                 cmd.setGpuDevice(new GPUDeviceTO(null, null, groupDetails));
                             }
 

@@ -49,6 +49,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.PerformanceMonitorCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -342,7 +343,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     gpuEnabledHosts = hosts;
                 }
                 for (HostVO host : gpuEnabledHosts) {
-                    HashMap<String, HashMap<String, Long>> groupDetails = _resourceMgr.getGPUStatistics(host);
+                    HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = _resourceMgr.getGPUStatistics(host);
                     if (groupDetails != null) {
                         _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
                     }

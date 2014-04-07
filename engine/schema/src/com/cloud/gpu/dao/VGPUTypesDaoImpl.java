@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -73,20 +74,23 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
     }
 
     @Override
-    public void persist(long hostId, HashMap<String, HashMap<String, Long>> groupDetails) {
-        Iterator<Entry<String, HashMap<String, Long>>> it1 = groupDetails.entrySet().iterator();
+    public void persist(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+        Iterator<Entry<String, HashMap<String, VgpuTypesInfo>>> it1 = groupDetails.entrySet().iterator();
         while (it1.hasNext()) {
-            Entry<String, HashMap<String, Long>> entry = it1.next();
+            Entry<String, HashMap<String, VgpuTypesInfo>> entry = it1.next();
             HostGpuGroupsVO gpuGroup = _hostGpuGroupsDao.findByHostIdGroupName(hostId, entry.getKey());
-            HashMap<String, Long> values = entry.getValue();
-            Iterator<Entry<String, Long>> it2 = values.entrySet().iterator();
+            HashMap<String, VgpuTypesInfo> values = entry.getValue();
+            Iterator<Entry<String, VgpuTypesInfo>> it2 = values.entrySet().iterator();
             while (it2.hasNext()) {
-                Entry<String, Long> record = it2.next();
+                Entry<String, VgpuTypesInfo> record = it2.next();
+                VgpuTypesInfo details = record.getValue();
                 VGPUTypesVO vgpuType = null;
                 if ((vgpuType = findByGroupIdVGPUType(gpuGroup.getId(), record.getKey())) == null) {
-                    persist(new VGPUTypesVO(record.getKey(), gpuGroup.getId(), record.getValue()));
+                    persist(new VGPUTypesVO(gpuGroup.getId(), record.getKey(), details.getVideoRam(), details.getMaxHeads(), details.getMaxResolutionX(),
+                            details.getMaxResolutionY(), details.getMaxVpuPerGpu(), details.getRemainingCapacity(), details.getMaxCapacity()));
                 } else {
-                    vgpuType.setRemainingCapacity(record.getValue());
+                    vgpuType.setRemainingCapacity(details.getRemainingCapacity());
+                    vgpuType.setMaxCapacity(details.getMaxCapacity());
                     update(vgpuType.getId(), vgpuType);
                 }
             }

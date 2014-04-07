@@ -70,7 +70,7 @@ public class StartupRoutingCommand extends StartupCommand {
     HypervisorType hypervisorType;
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
     String hypervisorVersion;
-    HashMap<String, HashMap<String, Long>> groupDetails = new HashMap<String, HashMap<String, Long>>();
+    HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
 
     public StartupRoutingCommand() {
         super(Host.Type.Routing);
@@ -246,11 +246,11 @@ public class StartupRoutingCommand extends StartupCommand {
         this._hostVmStateReport = hostVmStateReport;
     }
 
-    public  HashMap<String, HashMap<String, Long>> getGpuGroupDetails() {
+    public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
         return groupDetails;
     }
 
-    public void setGpuGroupDetails(HashMap<String, HashMap<String, Long>> groupDetails) {
+    public void setGpuGroupDetails(HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         this.groupDetails = groupDetails;
     }
 }

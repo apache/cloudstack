@@ -63,6 +63,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiDBUtils;
@@ -2537,7 +2538,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, Long>> groupDetails) {
+    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         // Update GPU group capacity
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -2547,7 +2548,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public HashMap<String, HashMap<String, Long>> getGPUStatistics(HostVO host) {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host) {
         Answer answer = _agentMgr.easySend(host.getId(), new GetGPUStatsCommand(host.getGuid(), host.getName()));
         if (answer != null && (answer instanceof UnsupportedAnswer)) {
             return null;
