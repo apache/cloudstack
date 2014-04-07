@@ -2501,6 +2501,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public boolean isHostGpuEnabled(long hostId) {
+        SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
+        sc.setParameters("hostId", hostId);
+        return _hostGpuGroupsDao.customSearch(sc, null).size() > 0 ? true : false;
+    }
+
+    @Override
     public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType) {
         if (vgpuType == null) {
             vgpuType = vGPUType.passthrough.getType();

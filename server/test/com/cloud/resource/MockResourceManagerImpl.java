@@ -585,4 +585,10 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean isHostGpuEnabled(long hostId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }
