@@ -131,7 +131,7 @@ def main(command, vif_raw):
             apply_flows(bridge,  this_vif_ofport, vif_ofports)
 
 
-    # handle case where brdige is setup for VPC and VPC is enabled for distributed routing
+    # handle case where bridge is setup for VPC which is enabled for distributed routing
     if ovs_vpc_distributed_vr_network == 'True':
         vlan = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'br-to-vlan', bridge])
         if vlan != '0':
