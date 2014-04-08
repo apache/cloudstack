@@ -2231,8 +2231,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 owner = caller;
             }
             AccessType accessType = AccessType.UseEntry;
-            if (listAll) {
-                // listAll = true should show all resources that owner has ListEntry access type
+            if (listAll || id != null) {
+                // listAll = true or id given should show all resources that owner has ListEntry access type.
                 accessType = AccessType.ListEntry;
             }
             domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
