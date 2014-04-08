@@ -3947,6 +3947,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             while (vifIter.hasNext()) {
                 VIF vif = vifIter.next();
                 try {
+                    String deviceId = vif.getDevice(conn);
+                    if(vm.getIsControlDomain(conn) || vif.getCurrentlyAttached(conn)) {
+                        usedDeviceNums.add(Integer.valueOf(deviceId));
+                    } else {
+                        s_logger.debug("Found unplugged VIF " + deviceId + " in VM " + vmName + " destroy it");
+                        vif.destroy(conn);
+                    }
                     usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
                     String msg = "Obtained an invalid value for an allocated VIF device number for VM: " + vmName;
