@@ -828,6 +828,16 @@ class Volume:
         return
 
     @classmethod
+    def extract(cls, apiclient, volume_id, zoneid, mode):
+        """Extracts the volume"""
+        
+        cmd = extractVolume.extractVolumeCmd()
+        cmd.id = volume_id
+        cmd.zoneid = zoneid
+        cmd.mode = mode
+        return Volume(apiclient.extractVolume(cmd).__dict__)
+
+    @classmethod
     def migrate(cls, apiclient, **kwargs):
         """Migrate a volume"""
         cmd = migrateVolume.migrateVolumeCmd()

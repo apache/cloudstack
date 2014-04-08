@@ -365,6 +365,9 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)",
         "sleep": 90,
         "timeout": 10,
+        "page": 1,
+        "pagesize": 2,
+        "listall":'true',
         "advanced_sg": {
             "zone": {
                 "name": "",
@@ -388,6 +391,20 @@ test_data = {
             "name": "Primary iSCSI"
         },
         "volume": {"diskname": "Test Volume"},
+        "custom_volume": {
+                          "customdisksize": 1,
+                          "diskname": "Custom disk",
+                         },
+        "upload_volume": {
+                          "diskname": "UploadVol",
+                          "format": "VHD",
+                          "url": "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
+                          "checksum": "",
+                         },
+        "recurring_snapshot": {
+                               "maxsnaps": 2,
+                               "timezone": "US/Arizona",
+                               },
         "volume_offerings": {
             0: {"diskname": "TestDiskServ"},
         },
