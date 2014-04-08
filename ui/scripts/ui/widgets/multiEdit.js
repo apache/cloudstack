@@ -702,6 +702,7 @@
 
             itemRow: function(item, itemActions, multiRule, $tbody) {
                 var $tr = $('<tr>');
+                
                 var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
                 var $itemName = $('<span>').html(_s(itemName));
 
@@ -716,6 +717,14 @@
                     });
                 });
 
+                                
+                var itemIp = multiRule._itemIp ? item[multiRule._itemIp] : null;
+                if (itemIp != null) {
+                	 var $itemIp = $('<span>').html(_s(itemIp));
+                     $tr.append($('<td>').addClass('state').appendTo($tr).append($itemIp));
+                }                        
+                
+                
                 var itemState = item._itemState ? item._itemState : item.state;
 
                 $tr.append($('<td>').addClass('state').appendTo($tr).append(

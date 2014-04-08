@@ -3806,31 +3806,30 @@
                                                 dataType: 'json',
                                                 async: true,
                                                 success: function(data) {
-                                                    var loadBalancerData = data.listloadbalancerrulesresponse.loadbalancerrule;
-                                                    var loadVMTotal = loadBalancerData ? loadBalancerData.length : 0;
-                                                    var loadVMCurrent = 0;
-
-                                                    $(loadBalancerData).each(function() {
-                                                        loadVMCurrent++;
-                                                        var item = this;
+                                                    var loadbalancerrules = data.listloadbalancerrulesresponse.loadbalancerrule;                                                    
+                                                    
+                                                    $(loadbalancerrules).each(function() {                                                        
+                                                        var lbRule = this;
                                                         var stickyData = {};
-                                                        var lbInstances = [];
+                                                        
+                                                        //var lbInstances = [];
+                                                        var itemData = [];
 
                                                         // Passing _hideFields array will disable specified fields for this row
-                                                        //item._hideFields = ['autoScale'];
+                                                        //lbRule._hideFields = ['autoScale'];
 
                                                         $.ajax({
                                                             url: createURL('listAutoScaleVmGroups'),
                                                             data: {
                                                                 listAll: true,
-                                                                lbruleid: item.id
+                                                                lbruleid: lbRule.id
                                                             },
                                                             async: false,
                                                             success: function(json) {
                                                                 if (json.listautoscalevmgroupsresponse.autoscalevmgroup != null && json.listautoscalevmgroupsresponse.autoscalevmgroup.length > 0) { //from 'autoScale' button
-                                                                    item._hideFields = ['add-vm'];
+                                                                    lbRule._hideFields = ['add-vm'];
                                                                 } else { //from 'add-vm' button
-                                                                    item._hideFields = ['autoScale'];
+                                                                    lbRule._hideFields = ['autoScale'];
                                                                 }
                                                             }
                                                         });
@@ -3841,7 +3840,7 @@
                                                             async: false,
                                                             data: {
                                                                 listAll: true,
-                                                                lbruleid: item.id
+                                                                lbruleid: lbRule.id
                                                             },
                                                             success: function(json) {
                                                                 var stickyPolicy = json.listlbstickinesspoliciesresponse.stickinesspolicies ?
@@ -3857,12 +3856,12 @@
                                                                         methodname: stickyPolicy.methodname,
                                                                         stickyName: stickyPolicy.name,
                                                                         id: stickyPolicy.id,
-                                                                        lbRuleID: item.id
+                                                                        lbRuleID: lbRule.id
                                                                     };
                                                                     $.extend(stickyData, stickyPolicy.params);
                                                                 } else {
                                                                     stickyData = {
-                                                                        lbRuleID: item.id
+                                                                        lbRuleID: lbRule.id
                                                                     };
                                                                 }
                                                             },
@@ -3880,42 +3879,62 @@
                                                             async: false,
                                                             data: {
                                                                 listAll: true,
-                                                                id: item.id
+                                                                lbvmips: true,
+                                                                id: lbRule.id                                                                
                                                             },
                                                             success: function(data) {
-                                                                lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance ?
-                                                                    data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance : [];
+                                                            	//when "lbvmips: true" is not passed to API
+                                                                //lbVMs = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance; 
+                                                            	
+                                                            	//when "lbvmips: true" is passed to API
+                                                            	lbrulevmidips = data.listloadbalancerruleinstancesresponse.lbrulevmidip; 
+                                                                             
+                                                                if (lbrulevmidips != null) {
+                                                                	for (var k = 0; k < lbrulevmidips.length; k++) {
+                                                                		var lbrulevmidip = lbrulevmidips[k];
+                                                                		var lbVM = lbrulevmidip.loadbalancerruleinstance;                                                                	
+                                                                        if (lbVM.displayname.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
+                                                                            lbVM._hideActions = ['destroy'];
 
-                                                                $(lbInstances).each(function() {
-                                                                    if (this.displayname.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
-                                                                        this._hideActions = ['destroy'];
-
-                                                                    if (this.servicestate) {
-                                                                        this._itemStateLabel = 'label.service.state';
-                                                                        this._itemState = this.servicestate;
-                                                                    }
-                                                                });
+                                                                        if (lbVM.servicestate) {
+                                                                            lbVM._itemStateLabel = 'label.service.state';
+                                                                            lbVM._itemState = lbVM.servicestate;
+                                                                        }
+                                                                                                                                               
+                                                                        if (lbrulevmidip.lbvmipaddresses != null) {
+                                                                        	for (var m = 0 ; m < lbrulevmidip.lbvmipaddresses.length; m++) {
+                                                                        		var ip = lbrulevmidip.lbvmipaddresses[m];
+                                                                        		itemData.push($.extend({}, lbVM, {
+                                                                        			itemIp: ip
+                                                                        		}));                                                                        		
+                                                                        	}
+                                                                        } else {
+                                                                        	itemData.push(lbVM);
+                                                                        }                                                                        
+                                                                	}
+                                                                }                                                                
                                                             },
                                                             error: function(data) {
                                                                 args.response.error(parseXMLHttpResponse(data));
                                                             }
-                                                        });
+                                                        });                                                        
 
-                                                        $.extend(item, {
+                                                        $.extend(lbRule, {
                                                             _itemName: 'name',
-                                                            _itemData: lbInstances,
+                                                            _itemIp: 'itemIp',
+                                                            _itemData: itemData,
                                                             _maxLength: {
                                                                 name: 7
                                                             },
                                                             sticky: stickyData,
                                                             autoScale: {
-                                                                lbRuleID: item.id
+                                                                lbRuleID: lbRule.id
                                                             }
                                                         });
                                                     });
 
                                                     args.response.success({
-                                                        data: loadBalancerData
+                                                        data: loadbalancerrules
                                                     });
                                                 }
                                             });
