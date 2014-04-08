@@ -918,6 +918,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug("A VIF for dom0 has already been found - No need to create one");
             }
         }
+
         if (dom0vif == null) {
             s_logger.debug("Create a vif on dom0 for " + networkDesc);
             VIF.Record vifr = new VIF.Record();
@@ -935,14 +936,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
             dom0vif = VIF.create(conn, vifr);
+            synchronized (_tmpDom0Vif) {
+                _tmpDom0Vif.add(dom0vif);
+            }
         }
         // At this stage we surely have a VIF
-        dom0vif.plug(conn);
-        dom0vif.unplug(conn);
-        synchronized (_tmpDom0Vif) {
-            _tmpDom0Vif.add(dom0vif);
+        try {
+            dom0vif.plug(conn);
+        } catch (Exception e) {
+            // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
         }
-
+        dom0vif.unplug(conn);
     }
 
     private synchronized Network setupvSwitchNetwork(Connection conn) {
@@ -994,11 +998,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 rec.otherConfig = otherConfig;
                 nw = Network.create(conn, rec);
                 // Plug dom0 vif only when creating network
-                if (!is_xcp())
-                    enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
                 s_logger.debug("### Xen Server network for tunnels created:" + nwName);
             } else {
                 nw = networks.iterator().next();
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + nwName);
                 s_logger.debug("Xen Server network for tunnels found:" + nwName);
             }
             return nw;
@@ -1031,8 +1035,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             if (!configured) {
                 // Plug dom0 vif only if not done before for network and host
-                if (!is_xcp())
-                    enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + bridgeName);
+                enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + bridgeName);
                 String result;
                 if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
                     result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge,
@@ -1670,7 +1673,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cmd;
     }
 
-    private void cleanUpTmpDomVif(Connection conn) {
+    private void cleanUpTmpDomVif(Connection conn, Network nw) {
         List<VIF> vifs;
         synchronized (_tmpDom0Vif) {
             vifs = _tmpDom0Vif;
@@ -1678,13 +1681,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         for (VIF v : vifs) {
-            String vifName = "unkown";
+            String vifName = "unknown";
             try {
                 VIF.Record vifr = v.getRecord(conn);
-                Map<String, String> config = vifr.otherConfig;
-                vifName = config.get("nameLabel");
-                v.destroy(conn);
-                s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
+                if (v.getNetwork(conn).getUuid(conn).equals(nw.getUuid(conn))) {
+                    Map<String, String> config = vifr.otherConfig;
+                    vifName = config.get("nameLabel");
+                    s_logger.debug("A VIF in dom0 for the network is found - so destroy the vif");
+                    v.destroy(conn);
+                    s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
+                }
             } catch (Exception e) {
                 s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
@@ -1822,7 +1828,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                 }
             }
-            cleanUpTmpDomVif(conn);
 
             if (_canBridgeFirewall) {
                 String result = null;
@@ -5250,6 +5255,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private Answer execute(OvsDestroyBridgeCommand cmd) {
         Connection conn = getConnection();
+        Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
+        cleanUpTmpDomVif(conn, nw);
         destroyTunnelNetwork(conn, cmd.getBridgeName());
         s_logger.debug("OVS Bridge destroyed");
         return new Answer(cmd, true, null);
