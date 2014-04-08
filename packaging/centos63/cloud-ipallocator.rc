@@ -23,12 +23,10 @@
 
 . /etc/rc.d/init.d/functions
 
-whatami=cloud-external-ipallocator
-
 # set environment variables
 
-SHORTNAME="$whatami"
-PIDFILE=/var/run/"$whatami".pid
+SHORTNAME=`basename $0`
+PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 LOGFILE=/var/log/cloudstack/ipallocator/ipallocator.log
 PROGNAME="External IPAllocator"
@@ -90,7 +88,7 @@ case "$1" in
 	fi
 	;;
   *)
-	echo $"Usage: $whatami {start|stop|restart|condrestart|status|help}"
+	echo $"Usage: $SHORTNAME {start|stop|restart|condrestart|status|help}"
 	RETVAL=3
 esac
 

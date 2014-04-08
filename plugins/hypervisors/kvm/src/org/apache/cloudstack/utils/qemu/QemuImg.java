@@ -90,11 +90,11 @@ public class QemuImg {
 
         if (options != null && !options.isEmpty()) {
             s.add("-o");
-            String optionsStr = "";
+            final StringBuilder optionsStr = new StringBuilder();
             for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr += option.getKey() + "=" + option.getValue() + ",";
+                optionsStr.append(option.getKey()).append('=').append(option.getValue()).append(',');
             }
-            s.add(optionsStr);
+            s.add(optionsStr.toString());
         }
 
         /*
@@ -111,10 +111,12 @@ public class QemuImg {
         }
 
         s.add(file.getFileName());
-
-        if (backingFile == null) {
+        if (file.getSize() != 0L) {
             s.add(Long.toString(file.getSize()));
+        } else if (backingFile == null) {
+            throw new QemuImgException("No size was passed, and no backing file was passed");
         }
+
         String result = s.execute();
         if (result != null) {
             throw new QemuImgException(result);
@@ -205,6 +207,10 @@ public class QemuImg {
         String result = s.execute();
         if (result != null) {
             throw new QemuImgException(result);
+        }
+
+        if (srcFile.getSize() < destFile.getSize()) {
+            this.resize(destFile, destFile.getSize());
         }
     }
 

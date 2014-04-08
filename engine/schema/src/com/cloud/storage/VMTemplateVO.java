@@ -591,7 +591,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 
@@ -632,4 +632,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.updated = updated;
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachineTemplate.class;
+    }
 }

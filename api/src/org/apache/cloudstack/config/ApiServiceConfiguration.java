@@ -24,7 +24,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 @Local(value = {ApiServiceConfiguration.class})
 public class ApiServiceConfiguration implements Configurable {
     public static final ConfigKey<String> ManagementHostIPAdr = new ConfigKey<String>("Advanced", String.class, "host", "localhost", "The ip address of management server", true);
-    public static final ConfigKey<String> ApiServletPath = new ConfigKey<String>("Advanced", String.class, "api.servlet.endpoint", "http://localhost:8080/client/api?",
+    public static final ConfigKey<String> ApiServletPath = new ConfigKey<String>("Advanced", String.class, "endpointe.url", "http://localhost:8080/client/api",
             "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", true);
 
     @Override

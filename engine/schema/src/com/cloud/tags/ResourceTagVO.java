@@ -29,6 +29,7 @@ import javax.persistence.Table;
 
 import com.cloud.server.ResourceTag;
 
+
 @Entity
 @Table(name = "resource_tags")
 public class ResourceTagVO implements ResourceTag {
@@ -67,7 +68,7 @@ public class ResourceTagVO implements ResourceTag {
     String customer;
 
     protected ResourceTagVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -88,7 +89,7 @@ public class ResourceTagVO implements ResourceTag {
         this.accountId = accountId;
         this.resourceId = resourceId;
         this.resourceType = resourceType;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.customer = customer;
         this.resourceUuid = resourceUuid;
     }
@@ -160,5 +161,10 @@ public class ResourceTagVO implements ResourceTag {
     @Override
     public String getResourceUuid() {
         return resourceUuid;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return ResourceTag.class;
     }
 }

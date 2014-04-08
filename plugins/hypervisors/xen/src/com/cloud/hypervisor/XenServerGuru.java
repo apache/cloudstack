@@ -29,12 +29,10 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -43,6 +41,7 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -103,30 +102,30 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
 
         List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
 
+        // it's OK in this case to send a detach command to the host for a root volume as this
+        // will simply lead to the SR that supports the root volume being removed
         if (volumes != null) {
             for (VolumeVO volume : volumes) {
-                if (volume.getVolumeType() == Volume.Type.DATADISK) {
-                    StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+                StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
-                    // storagePool should be null if we are expunging a volume that was never
-                    // attached to a VM that was started (the "trick" for storagePool to be null
-                    // is that none of the VMs this volume may have been attached to were ever started,
-                    // so the volume was never assigned to a storage pool)
-                    if (storagePool != null && storagePool.isManaged()) {
-                        DataTO volTO = _volFactory.getVolume(volume.getId()).getTO();
-                        DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+                // storagePool should be null if we are expunging a volume that was never
+                // attached to a VM that was started (the "trick" for storagePool to be null
+                // is that none of the VMs this volume may have been attached to were ever started,
+                // so the volume was never assigned to a storage pool)
+                if (storagePool != null && storagePool.isManaged()) {
+                    DataTO volTO = _volFactory.getVolume(volume.getId()).getTO();
+                    DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 
-                        DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+                    DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
-                        cmd.setManaged(true);
+                    cmd.setManaged(true);
 
-                        cmd.setStorageHost(storagePool.getHostAddress());
-                        cmd.setStoragePort(storagePool.getPort());
+                    cmd.setStorageHost(storagePool.getHostAddress());
+                    cmd.setStoragePort(storagePool.getPort());
 
-                        cmd.set_iScsiName(volume.get_iScsiName());
+                    cmd.set_iScsiName(volume.get_iScsiName());
 
-                        commands.add(cmd);
-                    }
+                    commands.add(cmd);
                 }
             }
         }
@@ -149,8 +148,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
-                    boolean snapshotHotFix = Boolean.parseBoolean(host.getDetail(HostInfo.XS620_SNAPSHOT_HOTFIX));
-                    if (snapshotHotFix) {
+                    String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
+                    if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
                         return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
                     }
                 }

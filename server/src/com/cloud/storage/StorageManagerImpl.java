@@ -572,7 +572,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-        ResourceUnavailableException {
+    ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -618,7 +618,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         }
@@ -630,7 +630,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         // Check if zone is disabled
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -854,8 +854,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public BigDecimal getStorageOverProvisioningFactor(Long dcId) {
-        return new BigDecimal(CapacityManager.StorageOverprovisioningFactor.valueIn(dcId));
+    public BigDecimal getStorageOverProvisioningFactor(Long poolId) {
+        return new BigDecimal(CapacityManager.StorageOverprovisioningFactor.valueIn(poolId));
     }
 
     @Override
@@ -869,13 +869,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS) {
-            BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getDataCenterId());
-            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
             // All this is for the inaccuracy of floats for big number multiplication.
+            BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getId());
+            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
+            s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString() + " with overprovisioning factor "
+                    + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + storagePool.getCapacityBytes());
         } else {
+            s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString());
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
 
+        s_logger.debug("Total over provisioned capacity of the pool " + storagePool.getName() + " id: " + storagePool.getId() + " is " + totalOverProvCapacity);
         if (capacities.size() == 0) {
             CapacityVO capacity =
                 new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
@@ -1552,16 +1557,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS) {
-            totalOverProvCapacity = getStorageOverProvisioningFactor(pool.getDataCenterId()).multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
+            BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
+            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor "
+                    + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString());
         }
 
+        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " id: " + pool.getId() + " is " + totalOverProvCapacity);
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity +
-                ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " +
-                storageAllocatedThreshold);
+                    ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " +
+                    storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithtemplate + totalAskingSize) / (double)(totalOverProvCapacity);
@@ -1677,8 +1688,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
             Account account = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
-                PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState()
+                    && !_accountMgr.isRootAdmin(account.getId())) {
+                PermissionDeniedException ex = new PermissionDeniedException(
+                        "Cannot perform this operation, Zone with specified id is currently disabled");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
             }
@@ -1823,14 +1836,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // first delete from image_store_details table, we need to do that since
-                // we are not actually deleting record from main
-                // image_data_store table, so delete cascade will not work
-                _imageStoreDetailsDao.deleteDetails(storeId);
-                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
-                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-                _imageStoreDao.remove(storeId);
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
             }
         });
 
@@ -1877,8 +1890,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
-            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+            PermissionDeniedException ex = new PermissionDeniedException(
+                    "Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
@@ -1934,14 +1948,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // first delete from image_store_details table, we need to do that since
-                // we are not actually deleting record from main
-                // image_data_store table, so delete cascade will not work
-                _imageStoreDetailsDao.deleteDetails(storeId);
-                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
-                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-                _imageStoreDao.remove(storeId);
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
             }
         });
 

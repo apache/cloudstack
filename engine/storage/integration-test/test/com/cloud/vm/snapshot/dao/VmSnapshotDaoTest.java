@@ -41,7 +41,7 @@ public class VmSnapshotDaoTest extends CloudStackTestNGBase {
 
     @Test
     public void testVmSnapshotDetails() {
-        VMSnapshotDetailsVO detailsVO = new VMSnapshotDetailsVO(1L, "test", "foo");
+        VMSnapshotDetailsVO detailsVO = new VMSnapshotDetailsVO(1L, "test", "foo", display);
         vmsnapshotDetailsDao.persist(detailsVO);
         Map<String, String> details = vmsnapshotDetailsDao.listDetailsKeyPairs(1L);
         Assert.assertTrue(details.containsKey("test"));

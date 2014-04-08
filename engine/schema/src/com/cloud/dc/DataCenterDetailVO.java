@@ -43,15 +43,16 @@ public class DataCenterDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     protected DataCenterDetailVO() {
     }
 
-    public DataCenterDetailVO(long dcId, String name, String value) {
+    public DataCenterDetailVO(long dcId, String name, String value, boolean display) {
         this.resourceId = dcId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

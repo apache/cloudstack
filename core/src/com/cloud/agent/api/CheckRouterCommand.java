@@ -27,4 +27,9 @@ public class CheckRouterCommand extends NetworkElementCommand {
     public CheckRouterCommand() {
         super();
     }
+
+    @Override
+    public boolean isQuery() {
+        return true;
+    }
 }

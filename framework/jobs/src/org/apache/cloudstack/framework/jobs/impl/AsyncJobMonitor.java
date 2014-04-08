@@ -17,6 +17,7 @@
 package org.apache.cloudstack.framework.jobs.impl;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,8 +39,7 @@ import com.cloud.utils.component.ManagerBase;
 public class AsyncJobMonitor extends ManagerBase {
     public static final Logger s_logger = Logger.getLogger(AsyncJobMonitor.class);
 
-    @Inject
-    private MessageBus _messageBus;
+    @Inject private MessageBus _messageBus;
 
     private final Map<Long, ActiveTaskRecord> _activeTasks = new HashMap<Long, ActiveTaskRecord>();
     private final Timer _timer = new Timer();
@@ -86,15 +86,16 @@ public class AsyncJobMonitor extends ManagerBase {
         synchronized (this) {
             for (Map.Entry<Long, ActiveTaskRecord> entry : _activeTasks.entrySet()) {
                 if (entry.getValue().millisSinceLastJobHeartbeat() > _inactivityWarningThresholdMs) {
-                    s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for " + entry.getValue().millisSinceLastJobHeartbeat() / 1000 +
-                        " seconds");
+                    s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for "
+                            + entry.getValue().millisSinceLastJobHeartbeat() / 1000 + " seconds");
                 }
             }
         }
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
 
         _messageBus.subscribe(AsyncJob.Topics.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
         _timer.scheduleAtFixedRate(new ManagedContextTimerTask() {
@@ -114,7 +115,7 @@ public class AsyncJobMonitor extends ManagerBase {
             assert (_activeTasks.get(runNumber) == null);
 
             long threadId = Thread.currentThread().getId();
-            boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobManager.JOB_POOL_THREAD_PREFIX);
+            boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobManager.API_JOB_POOL_THREAD_PREFIX);
             ActiveTaskRecord record = new ActiveTaskRecord(jobId, threadId, fromPoolThread);
             _activeTasks.put(runNumber, record);
             if (fromPoolThread)
@@ -137,6 +138,25 @@ public class AsyncJobMonitor extends ManagerBase {
                     _activeInplaceThreads.decrementAndGet();
 
                 _activeTasks.remove(runNumber);
+            }
+        }
+    }
+
+    public void unregisterByJobId(long jobId) {
+        synchronized (this) {
+            Iterator<Map.Entry<Long, ActiveTaskRecord>> it = _activeTasks.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Long, ActiveTaskRecord> entry = it.next();
+                if (entry.getValue().getJobId() == jobId) {
+                    s_logger.info("Remove Job-" + entry.getValue().getJobId() + " from job monitoring due to job cancelling");
+
+                    if (entry.getValue().isPoolThread())
+                        _activePoolThreads.decrementAndGet();
+                    else
+                        _activeInplaceThreads.decrementAndGet();
+
+                    it.remove();
+                }
             }
         }
     }

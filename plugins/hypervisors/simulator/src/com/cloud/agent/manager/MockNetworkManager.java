@@ -25,7 +25,6 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -79,7 +78,7 @@ public interface MockNetworkManager extends Manager {
 
     SetPortForwardingRulesAnswer setVpcPortForwards(SetPortForwardingRulesVpcCommand cmd);
 
-    SetupGuestNetworkAnswer setUpGuestNetwork(SetupGuestNetworkCommand cmd);
+    Answer setUpGuestNetwork(SetupGuestNetworkCommand cmd);
 
     SetStaticNatRulesAnswer setVPCStaticNatRules(SetStaticNatRulesCommand cmd);
 

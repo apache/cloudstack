@@ -34,6 +34,7 @@ import streamer.apr.AprSocketWrapperImpl;
 import streamer.bco.BcoSocketWrapperImpl;
 import streamer.ssl.SSLState;
 import vncclient.VncClient;
+
 import common.opt.IntOption;
 import common.opt.Option;
 import common.opt.OptionParser;
@@ -47,28 +48,28 @@ public class Client {
     }
 
     // Common options
-    private Option help = new Option() {
+    private final Option help = new Option() {
         {
             name = "--help";
             alias = "-h";
             description = "Show this help text.";
         }
     };
-    private Option debugLink = new Option() {
+    private final Option debugLink = new Option() {
         {
             name = "--debug-link";
             alias = "-DL";
             description = "Print debugging messages when packets are trasnferred via links.";
         }
     };
-    private Option debugElement = new Option() {
+    private final Option debugElement = new Option() {
         {
             name = "--debug-element";
             alias = "-DE";
             description = "Print debugging messages when packets are received or sended by elements.";
         }
     };
-    private Option debugPipeline = new Option() {
+    private final Option debugPipeline = new Option() {
         {
             name = "--debug-pipeline";
             alias = "-DP";
@@ -76,7 +77,7 @@ public class Client {
         }
     };
 
-    private StringOption hostName = new StringOption() {
+    private final StringOption hostName = new StringOption() {
         {
             name = "--host";
             alias = "-n";
@@ -85,7 +86,7 @@ public class Client {
             description = "Name or IP address of host to connect to.";
         }
     };
-    private IntOption canvasWidth = new IntOption() {
+    private final IntOption canvasWidth = new IntOption() {
         {
             name = "--width";
             alias = "-W";
@@ -94,7 +95,7 @@ public class Client {
         }
     };
 
-    private IntOption canvasHeight = new IntOption() {
+    private final IntOption canvasHeight = new IntOption() {
         {
             name = "--height";
             alias = "-H";
@@ -105,7 +106,7 @@ public class Client {
 
     // Protocol specific options
 
-    private IntOption vncPort = new IntOption() {
+    private final IntOption vncPort = new IntOption() {
         {
             name = "--port";
             alias = "-p";
@@ -114,7 +115,7 @@ public class Client {
         }
     };
 
-    private IntOption rdpPort = new IntOption() {
+    private final IntOption rdpPort = new IntOption() {
         {
             name = "--port";
             alias = "-p";
@@ -123,7 +124,7 @@ public class Client {
         }
     };
 
-    private IntOption hyperVPort = new IntOption() {
+    private final IntOption hyperVPort = new IntOption() {
         {
             name = "--port";
             alias = "-p";
@@ -132,7 +133,7 @@ public class Client {
         }
     };
 
-    private StringOption password = new StringOption() {
+    private final StringOption password = new StringOption() {
         {
             name = "--password";
             alias = "-P";
@@ -141,7 +142,7 @@ public class Client {
         }
     };
 
-    private StringOption rdpPassword = new StringOption() {
+    private final StringOption rdpPassword = new StringOption() {
         {
             name = "--password";
             alias = "-P";
@@ -150,7 +151,7 @@ public class Client {
         }
     };
 
-    private StringOption userName = new StringOption() {
+    private final StringOption userName = new StringOption() {
         {
             name = "--user";
             alias = "-U";
@@ -159,7 +160,7 @@ public class Client {
         }
     };
 
-    private StringOption domain = new StringOption() {
+    private final StringOption domain = new StringOption() {
         {
             name = "--domain";
             alias = "-D";
@@ -168,7 +169,7 @@ public class Client {
         }
     };
 
-    private StringOption hyperVInstanceId = new StringOption() {
+    private final StringOption hyperVInstanceId = new StringOption() {
         {
             name = "--instance";
             alias = "-i";
@@ -176,7 +177,7 @@ public class Client {
             description = "HyperV instance ID to use.";
         }
     };
-    private StringEnumerationOption sslImplementation = new StringEnumerationOption() {
+    private final StringEnumerationOption sslImplementation = new StringEnumerationOption() {
         {
             name = "--ssl-implementation";
             alias = "-j";
@@ -196,6 +197,7 @@ public class Client {
     private static ScrollPane scroller;
     private static ScreenDescription screen;
     private static BufferedImageCanvas canvas;
+    private InetSocketAddress address;
 
     private void help() {
         System.out.println("Usage: \n  java common.Client vnc|rdp|hyperv OPTIONS\n");
@@ -243,32 +245,7 @@ public class Client {
                 }
             });
 
-            // Assemble pipeline
-            InetSocketAddress address;
-            Element main;
-            switch (protocol) {
-            case VNC:
-                address = new InetSocketAddress(hostName.value, vncPort.value);
-                main = new VncClient("client", password.value, screen, canvas);
-                break;
-            case RDP:
-                address = new InetSocketAddress(hostName.value, rdpPort.value);
-                main = new RdpClient("client", hostName.value, domain.value, userName.value, rdpPassword.value, null, screen, canvas, sslState);
-                break;
-            case HYPERV:
-                address = new InetSocketAddress(hostName.value, hyperVPort.value);
-                main = new RdpClient("client", hostName.value, domain.value, userName.value, password.value, hyperVInstanceId.value, screen, canvas, sslState);
-                break;
-            default:
-                address = null;
-                main = null;
-            }
-
-            Pipeline pipeline = new PipelineImpl("Client");
-            pipeline.add(socket, main);
-            pipeline.link("socket", main.getId(), "socket");
-
-            pipeline.validate();
+            assemblePipeline(setMainElementAndAddressBasedOnProtocol(protocol, sslState));
 
             frame = createVncClientMainWindow(canvas, protocol.toString() + " " + hostName.value, new WindowAdapter() {
                 @Override
@@ -287,6 +264,37 @@ public class Client {
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
+    }
+
+    protected static void assemblePipeline(Element main) {
+        Pipeline pipeline = new PipelineImpl("Client");
+        pipeline.add(socket, main);
+        pipeline.link("socket", main.getId(), "socket");
+
+        pipeline.validate();
+    }
+
+    private Element setMainElementAndAddressBasedOnProtocol(Protocol protocol, SSLState sslState) {
+        Element main;
+        switch (protocol) {
+        case VNC:
+            address = new InetSocketAddress(hostName.value, vncPort.value);
+            main = new VncClient("client", password.value, screen, canvas);
+            break;
+        case RDP:
+            address = new InetSocketAddress(hostName.value, rdpPort.value);
+            main = new RdpClient("client", hostName.value, domain.value, userName.value, rdpPassword.value, null, screen, canvas, sslState);
+            break;
+        case HYPERV:
+            address = new InetSocketAddress(hostName.value, hyperVPort.value);
+            main = new RdpClient("client", hostName.value, domain.value, userName.value, password.value, hyperVInstanceId.value, screen, canvas, sslState);
+            break;
+        default:
+            address = null;
+            main = null;
+        }
+
+        return main;
     }
 
     private Protocol parseOptions(String[] args) {

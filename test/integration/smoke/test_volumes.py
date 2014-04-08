@@ -101,7 +101,7 @@ class TestCreateVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_01_create_volume(self):
         """Test Volume creation for all Disk Offerings (incl. custom)
         """
@@ -309,7 +309,7 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic","test"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_02_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
@@ -355,7 +355,7 @@ class TestVolumes(cloudstackTestCase):
                                     (self.virtual_machine.ipaddress, e))
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
         """
@@ -377,7 +377,7 @@ class TestVolumes(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.apiClient.extractVolume(cmd)
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
     def test_04_delete_attached_volume(self):
         """Delete a Volume attached to a VM
         """
@@ -398,7 +398,7 @@ class TestVolumes(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.apiClient.deleteVolume(cmd)
         
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
         """
@@ -440,7 +440,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_06_download_detached_volume(self):
         """Download a Volume unattached to an VM
         """
@@ -477,7 +477,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "selfservice"])
     def test_07_resize_fail(self):
         """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -512,6 +512,31 @@ class TestVolumes(cloudstackTestCase):
                 success,
                 True,
                 "ResizeVolume - verify disk offering is handled appropriately")
+
+        # try to resize a root disk with a disk offering, root can only be resized by size=
+        # get root vol from created vm
+        list_volume_response = list_volumes(
+                                            self.apiClient,
+                                            virtualmachineid=self.virtual_machine.id,
+                                            type='ROOT',
+                                            listall=True
+                                            )
+
+        rootvolume = list_volume_response[0]
+
+        cmd.id             = rootvolume.id
+        cmd.diskofferingid = self.services['diskofferingid']
+        success            = False
+        try:
+            response = self.apiClient.resizeVolume(cmd)
+        except Exception as ex:
+            if "Can only resize Data volumes" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "ResizeVolume - verify root disks cannot be resized by disk offering id")
+            
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
         cmd.diskofferingid = self.services['diskofferingid']
@@ -566,7 +591,7 @@ class TestVolumes(cloudstackTestCase):
         return 
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "provisioning"])
     def test_08_resize_volume(self):
         """Test resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -588,6 +613,7 @@ class TestVolumes(cloudstackTestCase):
         elif hosts[0].hypervisor.lower() == "vmware":
             self.skipTest("Resize Volume is unsupported on VmWare")
 
+        # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
         cmd                = resizeVolume.resizeVolumeCmd()
@@ -616,7 +642,48 @@ class TestVolumes(cloudstackTestCase):
         self.assertEqual(
                          success,
                          True,
-                         "Check if the volume resized appropriately"
+                         "Check if the data volume resized appropriately"
+                         )
+
+        # resize the root disk
+        self.debug("Resize Root for : %s" % self.virtual_machine.id)
+
+        # get root vol from created vm
+        list_volume_response = list_volumes(
+                                            self.apiClient,
+                                            virtualmachineid=self.virtual_machine.id,
+                                            type='ROOT',
+                                            listall=True
+                                            )
+
+        rootvolume = list_volume_response[0]
+
+        cmd                = resizeVolume.resizeVolumeCmd()
+        cmd.id             = rootvolume.id
+        cmd.size           = 10
+
+        self.apiClient.resizeVolume(cmd)
+
+        count = 0
+        success = False
+        while count < 3:
+            list_volume_response = list_volumes(
+                                                self.apiClient,
+                                                id=rootvolume.id
+                                                )
+            for vol in list_volume_response:
+                if vol.id == rootvolume.id and vol.size == 10737418240L and vol.state == 'Ready':
+                    success = True
+            if success:
+                break
+            else:
+                time.sleep(10)
+                count += 1
+
+        self.assertEqual(
+                         success,
+                         True,
+                         "Check if the root volume resized appropriately"
                          )
 
         #start the vm if it is on xenserver
@@ -626,7 +693,7 @@ class TestVolumes(cloudstackTestCase):
             time.sleep(30)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke","basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke","basic", "selfservice"])
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """

@@ -32,7 +32,8 @@ import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteUcsManager", description = "Delete a Ucs manager", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteUcsManager", description = "Delete a Ucs manager", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteUcsManagerCmd extends BaseCmd {
     private static final Logger logger = Logger.getLogger(DeleteUcsManagerCmd.class);
 

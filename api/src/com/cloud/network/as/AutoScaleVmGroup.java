@@ -53,4 +53,6 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
 
     String getUuid();
 
+    boolean isDisplay();
+
 }

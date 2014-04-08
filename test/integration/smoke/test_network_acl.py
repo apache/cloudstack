@@ -54,8 +54,9 @@ class TestNetworkACL(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "provisioning"])
     def test_network_acl(self):
+        #TODO: SIMENH: add actual verification Logic for rules.
         """Test network ACL lists and items in VPC"""
 
         # 0) Get the default network offering for VPC

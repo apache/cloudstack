@@ -21,10 +21,12 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -32,7 +34,9 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class)
+
+@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
@@ -67,6 +71,9 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list VPCs by restartRequired option")
     private Boolean restartRequired;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,6 +115,14 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
         return restartRequired;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -116,18 +131,18 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
     public void execute() {
         List<? extends Vpc> vpcs =
             _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(), getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), this.listAll(), getRestartRequired(), getTags(),
-                getProjectId());
+                getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(), listAll(), getRestartRequired(), getTags(),
+                getProjectId(), getDisplay());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {
-            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(vpc);
+            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(ResponseView.Restricted, vpc);
             offeringResponses.add(offeringResponse);
         }
 
         response.setResponses(offeringResponses);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

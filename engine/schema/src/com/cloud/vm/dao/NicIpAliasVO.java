@@ -34,23 +34,23 @@ import com.cloud.vm.NicIpAlias;
 
 @Entity
 @Table(name = "nic_ip_alias")
-public class NicIpAliasVO implements NicIpAlias {
+public class NicIpAliasVO implements NicIpAlias  {
 
     public NicIpAliasVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
         this.nicId = nicId;
         this.vmId = vmId;
-        this.ip4Address = ipaddr;
+        ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
         this.netmask = netmask;
         this.gateway = gateway;
-        this.state = NicIpAlias.state.active;
+        state = NicIpAlias.state.active;
         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         long cidrSize = Long.parseLong(cidrPair[1]);
-        this.startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
+        startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
     }
 
     protected NicIpAliasVO() {
@@ -199,7 +199,7 @@ public class NicIpAliasVO implements NicIpAlias {
     }
 
     public void setAliasCount(long count) {
-        this.aliasCount = count;
+        aliasCount = count;
     }
 
     public void setNetmask(String netmask) {
@@ -207,17 +207,17 @@ public class NicIpAliasVO implements NicIpAlias {
     }
 
     @Override
-    public String getNetmask() {
+    public  String getNetmask() {
         return netmask;
     }
 
     @Override
-    public String getGateway() {
-        return gateway;
+    public  String getGateway() {
+        return  gateway;
     }
 
     public void setGateway(String gateway) {
-        this.gateway = gateway;
+          this.gateway = gateway;
     }
 
     public NicIpAlias.state getState() {
@@ -232,4 +232,8 @@ public class NicIpAliasVO implements NicIpAlias {
         return startIpOfSubnet;
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return NicIpAlias.class;
+    }
 }

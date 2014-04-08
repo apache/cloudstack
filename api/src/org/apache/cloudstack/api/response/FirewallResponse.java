@@ -18,12 +18,12 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
@@ -75,6 +75,10 @@ public class FirewallResponse extends BaseResponse {
     @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -121,5 +125,9 @@ public class FirewallResponse extends BaseResponse {
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

@@ -29,7 +29,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class)
+@APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class, entityType = {SSHKeyPair.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class CreateSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "createsshkeypairresponse";
@@ -79,7 +80,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -93,7 +94,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
         CreateSSHKeyPairResponse response = new CreateSSHKeyPairResponse(r.getName(), r.getFingerprint(), r.getPrivateKey());
         response.setResponseName(getCommandName());
         response.setObjectName("keypair");
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

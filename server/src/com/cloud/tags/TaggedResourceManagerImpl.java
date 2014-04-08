@@ -40,6 +40,8 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
@@ -116,6 +118,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.VpnConnection, Site2SiteVpnConnectionVO.class);
         s_typeMap.put(ResourceObjectType.User, UserVO.class);
         s_typeMap.put(ResourceObjectType.DiskOffering, DiskOfferingVO.class);
+        s_typeMap.put(ResourceObjectType.AutoScaleVmProfile, AutoScaleVmProfileVO.class);
+        s_typeMap.put(ResourceObjectType.AutoScaleVmGroup, AutoScaleVmGroupVO.class);
     }
 
     @Inject
@@ -155,9 +159,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
+                }
+            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
         }
-        throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
-    }
 
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
         Class<?> clazz = s_typeMap.get(resourceType);
@@ -208,7 +212,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (String key : tags.keySet()) {
                     for (String resourceId : resourceIds) {
-                        if (!resourceType.resourceTagsSupport()) {
+                        if (!resourceType.resourceTagsSupport())  {
                             throw new InvalidParameterValueException("The resource type " + resourceType + " doesn't support resource tags");
                         }
 
@@ -219,8 +223,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
                         if (accountId != null) {
-                            _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
-                        } else if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_NORMAL) {
+                            _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(accountId));
+                        } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
                             //check permissions;
                             _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                         } else {
@@ -251,10 +255,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         Object entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null && entity instanceof Identity) {
             return ((Identity)entity).getUuid();
-        }
+       }
 
-        return resourceId;
-    }
+           return resourceId;
+       }
 
     @Override
     @DB
@@ -281,7 +285,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         for (ResourceTag resourceTag : resourceTags) {
             //1) validate the permissions
             Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-            _accountMgr.checkAccess(caller, null, false, owner);
+            _accountMgr.checkAccess(caller, null, owner);
             //2) Only remove tag if it matches key value pairs
             if (tags != null && !tags.isEmpty()) {
                 for (String key : tags.keySet()) {

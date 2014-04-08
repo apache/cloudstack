@@ -114,8 +114,11 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "is_portable")
     private boolean portable = false;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     protected IPAddressVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -126,26 +129,26 @@ public class IPAddressVO implements IpAddress {
     public IPAddressVO(Ip address, long dataCenterId, long macAddress, long vlanDbId, boolean sourceNat) {
         this.address = address;
         this.dataCenterId = dataCenterId;
-        this.vlanId = vlanDbId;
+        vlanId = vlanDbId;
         this.sourceNat = sourceNat;
-        this.allocatedInDomainId = null;
-        this.allocatedToAccountId = null;
-        this.allocatedTime = null;
-        this.state = State.Free;
+        allocatedInDomainId = null;
+        allocatedToAccountId = null;
+        allocatedTime = null;
+        state = State.Free;
         this.macAddress = macAddress;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public IPAddressVO(Ip address, long dataCenterId, Long networkId, Long vpcId, long physicalNetworkId, long sourceNetworkId, long vlanDbId, boolean portable) {
         this.address = address;
         this.dataCenterId = dataCenterId;
-        this.associatedWithNetworkId = networkId;
+        associatedWithNetworkId = networkId;
         this.vpcId = vpcId;
         this.physicalNetworkId = physicalNetworkId;
         this.sourceNetworkId = sourceNetworkId;
-        this.vlanId = vlanDbId;
+        vlanId = vlanDbId;
         this.portable = portable;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public long getMacAddress() {
@@ -158,7 +161,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     public void setDataCenterId(long dcId) {
-        this.dataCenterId = dcId;
+        dataCenterId = dcId;
     }
 
     @Override
@@ -182,7 +185,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     public void setAssociatedWithNetworkId(Long networkId) {
-        this.associatedWithNetworkId = networkId;
+        associatedWithNetworkId = networkId;
     }
 
     @Override
@@ -200,11 +203,11 @@ public class IPAddressVO implements IpAddress {
     }
 
     public void setAllocatedToAccountId(Long accountId) {
-        this.allocatedToAccountId = accountId;
+        allocatedToAccountId = accountId;
     }
 
     public void setAllocatedInDomainId(Long domainId) {
-        this.allocatedInDomainId = domainId;
+        allocatedInDomainId = domainId;
     }
 
     public void setSourceNat(boolean sourceNat) {
@@ -217,16 +220,16 @@ public class IPAddressVO implements IpAddress {
     }
 
     public void setAllocatedTime(Date allocated) {
-        this.allocatedTime = allocated;
+        allocatedTime = allocated;
     }
 
     @Override
     public long getVlanId() {
-        return this.vlanId;
+        return vlanId;
     }
 
     public void setVlanId(long vlanDbId) {
-        this.vlanId = vlanDbId;
+        vlanId = vlanDbId;
     }
 
     @Override
@@ -278,7 +281,7 @@ public class IPAddressVO implements IpAddress {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -300,7 +303,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     public void setSystem(boolean isSystem) {
-        this.system = isSystem;
+        system = isSystem;
     }
 
     @Override
@@ -333,5 +336,19 @@ public class IPAddressVO implements IpAddress {
     @Override
     public Long getNetworkId() {
         return sourceNetworkId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return IpAddress.class;
     }
 }

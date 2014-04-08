@@ -45,14 +45,14 @@ class TestCreateDiskOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke", "selfservice"])
     def test_01_create_disk_offering(self):
-        """Test to create disk offering"""
+        """Test to create disk offering
 
         # Validate the following:
         # 1. createDiskOfferings should return valid info for new offering
         # 2. The Cloud Database contains the valid information
-
+        """
         disk_offering = DiskOffering.create(
                                         self.apiclient,
                                         self.services["disk_offering"]
@@ -133,15 +133,16 @@ class TestDiskOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke", "selfservice"])
     def test_02_edit_disk_offering(self):
-        """Test to update existing disk offering"""
+        """Test to update existing disk offering
 
         # Validate the following:
         # 1. updateDiskOffering should return
         #    a valid information for newly created offering
 
         #Generate new name & displaytext from random data
+        """
         random_displaytext = random_gen()
         random_name = random_gen()
 
@@ -184,14 +185,14 @@ class TestDiskOfferings(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke", "selfservice"])
     def test_03_delete_disk_offering(self):
-        """Test to delete disk offering"""
+        """Test to delete disk offering
 
         # Validate the following:
         # 1. deleteDiskOffering should return
         #    a valid information for newly created offering
-
+        """
         self.disk_offering_2.delete(self.apiclient)
 
         self.debug("Deleted Disk offering with ID: %s" % 

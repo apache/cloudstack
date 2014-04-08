@@ -80,4 +80,12 @@ public class NicTO extends NetworkTO {
     public List<String> getNicSecIps() {
         return nicSecIps;
     }
+
+    public String getNetworkUuid() {
+        return super.getUuid();
+    }
+
+    public void setNetworkUuid(String uuid) {
+        super.setUuid(uuid);
+    }
 }

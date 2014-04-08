@@ -52,18 +52,19 @@ class TestHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @unittest.skip("skipped - our environments will not add hosts")
+    @attr(tags=["selfservice"])
     def test_01_clusters(self):
-        """Test Add clusters & hosts - XEN, KVM, VWARE
-        """
+        """Test Add clusters & hosts - simulator
+
 
         # Validate the following:
-        # 1. Verify hypervisortype returned by API is Xen/KVM/VWare
+        # 1. Verify hypervisortype returned by API is Simulator/Xen/KVM/VWare
         # 2. Verify that the cluster is in 'Enabled' allocation state
         # 3. Verify that the host is added successfully and in Up state
         #    with listHosts API response
 
-        #Create clusters with Hypervisor type XEN/KVM/VWare
+        #Create clusters with Hypervisor type Simulator/XEN/KVM/VWare
+        """
         for k, v in self.services["clusters"].items():
             cluster = Cluster.create(
                                      self.apiclient,

@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Snapshot;
 
 public class SnapshotEntityImpl implements SnapshotEntity {
 
@@ -183,4 +184,8 @@ public class SnapshotEntityImpl implements SnapshotEntity {
         return null;
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return Snapshot.class;
+    }
 }

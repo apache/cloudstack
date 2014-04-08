@@ -1429,8 +1429,8 @@
                                 return;
                             }
 
-                            //zone-wide-primary-storage is supported only for KVM and VMWare
-                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware") {
+                            //zone-wide-primary-storage is supported only for KVM and VMWare and Hyperv
+                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware" || selectedHypervisorObj.hypervisortype == "Hyperv") {
                                 var scope = [];
                                 scope.push({
                                     id: 'zone',
@@ -1485,6 +1485,10 @@
                                 items.push({
                                     id: "clvm",
                                     description: "CLVM"
+                                });
+                                items.push({
+                                    id: "gluster",
+                                    description: "Gluster"
                                 });
                                 args.response.success({
                                     data: items
@@ -1565,7 +1569,7 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>Path:');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>"label.path":');
 
                                 if (protocol == null)
                                     return;
@@ -1587,8 +1591,9 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.                                                  
-                                	$form.find('[rel=server]').css('display', 'block');                                    
+                               	    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
                                     
                                     $form.find('[rel=path]').css('display', 'block');                                   
@@ -1604,6 +1609,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1621,12 +1628,14 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "PreSetup") {                                   
                                     $form.find('[rel=server]').hide();                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
                                    
                                     $form.find('[rel=path]').css('display', 'block');                                    
-                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>SR Name-Label:");
+                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>'label.SR.name':");
                                    
                                     $form.find('[rel=smbUsername]').hide();
                                     $form.find('[rel=smbPassword]').hide();
@@ -1639,6 +1648,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "iscsi") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1656,6 +1667,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if ($(this).val() == "clvm") {                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1673,6 +1686,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "vmfs") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1690,6 +1705,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').css('display', 'block');
                                     $form.find('[rel=vCenterDataStore]').css('display', 'block');
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.                                   
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1707,6 +1724,27 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "gluster") {
+                                    $form.find('[rel=server]').css('display', 'block');
+                                    $form.find('[rel=server]').find(".value").find("input").val("");
+
+                                    $form.find('[rel=path]').hide();
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+
+                                    $form.find('[rel=volumegroup]').hide();
+
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').css('display', 'block');
                                 } else {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1722,6 +1760,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 }
                             });
 
@@ -1810,6 +1850,15 @@
                         isHidden: true
                     },
 
+                    //gluster
+                    glustervolume: {
+                        label: 'label.gluster.volume',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+
                     //always appear (begin)
                     storageTags: {
                         label: 'label.storage.tags',
@@ -1823,7 +1872,7 @@
             secondaryStorage: {
                 fields: {                    
                     provider: {
-                        label: 'Provider',
+                        label: 'label.provider',
                         select: function(args) {
                         	var storageproviders = [];  
                         	storageproviders.push({ id: '', description: ''});                         	
@@ -2074,20 +2123,20 @@
 
                     //SMB (begin)                                            
                     smbUsername: {
-                    	label: 'SMB Username',
+                    	label: 'label.smb.username',
                     	validation: {
                             required: true
                         }
                     },
                     smbPassword: {
-                    	label: 'SMB Password',
+                    	label: 'label.smb.password',
                     	isPassword: true,
                     	validation: {
                             required: true
                         }
                     },
                     smbDomain: {
-                    	label: 'SMB Domain',
+                    	label: 'label.smb.domain',
                     	validation: {
                             required: true
                         }
@@ -2140,7 +2189,7 @@
                     },
 
                     createNfsCache: {
-                        label: 'Create NFS Secondary Staging Store',
+                        label: 'label.create.nfs.secondary.staging.storage',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true
@@ -4420,7 +4469,10 @@
                     	var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
-                        url = smbURL(server, path, args.data.primaryStorage.smbUsername, args.data.primaryStorage.smbPassword, args.data.primaryStorage.smbDomain);
+                        url = smbURL(server, path);
+                        array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
+                        array1.push("&details[1].password=" + todb(args.data.primaryStorage.smbPassword));
+                        array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
                     } else if (args.data.primaryStorage.protocol == "PreSetup") {                        
                         var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
@@ -4529,12 +4581,18 @@
                     } else if (args.data.secondaryStorage.provider == 'SMB') {
                         var nfs_server = args.data.secondaryStorage.nfsServer;
                         var path = args.data.secondaryStorage.path;
-                        var url = smbURL(nfs_server, path, args.data.secondaryStorage.smbUsername, args.data.secondaryStorage.smbPassword, args.data.secondaryStorage.smbDomain);
+                        var url = smbURL(nfs_server, path);
 
                         $.extend(data, {
                             provider: args.data.secondaryStorage.provider,
                             zoneid: args.data.returnedZone.id,
-                            url: url
+                            url: url,
+                            'details[0].key': 'user',
+                            'details[0].value': args.data.secondaryStorage.smbUsername,
+                            'details[1].key': 'password',
+                            'details[1].value': args.data.secondaryStorage.smbPassword,
+                            'details[2].key': 'domain',
+                            'details[2].value': args.data.secondaryStorage.smbDomain
                         });
 
                         $.ajax({

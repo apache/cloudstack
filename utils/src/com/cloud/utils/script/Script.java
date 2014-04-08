@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,12 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.script;
+//
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
-import org.apache.log4j.Logger;
+package com.cloud.utils.script;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,6 +37,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
     private static final Logger s_logger = Logger.getLogger(Script.class);
@@ -164,6 +169,16 @@ public class Script implements Callable<String> {
         return buildCommandLine(command);
     }
 
+    static String stackTraceAsString(Throwable throwable) {
+        //TODO: a StringWriter is bit to heavy weight
+        try(StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out);) {
+            throwable.printStackTrace(writer);
+            return out.toString();
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 
@@ -256,28 +271,15 @@ public class Script implements Callable<String> {
             return error;
         } catch (SecurityException ex) {
             _logger.warn("Security Exception....not running as root?", ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } catch (Exception ex) {
             _logger.warn("Exception: " + buildCommandLine(command), ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
-                try {
-                    _process.getErrorStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getOutputStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getInputStream().close();
-                } catch (IOException ex) {
-                }
+                IOUtils.closeQuietly(_process.getErrorStream());
+                IOUtils.closeQuietly(_process.getOutputStream());
+                IOUtils.closeQuietly(_process.getInputStream());
                 _process.destroy();
             }
         }
@@ -315,23 +317,15 @@ public class Script implements Callable<String> {
             try {
                 result = interpreter.interpret(reader);
             } catch (IOException ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
+                result = stackTraceAsString(ex);
             } catch (Exception ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
+                result = stackTraceAsString(ex);
             } finally {
                 synchronized (this) {
                     done = true;
                     notifyAll();
                 }
-                try {
-                    reader.close();
-                } catch (IOException ex) {
-                }
-                ;
+                IOUtils.closeQuietly(reader);
             }
         }
 

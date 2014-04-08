@@ -25,6 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.utils.db.GenericDao;
 
@@ -159,5 +160,10 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     @Override
     public String getDomainPath() {
         return domainPath;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return ProjectInvitation.class;
     }
 }

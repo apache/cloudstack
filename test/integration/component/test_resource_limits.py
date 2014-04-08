@@ -197,7 +197,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_01_vm_per_account(self):
         """Test VM limit per account
         """
@@ -290,7 +290,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_02_publicip_per_account(self):
         """Test Public IP limit per account
         """
@@ -434,7 +434,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_03_snapshots_per_account(self):
         """Test Snapshot limit per account
         """
@@ -593,7 +593,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_04_volumes_per_account(self):
         """Test Volumes limit per account
         """
@@ -735,7 +735,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_05_templates_per_account(self):
         """Test Templates limit per account
         """
@@ -969,7 +969,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_01_vm_per_domain(self):
         """Test VM limit per domain
         """
@@ -1035,7 +1035,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_01_publicip_per_domain(self):
         """Test Public IP limit per domain
         """
@@ -1106,7 +1106,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_03_snapshots_per_domain(self):
         """Test Snapshot limit per domain
         """
@@ -1190,7 +1190,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"])
+    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
     def test_04_volumes_per_domain(self):
         """Test Volumes limit per domain
         """
@@ -1243,7 +1243,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_05_templates_per_domain(self):
         """Test Templates limit per domain
         """

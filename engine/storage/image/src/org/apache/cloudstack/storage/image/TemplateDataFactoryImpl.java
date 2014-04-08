@@ -23,9 +23,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -34,6 +31,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -104,6 +103,17 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             store = storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
+    }
+
+    @Override
+    public TemplateInfo getReadyTemplateOnImageStore(long templateId, Long zoneId) {
+        TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZoneReady(templateId, zoneId);
+        if (tmplStore != null) {
+            DataStore store = storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.Image);
+            return this.getTemplate(templateId, store);
+        } else {
+            return null;
+        }
     }
 
     @Override

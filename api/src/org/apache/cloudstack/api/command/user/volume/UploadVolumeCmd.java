@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -38,7 +39,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class)
+@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UploadVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
@@ -120,7 +122,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     }
 
     public String getImageStoreUuid() {
-        return this.imageStoreUuid;
+        return imageStoreUuid;
     }
 
     /////////////////////////////////////////////////////
@@ -131,24 +133,24 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
 
-        Volume volume = _volumeService.uploadVolume(this);
-        if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload volume");
-        }
+            Volume volume = _volumeService.uploadVolume(this);
+            if (volume != null){
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload volume");
+            }
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+           return s_name;
     }
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -158,7 +160,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "uploading volume: " + getVolumeName() + " in the zone " + getZoneId();
+        return  "uploading volume: " + getVolumeName() + " in the zone " + getZoneId();
     }
 
     @Override

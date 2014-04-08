@@ -41,7 +41,8 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addF5LoadBalancer", responseObject = F5LoadBalancerResponse.class, description = "Adds a F5 BigIP load balancer device")
+@APICommand(name = "addF5LoadBalancer", responseObject = F5LoadBalancerResponse.class, description = "Adds a F5 BigIP load balancer device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddF5LoadBalancerCmd.class.getName());

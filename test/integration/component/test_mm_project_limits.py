@@ -30,10 +30,11 @@ from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
 					                    wait_for_cleanup,
-                                        find_suitable_host,
+                                        findSuitableHostForMigration,
                                         get_resource_type
                                         )
 from marvin.lib.utils import cleanup_resources
+from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
     """Test memory resource limit services
@@ -216,7 +217,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                         "Check project name from list response")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_project_vmlifecycle_start_stop_instance(self):
 
         # Validate the following
@@ -273,7 +274,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                          "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_02_project_vmlifecycle_migrate_instance(self):
 
         # Validate the following
@@ -292,7 +293,9 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         resource_count = project_list[0].memorytotal
         self.debug(resource_count)
 
-        host = find_suitable_host(self.apiclient, self.vm)
+        host = findSuitableHostForMigration(self.apiclient, self.vm.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
         self.debug("Migrating instance: %s to host: %s" %
                                                     (self.vm.name, host.name))
         try:
@@ -312,7 +315,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                          "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_project_vmlifecycle_delete_instance(self):
 
         # Validate the following

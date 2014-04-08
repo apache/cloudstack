@@ -26,6 +26,7 @@ ALTER TABLE `cloud`.`disk_offering` ADD `cache_mode` VARCHAR( 16 ) DEFAULT 'none
 
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='150' WHERE hypervisor_version='6.1.0';
 UPDATE `cloud`.`hypervisor_capabilities` set max_guests_limit='500' WHERE hypervisor_version='6.2.0';
+UPDATE `cloud`.`hypervisor_capabilities` set storage_motion_supported='1' WHERE hypervisor_version='6.2' AND hypervisor_type="Hyperv";
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
@@ -44,6 +45,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
@@ -75,6 +77,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.customized_iops,
+        disk_offering.min_iops,
+        disk_offering.max_iops,
+        disk_offering.hv_ss_reserve,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
@@ -125,6 +131,7 @@ CREATE VIEW `cloud`.`volume_view` AS
     volumes.display_volume,
         volumes.format,
     volumes.path,
+        volumes.chain_info,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -224,7 +231,7 @@ CREATE TABLE `cloud`.`user_details` (
   `user_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
   `value` varchar(1024) NOT NULL,
-  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_details__user_id` FOREIGN KEY `fk_user_details__user_id`(`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -446,4 +453,314 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
+-- ACL DB schema        
+CREATE TABLE `cloud`.`iam_group` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(255) default NULL,
+  `uuid` varchar(40),
+  `path` varchar(255) NOT NULL,  
+  `account_id` bigint unsigned NOT NULL,
+  `view` varchar(40) default 'User' COMMENT 'response review this group account should see for result',
+  `removed` datetime COMMENT 'date the group was removed',
+  `created` datetime COMMENT 'date the group was created',
+  PRIMARY KEY  (`id`),
+  INDEX `i_iam_group__removed`(`removed`),
+  CONSTRAINT `uc_iam_group__uuid` UNIQUE (`uuid`)  
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`iam_group_account_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `group_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `removed` datetime COMMENT 'date the account was removed from the group',
+  `created` datetime COMMENT 'date the account was assigned to the group',  
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_iam_group_vm_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `iam_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
+
+
+CREATE TABLE `cloud`.`iam_policy` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `uuid` varchar(40) DEFAULT NULL,
+  `path` varchar(255) NOT NULL,
+  `account_id` bigint unsigned NOT NULL,  
+  `removed` datetime DEFAULT NULL COMMENT 'date the role was removed',
+  `created` datetime DEFAULT NULL COMMENT 'date the role was created',
+  `policy_type` varchar(64) DEFAULT 'Static' COMMENT 'Static or Dynamic',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `uc_iam_policy__uuid` (`uuid`),
+  KEY `i_iam_policy__removed` (`removed`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`iam_group_policy_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `group_id` bigint(20) unsigned NOT NULL,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the group',
+  `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the group',
+  PRIMARY KEY (`id`),
+  KEY `fk_iam_group_policy_map__group_id` (`group_id`),
+  KEY `fk_iam_group_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_group_policy_map__group_id` FOREIGN KEY (`group_id`) REFERENCES `iam_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`iam_account_policy_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the account',
+  `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the account',
+  PRIMARY KEY (`id`),
+  KEY `fk_iam_account_policy_map__account_id` (`account_id`),
+  KEY `fk_iam_account_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_account_policy_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_iam_account_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`iam_policy_permission` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `action` varchar(100) NOT NULL,
+  `resource_type` varchar(100) DEFAULT NULL,
+  `scope_id` bigint(20) DEFAULT NULL,
+  `scope` varchar(40) DEFAULT NULL,
+  `access_type` varchar(40) DEFAULT NULL,
+  `permission`  varchar(40) NOT NULL COMMENT 'Allow or Deny',
+  `recursive` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if this permission applies recursively in a group/policy hierarchy',
+  `removed` datetime DEFAULT NULL COMMENT 'date the permission was revoked',
+  `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `fk_iam_policy_permission__policy_id` (`policy_id`),
+  CONSTRAINT `fk_iam_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `iam_policy` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`iam_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), '/', 1, Now(), 'Dynamic');
+
+
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`iam_group` (id, name, description, uuid, path, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), '/', 1, Now());
+
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(1, 1, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(2, 2, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(3, 3, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
+INSERT INTO `cloud`.`iam_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
+
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('NetworkManager', 'DEFAULT', 'management-server', 'vm.network.nic.max.secondary.ipaddresses', NULL, 'Specify the number of secondary ip addresses per nic per vm', '256') ON DUPLICATE KEY UPDATE category='NetworkManager';
+
+CREATE TABLE `cloud`.`autoscale_vmprofile_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `autoscale_vmprofile_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_autoscale_vmprofile_details__autoscale_vmprofile_id` FOREIGN KEY `fk_autoscale_vmprofile_details__autoscale_vmprofile_id`(`autoscale_vmprofile_id`) REFERENCES `autoscale_vmprofiles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `autoscale_vmgroup_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_details__autoscale_vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_details__autoscale_vmgroup_id`(`autoscale_vmgroup_id`) REFERENCES `autoscale_vmgroups`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+ALTER TABLE `cloud`.`vm_snapshot_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+
+ALTER TABLE `cloud`.`data_center_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`data_center_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`service_offering_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`service_offering_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`disk_offering_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`disk_offering_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`firewall_rule_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`firewall_rule_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_acl_item_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_acl_item_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_acl_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_acl_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`network_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`network_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`nic_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`nic_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`storage_pool_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`storage_pool_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`remote_access_vpn_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`remote_access_vpn_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_customer_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_customer_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_vpn_connection_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_vpn_connection_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`s2s_vpn_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`s2s_vpn_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_ip_address_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`user_ip_address_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_vm_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`user_vm_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vm_template_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vm_template_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`volume_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`volume_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vpc_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vpc_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`vpc_gateway_details` CHANGE `display` `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user';
+UPDATE `cloud`.`vpc_gateway_details` set `display`=1 where id> 0;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the ip address can be displayed to the end user';
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the vpc can be displayed to the end user';
+ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the rule can be displayed to the end user';
+ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`network_acl` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`s2s_vpn_connection` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`s2s_vpn_gateway` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (227, UUID(), 1, 'CentOS 6.5 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (228, UUID(), 1, 'CentOS 6.5 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (229, UUID(), 6, 'Windows 8.1 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (230, UUID(), 6, 'Windows 8.1 (32-bit)');
+
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8.1 (64-bit)', 229);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8.1 (64-bit)', 229);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8.1 (32-bit)', 230);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8.1 (32-bit)', 230);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (32-bit)', 227);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (32-bit)', 227);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (64-bit)', 228);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (64-bit)', 228);
+
+CREATE TABLE `cloud`.`op_router_monitoring_services` (
+  `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
+  `router_name` varchar(255) NOT NULL COMMENT 'Name of the Virtual Router',
+  `last_alert_timestamp` varchar(255) NOT NULL COMMENT 'Timestamp of the last alert received from Virtual Router',
+   PRIMARY KEY (`vm_id`),
+   CONSTRAINT `fk_virtual_router__id` FOREIGN KEY `fk_virtual_router__id` (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`event` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'True if the detail can be displayed to the end user';
+
+DROP VIEW IF EXISTS `cloud`.`event_view`;
+CREATE VIEW `cloud`.`event_view` AS
+    select
+        event.id,
+        event.uuid,
+        event.type,
+        event.state,
+        event.description,
+        event.created,
+        event.level,
+        event.parameters,
+        event.start_id,
+        eve.uuid start_uuid,
+        event.user_id,
+        event.archived,
+        event.display,
+        user.username user_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name
+    from
+        `cloud`.`event`
+            inner join
+        `cloud`.`account` ON event.account_id = account.id
+            inner join
+        `cloud`.`domain` ON event.domain_id = domain.id
+            inner join
+        `cloud`.`user` ON event.user_id = user.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = event.account_id
+            left join
+        `cloud`.`event` eve ON event.start_id = eve.id;
+
+
+DROP TABLE IF EXISTS `cloud`.`host_gpu_groups`;
+CREATE TABLE `cloud`.`host_gpu_groups` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `group_name` varchar(255) NOT NULL,
+  `host_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_host_gpu_groups__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`vgpu_types`;
+CREATE TABLE `cloud`.`vgpu_types` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `gpu_group_id` bigint(20) unsigned NOT NULL,
+  `vgpu_type` varchar(40) NOT NULL COMMENT 'vgpu type supported by this gpu group',
+  `remaining_vm_capacity` bigint(20) unsigned DEFAULT NULL COMMENT 'remaining vgpu can be created with this vgpu_type on the given gpu group',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vgpu_types__gpu_group_id` FOREIGN KEY (`gpu_group_id`) REFERENCES `host_gpu_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB CHARSET=utf8;
+
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `hypervisor_version` varchar(32) NOT NULL DEFAULT 'default' COMMENT 'Hypervisor version for this mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `uuid` varchar(40) COMMENT 'UUID of the mapping';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD CONSTRAINT `uc_guest_os_hypervisor__uuid` UNIQUE (`uuid`);
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `created` datetime COMMENT 'Time when mapping was created';
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD COLUMN `removed` datetime COMMENT 'Time when mapping was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os_hypervisor` SET `uuid` = UUID();
+UPDATE `cloud`.`guest_os_hypervisor` SET `created` = now();
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `created` datetime COMMENT 'Time when Guest OS was created in system';
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `removed` datetime COMMENT 'Time when Guest OS was removed if deleted, else NULL';
+UPDATE `cloud`.`guest_os` SET `created` = now();
+ALTER TABLE `cloud`.`vm_reservation` ADD COLUMN `deployment_planner` varchar(40) DEFAULT NULL COMMENT 'Preferred deployment planner for the vm';
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_distributed_router boolean default false;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN uses_distributed_router  boolean default false;
+INSERT INTO `cloud`.`storage_pool_details` (pool_id,name,value,display) SELECT storage_pool.id,data_center_details.name,data_center_details.value,data_center_details.display FROM `cloud`.`storage_pool` JOIN `cloud`.`data_center_details` ON data_center_details.dc_id=storage_pool.data_center_id WHERE data_center_details.name = "storage.overprovisioning.factor";
+DELETE FROM `cloud`.`data_center_details` WHERE name="storage.overprovisioning.factor";
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
+ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_region_level_vpc boolean default false;
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_streched_l2 boolean default false;
+ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;

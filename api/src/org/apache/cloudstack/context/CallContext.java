@@ -55,6 +55,7 @@ public class CallContext {
     private String eventDescription;
     private String eventDetails;
     private String eventType;
+    private boolean isEventDisplayEnabled = true; // default to true unless specifically set
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -131,7 +132,10 @@ public class CallContext {
 
     protected static CallContext register(User callingUser, Account callingAccount, Long userId, Long accountId, String contextId) {
         /*
+<<<<<<< HEAD
                 Unit tests will have multiple times of setup/tear-down call to this, remove assertions to all unit test to run
+=======
+>>>>>>> a7a8a19... BUG-ID: CS-19295: add job path to help associate an API job to related internal job. Reviewed-By: Self
                 assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
                 if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
                     throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
@@ -152,6 +156,14 @@ public class CallContext {
         s_currentContextStack.get().push(callingContext);
 
         return callingContext;
+    }
+
+    public static CallContext registerPlaceHolderContext() {
+        CallContext context = new CallContext(0, 0, UUID.randomUUID().toString());
+        s_currentContext.set(context);
+
+        s_currentContextStack.get().push(context);
+        return context;
     }
 
     public static CallContext register(User callingUser, Account callingAccount) {
@@ -228,7 +240,7 @@ public class CallContext {
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
         while ((sessionIdOnStack = NDC.pop()) != null) {
-            if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+            if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
             if (s_logger.isTraceEnabled()) {
@@ -241,6 +253,8 @@ public class CallContext {
 
         if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
+        } else {
+            s_currentContext.set(null);
         }
 
         return context;
@@ -288,6 +302,18 @@ public class CallContext {
 
     public void setEventDescription(String eventDescription) {
         this.eventDescription = eventDescription;
+    }
+
+    /**
+     * Whether to display the event to the end user.
+     * @return true - if the event is to be displayed to the end user, false otherwise.
+     */
+    public boolean isEventDisplayEnabled() {
+        return isEventDisplayEnabled;
+    }
+
+    public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
+        isEventDisplayEnabled = eventDisplayEnabled;
     }
 
     public static void setActionEventInfo(String eventType, String description) {

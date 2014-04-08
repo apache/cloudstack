@@ -51,7 +51,9 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createServiceInstance",
             description = "Creates a system virtual-machine that implements network services",
-            responseObject = ServiceInstanceResponse.class)
+            responseObject = ServiceInstanceResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createserviceinstanceresponse";
 
@@ -184,7 +186,7 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

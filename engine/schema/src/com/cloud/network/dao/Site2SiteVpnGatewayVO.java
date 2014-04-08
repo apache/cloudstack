@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.db.GenericDao;
 
+
 @Entity
 @Table(name = ("s2s_vpn_gateway"))
 public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
@@ -55,13 +56,16 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public Site2SiteVpnGatewayVO() {
     }
 
     public Site2SiteVpnGatewayVO(long accountId, long domainId, long addrId, long vpcId) {
-        this.uuid = UUID.randomUUID().toString();
-        this.setAddrId(addrId);
-        this.setVpcId(vpcId);
+        uuid = UUID.randomUUID().toString();
+        setAddrId(addrId);
+        setVpcId(vpcId);
         this.accountId = accountId;
         this.domainId = domainId;
     }
@@ -111,5 +115,23 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Site2SiteVpnGateway.class;
     }
 }

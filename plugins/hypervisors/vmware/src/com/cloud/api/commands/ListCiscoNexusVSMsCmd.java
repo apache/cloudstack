@@ -45,7 +45,8 @@ import com.cloud.user.Account;
 
 @APICommand(name = "listCiscoNexusVSMs",
             responseObject = CiscoNexusVSMResponse.class,
-            description = "Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
+            description = "Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster",
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
     /**

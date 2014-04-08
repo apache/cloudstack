@@ -42,7 +42,8 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDevices", responseObject = NiciraNvpDeviceResponse.class, description = "Lists Nicira NVP devices")
+@APICommand(name = "listNiciraNvpDevices", responseObject = NiciraNvpDeviceResponse.class, description = "Lists Nicira NVP devices",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final String s_name = "listniciranvpdeviceresponse";
 

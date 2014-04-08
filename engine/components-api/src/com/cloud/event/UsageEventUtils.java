@@ -71,6 +71,15 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
         Long size, Long virtualSize, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
@@ -81,6 +90,13 @@ public class UsageEventUtils {
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, String entityType, String entityUUID, boolean diplayResource) {
+        if (diplayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName);
+            publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+        }
+    }
+
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType,
         boolean isSystem, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem);
@@ -88,9 +104,12 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
-        String resourceType, String entityType, String entityUUID) {
-        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
+        String resourceType, String entityType, String entityUUID, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
+        }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long vmId, long securityGroupId, String entityType, String entityUUID) {
@@ -99,9 +118,12 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
-        String resourceType, String entityType, String entityUUID, Map<String, String> details) {
-        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType, details);
+        String resourceType, String entityType, String entityUUID, Map<String, String> details, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType, details);
+        }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
     }
 
     private static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,

@@ -30,11 +30,12 @@ from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
 					                    wait_for_cleanup,
-                                        find_suitable_host,
+                                        findSuitableHostForMigration,
                                         get_resource_type,
                                         update_resource_count
                                         )
 from marvin.lib.utils import cleanup_resources
+from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 class Services:
     """Test memory resource limit services
@@ -209,7 +210,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               domainid=self.child_do_admin_2.domainid)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_change_service_offering(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -348,7 +349,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_02_migrate_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -389,7 +390,9 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count, expected_resource_count,
                          "Resource count should match with the expected resource count")
 
-            host = find_suitable_host(self.apiclient, vm)
+            host = findSuitableHostForMigration(self.apiclient, vm.id)
+            if host is None:
+                self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
             self.debug("Migrating instance: %s to host: %s" %
                                                         (vm.name, host.name))
             try:
@@ -407,7 +410,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                             "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_delete_vm(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -466,7 +469,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_04_deploy_multiple_vm(self):
         """Test Deploy multiple VM with specified RAM & verify the usage"""
 
@@ -681,7 +684,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                  }
         return users
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_multiple_child_domains(self):
         """Test memory limits with multiple child domains"""
 

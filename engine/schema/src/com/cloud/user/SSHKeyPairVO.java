@@ -114,4 +114,8 @@ public class SSHKeyPairVO implements SSHKeyPair {
         this.privateKey = privateKey;
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return SSHKeyPair.class;
+    }
 }

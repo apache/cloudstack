@@ -37,7 +37,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
 
-@APICommand(name = "destroyLunOnFiler", description = "Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
+@APICommand(name = "destroyLunOnFiler", description = "Destroy a LUN", responseObject = DeleteLUNCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyLunCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());

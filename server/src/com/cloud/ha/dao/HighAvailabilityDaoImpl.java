@@ -49,6 +49,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
     private final SearchBuilder<HaWorkVO> ReleaseSearch;
     private final SearchBuilder<HaWorkVO> FutureHaWorkSearch;
     private final SearchBuilder<HaWorkVO> RunningHaWorkSearch;
+    private final SearchBuilder<HaWorkVO> PendingHaWorkSearch;
 
     protected HighAvailabilityDaoImpl() {
         super();
@@ -106,6 +107,22 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         RunningHaWorkSearch.and("taken", RunningHaWorkSearch.entity().getDateTaken(), Op.NNULL);
         RunningHaWorkSearch.and("step", RunningHaWorkSearch.entity().getStep(), Op.NIN);
         RunningHaWorkSearch.done();
+
+        PendingHaWorkSearch = createSearchBuilder();
+        PendingHaWorkSearch.and("instance", PendingHaWorkSearch.entity().getInstanceId(), Op.EQ);
+        PendingHaWorkSearch.and("type", PendingHaWorkSearch.entity().getType(), Op.EQ);
+        PendingHaWorkSearch.and("step", PendingHaWorkSearch.entity().getStep(), Op.NIN);
+        PendingHaWorkSearch.done();
+    }
+
+    @Override
+    public List<HaWorkVO> listPendingHaWorkForVm(long vmId) {
+        SearchCriteria<HaWorkVO> sc = PendingHaWorkSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setParameters("type", WorkType.HA);
+        sc.setParameters("step", Step.Done, Step.Error, Step.Cancelled);
+
+        return search(sc, null);
     }
 
     @Override

@@ -275,7 +275,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_01_deploy_vms_in_network(self):
         """ Test deploy VMs in VPC networks
         """
@@ -489,7 +489,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_02_deploy_vms_delete_network(self):
         """ Test deploy VMs in VPC networks and delete one of the network
         """
@@ -741,7 +741,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_03_deploy_vms_delete_add_network(self):
         """ Test deploy VMs, delete one of the network and add another one
         """
@@ -1010,7 +1010,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_04_deploy_vms_delete_add_network_noLb(self):
         """ Test deploy VMs, delete one network without LB and add another one
         """
@@ -1304,7 +1304,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_05_create_network_max_limit(self):
         """ Test create networks in VPC upto maximum limit for hypervisor
         """
@@ -1475,7 +1475,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_06_delete_network_vm_running(self):
         """ Test delete network having running instances in VPC
         """
@@ -1717,7 +1717,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "selfservice"])
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """

@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 
-@APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class)
+@APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class, entityType = {VpnUser.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
@@ -96,7 +97,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -135,7 +136,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
         vpnResponse.setResponseName(getCommandName());
         vpnResponse.setObjectName("vpnuser");
-        this.setResponseObject(vpnResponse);
+        setResponseObject(vpnResponse);
     }
 
     @Override

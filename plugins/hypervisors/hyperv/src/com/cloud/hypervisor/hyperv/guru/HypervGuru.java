@@ -34,6 +34,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.hypervisor.hyperv.manager.HypervManager;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -53,7 +54,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject HypervManager _hypervMgr;
     @Inject NetworkDao _networkDao;
     @Inject NetworkModel _networkMgr;
-
+    int MaxNicSupported = 8;
     @Override
     public final HypervisorType getHypervisorType() {
         return HypervisorType.Hyperv;
@@ -74,18 +75,22 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
         if(vm.getVirtualMachine().getType() ==  VirtualMachine.Type.DomainRouter) {
 
             NicProfile publicNicProfile = null;
+            NicProfile controlNicProfile = null;
+            NicProfile profile = null;
             for(NicProfile nicProfile : nicProfiles) {
                 if(nicProfile.getTrafficType() == TrafficType.Public) {
                     publicNicProfile = nicProfile;
                     break;
                 }
+                else if (nicProfile.getTrafficType() == TrafficType.Control) {
+                    controlNicProfile = nicProfile;
+                }
             }
 
-            if(publicNicProfile != null) {
+            if(publicNicProfile != null || controlNicProfile != null) {
                 NicTO[] nics = to.getNics();
-
                 // reserve extra NICs
-                NicTO[] expandedNics = new NicTO[nics.length +  _hypervMgr.getRouterExtraPublicNics()];
+                NicTO[] expandedNics = new NicTO[MaxNicSupported];
                 int i = 0;
                 int deviceId = -1;
                 for(i = 0; i < nics.length; i++) {
@@ -95,17 +100,27 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                 }
                 deviceId++;
 
-                long networkId = publicNicProfile.getNetworkId();
-                NetworkVO network = _networkDao.findById(networkId);
+                long networkId = 0;
+                if(publicNicProfile != null ) {
+                    networkId= publicNicProfile.getNetworkId();
+                    profile = publicNicProfile;
+                }
+                else {
+                    networkId =  controlNicProfile.getNetworkId();
+                    profile = controlNicProfile;
+                }
 
-                for(; i < nics.length + _hypervMgr.getRouterExtraPublicNics(); i++) {
+                NetworkVO network = _networkDao.findById(networkId);
+                // for Hyperv Hot Nic plug is not supported and it will support upto 8 nics.
+                // creating the VR with extra nics (actual nics(3) + extra nics) will be 8
+                for(; i < MaxNicSupported; i++) {
                     NicTO nicTo = new NicTO();
                     nicTo.setDeviceId(deviceId++);
-                    nicTo.setBroadcastType(publicNicProfile.getBroadcastType());
-                    nicTo.setType(publicNicProfile.getTrafficType());
+                    nicTo.setBroadcastType(BroadcastDomainType.Vlan);
+                    nicTo.setType(TrafficType.Public);
                     nicTo.setIp("0.0.0.0");
                     nicTo.setNetmask("255.255.255.255");
-                    nicTo.setName(publicNicProfile.getName());
+                    nicTo.setName(profile.getName());
 
                     try {
                         String mac = _networkMgr.getNextAvailableMacAddressInNetwork(networkId);
@@ -113,16 +128,16 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                     } catch (InsufficientAddressCapacityException e) {
                         throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
                     }
-                    nicTo.setDns1(publicNicProfile.getDns1());
-                    nicTo.setDns2(publicNicProfile.getDns2());
-                    if (publicNicProfile.getGateway() != null) {
+                    nicTo.setDns1(profile.getDns1());
+                    nicTo.setDns2(profile.getDns2());
+                    if (publicNicProfile != null && publicNicProfile.getGateway() != null) {
                         nicTo.setGateway(publicNicProfile.getGateway());
                     } else {
                         nicTo.setGateway(network.getGateway());
                     }
                     nicTo.setDefaultNic(false);
-                    nicTo.setBroadcastUri(publicNicProfile.getBroadCastUri());
-                    nicTo.setIsolationuri(publicNicProfile.getIsolationUri());
+                    nicTo.setBroadcastUri(profile.getBroadCastUri());
+                    nicTo.setIsolationuri(profile.getIsolationUri());
 
                     Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
                     nicTo.setNetworkRateMbps(networkRate);
@@ -136,9 +151,12 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
             for(NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
-            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-            String bootArgs = to.getBootArgs();
-            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+
+            if (!sbMacSequence.toString().isEmpty()) {
+                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+                String bootArgs = to.getBootArgs();
+                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            }
 
         }
 

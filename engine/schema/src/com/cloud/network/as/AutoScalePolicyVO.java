@@ -77,7 +77,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
 
     public AutoScalePolicyVO(long domainId, long accountId, int duration,
             int quietTime, Date lastQuiteTime, String action) {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.domainId = domainId;
         this.accountId = accountId;
         this.duration = duration;
@@ -150,4 +150,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     public void setLastQuiteTime(Date lastQuiteTime) {
         this.lastQuiteTime = lastQuiteTime;
     }
+
+    @Override
+    public Class<?> getEntityType() {
+        return AutoScalePolicy.class;
+    }
+
 }

@@ -928,7 +928,7 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_01_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
@@ -1011,7 +1011,7 @@ class TestVolumes(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_02_detach_volume(self):
         """Detach a Volume attached to a VM
         """
@@ -1058,7 +1058,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_03_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
@@ -1085,7 +1085,7 @@ class TestVolumes(cloudstackTestCase):
                     )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "basic", "eip", "sg"])
+    @attr(tags=["advanced", "advancedns", "simulator", "basic", "eip", "sg", "selfservice"])
     def test_create_volume_under_domain(self):
         """Create a volume under a non-root domain as non-root-domain user
 

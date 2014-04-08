@@ -469,4 +469,10 @@ public interface UserVmService {
      */
     String getVmUserData(long vmId);
 
+    /**
+     * determin whether the uservm should be visible to the end user
+     * @return  value of the display flag
+     */
+    public boolean isDisplayResourceEnabled(Long vmId);
+
 }

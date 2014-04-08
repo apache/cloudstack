@@ -43,20 +43,25 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    boolean display;
+    private boolean display = true;
 
     protected ServiceOfferingDetailsVO() {
     }
 
-    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value) {
+    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value, boolean display) {
         this.resourceId = serviceOfferingId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
     public long getResourceId() {
         return resourceId;
+    }
+
+    public void setResourceId(long serviceOfferingId) {
+        this.resourceId = serviceOfferingId;
     }
 
     @Override

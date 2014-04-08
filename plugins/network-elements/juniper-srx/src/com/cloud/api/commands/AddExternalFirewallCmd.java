@@ -35,7 +35,8 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addExternalFirewall", description = "Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addExternalFirewall", description = "Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalFirewallCmd.class.getName());
     private static final String s_name = "addexternalfirewallresponse";

@@ -43,7 +43,8 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listF5LoadBalancers", responseObject = F5LoadBalancerResponse.class, description = "lists F5 load balancer devices")
+@APICommand(name = "listF5LoadBalancers", responseObject = F5LoadBalancerResponse.class, description = "lists F5 load balancer devices",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListF5LoadBalancersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancersCmd.class.getName());
     private static final String s_name = "listf5loadbalancerresponse";

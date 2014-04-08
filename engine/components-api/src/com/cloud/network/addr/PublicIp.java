@@ -196,7 +196,7 @@ public class PublicIp implements PublicIpAddress {
 
     @Override
     public Long getVpcId() {
-        return _addr.getVpcId();
+       return _addr.getVpcId();
     }
 
     @Override
@@ -229,6 +229,16 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public Long getIpMacAddress() {
-        return _addr.getMacAddress();
+        return  _addr.getMacAddress();
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return _addr.isDisplay();
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return PublicIpAddress.class;
     }
 }

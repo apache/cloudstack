@@ -48,8 +48,8 @@ public class SecurityGroupWorkTracker {
         synchronized (this) {
             Integer outstanding = _unackedMessages.get(agentId);
             if (outstanding == null) {
-                outstanding = new Integer(0);
-                _unackedMessages.put(new Long(agentId), outstanding);
+                outstanding = 0;
+                _unackedMessages.put(agentId, outstanding);
             }
             currLength = outstanding.intValue();
             if (currLength + 1 > _bufferLength) {
@@ -58,7 +58,7 @@ public class SecurityGroupWorkTracker {
                 s_logger.debug("SecurityGroupManager: dropping a message because there are more than " + currLength + " outstanding messages, total dropped=" + discarded);
                 return false;
             }
-            _unackedMessages.put(new Long(agentId), ++currLength);
+            _unackedMessages.put(agentId, ++currLength);
         }
         return true;
     }

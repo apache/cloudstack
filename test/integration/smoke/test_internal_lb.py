@@ -56,13 +56,13 @@ class TestInternalLb(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["smoke", "advanced"])
+    @attr(tags=["smoke", "advanced", "provisioning"])
     def test_internallb(self):
         """Test create, delete, assign, remove of internal loadbalancer
-        """
-
-        #1) Create and enable network offering with Internal Lb vm service
+        """   
+           #1) Create and enable network offering with Internal Lb vm service
         self.networkOffering = NetworkOffering.create(self.apiclient, self.services["network_offering_internal_lb"], conservemode=False)
+        #TODO: SIMENH:modify this test to verify lb rules by sending request from another tier
         self.networkOffering.update(self.apiclient, state="Enabled")
 
         #2) Create VPC and network in it

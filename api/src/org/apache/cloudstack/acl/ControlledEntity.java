@@ -29,4 +29,5 @@ public interface ControlledEntity extends OwnedBy, PartOf {
         Account, Domain
     }
 
+    Class<?> getEntityType();
 }

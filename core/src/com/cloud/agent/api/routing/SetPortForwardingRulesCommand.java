@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import java.util.List;
-
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+
+import java.util.List;
 
 public class SetPortForwardingRulesCommand extends NetworkElementCommand {
     PortForwardingRuleTO[] rules;
@@ -37,4 +37,10 @@ public class SetPortForwardingRulesCommand extends NetworkElementCommand {
     public PortForwardingRuleTO[] getRules() {
         return rules;
     }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
+    }
 }
+

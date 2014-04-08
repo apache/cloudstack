@@ -30,10 +30,11 @@ from marvin.lib.base import (
 from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        find_suitable_host,
+                                        findSuitableHostForMigration,
                                         get_resource_type
                                         )
 from marvin.lib.utils import cleanup_resources
+from marvin.codes import ERROR_NO_HOST_FOR_MIGRATION
 
 
 class Services:
@@ -176,7 +177,7 @@ class TestCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to deploy an instance: %s" % e)
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_multiplecore_start_stop_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -231,7 +232,7 @@ class TestCPULimits(cloudstackTestCase):
                          "Resource count should be same after stopping the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_02_multiplecore_migrate_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -252,7 +253,9 @@ class TestCPULimits(cloudstackTestCase):
         self.assertEqual(resource_count, expected_resource_count,
                          "Resource count should match with the expected resource count")
 
-        host = find_suitable_host(self.apiclient, self.vm)
+        host = findSuitableHostForMigration(self.apiclient, self.vm.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
         self.debug("Migrating instance: %s to host: %s" % (self.vm.name, host.name))
         try:
             self.vm.migrate(self.apiclient, host.id)
@@ -270,7 +273,7 @@ class TestCPULimits(cloudstackTestCase):
                          "Resource count should be same after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_multiplecore_delete_instance(self):
         """Test Deploy VM with multiple core CPU & verify the usage"""
 
@@ -306,7 +309,7 @@ class TestCPULimits(cloudstackTestCase):
         self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_04_deploy_multiple_vm_with_multiple_cpus(self):
         """Test Deploy multiple VM with 4 core CPU & verify the usage"""
 
@@ -462,7 +465,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_01_stop_start_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -534,7 +537,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
     def test_02_migrate_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -573,7 +576,9 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         self.assertEqual(resource_count, expected_resource_count,
             "Initial resource count should with the expected resource count")
 
-        host = find_suitable_host(self.apiclient, vm)
+        host = findSuitableHostForMigration(self.apiclient, vm.id)
+        if host is None:
+            self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
         self.debug("Migrating instance: %s to host: %s" %
                    (vm.name, host.name))
         try:
@@ -592,7 +597,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             "Resource count should be same after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"])
+    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
     def test_03_delete_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -728,7 +733,9 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.assertEqual(resource_count_after_delete, expected_resource_count,
                 "Resource count should be less than before after deleting the instance")
 
-            host = find_suitable_host(self.apiclient, vm_2)
+            host = findSuitableHostForMigration(self.apiclient, vm_2.id)
+            if host is None:
+                self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)
             self.debug("Migrating instance: %s to host: %s" % (vm_2.name,
                                                                host.name))
             try:

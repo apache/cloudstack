@@ -31,9 +31,10 @@ public interface NetworkACLService {
      * @param name
      * @param description
      * @param vpcId
+     * @param forDisplay TODO
      * @return
      */
-    NetworkACL createNetworkACL(String name, String description, long vpcId);
+    NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay);
 
     /**
      * Get Network ACL with specified Id
@@ -114,11 +115,13 @@ public interface NetworkACLService {
      * @param sourcePortEnd
      * @param icmpCode
      * @param icmpType
+     * @param newUUID TODO
+     * @param forDisplay TODO
      * @return
      * @throws ResourceUnavailableException
      */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID, Boolean forDisplay) throws ResourceUnavailableException;
 
     /**
      * Associates ACL with specified Network
@@ -128,5 +131,7 @@ public interface NetworkACLService {
      * @throws ResourceUnavailableException
      */
     boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException;
+
+    NetworkACL updateNetworkACL(Long id, String customId, Boolean forDisplay);
 
 }

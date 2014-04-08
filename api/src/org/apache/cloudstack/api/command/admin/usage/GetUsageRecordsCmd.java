@@ -35,7 +35,8 @@ import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listUsageRecords", description = "Lists usage records for accounts", responseObject = UsageRecordResponse.class)
+@APICommand(name = "listUsageRecords", description = "Lists usage records for accounts", responseObject = UsageRecordResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUsageRecordsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
 

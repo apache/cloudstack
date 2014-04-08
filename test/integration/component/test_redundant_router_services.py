@@ -200,7 +200,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh", "selfservice"])
     def test_enableVPNOverRvR(self):
         """Test redundant router internals
         """

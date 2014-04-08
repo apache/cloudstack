@@ -277,7 +277,9 @@ dhcp-hostsfile=/etc/dhcphosts.txt
 # or /etc/ethers. Equivalent to ISC "deny unknown-clients".
 # This relies on the special "known" tag which is set when
 # a host is matched.
-#dhcp-ignore=tag:!known
+#
+# When using bridged networks in ACS this prevents ack to DHCPINFORM etc. request
+dhcp-ignore=tag:!known
 
 # Send extra options which are tagged as "red" to any machine whose
 # DHCP vendorclass string includes the substring "Linux"
@@ -501,7 +503,7 @@ dhcp-option=vendor:MSFT,2,1i
 #dhcp-boot=/var/ftpd/pxelinux.0,boothost,tftp_server_name
 
 # Set the limit on DHCP leases, the default is 150
-#dhcp-lease-max=150
+dhcp-lease-max=2100
 
 # The DHCP server needs somewhere on disk to keep its lease database.
 # This defaults to a sane location, but if you want to change it, use

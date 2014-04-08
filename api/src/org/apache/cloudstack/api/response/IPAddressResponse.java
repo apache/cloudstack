@@ -19,14 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.IpAddress;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = IpAddress.class)
 @SuppressWarnings("unused")
@@ -145,6 +145,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.IS_PORTABLE)
     @Param(description = "is public IP portable across the zones")
     private Boolean isPortable;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is public ip for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     /*
         @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
@@ -279,5 +283,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setPortable(Boolean portable) {
         this.isPortable = portable;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

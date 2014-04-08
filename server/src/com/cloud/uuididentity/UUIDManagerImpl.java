@@ -28,6 +28,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {UUIDManager.class})
@@ -49,7 +50,7 @@ public class UUIDManagerImpl implements UUIDManager {
         Account caller = CallContext.current().getCallingAccount();
 
         // Only admin and system allowed to do this
-        if (!(caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType()))) {
+        if (!(caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId()))) {
             throw new PermissionDeniedException("Please check your permissions, you are not allowed to create/update custom id");
         }
 

@@ -16,15 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -40,9 +43,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "createVolume",
-            responseObject = VolumeResponse.class,
-            description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted, entityType = {Volume.class},
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -88,6 +90,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, description = "max iops")
     private Long maxIops;
 
+    @ACL
     @Parameter(name = ApiConstants.SNAPSHOT_ID,
                type = CommandType.UUID,
                entityType = SnapshotResponse.class,
@@ -97,9 +100,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVolume;
 
+    @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
@@ -177,7 +181,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -191,17 +195,27 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     @Override
+    public boolean isDisplayResourceEnabled(){
+        Boolean display = getDisplayVolume();
+        if(display == null){
+            return true;
+        } else {
+            return display;
+        }
+    }
+
+    @Override
     public String getEventDescription() {
-        return "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
+        return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
 
     @Override
     public void create() throws ResourceAllocationException {
 
-        Volume volume = this._volumeService.allocVolume(this);
+        Volume volume = _volumeService.allocVolume(this);
         if (volume != null) {
-            this.setEntityId(volume.getId());
-            this.setEntityUuid(volume.getUuid());
+            setEntityId(volume.getId());
+            setEntityUuid(volume.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create volume");
         }
@@ -212,7 +226,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
             //FIXME - have to be moved to ApiResponseHelper
             if (getSnapshotId() != null) {
                 Snapshot snap = _entityMgr.findById(Snapshot.class, getSnapshotId());
@@ -227,7 +241,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
                 }
             }
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a volume");
         }

@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = RemoteAccessVpn.class)
 @SuppressWarnings("unused")
@@ -72,6 +72,10 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the remote access vpn")
     private String id;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is vpn for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
@@ -122,4 +126,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.id = id;
     }
 
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
+    }
 }

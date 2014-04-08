@@ -407,6 +407,12 @@ public enum Config {
             "vm.network.nic.max.secondary.ipaddresses", "256",
             "Specify the number of secondary ip addresses per nic per vm", null),
 
+    EnableServiceMonitoring(
+            "Network", ManagementServer.class, Boolean.class,
+            "network.router.enableserviceMonitoring", "false",
+            "service monitoring in router enable/disable option, default false", null),
+
+
     // Console Proxy
     ConsoleProxyCapacityStandby(
             "Console Proxy",
@@ -433,7 +439,7 @@ public enum Config {
             "Console proxy command port that is used to communicate with management server",
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "realhostip.com", "Console proxy url domain", null),
+    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", null),
     ConsoleProxyLoadscanInterval(
             "Console Proxy",
             AgentManager.class,
@@ -677,7 +683,7 @@ public enum Config {
             null),
     StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
-    XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
+    XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "60", "Time (in seconds) to wait for XAPI to return", null),
     MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
     HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
     MountParent(
@@ -776,7 +782,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "secstorage.ssl.cert.domain",
-            "realhostip.com",
+            "",
             "SSL certificate used to encrypt copy traffic between zones",
             null),
     SecStorageCapacityStandby(
@@ -985,7 +991,6 @@ public enum Config {
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
             null),
-    EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", null),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,

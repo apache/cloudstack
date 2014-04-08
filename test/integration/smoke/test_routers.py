@@ -98,7 +98,7 @@ class TestRouterServices(cloudstackTestCase):
         self.hypervisor = self.testClient.getHypervisorInfo()
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "smoke"])
+    @attr(tags = ["advanced", "basic", "sg", "smoke", "provisioning"])
     def test_01_router_internal_basic(self):
         """Test router internal basic zone
         """
@@ -186,7 +186,7 @@ class TestRouterServices(cloudstackTestCase):
 
 
 
-    @attr(tags = ["advanced", "smoke"])
+    @attr(tags = ["advanced", "smoke", "provisioning"])
     def test_02_router_internal_adv(self):
         """Test router internal advanced zone
         """
@@ -294,7 +294,7 @@ class TestRouterServices(cloudstackTestCase):
         self.debug("Haproxy process status: %s" % res)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_03_restart_network_cleanup(self):
         """Test restart network
         """
@@ -372,7 +372,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
     def test_04_restart_network_wo_cleanup(self):
         """Test restart network without cleanup
         """
@@ -488,7 +488,7 @@ class TestRouterServices(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_05_router_basic(self):
         """Test router basic setup
         """
@@ -554,7 +554,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_06_router_advanced(self):
         """Test router advanced setup
         """
@@ -637,7 +637,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_07_stop_router(self):
         """Test stop router
         """
@@ -681,7 +681,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_08_start_router(self):
         """Test start router
         """
@@ -726,7 +726,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "selfservice"])
     def test_09_reboot_router(self):
         """Test reboot router
         """

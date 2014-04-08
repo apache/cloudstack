@@ -86,7 +86,7 @@ public class Storage {
 
     public static enum StoragePoolType {
         Filesystem(false), // local directory
-        NetworkFilesystem(true), // NFS or CIFS
+        NetworkFilesystem(true), // NFS
         IscsiLUN(true), // shared LUN, with a clusterfs overlay
         Iscsi(true), // for e.g., ZFS Comstar
         ISO(false), // for iso image
@@ -97,7 +97,9 @@ public class Storage {
         VMFS(true), // VMware VMFS storage
         PreSetup(true), // for XenServer, Storage Pool is set up by customers.
         EXT(false), // XenServer local EXT SR
-        OCFS2(true);
+        OCFS2(true),
+        SMB(true),
+        Gluster(true);
 
         boolean shared;
 

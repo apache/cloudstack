@@ -30,11 +30,15 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import junit.framework.TestCase;
+
+import org.junit.Test;
+
 import streamer.debug.MockServer;
 import streamer.debug.MockServer.Packet;
 
 public class MockServerTest extends TestCase {
 
+    @Test
     public void testIsMockServerCanRespond() throws Exception {
 
         final byte[] mockClientData = new byte[] {0x01, 0x02, 0x03};
@@ -58,7 +62,7 @@ public class MockServerTest extends TestCase {
 
         Socket socket = SocketFactory.getDefault().createSocket();
         try {
-            socket.connect(server.getAddress());
+            socket.connect(new InetSocketAddress("127.0.0.1", server.getAddress().getPort()));
 
             InputStream is = socket.getInputStream();
             OutputStream os = socket.getOutputStream();
@@ -87,6 +91,7 @@ public class MockServerTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsMockServerCanUpgradeConnectionToSsl() throws Exception {
 
         final byte[] mockClientData1 = new byte[] {0x01, 0x02, 0x03};
@@ -127,7 +132,7 @@ public class MockServerTest extends TestCase {
 
         Socket socket = SocketFactory.getDefault().createSocket();
         try {
-            InetSocketAddress address = server.getAddress();
+            InetSocketAddress address = new InetSocketAddress("127.0.0.1", server.getAddress().getPort());
             socket.connect(address);
 
             // Send hello data over plain connection

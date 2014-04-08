@@ -18,22 +18,28 @@ package org.apache.cloudstack.network.element;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.CoreConnectionPNames;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -44,115 +50,74 @@ import com.google.gson.annotations.SerializedName;
  */
 public class SspClient {
     private static final Logger s_logger = Logger.getLogger(SspClient.class);
-    private static final HttpConnectionManager s_httpclient_manager = new MultiThreadedHttpConnectionManager();
-    private static final HttpClientParams s_httpclient_params = new HttpClientParams();
+    private static final HttpClient s_client = new DefaultHttpClient(
+            new PoolingClientConnectionManager());
     static {
-        s_httpclient_params.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+        s_client.getParams()
+                .setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY)
+                .setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
     }
 
     private final String apiUrl;
     private final String username;
     private final String password;
 
-    protected HttpClient client;
-    protected PostMethod postMethod;
-    protected DeleteMethod deleteMethod;
-    protected PutMethod putMethod;
-
     public SspClient(String apiUrl, String username, String password) {
         super();
         this.apiUrl = apiUrl;
         this.username = username;
         this.password = password;
-        client = new HttpClient(s_httpclient_params, s_httpclient_manager);
-        postMethod = new PostMethod(apiUrl);
-        deleteMethod = new DeleteMethod(apiUrl);
-        putMethod = new PutMethod(apiUrl);
+    }
+
+    protected HttpClient getHttpClient() { // for mock test
+        return s_client;
+    }
+
+    private String executeMethod(HttpRequestBase req, String path) {
+        try {
+            URI base = new URI(apiUrl);
+            req.setURI(new URI(base.getScheme(), base.getUserInfo(), base.getHost(),
+                    base.getPort(), path, null, null));
+        } catch (URISyntaxException e) {
+            s_logger.error("invalid API URL " + apiUrl + " path " + path, e);
+            return null;
+        }
+        try {
+            String content = null;
+            try {
+                content = getHttpClient().execute(req, new BasicResponseHandler());
+                s_logger.info("ssp api call: " + req);
+            } catch (HttpResponseException e) {
+                s_logger.info("ssp api call failed: " + req, e);
+                if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED && login()) {
+                    req.reset();
+                    content = getHttpClient().execute(req, new BasicResponseHandler());
+                    s_logger.info("ssp api retry call: " + req);
+                }
+            }
+            return content;
+        } catch (ClientProtocolException e) { // includes HttpResponseException
+            s_logger.error("ssp api call failed: " + req, e);
+        } catch (IOException e) {
+            s_logger.error("ssp api call failed: " + req, e);
+        }
+        return null;
     }
 
     public boolean login() {
-        PostMethod method = postMethod;
-        method.setPath("/ws.v1/login"); // NOTE: /ws.v1/login is correct
-        method.addParameter("username", username);
-        method.addParameter("password", password);
-
+        HttpPost method = new HttpPost();
         try {
-            client.executeMethod(method);
-        } catch (HttpException e) {
-            s_logger.info("Login " + username + " to " + apiUrl + " failed", e);
+            method.setEntity(new UrlEncodedFormEntity(Arrays.asList(
+                    new BasicNameValuePair("username", username),
+                    new BasicNameValuePair("password", password))));
+        } catch (UnsupportedEncodingException e) {
+            s_logger.error("invalid username or password", e);
             return false;
-        } catch (IOException e) {
-            s_logger.info("Login " + username + " to " + apiUrl + " failed", e);
-            return false;
-        } finally {
-            method.releaseConnection();
         }
-        String apiCallPath = null;
-        try {
-            apiCallPath = method.getName() + " " + method.getURI().toString();
-        } catch (URIException e) {
-            s_logger.error("method getURI failed", e);
-        }
-        s_logger.info("ssp api call:" + apiCallPath + " user=" + username + " status=" + method.getStatusLine());
-        if (method.getStatusCode() == HttpStatus.SC_OK) {
+        if (executeMethod(method, "/ws.v1/login") != null) {
             return true;
         }
         return false;
-    }
-
-    private String executeMethod(HttpMethod method) {
-        String apiCallPath = null;
-        try {
-            apiCallPath = method.getName() + " " + method.getURI().toString();
-        } catch (URIException e) {
-            s_logger.error("method getURI failed", e);
-        }
-
-        String response = null;
-        try {
-            client.executeMethod(method);
-            response = method.getResponseBodyAsString();
-        } catch (HttpException e) {
-            s_logger.error("ssp api call failed " + apiCallPath, e);
-            return null;
-        } catch (IOException e) {
-            s_logger.error("ssp api call failed " + apiCallPath, e);
-            return null;
-        } finally {
-            method.releaseConnection();
-        }
-
-        if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-            if (!login()) {
-                return null;
-            }
-
-            try {
-                client.executeMethod(method);
-                response = method.getResponseBodyAsString();
-            } catch (HttpException e) {
-                s_logger.error("ssp api call failed " + apiCallPath, e);
-                return null;
-            } catch (IOException e) {
-                s_logger.error("ssp api call failed " + apiCallPath, e);
-                return null;
-            } finally {
-                method.releaseConnection();
-            }
-        }
-        s_logger.info("ssp api call:" + apiCallPath + " user=" + username + " status=" + method.getStatusLine());
-        if (method instanceof EntityEnclosingMethod) {
-            EntityEnclosingMethod emethod = (EntityEnclosingMethod)method;
-            RequestEntity reqEntity = emethod.getRequestEntity();
-            if (reqEntity instanceof StringRequestEntity) {
-                StringRequestEntity strReqEntity = (StringRequestEntity)reqEntity;
-                s_logger.debug("ssp api request body:" + strReqEntity.getContent());
-            } else {
-                s_logger.debug("ssp api request body:" + emethod.getRequestEntity());
-            }
-        }
-        s_logger.debug("ssp api response body:" + response);
-        return response;
     }
 
     public class TenantNetwork {
@@ -167,30 +132,16 @@ public class SspClient {
         req.name = networkName;
         req.tenantUuid = tenantUuid;
 
-        PostMethod method = postMethod;
-        method.setPath("/ssp.v1/tenant-networks");
-        StringRequestEntity entity = null;
-        try {
-            entity = new StringRequestEntity(new Gson().toJson(req), "application/json", "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            s_logger.error("failed creating http request body", e);
-            return null;
-        }
-        method.setRequestEntity(entity);
-
-        String response = executeMethod(method);
-        if (response != null && method.getStatusCode() == HttpStatus.SC_CREATED) {
-            return new Gson().fromJson(response, TenantNetwork.class);
-        }
-        return null;
+        HttpPost method = new HttpPost();
+        method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-networks"),
+                TenantNetwork.class);
     }
 
     public boolean deleteTenantNetwork(String tenantNetworkUuid) {
-        DeleteMethod method = deleteMethod;
-        method.setPath("/ssp.v1/tenant-networks/" + tenantNetworkUuid);
-
-        executeMethod(method);
-        if (method.getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+        HttpDelete method = new HttpDelete();
+        if (executeMethod(method, "/ssp.v1/tenant-networks/" + tenantNetworkUuid) != null) {
             return true;
         }
         return false;
@@ -214,30 +165,16 @@ public class SspClient {
         req.networkUuid = tenantNetworkUuid;
         req.attachmentType = "NoAttachment";
 
-        PostMethod method = postMethod;
-        method.setPath("/ssp.v1/tenant-ports");
-        StringRequestEntity entity = null;
-        try {
-            entity = new StringRequestEntity(new Gson().toJson(req), "application/json", "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            s_logger.error("failed creating http request body", e);
-            return null;
-        }
-        method.setRequestEntity(entity);
-
-        String response = executeMethod(method);
-        if (response != null && method.getStatusCode() == HttpStatus.SC_CREATED) {
-            return new Gson().fromJson(response, TenantPort.class);
-        }
-        return null;
+        HttpPost method = new HttpPost();
+        method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-ports"),
+                TenantPort.class);
     }
 
     public boolean deleteTenantPort(String tenantPortUuid) {
-        DeleteMethod method = deleteMethod;
-        method.setPath("/ssp.v1/tenant-ports/" + tenantPortUuid);
-
-        executeMethod(method);
-        if (method.getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+        HttpDelete method = new HttpDelete();
+        if (executeMethod(method, "/ssp.v1/tenant-ports/" + tenantPortUuid) != null) {
             return true;
         }
         return false;
@@ -252,21 +189,10 @@ public class SspClient {
             req.attachmentType = "NoAttachment";
         }
 
-        PutMethod method = putMethod;
-        method.setPath("/ssp.v1/tenant-ports/" + portUuid);
-        StringRequestEntity entity = null;
-        try {
-            entity = new StringRequestEntity(new Gson().toJson(req), "application/json", "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            s_logger.error("failed creating http request body", e);
-            return null;
-        }
-        method.setRequestEntity(entity);
-
-        String response = executeMethod(method);
-        if (response != null && method.getStatusCode() == HttpStatus.SC_OK) {
-            return new Gson().fromJson(response, TenantPort.class);
-        }
-        return null;
+        HttpPut method = new HttpPut();
+        method.setEntity(new StringEntity(new Gson().toJson(req), ContentType.APPLICATION_JSON));
+        return new Gson().fromJson(
+                executeMethod(method, "/ssp.v1/tenant-ports/" + portUuid),
+                TenantPort.class);
     }
 }

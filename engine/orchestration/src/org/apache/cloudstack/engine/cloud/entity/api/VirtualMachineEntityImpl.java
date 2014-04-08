@@ -24,10 +24,10 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -195,7 +195,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public String reserve(String plannerToUse, DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
+    public String reserve(DeploymentPlanner plannerToUse, DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
         ResourceUnavailableException {
         return manager.reserveVirtualMachine(this.vmEntityVO, plannerToUse, plan, exclude);
     }

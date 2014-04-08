@@ -47,7 +47,7 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
     $scope.toDisplay = ['name', 'type', 'hypervisor', 'vmdisplayname'];
 
     $scope.addVolumeForm = {
-        title: 'Add Volume',
+        title: 'label.add.volume',
         onSubmit: Volumes.getAll,
         fields: [
             {

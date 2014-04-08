@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -140,11 +141,11 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "the ID of the disk offering of the virtual machine")
+    @Param(description = "the ID of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "the name of the disk offering of the virtual machine")
+    @Param(description = "the name of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingName;
 
     @SerializedName("forvirtualnetwork")
@@ -162,6 +163,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.MEMORY)
     @Param(description = "the memory allocated for the virtual machine")
     private Integer memory;
+
+    @SerializedName(ApiConstants.VGPU)
+    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
+    private String vgpu;
 
     @SerializedName("cpuused")
     @Param(description = "the amount of the vm's CPU currently used")
@@ -248,7 +253,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<AffinityGroupResponse> affinityGroupList;
 
     @SerializedName(ApiConstants.DISPLAY_VM)
-    @Param(description = "an optional field whether to the display the vm to the end user or not.")
+    @Param(description = "an optional field whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
@@ -419,6 +424,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return memory;
     }
 
+    public String getVgpu() {
+        return vgpu;
+    }
     public String getCpuUsed() {
         return cpuUsed;
     }
@@ -642,6 +650,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.memory = memory;
     }
 
+    public void setVgpu(String vgpu) {
+        this.vgpu = vgpu;
+    }
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }

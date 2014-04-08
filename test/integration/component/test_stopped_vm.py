@@ -169,7 +169,7 @@ class TestDeployVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "selfservice"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
@@ -219,7 +219,7 @@ class TestDeployVM(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_02_deploy_vm_startvm_true(self):
         """Test Deploy Virtual Machine with startVM=true parameter
         """
@@ -270,7 +270,7 @@ class TestDeployVM(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_03_deploy_vm_startvm_false(self):
         """Test Deploy Virtual Machine with startVM=false parameter
         """
@@ -362,7 +362,7 @@ class TestDeployVM(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_04_deploy_startvm_false_attach_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume
         """
@@ -428,7 +428,7 @@ class TestDeployVM(cloudstackTestCase):
             self.fail("Attach volume failed!")
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_05_deploy_startvm_false_change_so(self):
         """Test Deploy Virtual Machine with startVM=false and change service offering
         """
@@ -501,7 +501,7 @@ class TestDeployVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_06_deploy_startvm_attach_detach(self):
         """Test Deploy Virtual Machine with startVM=false and
             attach detach volumes
@@ -586,7 +586,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_07_deploy_startvm_attach_iso(self):
         """Test Deploy Virtual Machine with startVM=false and attach ISO
         """
@@ -677,7 +677,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_08_deploy_attached_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume already attached to different machine
         """
@@ -807,7 +807,7 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_09_stop_vm_migrate_vol(self):
         """Test Stopped Virtual Machine's ROOT volume migration
         """
@@ -1023,7 +1023,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_01_deploy_ha_vm_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine with startvm=false
         """
@@ -1072,7 +1072,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_02_deploy_ha_vm_from_iso(self):
         """Test Deploy HA enabled Virtual Machine from ISO
         """
@@ -1137,7 +1137,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_03_deploy_ha_vm_iso_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine from ISO with startvm=false
         """
@@ -1253,7 +1253,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns"])
+    @attr(tags=["advanced", "eip", "advancedns", "selfservice"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
@@ -1552,7 +1552,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "provisioning"])
     def test_deploy_vm_password_enabled(self):
         """Test Deploy Virtual Machine with startVM=false & enabledpassword in
         template
@@ -1689,7 +1689,7 @@ class TestVMAccountLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_vm_per_account(self):
         """Test VM limit per account
         """
@@ -1804,7 +1804,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg", "selfservice"])
     def test_upload_attach_volume(self):
         """Test Upload volume and attach to VM in stopped state
         """

@@ -71,7 +71,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name = "cidr")
+    @Column(name = "cidr", length = 2048)
     String sourceCidrs;
 
     @Column(name = "uuid")
@@ -84,21 +84,24 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Enumerated(value = EnumType.STRING)
     Action action;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public NetworkACLItemVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType,
             TrafficType trafficType, Action action, int number) {
-        this.sourcePortStart = portStart;
-        this.sourcePortEnd = portEnd;
+        sourcePortStart = portStart;
+        sourcePortEnd = portEnd;
         this.protocol = protocol;
         this.aclId = aclId;
-        this.state = State.Staged;
+        state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         setSourceCidrList(sourceCidrs);
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.trafficType = trafficType;
         this.action = action;
         this.number = number;
@@ -188,7 +191,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
@@ -240,5 +243,18 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     public void setAction(Action action) {
         this.action = action;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

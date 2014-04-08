@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 public class RemoteAccessVpnDetailsDaoImpl extends ResourceDetailsDaoBase<RemoteAccessVpnDetailVO> implements RemoteAccessVpnDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new RemoteAccessVpnDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new RemoteAccessVpnDetailVO(resourceId, key, value, display));
     }
 }

@@ -71,7 +71,7 @@ copy_priv_key() {
 
 if [[ "$EUID" -ne 0  ]]
 then
-   SUDO="sudo "
+   SUDO="sudo -n "
 fi
 
 $SUDO mkdir -p $MOUNTPATH

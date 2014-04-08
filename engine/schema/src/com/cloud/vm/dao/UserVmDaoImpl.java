@@ -216,7 +216,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
 
     @Override
-    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean displayVm, boolean isDynamicallyScalable, String customId) {
+    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean displayVm, boolean isDynamicallyScalable, String customId, String hostName) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
         vo.setHaEnabled(enable);
@@ -224,6 +224,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         vo.setUserData(userData);
         vo.setDisplayVm(displayVm);
         vo.setDynamicallyScalable(isDynamicallyScalable);
+        if (hostName != null) {
+            vo.setHostName(hostName);
+        }
         if (customId != null) {
             vo.setUuid(customId);
         }
@@ -343,7 +346,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
         for (String key : detailsStr.keySet()) {
-            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key)));
+            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key), true));
         }
 
         _detailsDao.saveDetails(details);

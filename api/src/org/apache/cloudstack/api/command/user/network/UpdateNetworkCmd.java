@@ -18,11 +18,16 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -37,8 +42,9 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class)
-public class UpdateNetworkCmd extends BaseAsyncCmd {
+@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
     private static final String s_name = "updatenetworkresponse";
@@ -46,8 +52,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
-    private Long id;
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
+            required=true, description="the ID of the network")
+    protected Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the new name for the network")
     private String name;
@@ -69,7 +77,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the network to the end user or not.")
+ description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     /////////////////////////////////////////////////////
@@ -88,11 +96,11 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         return displayText;
     }
 
-    private String getNetworkDomain() {
+    public String getNetworkDomain() {
         return networkDomain;
     }
 
-    private Long getNetworkOfferingId() {
+    public Long getNetworkOfferingId() {
         return networkOfferingId;
     }
 
@@ -103,7 +111,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         return false;
     }
 
-    private String getGuestVmCidr() {
+    public String getGuestVmCidr() {
         return guestVmCidr;
     }
 
@@ -141,12 +149,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
         Network result =
             _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId());
 
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network");
         }
@@ -187,5 +195,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return id;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), Network.class);
+        }
     }
 }

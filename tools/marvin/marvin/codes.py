@@ -58,6 +58,16 @@ JOB_CANCELLED = 3
 '''
 User Related Codes
 '''
+BASIC_ZONE = "basic"
+ISOLATED_NETWORK = "ISOLATED"
+SHARED_NETWORK = "SHARED"
+VPC_NETWORK = "VPC"
+ERROR_NO_HOST_FOR_MIGRATION = "Could not find suitable host for migration, please ensure setup has required no. of hosts"
+NAT_RULE = "nat rule"
+STATIC_NAT_RULE = "static nat rule"
+UNKNOWN = "UNKNOWN"
+FAULT = "FAULT"
+MASTER = "MASTER"
 ADMIN = 1
 DOMAIN_ADMIN = 2
 USER = 0

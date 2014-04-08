@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,10 +36,14 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class)
+@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     private static final String s_name = "revertsnapshotresponse";
-    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class, required = true, description = "The ID of the snapshot")
+
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
+            required=true, description="The ID of the snapshot")
     private Long id;
 
     public Long getId() {
@@ -66,7 +72,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "revert snapshot: " + getId();
+        return  "revert snapshot: " + getId();
     }
 
     @Override
@@ -86,7 +92,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert snapshot");
         }

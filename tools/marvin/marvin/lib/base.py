@@ -134,6 +134,13 @@ class Account:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listAccounts(cmd))
 
+    def disable(self, apiclient, lock=False):
+        """Disable an account"""
+        cmd = disableAccount.disableAccountCmd()
+        cmd.id = self.id
+        cmd.lock = lock
+        apiclient.disableAccount(cmd)
+
 
 class User:
     """ User Life Cycle """
@@ -320,7 +327,8 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None):
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None,
+                    customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -407,6 +415,20 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
+
+        cmd.details = [{}]
+
+        if customcpunumber:
+            cmd.details[0]["cpuNumber"] = customcpunumber
+
+        if customcpuspeed:
+            cmd.details[0]["cpuSpeed"] = customcpuspeed
+
+        if custommemory:
+            cmd.details[0]["memory"] = custommemory
+
+        if rootdisksize >= 0:
+            cmd.details[0]["rootdisksize"] = rootdisksize
 
         if group:
             cmd.group = group
@@ -631,6 +653,21 @@ class VirtualMachine:
             cmd.affinitygroupnames = affinitygroupnames
 
         return apiclient.updateVMAffinityGroup(cmd)
+
+    def scale(self, apiclient, serviceOfferingId,
+            customcpunumber=None, customcpuspeed=None, custommemory=None):
+        """Change service offering of the instance"""
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.serviceofferingid = serviceOfferingId
+        cmd.details = [{"cpuNumber": "","cpuSpeed":"","memory":""}]
+        if customcpunumber:
+            cmd.details[0]["cpuNumber"] = customcpunumber
+        if customcpuspeed:
+            cmd.details[0]["cpuSpeed"] = customcpuspeed
+        if custommemory:
+            cmd.details[0]["memory"] = custommemory
+        return apiclient.scaleVirtualMachine(cmd)
 
 
 class Volume:
@@ -1202,7 +1239,8 @@ class NATRule:
 
     @classmethod
     def create(cls, apiclient, virtual_machine, services, ipaddressid=None,
-               projectid=None, openfirewall=False, networkid=None, vpcid=None):
+               projectid=None, openfirewall=False, networkid=None, vpcid=None,
+               vmguestip=None):
         """Create Port forwarding rule"""
         cmd = createPortForwardingRule.createPortForwardingRuleCmd()
 
@@ -1231,6 +1269,10 @@ class NATRule:
 
         if vpcid:
             cmd.vpcid = vpcid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1297,7 +1339,8 @@ class StaticNATRule:
         return(apiclient.listIpForwardingRules(cmd))
 
     @classmethod
-    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None):
+    def enable(cls, apiclient, ipaddressid, virtualmachineid, networkid=None,
+            vmguestip=None):
         """Enables Static NAT rule"""
 
         cmd = enableStaticNat.enableStaticNatCmd()
@@ -1305,6 +1348,9 @@ class StaticNATRule:
         cmd.virtualmachineid = virtualmachineid
         if networkid:
             cmd.networkid = networkid
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
         apiclient.enableStaticNat(cmd)
         return
 
@@ -1430,6 +1476,9 @@ class ServiceOffering:
 
         if "deploymentplanner" in services:
             cmd.deploymentplanner = services["deploymentplanner"]
+
+        if "serviceofferingdetails" in services:
+            cmd.serviceofferingdetails.append({services['serviceofferingdetails']})
 
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
@@ -3070,6 +3119,21 @@ class VpcOffering:
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]
         cmd.supportedServices = services["supportedservices"]
+        if "serviceProviderList" in services:
+            for service, provider in services["serviceProviderList"].items():
+                cmd.serviceproviderlist.append({
+                                            'service': service,
+                                            'provider': provider
+                                           })
+        if "serviceCapabilityList" in services:
+            cmd.servicecapabilitylist = []
+            for service, capability in services["serviceCapabilityList"].items():
+                for ctype, value in capability.items():
+                    cmd.servicecapabilitylist.append({
+                                            'service': service,
+                                            'capabilitytype': ctype,
+                                            'capabilityvalue': value
+                                           })
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
@@ -3649,3 +3713,160 @@ class Resources:
         cmd = updateResourceCount.updateResourceCountCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateResourceCount(cmd))
+   
+class NIC:
+    """NIC related API"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def addIp(cls, apiclient, id, ipaddress=None):
+        """Add Ip (secondary) to NIC"""
+        cmd = addIpToNic.addIpToNicCmd()
+        cmd.nicid = id
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        return(apiclient.addIpToNic(cmd))
+
+    @classmethod
+    def removeIp(cls,apiclient,ipaddressid):
+        """Remove secondary Ip from NIC"""
+        cmd = removeIpFromNic.removeIpFromNicCmd()
+        cmd.id = ipaddressid
+        return(apiclient.addIpToNic(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List NICs belonging to a virtual machine"""
+
+        cmd = listNics.listNicsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listNics(cmd))
+        
+class IAMGroup:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, iam_grp, account=None, domainid=None):
+        cmd = createIAMGroup.createIAMGroupCmd()
+        cmd.name = iam_grp['name']
+        cmd.description = iam_grp['description']
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return IAMGroup(apiclient.createIAMGroup(cmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteIAMGroup.deleteIAMGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteIAMGroup(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIAMGroups.listIAMGroupsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listIAMGroupsCmd(cmd)  
+    
+    def addAccount(self, apiclient, accts):
+        """Add accounts to iam group"""
+        cmd = addAccountToIAMGroup.addAccountToIAMGroupCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.addAccountToIAMGroup(cmd)
+        return  
+
+    def removeAccount(self, apiclient, accts):
+        """ Remove accounts from iam group"""
+        cmd = removeAccountFromIAMGroup.removeAccountFromIAMGroupCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.removeAccountFromIAMGroup(cmd)
+        return  
+    
+    def attachPolicy(self, apiclient, policies):
+        """Add policies to iam group"""
+        cmd = attachIAMPolicyToIAMGroup.attachIAMPolicyToIAMGroupCmd()
+        cmd.id = self.id
+        cmd.policies = [str(policy.id) for policy in policies]
+        apiclient.attachIAMPolicyToIAMGroup(cmd)
+        return   
+    
+    def detachPolicy(self, apiclient, policies):
+        """Remove policies from iam group"""
+        cmd = removeIAMPolicyFromIAMGroup.removeIAMPolicyFromIAMGroupCmd()
+        cmd.id = self.id
+        cmd.policies = [str(policy.id) for policy in policies]
+        apiclient.removeIAMPolicyFromIAMGroup(cmd)
+        return         
+    
+class IAMPolicy:
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, iam_policy, account=None, domainid=None):
+        cmd = createIAMPolicy.createIAMPolicyCmd()
+        cmd.name = iam_policy['name']
+        cmd.description = iam_policy['description']
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return IAMPolicy(apiclient.createIAMPolicy(cmd).__dict__)
+
+    def update(self, apiclient):
+        pass
+
+    def delete(self, apiclient):
+        cmd = deleteIAMPolicy.deleteIAMPolicyCmd()
+        cmd.id = self.id
+        return apiclient.deleteIAMPolicy(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIAMPolicies.listIAMPoliciesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listIAMPoliciesCmd(cmd)  
+
+    def addPermission(self, apiclient, permission):
+        """Add permission to iam policy"""
+        cmd = addIAMPermissionToIAMPolicy.addIAMPermissionToIAMPolicyCmd()
+        cmd.id = self.id
+        cmd.action = permission['action']
+        cmd.entitytype = permission['entitytype']
+        cmd.scope = permission['scope']
+        cmd.scopeid = permission['scopeid']
+        apiclient.addIAMPermissionToIAMPolicy(cmd)
+        return       
+
+    def removePermission(self, apiclient, permission):
+        """Remove permission from iam policy"""
+        cmd = removeIAMPermissionFromIAMPolicy.removeIAMPermissionFromIAMPolicyCmd()
+        cmd.id = self.id
+        cmd.action = permission['action']
+        cmd.entitytype = permission['entitytype']
+        cmd.scope = permission['scope']
+        cmd.scopeid = permission['scopeid']
+        apiclient.removeIAMPermissionFromIAMPolicy(cmd)
+        return  
+    
+    def attachAccount(self, apiclient, accts):
+        """Attach iam policy to accounts"""
+        cmd = attachIAMPolicyToAccount.attachIAMPolicyToAccountCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.attachIAMPolicyToAccount(cmd)
+        return  
+    
+    def detachAccount(self, apiclient, accts):
+        """Detach iam policy from accounts"""
+        cmd = removeIAMPolicyFromAccount.removeIAMPolicyFromAccountCmd()
+        cmd.id = self.id
+        cmd.accounts = [str(acct.id) for acct in accts]
+        apiclient.removeIAMPolicyFromAccount(cmd)
+        return           

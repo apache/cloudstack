@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -42,7 +43,8 @@ import com.cloud.network.Network;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device")
+@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPaloAltoFirewallNetworksCmd.class.getName());
@@ -83,14 +85,14 @@ public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
 
             if (networks != null && !networks.isEmpty()) {
                 for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
+                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
                     networkResponses.add(networkResponse);
                 }
             }
 
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {

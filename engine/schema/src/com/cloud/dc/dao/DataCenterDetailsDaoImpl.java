@@ -41,8 +41,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
     }
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new DataCenterDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new DataCenterDetailVO(resourceId, key, value, display));
     }
 
 }

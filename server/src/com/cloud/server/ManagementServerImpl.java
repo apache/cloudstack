@@ -40,18 +40,23 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.address.AssociateIPAddrCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGroupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
@@ -69,6 +74,13 @@ import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
@@ -86,8 +98,16 @@ import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.StartInternalLBVMCmd;
 import org.apache.cloudstack.api.command.admin.internallb.StopInternalLBVMCmd;
+import org.apache.cloudstack.api.command.admin.iso.AttachIsoCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.iso.CopyIsoCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.iso.DetachIsoCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.iso.ListIsoPermissionsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
@@ -101,10 +121,12 @@ import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRan
 import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkIsolationMethodsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkServiceProvidersCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.ListPhysicalNetworksCmd;
 import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListSupportedNetworkServicesCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
@@ -170,7 +192,12 @@ import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.template.CopyTemplateCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.template.CreateTemplateCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.template.ListTemplatePermissionsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
+import org.apache.cloudstack.api.command.admin.template.RegisterTemplateCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
@@ -196,19 +223,47 @@ import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vm.AddNicToVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.DestroyVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.GetVMUserDataCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
+import org.apache.cloudstack.api.command.admin.vm.RebootVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RemoveNicFromVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ResetVMPasswordCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ResetVMSSHKeyCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.RestoreVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ScaleVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.StartVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.StopVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.UpdateDefaultNicForVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.UpdateVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.UpgradeVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vmsnapshot.RevertToVMSnapshotCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.AttachVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.CreateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.DetachVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.ResizeVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.UpdateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.UploadVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.DeletePrivateGatewayCmd;
 import org.apache.cloudstack.api.command.admin.vpc.DeleteVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.ListVPCsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
@@ -218,6 +273,7 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
@@ -255,6 +311,8 @@ import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleC
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateEgressFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
@@ -289,6 +347,7 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRules
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateApplicationLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
@@ -309,6 +368,7 @@ import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -429,14 +489,16 @@ import org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;
 import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateRemoteAccessVpnCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -448,8 +510,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -466,7 +526,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
@@ -502,6 +561,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.gpu.GPU;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -533,25 +593,24 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -565,7 +624,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -650,8 +708,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private VMTemplateDao _templateDao;
-    @Inject
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
@@ -663,6 +719,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOSDao _guestOSDao;
     @Inject
     private GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject
+    private GuestOSHypervisorDao _guestOSHypervisorDao;
     @Inject
     private PrimaryDataStoreDao _poolDao;
     @Inject
@@ -695,41 +753,32 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ResourceTagDao _resourceTagDao;
     @Inject
     private ImageStoreDao _imgStoreDao;
+    @Inject
+    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+
 
     @Inject
-    ProjectManager _projectMgr;
+    private ProjectManager _projectMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
-    SnapshotManager _snapshotMgr;
+    private HighAvailabilityManager _haMgr;
     @Inject
-    HighAvailabilityManager _haMgr;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    TemplateManager templateMgr;
+    private HostTagsDao _hostTagsDao;
     @Inject
-    DataStoreManager dataStoreMgr;
+    private ConfigDepot _configDepot;
     @Inject
-    HostTagsDao _hostTagsDao;
+    private UserVmManager _userVmMgr;
     @Inject
-    ConfigurationServer _configServer;
+    private AccountService _accountService;
     @Inject
-    ConfigDepot _configDepot;
+    private ServiceOfferingDao _offeringDao;
     @Inject
-    UserVmManager _userVmMgr;
-    @Inject
-    VolumeDataFactory _volFactory;
-    @Inject
-    AccountService _accountService;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    ServiceOfferingDao _offeringDao;
+    private DeploymentPlanningManager _dpMgr;
 
-    @Inject
-    DeploymentPlanningManager _dpMgr;
-
-    LockMasterListener _lockMasterListener;
-
+    private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     @Inject
@@ -894,7 +943,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -904,7 +953,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -921,7 +970,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -931,7 +980,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -1042,7 +1091,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -1062,6 +1111,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " + "migrate the vm with specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
+        }
+
+        if(_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
+            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName()+ " is not supported");
+            // Return empty list.
+            return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List <? extends Host>,
+                    Integer>(new ArrayList<HostVO>(), new Integer(0)), new ArrayList<Host>(), new HashMap<Host, Boolean>());
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
@@ -1167,7 +1223,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (HostAllocator allocator : hostAllocators) {
-            if (canMigrateWithStorage) {
+            if  (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -1239,7 +1295,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId) {
         // Access check - only root administrator can migrate volumes.
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the volume");
             }
@@ -1679,216 +1735,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 ConfigurationVO configVo = _configDao.findByName(param.getName());
                 configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
                 configVOList.add(configVo);
-            }
+    }
 
             return new Pair<List<? extends Configuration>, Integer>(configVOList, configVOList.size());
         }
 
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
-    }
-
-    /* TODO: this method should go away. Keep here just in case that our latest refactoring using template_store_ref missed anything
-     * in handling Swift or S3.
-    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
-            Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
-
-        VMTemplateVO template = null;
-        if (templateId != null) {
-            template = _templateDao.findById(templateId);
-            if (template == null) {
-                throw new InvalidParameterValueException("Please specify a valid template ID.");
-            }// If ISO requested then it should be ISO.
-            if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
-                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }// If ISO not requested then it shouldn't be an ISO.
-            if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
-                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
-                        + " of the specified template id");
-                ex.addProxyObject(template.getUuid(), "templateId");
-                throw ex;
-            }
-        }
-
-        DomainVO domain = null;
-        if (!permittedAccounts.isEmpty()) {
-            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
-        } else {
-            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
-        }
-
-        List<HypervisorType> hypers = null;
-        if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-        }
-        Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
-        if (_swiftMgr.isSwiftEnabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else if (_s3Mgr.isS3Enabled()) {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso,
-                        hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, tags);
-                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
-                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-
-                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
-                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
-                        templateZonePairSet.add(tmpltPair);
-                    }
-                }
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        } else {
-            if (template == null) {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
-            } else {
-                // if template is not public, perform permission check here
-                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    Account owner = _accountMgr.getAccount(template.getAccountId());
-                    _accountMgr.checkAccess(caller, null, true, owner);
-                }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
-            }
-        }
-
-        return templateZonePairSet;
-    }
-     */
-
-    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getTemplateName();
-        String displayText = cmd.getDisplayText();
-        String format = cmd.getFormat();
-        Long guestOSId = cmd.getOsTypeId();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
-        Boolean bootable = cmd.isBootable();
-        Integer sortKey = cmd.getSortKey();
-        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
-        Boolean isRoutingTemplate = cmd.isRoutingType();
-        Account account = CallContext.current().getCallingAccount();
-
-        // verify that template exists
-        VMTemplateVO template = _templateDao.findById(id);
-        if (template == null || template.getRemoved() != null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-            ex.addProxyObject(id.toString(), "templateId");
-            throw ex;
-        }
-
-        // Don't allow to modify system template
-        if (id.equals(Long.valueOf(1))) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(template.getUuid(), "templateId");
-            throw ex;
-        }
-
-        // do a permission check
-        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
-
-        if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account.getType())) {
-                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
-            }
-        }
-        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null
-                && isDynamicallyScalable == null && isRoutingTemplate == null);
-        if (!updateNeeded) {
-            return template;
-        }
-
-        template = _templateDao.createForUpdate(id);
-
-        if (name != null) {
-            template.setName(name);
-        }
-
-        if (displayText != null) {
-            template.setDisplayText(displayText);
-        }
-
-        if (sortKey != null) {
-            template.setSortKey(sortKey);
-        }
-
-        ImageFormat imageFormat = null;
-        if (format != null) {
-            try {
-                imageFormat = ImageFormat.valueOf(format.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-
-            template.setFormat(imageFormat);
-        }
-
-        if (guestOSId != null) {
-            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-
-            if (guestOS == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
-            } else {
-                template.setGuestOSId(guestOSId);
-            }
-        }
-
-        if (passwordEnabled != null) {
-            template.setEnablePassword(passwordEnabled);
-        }
-
-        if (bootable != null) {
-            template.setBootable(bootable);
-        }
-
-        if (isDynamicallyScalable != null) {
-            template.setDynamicallyScalable(isDynamicallyScalable);
-        }
-
-        if (isRoutingTemplate != null) {
-            if (isRoutingTemplate) {
-                template.setTemplateType(TemplateType.ROUTING);
-            } else {
-                template.setTemplateType(TemplateType.USER);
-            }
-        }
-
-        _templateDao.update(id, template);
-
-        return _templateDao.findById(id);
     }
 
     @Override
@@ -1905,6 +1757,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
         Long vpcId = cmd.getVpcId();
+        Boolean forDisplay = cmd.getDisplay();
         Map<String, String> tags = cmd.getTags();
 
         Boolean isAllocated = cmd.isAllocatedOnly();
@@ -1916,19 +1769,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
         Boolean isRecursive = null;
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated) {
             Account caller = CallContext.current().getCallingAccount();
 
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                    cmd.isRecursive(), null);
-            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(),
-                    false);
-            domainId = domainIdRecursiveListProject.first();
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                    cmd.getDomainId(), cmd.isRecursive(), null);
+            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                    domainIdRecursiveListProject, cmd.listAll(), false, "listPublicIpAddresses");
+            //domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-            _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         }
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1940,6 +1796,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -1982,7 +1839,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         if (isAllocated) {
-            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2035,6 +1892,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (associatedNetworkId != null) {
             sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+        }
+
+        if (forDisplay != null) {
+            sc.setParameters("display", forDisplay);
         }
 
         Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
@@ -2094,6 +1955,216 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         Pair<List<GuestOSCategoryVO>, Integer> result = _guestOSCategoryDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends GuestOsCategory>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(ListGuestOsMappingCmd cmd) {
+        Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long id = cmd.getId();
+        Long osTypeId = cmd.getOsTypeId();
+        String hypervisor = cmd.getHypervisor();
+        String hypervisorVersion = cmd.getHypervisorVersion();
+
+        //throw exception if hypervisor name is not passed, but version is
+        if (hypervisorVersion != null && (hypervisor == null || hypervisor.isEmpty())) {
+            throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
+        }
+
+        SearchCriteria<GuestOSHypervisorVO> sc = _guestOSHypervisorDao.createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (osTypeId != null) {
+            sc.addAnd("guestOsId", SearchCriteria.Op.EQ, osTypeId);
+        }
+
+        if (hypervisor != null) {
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisor);
+        }
+
+        if (hypervisorVersion != null) {
+            sc.addAnd("hypervisorVersion", SearchCriteria.Op.EQ, hypervisorVersion);
+        }
+
+        Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends GuestOSHypervisor>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_ADD, eventDescription = "Adding new guest OS to hypervisor name mapping", create = true)
+    public GuestOSHypervisor addGuestOsMapping(AddGuestOsMappingCmd cmd) {
+        Long osTypeId = cmd.getOsTypeId();
+        String osStdName = cmd.getOsStdName();
+        String hypervisor = cmd.getHypervisor();
+        String hypervisorVersion = cmd.getHypervisorVersion();
+        String osNameForHypervisor = cmd.getOsNameForHypervisor();
+        GuestOS guestOs = null;
+
+        if ((osTypeId == null) && (osStdName == null || osStdName.isEmpty())) {
+            throw new InvalidParameterValueException("Please specify either a guest OS name or UUID");
+        }
+
+        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
+
+        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware)) {
+            throw new InvalidParameterValueException("Please specify a valid hypervisor : XenServer, KVM or VMware");
+        }
+
+        HypervisorCapabilitiesVO hypervisorCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
+        if (hypervisorCapabilities == null) {
+            throw new InvalidParameterValueException("Please specify a valid hypervisor and supported version");
+        }
+
+        //by this point either osTypeId or osStdType is non-empty. Find by either of them. ID takes preference if both are specified
+        if (osTypeId != null) {
+            guestOs = ApiDBUtils.findGuestOSById(osTypeId);
+        }
+        else if (osStdName != null) {
+            guestOs = ApiDBUtils.findGuestOSByDisplayName(osStdName);
+        }
+
+        if (guestOs == null) {
+            throw new InvalidParameterValueException("Unable to find the guest OS by name or UUID");
+        }
+        //check for duplicates
+        GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisor(osTypeId.longValue(), hypervisorType.toString(), hypervisorVersion);
+
+        if (duplicate != null) {
+            throw new InvalidParameterValueException("Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : "
+                    + guestOs.getDisplayName() + " already exists!");
+        }
+        GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
+        guestOsMapping.setGuestOsId(guestOs.getId());
+        guestOsMapping.setGuestOsName(osNameForHypervisor);
+        guestOsMapping.setHypervisorType(hypervisorType.toString());
+        guestOsMapping.setHypervisorVersion(hypervisorVersion);
+        return _guestOSHypervisorDao.persist(guestOsMapping);
+
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_ADD, eventDescription = "Adding a new guest OS to hypervisor name mapping", async = true)
+    public GuestOSHypervisor getAddedGuestOsMapping(Long guestOsMappingId) {
+        return getGuestOsHypervisor(guestOsMappingId);
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_ADD, eventDescription = "Adding new guest OS type", create = true)
+    public GuestOS addGuestOs(AddGuestOsCmd cmd) {
+        Long categoryId = cmd.getOsCategoryId();
+        String displayName = cmd.getOsDisplayName();
+        String name = cmd.getOsName();
+
+        GuestOSCategoryVO guestOsCategory = ApiDBUtils.findGuestOsCategoryById(categoryId);
+        if (guestOsCategory == null) {
+            throw new InvalidParameterValueException("Guest OS category not found. Please specify a valid Guest OS category");
+        }
+
+        GuestOS guestOs = ApiDBUtils.findGuestOSByDisplayName(displayName);
+        if (guestOs != null) {
+            throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique name");
+        }
+
+        GuestOSVO guestOsVo = new GuestOSVO();
+        guestOsVo.setCategoryId(categoryId.longValue());
+        guestOsVo.setDisplayName(displayName);
+        guestOsVo.setName(name);
+        return _guestOSDao.persist(guestOsVo);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_ADD, eventDescription = "Adding a new guest OS type", async = true)
+    public GuestOS getAddedGuestOs(Long guestOsId) {
+        return getGuestOs(guestOsId);
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_UPDATE, eventDescription = "updating guest OS type", async = true)
+    public GuestOS updateGuestOs(UpdateGuestOsCmd cmd) {
+        Long id = cmd.getId();
+        String displayName = cmd.getOsDisplayName();
+
+        //check if guest OS exists
+        GuestOS guestOsHandle = ApiDBUtils.findGuestOSById(id);
+        if (guestOsHandle == null) {
+            throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
+        }
+
+        //Check if update is needed
+        if (displayName.equals(guestOsHandle.getDisplayName())) {
+            return guestOsHandle;
+        }
+
+        //Check if another Guest OS by same name exists
+        GuestOS duplicate = ApiDBUtils.findGuestOSByDisplayName(displayName);
+        if(duplicate != null) {
+            throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique guest OS name");
+        }
+        GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
+        guestOs.setDisplayName(displayName);
+        if (_guestOSDao.update(id, guestOs)) {
+            return _guestOSDao.findById(id);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_REMOVE, eventDescription = "removing guest OS type", async = true)
+    public boolean removeGuestOs(RemoveGuestOsCmd cmd) {
+        Long id = cmd.getId();
+
+        //check if guest OS exists
+        GuestOS guestOs = ApiDBUtils.findGuestOSById(id);
+        if (guestOs == null) {
+            throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
+        }
+
+        return _guestOSDao.remove(id);
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_UPDATE, eventDescription = "updating guest OS mapping", async = true)
+    public GuestOSHypervisor updateGuestOsMapping(UpdateGuestOsMappingCmd cmd) {
+        Long id = cmd.getId();
+        String osNameForHypervisor = cmd.getOsNameForHypervisor();
+
+        //check if mapping exists
+        GuestOSHypervisor guestOsHypervisorHandle = _guestOSHypervisorDao.findById(id);
+        if (guestOsHypervisorHandle == null) {
+            throw new InvalidParameterValueException("Guest OS Mapping not found. Please specify a valid ID for the Guest OS Mapping");
+        }
+
+        GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(id);
+        guestOsHypervisor.setGuestOsName(osNameForHypervisor);
+        if (_guestOSHypervisorDao.update(id, guestOsHypervisor)) {
+            return _guestOSHypervisorDao.findById(id);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_REMOVE, eventDescription = "removing guest OS mapping", async = true)
+    public boolean removeGuestOsMapping(RemoveGuestOsMappingCmd cmd) {
+        Long id = cmd.getId();
+
+        //check if mapping exists
+        GuestOSHypervisor guestOsHypervisorHandle = _guestOSHypervisorDao.findById(id);
+        if (guestOsHypervisorHandle == null) {
+            throw new InvalidParameterValueException("Guest OS Mapping not found. Please specify a valid ID for the Guest OS Mapping");
+        }
+
+        return _guestOSHypervisorDao.removeGuestOsMapping(id);
+
     }
 
     protected ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
@@ -2207,21 +2278,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (domainName != null) {
-                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-                    updateDomainChildren(domain, updatedDomainPath);
-                    domain.setName(domainName);
-                    domain.setPath(updatedDomainPath);
-                }
+        if (domainName != null) {
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+            updateDomainChildren(domain, updatedDomainPath);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
+        }
 
-                if (networkDomain != null) {
-                    if (networkDomain.isEmpty()) {
-                        domain.setNetworkDomain(null);
-                    } else {
-                        domain.setNetworkDomain(networkDomain);
-                    }
-                }
-                _domainDao.update(domainId, domain);
+        if (networkDomain != null) {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
+                domain.setNetworkDomain(networkDomain);
+            }
+        }
+        _domainDao.update(domainId, domain);
             }
         });
 
@@ -2468,10 +2539,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     }
 
-    public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
@@ -2650,6 +2717,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdatePortForwardingRuleCmd.class);
         cmdList.add(ListGuestOsCategoriesCmd.class);
         cmdList.add(ListGuestOsCmd.class);
+        cmdList.add(ListGuestOsMappingCmd.class);
+        cmdList.add(AddGuestOsCmd.class);
+        cmdList.add(AddGuestOsMappingCmd.class);
+        cmdList.add(UpdateGuestOsCmd.class);
+        cmdList.add(UpdateGuestOsMappingCmd.class);
+        cmdList.add(RemoveGuestOsCmd.class);
+        cmdList.add(RemoveGuestOsMappingCmd.class);
         cmdList.add(AttachIsoCmd.class);
         cmdList.add(CopyIsoCmd.class);
         cmdList.add(DeleteIsoCmd.class);
@@ -2794,7 +2868,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveVpnUserCmd.class);
         cmdList.add(ResetVpnConnectionCmd.class);
         cmdList.add(UpdateVpnCustomerGatewayCmd.class);
-        cmdList.add(ListZonesByCmd.class);
+        cmdList.add(ListZonesCmd.class);
         cmdList.add(ListVMSnapshotCmd.class);
         cmdList.add(CreateVMSnapshotCmd.class);
         cmdList.add(RevertToVMSnapshotCmd.class);
@@ -2861,6 +2935,62 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListOvsElementsCmd.class);
         cmdList.add(ConfigureOvsElementCmd.class);
         cmdList.add(GetVMUserDataCmd.class);
+        cmdList.add(UpdateEgressFirewallRuleCmd.class);
+        cmdList.add(UpdateFirewallRuleCmd.class);
+        cmdList.add(UpdateNetworkACLListCmd.class);
+        cmdList.add(UpdateApplicationLoadBalancerCmd.class);
+        cmdList.add(UpdateIPAddrCmd.class);
+        cmdList.add(UpdateRemoteAccessVpnCmd.class);
+        cmdList.add(UpdateVpnConnectionCmd.class);
+        cmdList.add(UpdateVpnGatewayCmd.class);
+        // separated admin commands
+        cmdList.add(ListAccountsCmdByAdmin.class);
+        cmdList.add(ListZonesCmdByAdmin.class);
+        cmdList.add(ListTemplatesCmdByAdmin.class);
+        cmdList.add(CreateTemplateCmdByAdmin.class);
+        cmdList.add(CopyTemplateCmdByAdmin.class);
+        cmdList.add(RegisterTemplateCmdByAdmin.class);
+        cmdList.add(ListTemplatePermissionsCmdByAdmin.class);
+        cmdList.add(RegisterIsoCmdByAdmin.class);
+        cmdList.add(CopyIsoCmdByAdmin.class);
+        cmdList.add(ListIsosCmdByAdmin.class);
+        cmdList.add(AttachIsoCmdByAdmin.class);
+        cmdList.add(DetachIsoCmdByAdmin.class);
+        cmdList.add(ListIsoPermissionsCmdByAdmin.class);
+        cmdList.add(UpdateVMAffinityGroupCmdByAdmin.class);
+        cmdList.add(AddNicToVMCmdByAdmin.class);
+        cmdList.add(RemoveNicFromVMCmdByAdmin.class);
+        cmdList.add(UpdateDefaultNicForVMCmdByAdmin.class);
+        cmdList.add(ListLoadBalancerRuleInstancesCmdByAdmin.class);
+        cmdList.add(DeployVMCmdByAdmin.class);
+        cmdList.add(DestroyVMCmdByAdmin.class);
+        cmdList.add(RebootVMCmdByAdmin.class);
+        cmdList.add(ResetVMPasswordCmdByAdmin.class);
+        cmdList.add(ResetVMSSHKeyCmdByAdmin.class);
+        cmdList.add(RestoreVMCmdByAdmin.class);
+        cmdList.add(ScaleVMCmdByAdmin.class);
+        cmdList.add(StartVMCmdByAdmin.class);
+        cmdList.add(StopVMCmdByAdmin.class);
+        cmdList.add(UpdateVMCmdByAdmin.class);
+        cmdList.add(UpgradeVMCmdByAdmin.class);
+        cmdList.add(RevertToVMSnapshotCmdByAdmin.class);
+        cmdList.add(ListVMsCmdByAdmin.class);
+        cmdList.add(AttachVolumeCmdByAdmin.class);
+        cmdList.add(CreateVolumeCmdByAdmin.class);
+        cmdList.add(DetachVolumeCmdByAdmin.class);
+        cmdList.add(MigrateVolumeCmdByAdmin.class);
+        cmdList.add(ResizeVolumeCmdByAdmin.class);
+        cmdList.add(UpdateVolumeCmdByAdmin.class);
+        cmdList.add(UploadVolumeCmdByAdmin.class);
+        cmdList.add(ListVolumesCmdByAdmin.class);
+        cmdList.add(AssociateIPAddrCmdByAdmin.class);
+        cmdList.add(ListPublicIpAddressesCmdByAdmin.class);
+        cmdList.add(CreateNetworkCmdByAdmin.class);
+        cmdList.add(UpdateNetworkCmdByAdmin.class);
+        cmdList.add(ListNetworksCmdByAdmin.class);
+        cmdList.add(CreateVPCCmdByAdmin.class);
+        cmdList.add(ListVPCsCmdByAdmin.class);
+        cmdList.add(UpdateVPCCmdByAdmin.class);
         return cmdList;
     }
 
@@ -3164,7 +3294,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
+        _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(user.getAccountId()));
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
@@ -3211,7 +3341,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        long diskOffMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
+        long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
+        long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
@@ -3234,6 +3365,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
+        capabilities.put("customDiskOffMinSize", diskOffMinSize);
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
@@ -3251,6 +3383,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public GuestOSHypervisorVO getGuestOsHypervisor(Long guestOsHypervisorId) {
+        return _guestOSHypervisorDao.findById(guestOsHypervisorId);
+    }
+
+    @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long groupId = cmd.getId();
@@ -3264,7 +3401,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        _accountMgr.checkAccess(caller, null, true, group);
+        _accountMgr.checkAccess(caller, null, group);
 
         // Check if name is already in use by this account (exclude this group)
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
@@ -3289,16 +3426,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return "unknown";
-    }
-
-    @Override
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, startEventId);
-    }
-
-    @Override
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, description, startEventId);
     }
 
     @Override
@@ -3439,20 +3566,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String fingerPrint = cmd.getFingerprint();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listSSHKeyPairs");
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchCriteria<SSHKeyPairVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
@@ -3517,7 +3646,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // make permission check
-        _accountMgr.checkAccess(caller, null, true, vm);
+        _accountMgr.checkAccess(caller, null, vm);
 
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");
@@ -3555,23 +3684,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    for (HostVO h : hosts) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Changing password for host name = " + h.getName());
-                        }
-                        // update password for this host
-                        DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                        if (nv.getValue().equals(cmd.getUsername())) {
-                            DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                            _detailsDao.persist(nvp);
-                        } else {
-                            // if one host in the cluster has diff username then
-                            // rollback to maintain consistency
+                for (HostVO h : hosts) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Changing password for host name = " + h.getName());
+                    }
+                    // update password for this host
+                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    if (nv.getValue().equals(cmd.getUsername())) {
+                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else {
+                        // if one host in the cluster has diff username then
+                        // rollback to maintain consistency
                             throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                        }
                     }
                 }
+            }
             });
         }
 
@@ -3690,7 +3819,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
         }
 
-        _accountMgr.checkAccess(caller, null, true, systemVm);
+        _accountMgr.checkAccess(caller, null, systemVm);
 
         // Check that the specified service offering ID is valid
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
@@ -3778,4 +3907,5 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public void setLockMasterListener(LockMasterListener lockMasterListener) {
         _lockMasterListener = lockMasterListener;
     }
+
 }

@@ -38,7 +38,8 @@ import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "enableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "Enable a Cisco Nexus VSM device")
+@APICommand(name = "enableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "Enable a Cisco Nexus VSM device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());

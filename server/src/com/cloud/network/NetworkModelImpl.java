@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
@@ -97,6 +98,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
@@ -136,6 +138,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     AccountDao _accountDao = null;
     @Inject
     DomainDao _domainDao = null;
+    @Inject
+    AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
 
@@ -1017,14 +1021,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
 
         for (NetworkOfferingServiceMapVO instance : map) {
-            Service service = Network.Service.getService(instance.getService());
+            String service = instance.getService();
             Set<Provider> providers;
-            providers = serviceProviderMap.get(service);
+            providers = serviceProviderMap.get(Service.getService(service));
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
             providers.add(Provider.getProvider(instance.getProvider()));
-            serviceProviderMap.put(service, providers);
+            serviceProviderMap.put(Service.getService(service), providers);
         }
 
         return serviceProviderMap;
@@ -1533,33 +1537,57 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public void checkNetworkPermissions(Account owner, Network network) {
+        // dahn 20140310: I was thinking of making this an assert but
+        //                as we hardly ever test with asserts I think
+        //                we better make sure at runtime.
         if (network == null) {
-            throw new CloudRuntimeException("no network to check permissions for.");
+            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
         // Perform account permission check
         if (network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
+                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
             if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                         ", permission denied");
                 }
             } else {
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
                 if (networkMap == null || networkMap.isEmpty()) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                         ", permission denied");
                 }
             }
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + ((network != null) ? ((NetworkVO)network).getUuid() : "") + " is not available in domain id=" +
+                throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
                     owner.getDomainId());
             }
+        }
+    }
+
+    @Override
+    public void checkNetworkPermissions(Account owner, Network network, AccessType accessType) {
+        if (network == null) {
+            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
+        }
+
+        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+        if (networkOwner == null) {
+            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
+                    + ", network does not have an owner");
+        }
+        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
+                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid()
+                        + ", permission denied");
+            }
+        } else {
+            _accountMgr.checkAccess(owner, accessType, network);
         }
     }
 
@@ -1668,8 +1696,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public boolean isPrivateGateway(Nic guestNic) {
-        Network network = getNetwork(guestNic.getNetworkId());
+    public boolean isPrivateGateway(long ntwkId) {
+        Network network = getNetwork(ntwkId);
         if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != s_privateOfferingId.longValue()) {
             return false;
         }

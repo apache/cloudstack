@@ -87,4 +87,6 @@ public interface FirewallRule extends ControlledEntity, Identity, InternalIdenti
      */
     TrafficType getTrafficType();
 
+    boolean isDisplay();
+
 }

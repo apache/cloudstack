@@ -437,6 +437,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             return true;
         }
 
+        // lock the target row at beginning to avoid lock-promotion caused deadlock
+        lockRow(vm.getId(), true);
+
         SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vmi.getId());
         sc.setParameters("states", oldState);
@@ -452,41 +455,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ub.set(vmi, _updateTimeAttr, new Date());
 
         int result = update(vmi, sc);
-        if (result == 0 && s_logger.isDebugEnabled()) {
-
+        if (result == 0) {
             VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
 
-            if (vo != null) {
-                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={Host=")
-                    .append(vo.getHostId())
-                    .append("; State=")
-                    .append(vo.getState().toString())
-                    .append("; updated=")
-                    .append(vo.getUpdated())
-                    .append("; time=")
-                    .append(vo.getUpdateTime());
-                str.append("} New Data: {Host=")
-                    .append(vm.getHostId())
-                    .append("; State=")
-                    .append(vm.getState().toString())
-                    .append("; updated=")
-                    .append(vmi.getUpdated())
-                    .append("; time=")
-                    .append(vo.getUpdateTime());
-                str.append("} Stale Data: {Host=")
-                    .append(oldHostId)
-                    .append("; State=")
-                    .append(oldState)
-                    .append("; updated=")
-                    .append(oldUpdated)
-                    .append("; time=")
-                    .append(oldUpdateDate)
-                    .append("}");
-                s_logger.debug(str.toString());
+            if (s_logger.isDebugEnabled()) {
+                if (vo != null) {
+                    StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                    str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated())
+                            .append("; time=").append(vo.getUpdateTime());
+                    str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated())
+                            .append("; time=").append(vo.getUpdateTime());
+                    str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=")
+                            .append(oldUpdateDate).append("}");
+                    s_logger.debug(str.toString());
 
-            } else {
-                s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                } else {
+                    s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                }
+            }
+
+            if (vo != null && vo.getState() == newState) {
+                // allow for concurrent update if target state has already been matched
+                s_logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
+                return true;
             }
         }
         return result > 0;

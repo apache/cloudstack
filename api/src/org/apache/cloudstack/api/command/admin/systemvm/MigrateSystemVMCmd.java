@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,7 +40,8 @@ import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class)
+@APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateSystemVMCmd.class.getName());
 
@@ -55,6 +58,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                description = "destination Host ID to migrate VM to")
     private Long hostId;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
@@ -118,7 +122,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 // return the generic system VM instance response
                 SystemVmResponse response = _responseGenerator.createSystemVmResponse(migratedVm);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate the system vm");
             }

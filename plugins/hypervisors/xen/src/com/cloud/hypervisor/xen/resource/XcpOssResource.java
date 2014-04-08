@@ -27,29 +27,27 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.NetworkUsageAnswer;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.resource.ServerResource;
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.NetworkUsageAnswer;
-import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
@@ -76,16 +74,55 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
+    protected boolean launchHeartBeat(Connection conn) {
+        return true;
+    }
+
+    protected StartupStorageCommand initializeLocalSR(Connection conn) {
+        SR extsr = getLocalEXTSR(conn);
+        if (extsr != null) {
+            try {
+                String extuuid = extsr.getUuid(conn);
+                _host.localSRuuid = extuuid;
+                long cap = extsr.getPhysicalSize(conn);
+                if (cap > 0) {
+                    long avail = cap - extsr.getPhysicalUtilisation(conn);
+                    String name = "Cloud Stack Local EXT Storage Pool for " + _host.uuid;
+                    extsr.setNameDescription(conn, name);
+                    Host host = Host.getByUuid(conn, _host.uuid);
+                    String address = host.getAddress(conn);
+                    StoragePoolInfo pInfo = new StoragePoolInfo(extsr.getNameLabel(conn), address, SRType.EXT.toString(), SRType.EXT.toString(), Storage.StoragePoolType.EXT, cap, avail);
+                    StartupStorageCommand cmd = new StartupStorageCommand();
+                    cmd.setPoolInfo(pInfo);
+                    cmd.setGuid(_host.uuid);
+                    cmd.setDataCenter(Long.toString(_dcId));
+                    cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+                    return cmd;
+                }
+            } catch (XenAPIException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.toString();
+                s_logger.warn(msg);
+            } catch (XmlRpcException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.getMessage();
+                s_logger.warn(msg);
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
             return "Debian Squeeze 6.0 (64-bit)";
+        } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
+            return "CentOS 5 (64-bit)";
         } else {
             return CitrixHelper.getXcpGuestOsType(stdType);
         }
     }
 
     @Override
-    protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
+    protected synchronized VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
         if (_host.localSRuuid != null) {
             //create an iso vdi on it
             String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
@@ -134,29 +171,10 @@ public class XcpOssResource extends CitrixResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand)cmd);
+            return execute((NetworkUsageCommand) cmd);
         } else {
             return super.executeRequest(cmd);
         }
-    }
-
-    @Override
-    public StartAnswer execute(StartCommand cmd) {
-        StartAnswer answer = super.execute(cmd);
-
-        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
-            Connection conn = getConnection();
-            String publicIp = null;
-            for (NicTO nic : vmSpec.getNics()) {
-                if (nic.getType() == TrafficType.Guest) {
-                    publicIp = nic.getIp();
-                }
-            }
-            callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
-        }
-
-        return answer;
     }
 
     @Override

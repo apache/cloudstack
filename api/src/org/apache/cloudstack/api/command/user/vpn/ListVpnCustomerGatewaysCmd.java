@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVpnCustomerGateways", description = "Lists site to site vpn customer gateways", responseObject = Site2SiteCustomerGatewayResponse.class)
+@APICommand(name = "listVpnCustomerGateways", description = "Lists site to site vpn customer gateways", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVpnCustomerGatewaysCmd.class.getName());
 
@@ -77,6 +78,6 @@ public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourc
 
         response.setResponses(gwResponses, gws.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

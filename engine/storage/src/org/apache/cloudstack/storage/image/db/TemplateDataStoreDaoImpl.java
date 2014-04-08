@@ -400,6 +400,22 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return null;
     }
 
+    @Override
+    public TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId) {
+        List<DataStore> imgStores = null;
+        imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (imgStores != null) {
+            Collections.shuffle(imgStores);
+            for (DataStore store : imgStores) {
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreStatus(templateId, store.getId(), State.Ready);
+                if (sRes != null && sRes.size() > 0) {
+                    return sRes.get(0);
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Duplicate all image cache store entries
      */

@@ -229,6 +229,7 @@ namespace HypervResource
             string errMsg = vmName;
             var diskDrives = vmInfo.disks;
             var bootArgs = vmInfo.bootArgs;
+            string defaultvlan = "4094"; 
 
             // assert
             errMsg = vmName + ": missing disk information, array empty or missing, agent expects *at least* one disk for a VM";
@@ -391,7 +392,9 @@ namespace HypervResource
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
                     string broadcastUri = nic.broadcastUri;
-                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")) && !isolationUri.Equals("vlan://untagged"))
+                    string nicIp = nic.ip;
+                    string nicNetmask = nic.netmask;
+                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")))
                     {
                         if (broadcastUri != null && broadcastUri.StartsWith("storage"))
                         {
@@ -402,7 +405,11 @@ namespace HypervResource
                             vlan = isolationUri.Substring("vlan://".Length);
                         }
                         int tmp;
-                        if (!int.TryParse(vlan, out tmp))
+                        if (vlan.Equals("untagged", StringComparison.CurrentCultureIgnoreCase) ) {
+                            // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                            vlan = null;
+                        }
+                        else if (!int.TryParse(vlan, out tmp))
                         {
                             // TODO: double check exception type
                             errMsg = string.Format("Invalid VLAN value {0} for on vm {1} for nic uuid {2}", isolationUri, vmName, nic.uuid);
@@ -410,6 +417,10 @@ namespace HypervResource
                             logger.Error(errMsg, ex);
                             throw ex;
                         }
+                    }
+                    if(nicIp.Equals("0.0.0.0") && nicNetmask.Equals("255.255.255.255") ) {
+                        // this is the extra nic added to VR.
+                        vlan = defaultvlan;
                     }
 
                     if (nicCount == 2)
@@ -910,7 +921,6 @@ namespace HypervResource
             return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
         }
 
-
         // Modify the systemvm nic's VLAN id
         public void ModifyVmVLan(string vmName, uint vlanid, String mac)
         {
@@ -933,6 +943,24 @@ namespace HypervResource
 
             EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
+
+            //Assign configuration to new NIC
+            vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
+            vlanSettings.LateBoundObject["OperationMode"] = 1;
+            ModifyFeatureVmResources(vmMgmtSvc, vm, new String[] {
+                vlanSettings.LateBoundObject.GetText(TextFormat.CimDtd20)});
+        }
+
+        // Modify the systemvm nic's VLAN id
+        public void ModifyVmVLan(string vmName, uint vlanid, uint pos)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            SyntheticEthernetPortSettingData[] nicSettingsViaVm = GetEthernetPortSettings(vm);
+            // Obtain controller for Hyper-V virtualisation subsystem
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+
+            EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
+            EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[pos]);
 
             //Assign configuration to new NIC
             vlanSettings.LateBoundObject["AccessVlanId"] = vlanid;
@@ -1046,6 +1074,124 @@ namespace HypervResource
                 var errMsg = string.Format(
                     "Failed migrating VM {0} (GUID {1}) due to {2}",
                     vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Migrates the volume of a vm to a given destination storage
+        /// </summary>
+        /// <param name="displayName"></param>
+        /// <param name="volume"></param>
+        /// <param name="destination storage pool"></param>
+        public void MigrateVolume(string vmName, string volume, string destination)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+            StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
+
+            string[] rasds = null;
+            if (sasd != null)
+            {
+                rasds = new string[1];
+                foreach (StorageAllocationSettingData item in sasd)
+                {
+                    string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
+                    if (!String.IsNullOrEmpty(vhdFileName) && vhdFileName.Equals(volume))
+                    {
+                        string newVhdPath = Path.Combine(destination, Path.GetFileName(item.HostResource[0]));
+                        item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
+                        item.LateBoundObject["PoolId"] = "";
+                        rasds[0] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                        break;
+                    }
+                }
+            }
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.Storage;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, null, migrationSettings, rasds, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating volume {0} of VM {1} (GUID {2}) due to {3}",
+                    volume,
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Migrates the volume of a vm to a given destination storage
+        /// </summary>
+        /// <param name="displayName"></param>
+        /// <param name="destination host"></param>
+        /// <param name="volumeToPool"> volume to me migrated to which pool</param>
+        public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+            StorageAllocationSettingData[] sasd = GetStorageSettings(vm);
+
+            string[] rasds = null;
+            if (sasd != null)
+            {
+                rasds = new string[sasd.Length];
+                uint index = 0;
+                foreach (StorageAllocationSettingData item in sasd)
+                {
+                    string vhdFileName = Path.GetFileNameWithoutExtension(item.HostResource[0]);
+                    if (!String.IsNullOrEmpty(vhdFileName) && volumeToPool.ContainsKey(vhdFileName))
+                    {
+                        string newVhdPath = Path.Combine(volumeToPool[vhdFileName], Path.GetFileName(item.HostResource[0]));
+                        item.LateBoundObject["HostResource"] = new string[] { newVhdPath };
+                        item.LateBoundObject["PoolId"] = "";
+                    }
+
+                    rasds[index++] = item.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+                }
+            }
+
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystemAndStorage;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, rasds, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating VM {0} and its volumes to destination {1} (GUID {2}) due to {3}",
+                    vm.ElementName,
+                    destination,
                     vm.Name,
                     ReturnCode.ToString(ret_val));
                 var ex = new WmiException(errMsg);
@@ -1630,7 +1776,7 @@ namespace HypervResource
             // Is there a template we can use to fill in the settings?
             var newVirtHDSettings = VirtualHardDiskSettingData.CreateInstance();
             newVirtHDSettings.LateBoundObject["Type"] = 3; // Dynamic
-            newVirtHDSettings.LateBoundObject["Format"] = 2; // VHD
+            newVirtHDSettings.LateBoundObject["Format"] = 3; // VHDX
             newVirtHDSettings.LateBoundObject["Path"] = Path;
             newVirtHDSettings.LateBoundObject["MaxInternalSize"] = MaxInternalSize;
             newVirtHDSettings.LateBoundObject["BlockSize"] = 0; // Use defaults
@@ -1870,6 +2016,12 @@ namespace HypervResource
             return null;
         }
 
+        public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
+        {
+            var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
+            return ComputerSystem.GetInstances(wmiQuery);
+        }
+
         public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
         {
             List<String> vms = GetVmElementNames();
@@ -2065,6 +2217,26 @@ namespace HypervResource
 
             var result = new List<EthernetPortAllocationSettingData>(wmiObjCollection.Count);
             foreach (EthernetPortAllocationSettingData item in wmiObjCollection)
+            {
+                result.Add(item);
+            }
+            return result.ToArray();
+        }
+
+        public StorageAllocationSettingData[] GetStorageSettings(ComputerSystem vm)
+        {
+            // ComputerSystem -> VirtualSystemSettingData -> EthernetPortAllocationSettingData
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+
+            var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, StorageAllocationSettingData.CreatedClassName);
+
+            // NB: default scope of ManagementObjectSearcher is '\\.\root\cimv2', which does not contain
+            // the virtualisation objects.
+            var wmiObjectSearch = new ManagementObjectSearcher(vmSettings.Scope, wmiObjQuery);
+            var wmiObjCollection = new StorageAllocationSettingData.StorageAllocationSettingDataCollection(wmiObjectSearch.Get());
+
+            var result = new List<StorageAllocationSettingData>(wmiObjCollection.Count);
+            foreach (StorageAllocationSettingData item in wmiObjCollection)
             {
                 result.Add(item);
             }
@@ -2467,6 +2639,25 @@ namespace HypervResource
                 case Stopping: result = "Stopping"; break;
                 case Pausing: result = "Unknown"; break;
                 case Resuming: result = "Starting"; break; 
+            }
+            return result;
+        }
+
+        public static string ToCloudStackPowerState(UInt16 value)
+        {
+            string result = "Unknown";
+            switch (value)
+            {
+                case Enabled: result = "PowerOn"; break;
+                case Disabled: result = "PowerOff"; break;
+                case Paused: result = "PowerUnknown"; break;
+                case Suspended: result = "PowerUnknown"; break;
+                case Starting: result = "PowerOn"; break;
+                case Snapshotting: result = "PowerUnknown"; break; // NOT used
+                case Saving: result = "PowerOn"; break;
+                case Stopping: result = "PowerOff"; break;
+                case Pausing: result = "PowerUnknown"; break;
+                case Resuming: result = "PowerOn"; break;
             }
             return result;
         }

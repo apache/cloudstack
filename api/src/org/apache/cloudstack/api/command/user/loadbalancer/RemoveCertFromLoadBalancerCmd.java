@@ -36,12 +36,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "removeCertFromLoadBalancer", description = "Removes a certificate from a Load Balancer Rule", responseObject = SuccessResponse.class)
+@APICommand(name = "removeCertFromLoadBalancer", description = "Removes a certificate from a Load Balancer Rule", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(RemoveCertFromLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "removeCertFromLoadBalancer";
+    private static final String s_name = "removecertfromloadbalancerresponse";
 
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,

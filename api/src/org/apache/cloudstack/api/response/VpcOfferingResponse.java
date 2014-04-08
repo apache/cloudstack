@@ -59,6 +59,14 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
+    @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
+    @Param(description = " indicates if the vpc offering supports distributed router for one-hop forwarding", since = "4.4")
+    private Boolean supportsDistributedRouter;
+
+    @SerializedName((ApiConstants.SUPPORTS_REGION_LEVEL_VPC))
+    @Param(description = " indicated if the offering can support region level vpc", since = "4.4")
+    private Boolean supportsRegionLevelVpc;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -85,5 +93,13 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public void setSupportsDistributedRouter(Boolean supportsDistributedRouter) {
+        this.supportsDistributedRouter = supportsDistributedRouter;
+    }
+
+    public void setSupportsRegionLevelVpc(Boolean supports) {
+        this.supportsRegionLevelVpc = supports;
     }
 }

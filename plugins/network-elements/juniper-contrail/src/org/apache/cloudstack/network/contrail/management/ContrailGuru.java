@@ -19,9 +19,10 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
-import javax.inject.Inject;
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import net.juniper.contrail.api.types.MacAddressesType;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
@@ -33,14 +34,15 @@ import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
@@ -48,23 +50,24 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.user.AccountManager;
-import com.cloud.network.IpAddressManager;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -93,8 +96,18 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     private boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
+        if (physicalNetwork == null) {
+            // Physical network can be false for system network during initial setup of CloudStack
+            return false;
+        }
+
+        if (_manager.getRouterOffering() == null || _manager.getVpcRouterOffering() == null) {
+            // FIXME The resource is apparently not configured, we need another way to check this.
+            return false;
+        }
+
         if (networkType == NetworkType.Advanced
-                && offering.getId() == _manager.getRouterOffering().getId()
+                && (offering.getId() == _manager.getRouterOffering().getId() || offering.getId() == _manager.getVpcRouterOffering().getId())
                 && isMyTrafficType(offering.getTrafficType())
                 && offering.getGuestType() == Network.GuestType.Isolated
                 && physicalNetwork.getIsolationMethods().contains("L3VPN"))
@@ -118,8 +131,8 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         NetworkVO network =
-            new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch, offering.getId(), State.Allocated, plan.getDataCenterId(),
-                plan.getPhysicalNetworkId());
+                new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch, offering.getId(), State.Allocated, plan.getDataCenterId(),
+                        plan.getPhysicalNetworkId());
         if (userSpecified.getCidr() != null) {
             network.setCidr(userSpecified.getCidr());
             network.setGateway(userSpecified.getGateway());
@@ -130,7 +143,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+            throws InsufficientVirtualNetworkCapcityException {
         s_logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());
 
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
@@ -148,6 +161,25 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return network;
         }
         _manager.getDatabase().getVirtualNetworks().add(vnModel);
+
+        if (network.getVpcId() != null) {
+            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
+            if (ips.isEmpty()) {
+                s_logger.debug("Creating a source nat ip for network " + network);
+                Account owner = _accountMgr.getAccount(network.getAccountId());
+                try {
+                    PublicIp publicIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+                    IPAddressVO ip = publicIp.ip();
+                    ip.setVpcId(network.getVpcId());
+                    _ipAddressDao.acquireInLockTable(ip.getId());
+                    _ipAddressDao.update(ip.getId(), ip);
+                    _ipAddressDao.releaseFromLockTable(ip.getId());
+                } catch (Exception e) {
+                    s_logger.error("Unable to allocate source nat ip: " + e);
+                }
+            }
+        }
+
         return network;
     }
 
@@ -158,7 +190,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      */
     @Override
     public NicProfile allocate(Network network, NicProfile profile, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-        InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("allocate NicProfile on " + network.getName());
 
         if (profile != null && profile.getRequestedIpv4() != null) {
@@ -185,7 +217,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      */
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve NicProfile on network id: " + network.getId() + " " + network.getName());
         s_logger.debug("deviceId: " + nic.getDeviceId());
 

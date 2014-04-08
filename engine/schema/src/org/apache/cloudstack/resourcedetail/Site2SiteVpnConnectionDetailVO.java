@@ -43,15 +43,16 @@ public class Site2SiteVpnConnectionDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public Site2SiteVpnConnectionDetailVO() {
     }
 
-    public Site2SiteVpnConnectionDetailVO(long id, String name, String value) {
+    public Site2SiteVpnConnectionDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

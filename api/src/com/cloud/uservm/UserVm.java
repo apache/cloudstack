@@ -39,4 +39,5 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
 
     void setAccountId(long accountId);
 
+    public boolean isDisplayVm();
 }

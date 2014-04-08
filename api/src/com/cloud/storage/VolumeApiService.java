@@ -66,11 +66,11 @@ public interface VolumeApiService {
     /**
      * Uploads the volume to secondary storage
      *
-     * @param UploadVolumeCmd cmd
+     * @param UploadVolumeCmdByAdmin cmd
      *
      * @return Volume object
      */
-    Volume uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException;
+    Volume uploadVolume(UploadVolumeCmd cmd)    throws ResourceAllocationException;
 
     boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 
@@ -82,7 +82,7 @@ public interface VolumeApiService {
 
     Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException;
 
-    Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner);
+    Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner, String chainInfo);
 
     /**
      * Extracts the volume to a particular location.
@@ -94,4 +94,8 @@ public interface VolumeApiService {
      *
      */
     String extractVolume(ExtractVolumeCmd cmd);
+
+    boolean isDisplayResourceEnabled(Long id);
+
+    void updateDisplay(Volume volume, Boolean displayVolume);
 }

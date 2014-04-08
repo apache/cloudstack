@@ -259,7 +259,6 @@ import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -621,11 +620,6 @@ public class IntegrationTestConfiguration {
     @Bean
     public ResourceMetaDataService resourceMetaDataService() {
         return Mockito.mock(ResourceMetaDataService.class);
-    }
-
-    @Bean
-    public SecondaryStorageVmManager secondaryStorageVmManager() {
-        return Mockito.mock(SecondaryStorageVmManager.class);
     }
 
     @Bean

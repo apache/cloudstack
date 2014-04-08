@@ -73,6 +73,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());
+        offeringResponse.setCustomizedIops(offering.isCustomizedIops());
+        offeringResponse.setMinIops(offering.getMinIops());
+        offeringResponse.setMaxIops(offering.getMaxIops());
+        offeringResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         offeringResponse.setBytesReadRate(offering.getBytesReadRate());
         offeringResponse.setBytesWriteRate(offering.getBytesWriteRate());
         offeringResponse.setIopsReadRate(offering.getIopsReadRate());

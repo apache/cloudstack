@@ -36,7 +36,6 @@ public class ByteBuffer {
     public int cursor = 0;
 
     private int refCount = 1;
-    private ByteBuffer parentByteBuffer = null;
 
     private Order order;
 
@@ -159,8 +158,23 @@ public class ByteBuffer {
      */
     public String dump() {
         StringBuilder builder = new StringBuilder(length * 4);
+        int i = addBytesToBuilder(builder);
+        int end = i - 1;
+        if (end % 16 != 15) {
+            int begin = end & ~0xf;
+            for (int j = 0; j < (15 - (end % 16)); j++) {
+                builder.append("   ");
+            }
+            builder.append(' ');
+            builder.append(toASCIIString(begin, end));
+            builder.append('\n');
+        }
+        return builder.toString();
+    }
+
+    protected int addBytesToBuilder(StringBuilder builder) {
         int i = 0;
-        for (; i < length && i < length; i++) {
+        for (; i < length; i++) {
             if (i % 16 == 0) {
                 builder.append(String.format("%04x", i));
             }
@@ -175,17 +189,7 @@ public class ByteBuffer {
                 builder.append('\n');
             }
         }
-        int end = i - 1;
-        if (end % 16 != 15) {
-            int begin = end & ~0xf;
-            for (int j = 0; j < (15 - (end % 16)); j++) {
-                builder.append("   ");
-            }
-            builder.append(' ');
-            builder.append(toASCIIString(begin, end));
-            builder.append('\n');
-        }
-        return builder.toString();
+        return i;
     }
 
     private String toASCIIString(int start, int finish) {
@@ -222,14 +226,8 @@ public class ByteBuffer {
         refCount--;
 
         if (refCount == 0) {
-
-            if (parentByteBuffer != null) {
-                parentByteBuffer.unref();
-                parentByteBuffer = null;
-            } else {
-                // Return buffer to buffer pool
-                BufferPool.recycleBuffer(data);
-            }
+            // Return buffer to buffer pool
+            BufferPool.recycleBuffer(data);
 
             data = null;
         }
@@ -237,7 +235,7 @@ public class ByteBuffer {
     }
 
     public boolean isSoleOwner() {
-        return refCount == 1 && (parentByteBuffer == null);
+        return refCount == 1;
     }
 
     /**
@@ -247,8 +245,8 @@ public class ByteBuffer {
         ref();
 
         if (this.length < (offset + length))
-            throw new RuntimeException("Length of region is larger that length of this buffer. Buffer length: " + this.length + ", offset: " + offset
-                    + ", new region length: " + length + ".");
+            throw new RuntimeException("Length of region is larger that length of this buffer. Buffer length: " + this.length + ", offset: " + offset + ", new region length: "
+                    + length + ".");
 
         ByteBuffer slice = new ByteBuffer(data, this.offset + offset, length);
 
@@ -308,8 +306,8 @@ public class ByteBuffer {
 
     public short[] toShortArray() {
         if (length % 2 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 2 without remainder. Array length: " + length + ", remainder: "
-                    + (length % 2) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 2 without remainder. Array length: " + length + ", remainder: " + (length % 2)
+                    + ".");
 
         short[] buf = new short[length / 2];
 
@@ -324,8 +322,8 @@ public class ByteBuffer {
      */
     public int[] toIntLEArray() {
         if (length % 4 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 4 without remainder. Array length: " + length + ", remainder: "
-                    + (length % 4) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 4 without remainder. Array length: " + length + ", remainder: " + (length % 4)
+                    + ".");
 
         int[] buf = new int[length / 4];
 
@@ -341,8 +339,8 @@ public class ByteBuffer {
      */
     public int[] toInt3LEArray() {
         if (length % 3 != 0)
-            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 3 without remainder. Array length: " + length + ", remainder: "
-                    + (length % 3) + ".");
+            throw new ArrayIndexOutOfBoundsException("Length of byte array must be dividable by 3 without remainder. Array length: " + length + ", remainder: " + (length % 3)
+                    + ".");
 
         int[] buf = new int[length / 3];
 
@@ -373,8 +371,7 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        int result = (((data[offset + cursor] & 0xff) << 24) + ((data[offset + cursor + 1] & 0xff) << 16) + ((data[offset + cursor + 2] & 0xff) << 8) + (data[offset
-                                                                                                                                                              + cursor + 3] & 0xff));
+        int result = (((data[offset + cursor] & 0xff) << 24) + ((data[offset + cursor + 1] & 0xff) << 16) + ((data[offset + cursor + 2] & 0xff) << 8) + (data[offset + cursor + 3] & 0xff));
         cursor += 4;
         return result;
     }
@@ -386,8 +383,7 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        int result = (((data[offset + cursor + 3] & 0xff) << 24) + ((data[offset + cursor + 2] & 0xff) << 16) + ((data[offset + cursor + 1] & 0xff) << 8) + (data[offset
-                                                                                                                                                                  + cursor] & 0xff));
+        int result = (((data[offset + cursor + 3] & 0xff) << 24) + ((data[offset + cursor + 2] & 0xff) << 16) + ((data[offset + cursor + 1] & 0xff) << 8) + (data[offset + cursor] & 0xff));
         cursor += 4;
         return result;
     }
@@ -399,8 +395,8 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        long result = (((long)(data[offset + cursor + 3] & 0xff) << 24) + ((long)(data[offset + cursor + 2] & 0xff) << 16)
-                + ((long)(data[offset + cursor + 1] & 0xff) << 8) + (data[offset + cursor + 0] & 0xff));
+        long result = (((long)(data[offset + cursor + 3] & 0xff) << 24) + ((long)(data[offset + cursor + 2] & 0xff) << 16) + ((long)(data[offset + cursor + 1] & 0xff) << 8) + (data[offset
+                + cursor + 0] & 0xff));
         cursor += 4;
         return result;
     }
@@ -412,10 +408,17 @@ public class ByteBuffer {
         if (cursor + 4 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 4 bytes from this buffer: " + this + ".");
 
-        long result = (((long)(data[offset + cursor + 0] & 0xff) << 24) + ((long)(data[offset + cursor + 1] & 0xff) << 16)
-                + ((long)(data[offset + cursor + 2] & 0xff) << 8) + (data[offset + cursor + 3] & 0xff));
+        byte value1 = data[offset + cursor + 0];
+        byte value2 = data[offset + cursor + 1];
+        byte value3 = data[offset + cursor + 2];
+        byte value4 = data[offset + cursor + 3];
+        long result = calculateUnsignedInt(value1, value2, value3, value4);
         cursor += 4;
         return result;
+    }
+
+    protected static long calculateUnsignedInt(byte value1, byte value2, byte value3, byte value4) {
+        return (calculateUnsignedByte(value1) << 24) + (calculateUnsignedByte(value2) << 16) + (calculateUnsignedByte(value3) << 8) + calculateUnsignedByte(value4);
     }
 
     /**
@@ -474,9 +477,14 @@ public class ByteBuffer {
         if (cursor + 1 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 1 byte from this buffer: " + this + ".");
 
-        int b = data[offset + cursor] & 0xff;
+        byte value = data[offset + cursor];
+        int b = calculateUnsignedByte(value);
         cursor += 1;
         return b;
+    }
+
+    protected static int calculateUnsignedByte(byte value) {
+        return value & 0xff;
     }
 
     /**
@@ -498,9 +506,15 @@ public class ByteBuffer {
         if (cursor + 2 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 2 bytes from this buffer: " + this + ".");
 
-        int result = (((data[offset + cursor] & 0xff) << 8) | (data[offset + cursor + 1] & 0xff));
+        byte value1 = data[offset + cursor];
+        byte value2 = data[offset + cursor + 1];
+        int result = calculateUnsignedShort(value1, value2);
         cursor += 2;
         return result;
+    }
+
+    protected static int calculateUnsignedShort(byte value1, byte value2) {
+        return (calculateUnsignedByte(value1) << 8) | calculateUnsignedByte(value2);
     }
 
     /**
@@ -522,9 +536,15 @@ public class ByteBuffer {
         if (cursor + 2 > length)
             throw new ArrayIndexOutOfBoundsException("Cannot read 2 bytes from this buffer: " + this + ".");
 
-        short result = (short)(((data[offset + cursor + 0] & 0xff) << 8) | (data[offset + cursor + 1] & 0xff));
+        byte value1 = data[offset + cursor + 0];
+        byte value2 = data[offset + cursor + 1];
+        short result = calculateSignedShort(value1, value2);
         cursor += 2;
         return result;
+    }
+
+    protected static short calculateSignedShort(byte value1, byte value2) {
+        return (short)calculateUnsignedShort(value1, value2);
     }
 
     /**
@@ -653,13 +673,13 @@ public class ByteBuffer {
             value = readSignedInt();
             break;
         case 5:
-            value = (readSignedByte() << 32) | readUnsignedInt();
+            value = readSignedByte() | readUnsignedInt();
             break;
         case 6:
-            value = (readSignedShort() << 32) | readUnsignedInt();
+            value = readSignedShort() | readUnsignedInt();
             break;
         case 7:
-            value = (readSignedByte() << 32 + 24) | (readUnsignedShort() << 32) | readUnsignedInt();
+            value = (readSignedByte() << 24) | readUnsignedShort() | readUnsignedInt();
             break;
         case 8:
             value = readSignedLong();
@@ -694,20 +714,19 @@ public class ByteBuffer {
             value = readUnsignedInt();
             break;
         case 5:
-            value = (readUnsignedByte() << 32) | readUnsignedInt();
+            value = readUnsignedByte() | readUnsignedInt();
             break;
         case 6:
-            value = (readUnsignedShort() << 32) | readUnsignedInt();
+            value = readUnsignedShort() | readUnsignedInt();
             break;
         case 7:
-            value = (readUnsignedByte() << 32 + 16) | (readUnsignedShort() << 32) | readUnsignedInt();
+            value = (readUnsignedByte() << 16) | readUnsignedShort() | readUnsignedInt();
             break;
         case 8:
             value = readSignedLong();
             if (value < 0)
-                throw new RuntimeException(
-                        "Cannot read 64 bit integers which are larger than 0x7FffFFffFFffFFff, because of lack of unsinged long type in Java. Value: " + value + ". Data: "
-                                + this + ".");
+                throw new RuntimeException("Cannot read 64 bit integers which are larger than 0x7FffFFffFFffFFff, because of lack of unsinged long type in Java. Value: " + value
+                        + ". Data: " + this + ".");
             break;
         default:
             throw new RuntimeException("Cannot read integers which are more than 8 bytes long. Length: " + len + ". Data: " + this + ".");
@@ -971,8 +990,7 @@ public class ByteBuffer {
      */
     public void prepend(byte[] data, int offset, int length) {
         if (!isSoleOwner()) {
-            throw new RuntimeException("Create full copy of this byte buffer data for modification. refCount: " + refCount + ", parentByteBuffer: "
-                    + parentByteBuffer + ".");
+            throw new RuntimeException("Create full copy of this byte buffer data for modification. refCount: " + refCount + ".");
         }
 
         // If there is no enough space for header to prepend

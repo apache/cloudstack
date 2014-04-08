@@ -17,6 +17,7 @@
 package com.cloud.consoleproxy;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -232,6 +233,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
     private boolean _sslEnabled = true;
+    private String _consoleProxyUrlDomain;
 
     // global load picture at zone basis
     private SystemVmLoadScanner<Long> _loadScanner;
@@ -383,9 +385,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         assert (ksVo != null);
 
         if (_staticPublicIp == null) {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _consoleProxyUrlDomain);
         } else {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, _consoleProxyUrlDomain);
         }
     }
 
@@ -703,16 +705,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         List<? extends NetworkOffering> offerings =
             _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
 
         networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
-            defaultNic);
+                new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
 
         for (NetworkOffering offering : offerings) {
-            networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null);
+            networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<NicProfile>());
         }
 
         ConsoleProxyVO proxy =
@@ -1188,6 +1190,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
+        }
+
+        _consoleProxyUrlDomain = configs.get(Config.ConsoleProxyUrlDomain.key());
+        if( _sslEnabled && (_consoleProxyUrlDomain == null || _consoleProxyUrlDomain.isEmpty())) {
+            s_logger.warn("Empty console proxy domain, explicitly disabling SSL");
+            _sslEnabled = false;
         }
 
         value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());

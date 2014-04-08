@@ -40,8 +40,11 @@ namespace HypervResource
         void DestroyVm(dynamic jsonObj);
         void DestroyVm(string displayName);
         void MigrateVm(string vmName, string destination);
+        void MigrateVolume(string vmName, string volume, string destination);
+        void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool);
         void DetachDisk(string displayName, string diskFileName);
         ComputerSystem GetComputerSystem(string displayName);
+        ComputerSystem.ComputerSystemCollection GetComputerSystemCollection();
         string GetDefaultDataRoot();
         string GetDefaultVirtualDiskFolder();
         ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings);
@@ -67,5 +70,6 @@ namespace HypervResource
         void SetState(ComputerSystem vm, ushort requiredState);
         Dictionary<String, VmState> GetVmSync(String privateIpAddress);
         void ModifyVmVLan(string vmName, uint vlanid, string mac);
+        void ModifyVmVLan(string vmName, uint vlanid, uint pos);
     }
 }

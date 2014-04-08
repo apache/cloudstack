@@ -50,7 +50,7 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp) throws ResourceAllocationException, InsufficientAddressCapacityException,
         ConcurrentOperationException;
 
     boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
@@ -77,7 +77,7 @@ public interface NetworkService {
     IpAddress getIp(long id);
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId,
-        Boolean changeCidr, String guestVmCidr, Boolean displayNetwork);
+        Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId,
         List<String> tags, String name);
@@ -176,4 +176,6 @@ public interface NetworkService {
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
 
     Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
+
+    IpAddress updateIP(Long id, String customId, Boolean displayIp);
 }

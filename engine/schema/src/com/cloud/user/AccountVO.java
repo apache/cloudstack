@@ -70,12 +70,12 @@ public class AccountVO implements Account {
     boolean isDefault;
 
     public AccountVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AccountVO(long id) {
         this.id = id;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid) {
@@ -83,7 +83,7 @@ public class AccountVO implements Account {
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
-        this.state = State.enabled;
+        state = State.enabled;
         this.uuid = uuid;
     }
 
@@ -175,7 +175,7 @@ public class AccountVO implements Account {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -185,5 +185,10 @@ public class AccountVO implements Account {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Account.class;
     }
 }

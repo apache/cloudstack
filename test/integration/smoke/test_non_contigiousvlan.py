@@ -32,7 +32,7 @@ class Services():
         }
 
 
-@attr(tags = ["simulator", "advanced"])
+@attr(tags = ["simulator", "advanced", "selfservice"])
 class TestUpdatePhysicalNetwork(cloudstackTestCase):
     """
     Test to extend physical network vlan range

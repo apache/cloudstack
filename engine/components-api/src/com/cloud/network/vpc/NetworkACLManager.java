@@ -28,9 +28,10 @@ public interface NetworkACLManager {
      * @param name
      * @param description
      * @param vpcId
+     * @param forDisplay TODO
      * @return
      */
-    NetworkACL createNetworkACL(String name, String description, long vpcId);
+    NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay);
 
     /**
      * Fetches Network ACL with specified Id
@@ -74,10 +75,11 @@ public interface NetworkACLManager {
      * @param aclId
      * @param action
      * @param number
+     * @param forDisplay TODO
      * @return
      */
     NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
-        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number);
+        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number, Boolean forDisplay);
 
     /**
      * Returns Network ACL Item with specified Id
@@ -130,11 +132,13 @@ public interface NetworkACLManager {
      * @param sourcePortEnd
      * @param icmpCode
      * @param icmpType
+     * @param customId TODO
+     * @param forDisplay TODO
      * @return
      * @throws ResourceUnavailableException
      */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId, Boolean forDisplay) throws ResourceUnavailableException;
 
     /**
      * Associates acl with a network and applies the ACLItems

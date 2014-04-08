@@ -19,6 +19,5 @@
 
 package com.cloud.network.nicira;
 
-@SuppressWarnings("serial")
 public class Acl extends AccessConfiguration<AclRule> {
 }

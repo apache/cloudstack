@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePrivateGateway", description = "Deletes a Private gateway", responseObject = SuccessResponse.class)
+@APICommand(name = "deletePrivateGateway", description = "Deletes a Private gateway", responseObject = SuccessResponse.class, entityType = {VpcGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());
     private static final String s_name = "deleteprivategatewayresponse";
@@ -85,7 +86,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
         boolean result = _vpcService.deleteVpcPrivateGateway(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete private gateway");
         }

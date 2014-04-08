@@ -63,4 +63,8 @@ public interface Site2SiteVpnService {
     Pair<List<? extends Site2SiteVpnConnection>, Integer> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd);
 
     Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd updateVpnCustomerGatewayCmd);
+
+    Site2SiteVpnConnection updateVpnConnection(long id, String customId, Boolean forDisplay);
+
+    Site2SiteVpnGateway updateVpnGateway(Long id, String customId, Boolean forDisplay);
 }

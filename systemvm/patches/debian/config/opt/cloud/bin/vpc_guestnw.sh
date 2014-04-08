@@ -30,7 +30,7 @@ then
 fi
 
 usage() {
-  printf "Usage:\n %s -A  -d <dev> -i <ip address> -g <gateway> -m <network mask> -s <dns ip> -e < domain> [-f] \n" $(basename $0) >&2
+  printf "Usage:\n %s -A  -M <mac> -d <dev> -i <ip address> -g <gateway> -m <network mask> -s <dns ip> -e < domain> [-f] \n" $(basename $0) >&2
   printf " %s -D -d <dev> -i <ip address> \n" $(basename $0) >&2
 }
 
@@ -131,15 +131,33 @@ desetup_passwdsvcs() {
 create_guest_network() {
   # need to wait for eth device to appear before configuring it
   timer=0
-  while ! `grep -q $dev /proc/net/dev` ; do
-    logger -t cloud "$(basename $0):Waiting for interface $dev to appear, $timer seconds"
-    sleep 1;
-    if [ $timer -gt 15 ]; then
-      logger -t cloud "$(basename $0):interface $dev never appeared"
-      break
-    fi
-    timer=$[timer + 1]
-  done
+
+  # match dev based on mac, if passed
+  if [[ ! -z "$mac" ]]; then
+    logger -t cloud "$(basename $0): mac $mac passed, trying to match to device"
+    while [ ! $timer -gt 15 ]; do 
+      for i in `ls /sys/class/net`; do
+        if grep -q $mac /sys/class/net/$i/address; then
+          dev=$i
+          logger -t cloud "$(basename $0): matched dev $i to mac $mac, dev is now $dev"
+          timer=15
+          break
+        fi
+      done
+      sleep 1;
+      timer=$[timer + 1]
+    done
+  else
+    while ! `grep -q $dev /proc/net/dev` ; do
+      logger -t cloud "$(basename $0):Waiting for interface $dev to appear, $timer seconds"
+      sleep 1;
+      if [ $timer -gt 15 ]; then
+        logger -t cloud "$(basename $0):interface $dev never appeared"
+        break
+      fi
+      timer=$[timer + 1]
+    done
+  fi
 
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
@@ -225,11 +243,12 @@ dflag=
 gflag=
 Cflag=
 Dflag=
+Mflag=
 
 op=""
 
 
-while getopts 'CDn:m:d:i:g:s:e:' OPTION
+while getopts 'CDn:m:M:d:i:g:s:e:' OPTION
 do
   case $OPTION in
   C)	Cflag=1
@@ -244,6 +263,9 @@ do
   m)	mflag=1
 		mask="$OPTARG"
 		;;
+  M)    Mflag=1
+                mac="$OPTARG"
+                ;;
   d)	dflag=1
   		dev="$OPTARG"
   		;;

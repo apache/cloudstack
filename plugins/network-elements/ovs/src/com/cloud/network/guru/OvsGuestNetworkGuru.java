@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.guru;
 
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -61,6 +63,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     OvsTunnelManager _ovsTunnelMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    @Inject
+    VpcDao _vpcDao;
 
     OvsGuestNetworkGuru() {
         super();
@@ -144,14 +148,15 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         if (network.getCidr() != null) {
             implemented.setCidr(network.getCidr());
         }
-        String name = network.getName();
-        if (name == null || name.isEmpty()) {
-            name = ((NetworkVO)network).getUuid();
-        }
-
-        // do we need to create switch right now?
 
         implemented.setBroadcastDomainType(BroadcastDomainType.Vswitch);
+
+        // for the networks that are part of VPC enabled for distributed routing use scheme vs://vpcid.GRE key for network
+        if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
+            String keyStr = BroadcastDomainType.getValue(implemented.getBroadcastUri());
+            Long vpcid= network.getVpcId();
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vpcid.toString() + "." + keyStr));
+        }
 
         return implemented;
     }
@@ -218,5 +223,10 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
+    }
+
+    boolean isVpcEnabledForDistributedRouter(long vpcId) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        return vpc.usesDistributedRouter();
     }
 }

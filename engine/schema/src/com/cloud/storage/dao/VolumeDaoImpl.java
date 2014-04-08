@@ -225,6 +225,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volume.setDeviceId(deviceId);
         volume.setUpdated(new Date());
         volume.setAttached(new Date());
+        if (deviceId == 0L) {
+            volume.setVolumeType(Type.ROOT);
+        }
         update(volumeId, volume);
     }
 
@@ -235,6 +238,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volume.setDeviceId(null);
         volume.setUpdated(new Date());
         volume.setAttached(null);
+        if (findById(volumeId).getVolumeType() == Type.ROOT) {
+            volume.setVolumeType(Type.DATADISK);
+        }
         update(volumeId, volume);
     }
 
@@ -577,6 +583,26 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+
+    @Override
+    @DB
+    public boolean updateUuid(long srcVolId, long destVolId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        try {
+            VolumeVO srcVol = findById(srcVolId);
+            VolumeVO destVol = findById(destVolId);
+            String uuid = srcVol.getUuid();
+            srcVol.setUuid(null);
+            destVol.setUuid(uuid);
+            update(srcVolId, srcVol);
+            update(destVolId, destVol);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to persist the sequence number for this host");
+        }
+        txn.commit();
+        return true;
     }
 
     @Override

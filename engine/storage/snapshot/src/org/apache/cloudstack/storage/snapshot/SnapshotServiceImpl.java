@@ -302,6 +302,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         if (result.isFailed()) {
             try {
                 destSnapshot.processEvent(Event.OperationFailed);
+                //if backup snapshot failed, mark srcSnapshot in snapshot_store_ref as failed also
+                srcSnapshot.processEvent(Event.DestroyRequested);
+                srcSnapshot.processEvent(Event.OperationSuccessed);
+
                 srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to update state: " + e.toString());
@@ -442,10 +446,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     // push one individual snapshots currently on cache store to region store if it is not there already
-    private void syncSnapshotToRegionStore(long snapshotId, DataStore store) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
-        }
+    private void syncSnapshotToRegionStore(long snapshotId, DataStore store){
         // if snapshot is already on region wide object store, check if it is really downloaded there (by checking install_path). Sync snapshot to region
         // wide store if it is not there physically.
         SnapshotInfo snapOnStore = _snapshotFactory.getSnapshot(snapshotId, store);
@@ -453,6 +454,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             throw new CloudRuntimeException("Cannot find an entry in snapshot_store_ref for snapshot " + snapshotId + " on region store: " + store.getName());
         }
         if (snapOnStore.getPath() == null || snapOnStore.getPath().length() == 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
+            }
             // snapshot is not on region store yet, sync to region store
             SnapshotInfo srcSnapshot = _snapshotFactory.getReadySnapshotOnCache(snapshotId);
             if (srcSnapshot == null) {

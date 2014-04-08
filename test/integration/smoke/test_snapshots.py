@@ -102,7 +102,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "provisioning"])
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
         """

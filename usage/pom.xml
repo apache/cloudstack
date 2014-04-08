@@ -15,7 +15,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.5.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -34,11 +34,6 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-schema</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>commons-daemon</groupId>

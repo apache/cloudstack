@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,12 +16,12 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
-
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
 
 public interface Site2SiteVpnGateway extends ControlledEntity, Identity, InternalIdentity {
     public long getAddrId();
@@ -28,4 +29,6 @@ public interface Site2SiteVpnGateway extends ControlledEntity, Identity, Interna
     public long getVpcId();
 
     public Date getRemoved();
+
+    boolean isDisplay();
 }

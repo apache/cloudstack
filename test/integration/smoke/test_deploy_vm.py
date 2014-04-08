@@ -34,6 +34,11 @@ from marvin.lib.common import get_zone, get_domain, get_template
 
 from nose.plugins.attrib import attr
 
+            #data reqd for virtual machine creation
+            "virtual_machine2" : {
+                "name" : "testvm2",
+                "displayname" : "Test VM2",
+            },
 class TestDeployVM(cloudstackTestCase):
     """Test deploy a VM into a user account
     """
@@ -69,7 +74,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
-    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'selfservice'])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
 
@@ -122,8 +127,53 @@ class TestDeployVM(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg', 'selfservice'])
+    def test_deploy_vm_multiple(self):
+        """Test Multiple Deploy Virtual Machine
+
+        # Validate the following:
+        # 1. deploy 2 virtual machines 
+        # 2. listVirtualMachines using 'ids' parameter returns accurate information
+        """
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id
+        )
+
+        self.virtual_machine2 = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["virtual_machine2"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id
+        )
+
+        list_vms = VirtualMachine.list(self.apiclient, ids=[self.virtual_machine.id, self.virtual_machine2.id], listAll=True)
+        self.debug(
+            "Verify listVirtualMachines response for virtual machines: %s, %s" % (self.virtual_machine.id, self.virtual_machine2.id)
+        )
+
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertEqual(
+            len(list_vms),
+            2,
+            "List VM response was empty, expected 2 VMs"
+        )
+
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
+

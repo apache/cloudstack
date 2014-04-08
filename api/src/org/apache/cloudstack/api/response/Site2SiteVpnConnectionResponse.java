@@ -18,20 +18,20 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Site2SiteVpnConnection.class)
 @SuppressWarnings("unused")
 public class Site2SiteVpnConnectionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the vpn gateway ID")
+    @Param(description = "the connection ID")
     private String id;
 
     @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID)
@@ -123,6 +123,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Param(description = "the date and time the host was removed")
     private Date removed;
 
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is connection for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -210,6 +214,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Override
     public void setDomainName(String domainName) {
         this.domain = domainName;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 
 }

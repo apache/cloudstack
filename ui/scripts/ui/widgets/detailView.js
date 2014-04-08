@@ -456,6 +456,13 @@
                 tooltip: '.tooltip-box'
             });
 
+            var removeCopyPasteIcons = function() {
+                $detailView.find('.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                $detailView.find('td.value .copypasteicon').hide();
+            };
+
+            removeCopyPasteIcons();
+
             var convertInputs = function($inputs) {
                 // Save and turn back into labels
                 $inputs.each(function() {
@@ -606,11 +613,12 @@
                             return false;
                         }
                     }
+                    restoreCopyPasteIcons();
                     applyEdits($inputs, $editButton);
                 } else { // Cancel
+                    restoreCopyPasteIcons();
                     cancelEdits($inputs, $editButton);
                 }
-
                 return true;
             });
 
@@ -625,6 +633,9 @@
                 tooltip: '.tooltip-box'
             });
 
+            var restoreCopyPasteIcons = function() {
+                $detailView.find('td.value .copypasteicon').show();
+            };
 
             $detailView.find('td.value span').each(function() {
                 var name = $(this).closest('tr').data('detail-view-field');
@@ -931,7 +942,6 @@
 
         $(fields).each(function() {
             var fieldGroup = this;
-
             var $detailTable = $('<tbody></tbody>').appendTo(
                 $('<table></table>').appendTo(
                     $('<div></div>').addClass('detail-group').appendTo($detailGroups.find('.main-groups'))
@@ -979,9 +989,32 @@
 
                 $name.html(_l(value.label));
                 $value.html(_s(content));
+                $value.attr('title', _s(content));
 
                 // Set up validation metadata
                 $value.data('validation-rules', value.validation);
+
+                //add copypaste icon
+                if (value.isCopyPaste) {
+                    var $copyicon = $('<div>').addClass('copypasteicon').insertAfter($value);
+                    $value.addClass('copypasteenabledvalue');
+
+                    //set up copypaste eventhandler
+                    $copyicon.click(function() {
+                        //reset other values' formatting
+                        $(this).closest('table').find('span.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                        //find the corresponding value
+                        var $correspValue = $(this).closest('tr').find('.value').find('span');
+                        $value.removeClass("copypasteenabledvalue").addClass("copypasteactive");
+                        var correspValueElem = $correspValue.get(0);
+                        //select the full value
+                        var range = document.createRange();
+                        range.selectNodeContents(correspValueElem);
+                        var selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    });
+                }
 
                 // Set up editable metadata
                 if (typeof(value.isEditable) == 'function')
@@ -1486,7 +1519,8 @@
         }
 
         // Detail action
-        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size() &&
+            !$target.closest('.list-view').size()) {
             var $action = $target.closest('.action').find('[detail-action]');
             var actionName = $action.attr('detail-action');
             var actionCallback = $action.data('detail-view-action-callback');

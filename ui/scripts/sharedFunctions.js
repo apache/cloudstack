@@ -297,7 +297,7 @@ var addGuestNetworkDialog = {
                     docID: 'helpGuestNetworkZoneVLANID'
                 },
                 isolatedpvlanId: {
-                    label: 'Secondary Isolated VLAN ID'
+                    label: 'label.secondary.isolated.vlan.id'
                 },
 
                 scope: {
@@ -319,24 +319,24 @@ var addGuestNetworkDialog = {
                         if (selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) {
                             array1.push({
                                 id: 'zone-wide',
-                                description: 'All'
+                                description: 'ui.listView.filters.all'
                             });
                         } else {
                             array1.push({
                                 id: 'zone-wide',
-                                description: 'All'
+                                description: 'ui.listView.filters.all'
                             });
                             array1.push({
                                 id: 'domain-specific',
-                                description: 'Domain'
+                                description: 'label.domain'
                             });
                             array1.push({
                                 id: 'account-specific',
-                                description: 'Account'
+                                description: 'label.account'
                             });
                             array1.push({
                                 id: 'project-specific',
-                                description: 'Project'
+                                description: 'label.project'
                             });
                         }
                         args.response.success({
@@ -584,37 +584,37 @@ var addGuestNetworkDialog = {
 
                 //IPv4 (begin)
                 ip4gateway: {
-                    label: 'IPv4 Gateway',
+                    label: 'label.ipv4.gateway',
                     docID: 'helpGuestNetworkZoneGateway'
                 },
                 ip4Netmask: {
-                    label: 'IPv4 Netmask',
+                    label: 'label.ipv4.netmask',
                     docID: 'helpGuestNetworkZoneNetmask'
                 },
                 startipv4: {
-                    label: 'IPv4 Start IP',
+                    label: 'label.ipv4.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP'
                 },
                 endipv4: {
-                    label: 'IPv4 End IP',
+                    label: 'label.ipv4.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP'
                 },
                 //IPv4 (end)
 
                 //IPv6 (begin)
                 ip6gateway: {
-                    label: 'IPv6 Gateway',
+                    label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway'
                 },
                 ip6cidr: {
-                    label: 'IPv6 CIDR'
+                    label: 'label.ipv6.CIDR'
                 },
                 startipv6: {
-                    label: 'IPv6 Start IP',
+                    label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP'
                 },
                 endipv6: {
-                    label: 'IPv6 End IP',
+                    label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP'
                 },
                 //IPv6 (end)
@@ -900,6 +900,9 @@ var roleTypeDomainAdmin = "2";
 
 cloudStack.converters = {
     convertBytes: function(bytes) {
+	    if (bytes == undefined)
+	    	return '';
+	
         if (bytes < 1024 * 1024) {
             return (bytes / 1024).toFixed(2) + " KB";
         } else if (bytes < 1024 * 1024 * 1024) {
@@ -916,11 +919,18 @@ cloudStack.converters = {
             var disconnected = new Date();
             disconnected.setISO8601(UtcDate);
 
-            if (g_timezoneoffset != null)
+            if (g_timezoneoffset != null) {
                 localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
-            else
-                localDate = disconnected.toUTCString();
-            // localDate = disconnected.getTimePlusTimezoneOffset(0);
+            } else {                
+            	var browserDate = new Date();
+            	var browserTimezoneoffset = browserDate.getTimezoneOffset();            	
+            	if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {            		
+            		localDate = disconnected.toUTCString();
+            	} else {
+            		g_timezoneoffset = (browserTimezoneoffset/60) * (-1);
+            		localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
+            	}       
+            }
         }
         return localDate;
     },
@@ -1253,7 +1263,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         	url += 'cifs://';
         }
         
-        url += (server + path + '?user=' + smbUsername + '&password=' + smbPassword + '&domain=' + smbDomain);
+        url += (server + path);
                
         return url;
     }
@@ -1334,6 +1344,15 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
             url = "iscsi://" + server + iqn + "/" + lun;
         else
             url = server + iqn + "/" + lun;
+        return url;
+    }
+
+    function glusterURL(server, path) {
+        var url;
+        if (server.indexOf("://") == -1)
+            url = "gluster://" + server + path;
+        else
+            url = server + path;
         return url;
     }
 

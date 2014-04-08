@@ -133,10 +133,10 @@ public class VMSnapshotVO implements VMSnapshot {
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
-        this.state = State.Allocated;
+        state = State.Allocated;
         this.description = description;
-        this.name = vmSnapshotName;
-        this.displayName = vsDisplayName;
+        name = vmSnapshotName;
+        displayName = vsDisplayName;
         this.type = type;
         this.current = current;
     }
@@ -227,7 +227,7 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Override
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     @Override
@@ -242,5 +242,10 @@ public class VMSnapshotVO implements VMSnapshot {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VMSnapshot.class;
     }
 }

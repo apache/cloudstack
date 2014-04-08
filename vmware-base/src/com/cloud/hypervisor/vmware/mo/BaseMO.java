@@ -70,6 +70,10 @@ public class BaseMO {
         return _name;
     }
 
+    public void unregisterVm() throws Exception {
+        _context.getService().unregisterVM(_mor);
+    }
+
     public boolean destroy() throws Exception {
         ManagedObjectReference morTask = _context.getService().destroyTask(_mor);
 

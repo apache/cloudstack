@@ -75,7 +75,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["simulator", "basic", "advanced",  "portablepublicip"])
+    @attr(tags = ["simulator", "basic", "advanced",  "portablepublicip", "selfservice"])
     def test_createPortablePublicIPRange(self):
         """ Test to create a portable public ip range
         """
@@ -161,7 +161,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["simulator", "advanced",  "portablepublicip"])
+    @attr(tags = ["simulator", "advanced",  "portablepublicip", "selfservice"])
     def test_createPortablePublicIPAcquire(self):
         """ Test to acquire a provisioned public ip range
         """

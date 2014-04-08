@@ -110,6 +110,10 @@ CREATE TABLE `cloud`.`async_job_join_map` (
   INDEX `i_async_job_join_map__expiration`(`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+#realhostip changes, before changing table and adding default value
+UPDATE `cloud`.`configuration` SET value = CONCAT("*.",(SELECT `temptable`.`value` FROM (SELECT * FROM `cloud`.`configuration` WHERE `name`="consoleproxy.url.domain") AS `temptable` WHERE `temptable`.`name`="consoleproxy.url.domain")) WHERE `name`="consoleproxy.url.domain";
+UPDATE `cloud`.`configuration` SET `value` = CONCAT("*.",(SELECT `temptable`.`value` FROM (SELECT * FROM `cloud`.`configuration` WHERE `name`="secstorage.ssl.cert.domain") AS `temptable` WHERE `temptable`.`name`="secstorage.ssl.cert.domain")) WHERE `name`="secstorage.ssl.cert.domain";
+
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `default_value` VARCHAR(4095) COMMENT 'Default value for a configuration parameter';
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `updated` datetime COMMENT 'Time this was updated by the server. null means this row is obsolete.';
 ALTER TABLE `cloud`.`configuration` ADD COLUMN `scope` VARCHAR(255) DEFAULT NULL COMMENT 'Can this parameter be scoped';
@@ -299,7 +303,7 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id
             left join
-        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image' and template_store_ref.destroyed=0
             left join
         `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id
             left join
@@ -898,8 +902,6 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 ALTER TABLE `cloud`.`network_acl_item` modify `cidr` varchar(2048);
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "api.servlet.endpoint", "http://localhost:8080/client/api?", "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", "http://localhost:8080/client/api?", NULL,NULL,0);
-
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select
@@ -1099,3 +1101,6 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 2012 R2 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows Server 2012 R2 (64-bit)', 168);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows Server 2012 R2 (64-bit)', 168);

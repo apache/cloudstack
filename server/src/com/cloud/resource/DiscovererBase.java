@@ -25,13 +25,13 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
@@ -49,6 +49,10 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected NetworkModel _networkMgr;
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    protected ResourceManager _resourceMgr;
+    @Inject
+    protected DataCenterDao _dcDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

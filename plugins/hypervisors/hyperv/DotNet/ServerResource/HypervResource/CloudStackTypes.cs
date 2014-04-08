@@ -61,7 +61,7 @@ namespace HypervResource
             get
             {
                 string uncPath = null;
-                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem")))
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem") || uri.Scheme.Equals("smb")))
                 {
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
@@ -173,33 +173,35 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        String volume = this.path;
+                        if (String.IsNullOrEmpty(volume))
+                        {
+                            volume = this.uuid;
+                        }
+                        fileName = Path.Combine(store.Path, volume);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        String volume = this.path;
+                        if (String.IsNullOrEmpty(volume))
+                        {
+                            volume = this.uuid;
+                        }
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + volume;
                         fileName = Utils.NormalizePath(fileName);
                     }
                 }
                 else if (this.nfsDataStore != null)
                 {
-                    if (this.path != null && File.Exists(this.path))
+                    fileName = this.nfsDataStore.UncPath;
+                    if (this.path != null)
                     {
-                        fileName = this.path;
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.path);
                     }
-                    else
-                    {
-                        fileName = this.nfsDataStore.UncPath;
-                        if (this.path != null)
-                        {
-                            fileName += @"\" + this.path;
-                        }
 
-                        fileName = Utils.NormalizePath(fileName);
-                        if (Directory.Exists(fileName))
-                        {
-                            fileName = Utils.NormalizePath(fileName + @"\" + this.name);
-                        }
+                    if (fileName != null && !File.Exists(fileName))
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.uuid);
                     }
                 }
                 else
@@ -300,11 +302,11 @@ namespace HypervResource
                 path = Utils.NormalizePath(path);
                 if (Directory.Exists(path))
                 {
-                    string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
+                    string[] choices = choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
                     if (choices.Length != 1)
                     {
                         String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
-                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.name);
+                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.uuid);
                         logger.Debug(errMsg);
                     }
                     else
@@ -334,18 +336,27 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        fileName = Path.Combine(store.Path, this.uuid);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.uuid;
                     }
                     fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
                 else if (this.nfsDataStoreTO != null)
                 {
-                    NFSTO store = this.nfsDataStoreTO;
-                    fileName = store.UncPath + @"\" + this.path + @"\" + this.name;
+                    fileName = this.nfsDataStoreTO.UncPath;
+                    if (this.path != null)
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.path);
+                    }
+
+                    if (fileName != null && !File.Exists(fileName))
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.uuid);
+                    }
+
                     if (!this.format.Equals("RAW"))
                     {
                         fileName = fileName + '.' + this.format.ToLowerInvariant();
@@ -584,7 +595,11 @@ namespace HypervResource
         /// <summary>
         /// 
         /// </summary>
-        OCFS2
+        OCFS2,
+        /// <summary>
+        /// for hyper-v
+        /// </summary>
+        SMB
     }
 
     public enum StorageResourceType
@@ -765,6 +780,8 @@ namespace HypervResource
         public const string ManageSnapshotCommand = "com.cloud.agent.api.ManageSnapshotCommand";
         public const string MigrateAnswer = "com.cloud.agent.api.MigrateAnswer";
         public const string MigrateCommand = "com.cloud.agent.api.MigrateCommand";
+        public const string MigrateWithStorageAnswer = "com.cloud.agent.api.MigrateWithStorageAnswer";
+        public const string MigrateWithStorageCommand = "com.cloud.agent.api.MigrateWithStorageCommand";
         public const string ModifySshKeysCommand = "com.cloud.agent.api.ModifySshKeysCommand";
         public const string ModifyStoragePoolAnswer = "com.cloud.agent.api.ModifyStoragePoolAnswer";
         public const string ModifyStoragePoolCommand = "com.cloud.agent.api.ModifyStoragePoolCommand";
@@ -849,6 +866,8 @@ namespace HypervResource
         public const string CreateCommand = "com.cloud.agent.api.storage.CreateCommand";
         public const string CreatePrivateTemplateAnswer = "com.cloud.agent.api.storage.CreatePrivateTemplateAnswer";
         public const string DestroyCommand = "com.cloud.agent.api.storage.DestroyCommand";
+        public const string MigrateVolumeAnswer = "com.cloud.agent.api.storage.MigrateVolumeAnswer";
+        public const string MigrateVolumeCommand = "com.cloud.agent.api.storage.MigrateVolumeCommand";
         public const string PrimaryStorageDownloadAnswer = "com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer";
         public const string PrimaryStorageDownloadCommand = "com.cloud.agent.api.storage.PrimaryStorageDownloadCommand";
         public const string ResizeVolumeAnswer = "com.cloud.agent.api.storage.ResizeVolumeAnswer";
@@ -914,5 +933,6 @@ namespace HypervResource
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
+        public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

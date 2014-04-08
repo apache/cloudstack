@@ -178,11 +178,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isExternalSnapshot() {
-        if (this.type == StoragePoolType.Filesystem) {
-            return false;
+        if (this.type == StoragePoolType.CLVM || type == StoragePoolType.RBD) {
+            return true;
         }
-
-        return true;
+        return false;
     }
 
     @Override
@@ -250,7 +249,12 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean delete() {
-        return this._storageAdaptor.deleteStoragePool(this);
+        try {
+            return this._storageAdaptor.deleteStoragePool(this);
+        } catch (Exception e) {
+            s_logger.debug("Failed to delete storage pool", e);
+        }
+        return false;
     }
 
     @Override

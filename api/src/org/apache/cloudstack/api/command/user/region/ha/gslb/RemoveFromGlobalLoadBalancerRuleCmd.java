@@ -43,7 +43,9 @@ import com.cloud.utils.StringUtils;
 
 @APICommand(name = "removeFromGlobalLoadBalancerRule",
             description = "Removes a load balancer rule association with" + " global load balancer rule",
-            responseObject = SuccessResponse.class)
+            responseObject = SuccessResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromGlobalLoadBalancerRuleCmd.class.getName());
 

@@ -159,8 +159,7 @@
                     truncate: true
                 },
                 zonename: {
-                    label: 'label.zone.name',
-                    truncate: true
+                    label: 'label.zone.name'
                 },
                 state: {
                     label: 'label.state',
@@ -175,10 +174,10 @@
 
             advSearchFields: {
                 name: {
-                    label: 'Name'
+                    label: 'label.name'
                 },
                 zoneid: {
-                    label: 'Zone',
+                    label: 'label.zone',
                     select: function(args) {
                         $.ajax({
                             url: createURL('listZones'),
@@ -202,7 +201,7 @@
                 },
 
                 domainid: {
-                    label: 'Domain',
+                    label: 'label.domain',
                     select: function(args) {
                         if (isAdmin() || isDomainAdmin()) {
                             $.ajax({
@@ -244,7 +243,7 @@
                     }
                 },
                 account: {
-                    label: 'Account',
+                    label: 'label.account',
                     isHidden: function(args) {
                         if (isAdmin() || isDomainAdmin())
                             return false;
@@ -254,10 +253,10 @@
                 },
 
                 tagKey: {
-                    label: 'Tag Key'
+                    label: 'label.tag.key'
                 },
                 tagValue: {
-                    label: 'Tag Value'
+                    label: 'label.tag.value'
                 }
             },
 
@@ -467,7 +466,7 @@
                             },
                             complete: function(args) {
                                 if (args.password != null) {
-                                    return 'Password of the VM is ' + args.password;
+                                    return 'label.vm.password' + ' ' + args.password;
                                 }
 
                                 return false;
@@ -481,7 +480,7 @@
                         label: 'label.action.stop.instance',
                         compactLabel: 'label.stop',
                         createForm: {
-                            title: 'Stop instance',
+                            title: 'notification.stop.instance',
                             desc: 'message.action.stop.instance',
                             fields: {
                                 forced: {
@@ -504,7 +503,7 @@
                                         _custom: {
                                             jobId: jid,
                                             getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
@@ -574,7 +573,7 @@
                         compactLabel: 'label.destroy',
                         createForm: {
                             title: 'label.action.destroy.instance', 
-                            desc: 'Please confirm that you want to destroy this instance',
+                            desc: 'label.action.destroy.instance',
                             preFilter: function(args) {
                             	if (isAdmin() || isDomainAdmin()) {
                             		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
@@ -584,7 +583,7 @@
                             },
                             fields: {
                             	expunge: {
-                                    label: 'Expunge',
+                                    label: 'label.expunge',
                                     isBoolean: true,
                                     isChecked: false
                                 }
@@ -663,15 +662,15 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    restore: {
-                        label: 'label.action.restore.instance',
-                        compactLabel: 'label.restore',
+                    recover: {
+                        label: 'label.recover.vm',
+                        compactLabel: 'label.recover.vm',
                         messages: {
                             confirm: function(args) {
-                                return 'message.action.restore.instance';
+                                return 'message.recover.vm';
                             },
                             notification: function(args) {
-                                return 'label.action.restore.instance';
+                                return 'label.recover.vm';
                             }
                         },
                         action: function(args) {
@@ -697,19 +696,18 @@
                             }
                         }
                     },
-                    reset: {
-                        label: 'Reset VM',
-                        textLabel: 'Reset VM',
+                    reinstall: {
+                        label: 'label.reinstall.vm',
                         messages: {
                             confirm: function(args) {
-                                return 'Do you want to restore the VM ?';
+                                return 'message.reinstall.vm';
                             },
                             notification: function(args) {
-                                return 'Reset VM';
+                                return 'label.reinstall.vm';
                             },
                             complete: function(args) {
                             	if (args.password != null && args.password.length > 0)
-                                    return 'Password has been reset to ' + args.password;
+                                    return 'label.password.reset.confirm' + args.password;
                             	else
                             		return null;
                             }
@@ -745,7 +743,7 @@
                     },
 
                     changeAffinity: {
-                        label: 'Change affinity',
+                        label: 'label.change.affinity',
 
                         action: {
                             custom: cloudStack.uiCustom.affinity({
@@ -767,7 +765,7 @@
                                                 var networks = json.listnetworksresponse.network;
                                                 var items = [{
                                                     id: -1,
-                                                    description: 'Please select a tier'
+                                                    description: 'message.select.tier'
                                                 }];
                                                 $(networks).each(function() {
                                                     items.push({
@@ -874,7 +872,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Change affinity';
+                                return 'label.change.affinity';
                             }
                         },
                         notification: {
@@ -1291,7 +1289,7 @@
                                                     });
                                                 } else {
                                                     cloudStack.dialog.notice({
-                                                        message: _l('No Hosts are avaialble for Migration')
+                                                        message: _l(dictionary['message.no.host.available'])
                                                     }); //Only a single host in the set up
                                                 }
                                             }
@@ -1437,7 +1435,7 @@
                             	var description = '';                            	
                             	var vmObj = args.jsonObj;                            	
                             	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
-                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                            		description = 'message.read.admin.guide.scaling.up';
                             	}                             
                                 return description;                  	                
                             },
@@ -1574,10 +1572,10 @@
                         },
                         messages: {
                             confirm: function(args) {
-                                return 'Do you really want to scale Up your instance ?';
+                                return 'message.instance.scaled.up.confirm';
                             },
                             notification: function(args) {
-                                return 'Instance Scaled Up';
+                                return 'label.instance.scaled.up';
                             }
                         },
                         notification: {
@@ -1586,9 +1584,9 @@
                     },
                    
                     assignVmToAnotherAccount: {
-                        label: 'Assign Instance to Another Account',
+                        label: 'label.assign.instance.another',
                         createForm: {
-                            title: 'Assign Instance to Another Account',
+                            title: 'label.assign.instance.another',
                             fields: {                                
                             	domainid: {
                 				    label: 'label.domain',
@@ -1646,7 +1644,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Assign Instance to Another Account';
+                                return 'label.assign.instance.another';
                             }
                         },
                         notification: {
@@ -1735,7 +1733,7 @@
                             },
 
                             isdynamicallyscalable: {
-                                label: 'Dynamically Scalable',
+                                label: 'label.dynamically.scalable',
                                 isBoolean: true,
                                 isEditable: true,
                                 converter: cloudStack.converters.toBooleanText
@@ -1771,7 +1769,7 @@
                             },
 
                             xenserverToolsVersion61plus: {
-                                label: 'XenServer Tools Version 6.1+',
+                                label: 'label.Xenserver.Tools.Version61plus',
                                 isBoolean: true,
                                 isEditable: function () {
                                     if (isAdmin())
@@ -1807,7 +1805,9 @@
                             memory: {
                             	label: 'label.memory.mb'
                             },
-                            
+                            vgpu: {
+                                label: 'VGPU'
+                            },
                             haenable: {
                                 label: 'label.ha.enabled',
                                 converter: cloudStack.converters.toBooleanText
@@ -1895,18 +1895,18 @@
                         multiple: true,
                         actions: {
                             add: {
-                                label: 'Add network to VM',
+                                label: 'label.network.addVM',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you would like to add a new VM NIC for this network.';
+                                        return 'message.network.addVMNIC';
                                     },
                                     notification: function(args) {
-                                        return 'Add network to VM';
+                                        return 'label.network.addVM';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Add network to VM',
-                                    desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                                    title: 'label.network.addVM',
+                                    desc: 'message.network.addVM.desc',
                                     fields: {
                                         networkid: {
                                             label: 'label.network',
@@ -1955,13 +1955,13 @@
                             },
 
                             makeDefault: {
-                                label: 'Set default NIC',
+                                label: 'label.set.default.NIC',
                                 messages: {
                                     confirm: function() {
-                                        return 'Please confirm that you would like to make this NIC the default for this VM.';
+                                        return 'message.set.default.NIC';
                                     },
                                     notification: function(args) {
-                                        return 'Set default NIC'
+                                        return 'label.set.default.NIC'
                                     }
                                 },
                                 action: function(args) {
@@ -1978,7 +1978,7 @@
                                                 }
                                             });
                                             cloudStack.dialog.notice({
-                                                message: _l('Please manually update the default NIC on the VM now.')
+                                                message: _l(dictionary['message.set.default.NIC.manual'])
                                             });
                                         }
                                     });
@@ -2022,14 +2022,14 @@
                         },
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name',
                                 header: true
                             },
                             networkname: {
-                                label: 'Network Name'
+                                label: 'label.network.name'
                             },
                             type: {
                                 label: 'label.type'
@@ -2045,13 +2045,13 @@
                             },
 
                             ip6address: {
-                                label: 'IPv6 IP Address'
+                                label: 'label.ipv6.address'
                             },
                             ip6gateway: {
-                                label: 'IPv6 Gateway'
+                                label: 'label.ipv6.gateway'
                             },
                             ip6cidr: {
-                                label: 'IPv6 CIDR'
+                                label: 'label.ipv6.CIDR'
                             },
 
                             isdefault: {
@@ -2199,7 +2199,7 @@
 
         if (jsonObj.state == 'Destroyed') {
             if (isAdmin() || isDomainAdmin()) {
-                allowedActions.push("restore");
+                allowedActions.push("recover");
             }
             if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
@@ -2209,7 +2209,7 @@
             if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("destroy");            
-            allowedActions.push("reset");
+            allowedActions.push("reinstall");
              
             //when userVm is running, scaleUp is not supported for KVM
             if (jsonObj.hypervisor != 'KVM') {
@@ -2235,7 +2235,7 @@
             allowedActions.push("edit");
             allowedActions.push("start");
             allowedActions.push("destroy");
-            allowedActions.push("reset");
+            allowedActions.push("reinstall");
             if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 

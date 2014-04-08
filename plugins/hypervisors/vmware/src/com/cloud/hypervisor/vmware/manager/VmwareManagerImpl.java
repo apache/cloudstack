@@ -38,7 +38,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -75,7 +74,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
@@ -104,11 +102,9 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -132,85 +128,77 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
 
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
-    int _timeout;
+    private int _timeout;
 
     private String _instance;
 
     @Inject
-    AgentManager _agentMgr;
+    private AgentManager _agentMgr;
     @Inject
-    protected NetworkModel _netMgr;
+    private NetworkModel _netMgr;
     @Inject
-    HostDao _hostDao;
+    private ClusterDao _clusterDao;
     @Inject
-    ClusterDao _clusterDao;
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    ClusterDetailsDao _clusterDetailsDao;
+    private CommandExecLogDao _cmdExecLogDao;
     @Inject
-    CommandExecLogDao _cmdExecLogDao;
+    private DataStoreManager _dataStoreMgr;
     @Inject
-    SecondaryStorageVmManager _ssvmMgr;
+    private CiscoNexusVSMDeviceDao _nexusDao;
     @Inject
-    DataStoreManager _dataStoreMgr;
+    private ClusterVSMMapDao _vsmMapDao;
     @Inject
-    CiscoNexusVSMDeviceDao _nexusDao;
+    private ConfigurationDao _configDao;
     @Inject
-    ClusterVSMMapDao _vsmMapDao;
+    private ConfigurationServer _configServer;
     @Inject
-    ConfigurationDao _configDao;
+    private HypervisorCapabilitiesDao _hvCapabilitiesDao;
     @Inject
-    ConfigurationServer _configServer;
+    private DataCenterDao _dcDao;
     @Inject
-    HypervisorCapabilitiesDao _hvCapabilitiesDao;
+    private VmwareDatacenterDao _vmwareDcDao;
     @Inject
-    DataCenterDao _dcDao;
+    private VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
     @Inject
-    VmwareDatacenterDao _vmwareDcDao;
+    private LegacyZoneDao _legacyZoneDao;
     @Inject
-    VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
+    private ManagementServerHostPeerDao _mshostPeerDao;
     @Inject
-    LegacyZoneDao _legacyZoneDao;
-    @Inject
-    ManagementServerHostPeerDao _mshostPeerDao;
-    @Inject
-    ClusterManager _clusterMgr;
+    private ClusterManager _clusterMgr;
 
-    String _mountParent;
-    StorageLayer _storage;
-    String _privateNetworkVSwitchName = "vSwitch0";
+    private String _mountParent;
+    private StorageLayer _storage;
+    private final String _privateNetworkVSwitchName = "vSwitch0";
 
-    int _portsPerDvPortGroup = 256;
-    boolean _nexusVSwitchActive;
-    boolean _fullCloneFlag;
-    boolean _instanceNameFlag;
-    String _serviceConsoleName;
-    String _managemetPortGroupName;
-    String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
-    String _recycleHungWorker = "false";
-    long _hungWorkerTimeout = 7200000;        // 2 hour
-    int _additionalPortRangeStart;
-    int _additionalPortRangeSize;
-    int _routerExtraPublicNics = 2;
-    int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
+    private int _portsPerDvPortGroup = 256;
+    private boolean _fullCloneFlag;
+    private boolean _instanceNameFlag;
+    private String _serviceConsoleName;
+    private String _managemetPortGroupName;
+    private String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
+    private String _recycleHungWorker = "false";
+    private int _additionalPortRangeStart;
+    private int _additionalPortRangeSize;
+    private int _routerExtraPublicNics = 2;
+    private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
-    String _reserveCpu = "false";
+    private String _reserveCpu = "false";
 
-    String _reserveMem = "false";
+    private String _reserveMem = "false";
 
-    String _rootDiskController = DiskControllerType.ide.toString();
+    private String _rootDiskController = DiskControllerType.ide.toString();
 
-    Map<String, String> _storageMounts = new HashMap<String, String>();
+    private final Map<String, String> _storageMounts = new HashMap<String, String>();
 
-    Random _rand = new Random(System.currentTimeMillis());
-    Gson _gson;
+    private final Random _rand = new Random(System.currentTimeMillis());
 
-    VmwareStorageManager _storageMgr;
-    GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("vmware.exclusive.op");
+    private final VmwareStorageManager _storageMgr;
+    private final GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("vmware.exclusive.op");
 
     private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
 
     public VmwareManagerImpl() {
-        _gson = GsonHelper.getGsonLogger();
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
 
@@ -310,10 +298,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _recycleHungWorker = "false";
         }
 
-        value = _configDao.getValue(Config.VmwareHungWorkerTimeout.key());
-        if (value != null)
-            _hungWorkerTimeout = Long.parseLong(value) * 1000;
-
         _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
         if (_rootDiskController == null || _rootDiskController.isEmpty()) {
             _rootDiskController = DiskControllerType.ide.toString();
@@ -398,10 +382,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
-        ManagedObjectReference mor = null;
-        if (serviceContext != null) {
-            mor = serviceContext.getHostMorByPath(hostInventoryPath);
+        if (serviceContext == null) {
+            throw new CloudRuntimeException("Invalid serviceContext");
         }
+        ManagedObjectReference mor = serviceContext.getHostMorByPath(hostInventoryPath);
         String privateTrafficLabel = null;
         privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
         if (privateTrafficLabel == null) {

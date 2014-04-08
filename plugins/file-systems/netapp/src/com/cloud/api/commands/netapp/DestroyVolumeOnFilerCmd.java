@@ -38,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 
-@APICommand(name = "destroyVolumeOnFiler", description = "Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
+@APICommand(name = "destroyVolumeOnFiler", description = "Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";

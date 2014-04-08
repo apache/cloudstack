@@ -34,7 +34,6 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
 
 public class DirectAgentAttache extends AgentAttache {
@@ -145,7 +144,6 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     if (cmd == null) {
                         s_logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
-                        _mgr.disconnectWithInvestigation(DirectAgentAttache.this, Event.AgentDisconnected);
                         return;
                     }
                     if (s_logger.isDebugEnabled()) {
@@ -182,7 +180,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (Command cmd : cmds) {
-                    Answer answer = new Answer(cmd, false, "Bailed out as maximum oustanding task limit reached");
+                    Answer answer = new Answer(cmd, false, "Bailed out as maximum outstanding task limit reached");
                     answers.add(answer);
                 }
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));

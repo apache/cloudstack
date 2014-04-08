@@ -147,7 +147,7 @@ public class CertServiceImpl implements CertService {
         if (certVO == null) {
             throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, certVO);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, certVO);
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
@@ -191,7 +191,7 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVO);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, certVO);
 
             certLbMap = _lbCertDao.listByCertId(certId);
 
@@ -206,14 +206,15 @@ public class CertServiceImpl implements CertService {
                 throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, lb);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, lb);
 
             // get the cert id
             LoadBalancerCertMapVO lbCertMapRule;
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                throw new InvalidParameterValueException("No certificate bound to loadbalancer id: " + lbRuleId);
+                s_logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                return certResponseList;
             }
 
             certVO = _sslCertDao.findById(lbCertMapRule.getCertId());
@@ -228,7 +229,7 @@ public class CertServiceImpl implements CertService {
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVOList.get(0));
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, certVOList.get(0));
 
         for (SslCertVO cert : certVOList) {
             certLbMap = _lbCertDao.listByCertId(cert.getId());
@@ -486,7 +487,7 @@ public class CertServiceImpl implements CertService {
         char[] password;
 
         KeyPassword(char[] word) {
-            this.password = word;
+            password = word;
         }
 
         @Override

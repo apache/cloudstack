@@ -123,18 +123,7 @@ def setup_heartbeat_file(session, args):
         txt = ''
     return txt
 
-@echo
-def check_heartbeat(session, args):
-    host = args['host']
-    interval = args['interval']
-    try:
-       cmd = ["bash", "/opt/cloud/bin/check_heartbeat.sh", host, interval]
-       txt = util.pread2(cmd)
-    except:
-       txt=''
-    return txt
-    
-   
+ 
 @echo
 def heartbeat(session, args):
     host = args['host']
@@ -156,5 +145,4 @@ def asmonitor(session, args):
         return 'fail'
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat, "asmonitor": asmonitor})
-
+    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "heartbeat": heartbeat, "asmonitor": asmonitor})

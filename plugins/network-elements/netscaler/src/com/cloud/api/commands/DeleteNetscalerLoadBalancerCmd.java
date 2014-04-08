@@ -38,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNetscalerLoadBalancer", responseObject = SuccessResponse.class, description = " delete a netscaler load balancer device")
+@APICommand(name = "deleteNetscalerLoadBalancer", responseObject = SuccessResponse.class, description = " delete a netscaler load balancer device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteNetscalerLoadBalancerCmd.class.getName());

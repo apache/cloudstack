@@ -15,21 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
-
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
-public class XenServer602Resource extends XenServer56FP1Resource {
+public class XenServer602Resource extends XenServer600Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer602Resource.class);
 
     public XenServer602Resource() {
@@ -39,19 +30,6 @@ public class XenServer602Resource extends XenServer56FP1Resource {
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         return CitrixHelper.getXenServer602GuestOsType(stdType, bootFromCD);
-    }
-
-    @Override
-    protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        File file = new File(patchfilePath);
-        files.add(file);
-        return files;
     }
 
     @Override

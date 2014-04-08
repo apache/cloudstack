@@ -18,12 +18,12 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
@@ -102,6 +102,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with load balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public void setId(String id) {
         this.id = id;
@@ -182,5 +186,9 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     public void setLbProtocol(String lbProtocol) {
         this.lbProtocol = lbProtocol;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

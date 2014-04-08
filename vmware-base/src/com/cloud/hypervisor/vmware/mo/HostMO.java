@@ -39,6 +39,7 @@ import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
 import com.vmware.vim25.HostHardwareSummary;
 import com.vmware.vim25.HostHyperThreadScheduleInfo;
+import com.vmware.vim25.HostIpConfig;
 import com.vmware.vim25.HostIpRouteEntry;
 import com.vmware.vim25.HostListSummaryQuickStats;
 import com.vmware.vim25.HostNetworkInfo;
@@ -1042,5 +1043,20 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             if (bRefresh)
                 firewallMo.refreshFirewall();
         }
+    }
+
+    public String getHostManagementIp(String managementPortGroup) throws Exception {
+        HostNetworkInfo netInfo = getHostNetworkInfo();
+
+        List<HostVirtualNic> nics = netInfo.getVnic();
+        for (HostVirtualNic nic : nics) {
+            if (nic.getPortgroup().equals(managementPortGroup)) {
+                HostIpConfig ipConfig = nic.getSpec().getIp();
+
+                return ipConfig.getIpAddress();
+            }
+        }
+
+        return null;
     }
 }

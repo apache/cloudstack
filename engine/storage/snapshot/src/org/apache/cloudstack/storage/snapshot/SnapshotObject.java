@@ -286,7 +286,10 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
+                if (snapshotTO.getPhysicalSize() != null) {
+                    // For S3 delta snapshot, physical size is currently not set
                 snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }
@@ -376,5 +379,10 @@ public class SnapshotObject implements SnapshotInfo {
             return store.delete(this);
         }
         return true;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Snapshot.class;
     }
 }

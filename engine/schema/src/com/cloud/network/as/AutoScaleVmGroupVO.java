@@ -87,6 +87,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Column(name = "state")
     private String state;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public AutoScaleVmGroupVO() {
     }
 
@@ -94,8 +97,8 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
             long accountId, int minMembers, int maxMembers, int memberPort,
             int interval, Date lastInterval, long profileId, String state) {
 
-        this.uuid = UUID.randomUUID().toString();
-        this.loadBalancerId = lbRuleId;
+        uuid = UUID.randomUUID().toString();
+        loadBalancerId = lbRuleId;
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -207,5 +210,23 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return AutoScaleVmGroup.class;
     }
 }

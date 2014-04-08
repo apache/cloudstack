@@ -728,7 +728,7 @@
                                         }
                                     },
                                     vpcLimit: {
-                                        label: 'VPC limits',
+                                        label: 'label.VPC.limits',
                                         isEditable: function(context) {
                                             if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
                                                 return true;
@@ -1374,12 +1374,6 @@
                                     state: {
                                         label: 'label.state'
                                     },
-                                    apikey: {
-                                        label: 'label.api.key'
-                                    },
-                                    secretkey: {
-                                        label: 'label.secret.key'
-                                    },
                                     account: {
                                         label: 'label.account.name'
                                     },
@@ -1391,6 +1385,14 @@
                                     },
                                     domain: {
                                         label: 'label.domain'
+                                    },
+                                    apikey: {
+                                        label: 'label.api.key',
+                                        isCopyPaste: true
+                                    },
+                                    secretkey: {
+                                        label: 'label.secret.key',
+                                        isCopyPaste: true
                                     },
                                     email: {
                                         label: 'label.email',

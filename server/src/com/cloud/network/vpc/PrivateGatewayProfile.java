@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.vpc;
 
+
 public class PrivateGatewayProfile implements PrivateGateway {
     VpcGateway vpcGateway;
     long physicalNetworkId;
@@ -110,4 +111,8 @@ public class PrivateGatewayProfile implements PrivateGateway {
         return vpcGateway.getNetworkACLId();
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return VpcGateway.class;
+    }
 }

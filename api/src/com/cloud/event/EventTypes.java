@@ -50,6 +50,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -102,6 +104,7 @@ public class EventTypes {
     // Network Events
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
+    public static final String EVENT_NET_IP_UPDATE = "NET.IPUPDATE";
     public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
     public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";
     public static final String EVENT_NET_RULE_ADD = "NET.RULEADD";
@@ -112,6 +115,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
+    public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
@@ -285,16 +289,19 @@ public class EventTypes {
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
     public static final String EVENT_REMOTE_ACCESS_VPN_DESTROY = "VPN.REMOTE.ACCESS.DESTROY";
+    public static final String EVENT_REMOTE_ACCESS_VPN_UPDATE = "VPN.REMOTE.ACCESS.UPDATE";
     public static final String EVENT_VPN_USER_ADD = "VPN.USER.ADD";
     public static final String EVENT_VPN_USER_REMOVE = "VPN.USER.REMOVE";
     public static final String EVENT_S2S_VPN_GATEWAY_CREATE = "VPN.S2S.VPN.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_GATEWAY_DELETE = "VPN.S2S.VPN.GATEWAY.DELETE";
+    public static final String EVENT_S2S_VPN_GATEWAY_UPDATE = "VPN.S2S.VPN.GATEWAY.UPDATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
     public static final String EVENT_S2S_VPN_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
     public static final String EVENT_S2S_VPN_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
     public static final String EVENT_S2S_VPN_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
+    public static final String EVENT_S2S_VPN_CONNECTION_UPDATE = "VPN.S2S.CONNECTION.UPDATE";
 
     // Network
     public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";
@@ -364,6 +371,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
     public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
+    public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
     public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
@@ -449,6 +457,19 @@ public class EventTypes {
 
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
+    // IAM events
+    public static final String EVENT_IAM_POLICY_CREATE = "IAMPOLICY.CREATE";
+    public static final String EVENT_IAM_POLICY_DELETE = "IAMPOLICY.DELETE";
+    public static final String EVENT_IAM_POLICY_GRANT = "IAMPOLICY.GRANT";
+    public static final String EVENT_IAM_POLICY_REVOKE = "IAMPOLICY.REVOKE";
+
+    public static final String EVENT_IAM_GROUP_UPDATE = "IAMGROUP.UPDATE";
+    public static final String EVENT_IAM_GROUP_CREATE = "IAMGROUP.CREATE";
+    public static final String EVENT_IAM_GROUP_DELETE = "IAMGROUP.DELETE";
+    public static final String EVENT_IAM_GROUP_GRANT = "IAMGROUP.GRANT";
+    public static final String EVENT_IAM_GROUP_REVOKE = "IAMGROUP.REVOKE";
+    public static final String EVENT_IAM_ACCOUNT_POLICY_UPDATE = "IAMACCOUNTPOLICY.UPDATE";
+
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 
@@ -460,10 +481,19 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.DELETE";
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
+    //Guest OS related events
+    public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
+    public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
+    public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
+    public static final String EVENT_GUEST_OS_MAPPING_ADD = "GUEST.OS.MAPPING.ADD";
+    public static final String EVENT_GUEST_OS_MAPPING_REMOVE = "GUEST.OS.MAPPING.REMOVE";
+    public static final String EVENT_GUEST_OS_MAPPING_UPDATE = "GUEST.OS.MAPPING.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
         // current ActionEvent annotation semantics
+        // TODO #2 - The map should be from event type to class.
 
         entityEventDetails = new HashMap<String, String>();
 
@@ -474,10 +504,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_REBOOT, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPDATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_UPGRADE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_DYNAMIC_SCALE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESETPASSWORD, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_RESETSSHKEY, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MIGRATE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class.getName());
         entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class.getName());
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class.getName());
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class.getName());
@@ -525,9 +558,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class.getName());
 
         // Account events
+        entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_CREATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_DELETE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_UPDATE, Account.class.getName());
         entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class.getName());
 
         // UserVO Events
@@ -770,6 +805,14 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER, "OpenDaylightController");
+
+        //Guest OS
+        entityEventDetails.put(EVENT_GUEST_OS_ADD, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_REMOVE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_UPDATE, GuestOS.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_ADD, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_REMOVE, GuestOSHypervisor.class.getName());
+        entityEventDetails.put(EVENT_GUEST_OS_MAPPING_UPDATE, GuestOSHypervisor.class.getName());
     }
 
     public static String getEntityForEvent(String eventName) {

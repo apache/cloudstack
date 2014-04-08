@@ -2233,9 +2233,9 @@ public class EC2Engine extends ManagerBase {
             perm.setProtocol(rule.getProtocol());
             perm.setFromPort(rule.getStartPort());
             perm.setToPort(rule.getEndPort());
-            perm.setRuleId(rule.getRuleId() != null ? rule.getRuleId().toString() : new String());
-            perm.setIcmpCode(rule.getIcmpCode() != null ? rule.getIcmpCode().toString() : new String());
-            perm.setIcmpType(rule.getIcmpType() != null ? rule.getIcmpType().toString() : new String());
+            perm.setRuleId(rule.getRuleId() != null ? rule.getRuleId().toString() : "");
+            perm.setIcmpCode(rule.getIcmpCode() != null ? rule.getIcmpCode().toString() : "");
+            perm.setIcmpType(rule.getIcmpType() != null ? rule.getIcmpType().toString() : "");
             perm.setCIDR(rule.getCidr());
             perm.addIpRange(rule.getCidr());
 

@@ -30,9 +30,10 @@ public interface ResourceMetaDataService {
      * @param resourceId TODO
      * @param resourceType
      * @param details
+     * @param forDisplay TODO
      * @return
      */
-    boolean addResourceMetaData(String resourceId, ResourceObjectType resourceType, Map<String, String> details);
+    boolean addResourceMetaData(String resourceId, ResourceObjectType resourceType, Map<String, String> details, boolean forDisplay);
 
     /**
      *

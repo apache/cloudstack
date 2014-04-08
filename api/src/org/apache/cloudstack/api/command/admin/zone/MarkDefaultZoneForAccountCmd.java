@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -33,7 +34,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "markDefaultZoneForAccount", description = "Marks a default zone for this account", responseObject = AccountResponse.class, since = "4.0")
+@APICommand(name = "markDefaultZoneForAccount", description = "Marks a default zone for this account", responseObject = AccountResponse.class, since = "4.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MarkDefaultZoneForAccountCmd.class.getName());
 
@@ -101,7 +103,7 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Marking account with the default zone: " + getDefaultZoneId();
+        return  "Marking account with the default zone: " + getDefaultZoneId();
     }
 
     @Override
@@ -113,10 +115,11 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public void execute() {
         Account result = _configService.markDefaultZone(getAccountName(), getDomainId(), getDefaultZoneId());
         if (result != null) {
-            AccountResponse response = _responseGenerator.createAccountResponse(result);
+            AccountResponse response = _responseGenerator.createAccountResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
+            setResponseObject(response);
+        }
+        else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to mark the account with the default zone");
         }
     }

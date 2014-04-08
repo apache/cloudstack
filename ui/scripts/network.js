@@ -35,11 +35,95 @@
         return elemData;
     };
 
-    var instanceSecondaryIPSubselect = function(args) {        
+    //value of Primary IP in subselect dropdown is -1, for single VM selection (API parameter virtualmachineid + vmguestip), e.g. enableStaticNat API, createPortForwardingRule API.
+    var singleVmSecondaryIPSubselect = function(args) {        
         var instance = args.context.instances[0];
         var network = args.context.networks[0];
 
-        if (args.context.ipAddresses[0].isportable) {
+        if (args.context.ipAddresses[0].isportable) { //portable IP which has multiple NICs. Each NIC has a different network ID.
+            $.ajax({
+                url: createURL('listNics'),
+                data: {
+                    virtualmachineid: instance.id
+                },
+                success: function(json) {
+                    var nics = json.listnicsresponse.nic;
+                    var ipSelection = [];
+                    
+                    $(nics).map(function(index, nic) { 
+                    	var primaryIp = nic.ipaddress;
+                        var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                        var prefix = '[NIC ' + (index + 1) + '] ';
+
+                        // Add primary IP as default
+                        ipSelection.push({
+                            id: nic.networkid + ',-1',
+                            description: prefix + primaryIp + ' (Primary)'
+                        });
+                        
+                        // Add secondary IPs
+                        $(secondaryIps).map(function(index, secondaryIp) {
+                            ipSelection.push({
+                                id: nic.networkid + ',' + secondaryIp.ipaddress,
+                                description: prefix + secondaryIp.ipaddress
+                            });
+                        });
+                    });                  
+
+                    args.response.success({
+                        data: ipSelection
+                    });
+                }
+            });
+                        
+        } else { //non-portable IP which has only one NIC  
+	        /*
+        	var nic = $.grep(instance.nic, function(nic) {
+	            return nic.networkid == network.id;
+	        })[0];
+	        */
+        	
+	        // Get NIC IPs
+	        $.ajax({
+	            url: createURL('listNics'),
+	            data: {
+	                virtualmachineid: instance.id,
+	                nicId: instance.nic[0].id
+	            },
+	            success: function(json) {	            	
+	                var nic = json.listnicsresponse.nic[0];
+	                var primaryIp = nic.ipaddress;
+	                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+	                var ipSelection = [];
+	
+	                // Add primary IP as default
+	                ipSelection.push({
+	                    id: -1,
+	                    description: primaryIp + ' (Primary)'
+	                });
+	
+	                // Add secondary IPs
+	                $(secondaryIps).map(function(index, secondaryIp) {
+	                    ipSelection.push({
+	                        id: secondaryIp.ipaddress,
+	                        description: secondaryIp.ipaddress
+	                    });
+	                });
+		
+	                args.response.success({
+	                    data: ipSelection
+	                });
+	            }
+	        });
+        }
+    };
+
+    //value of Primary IP in subselect dropdown is itself (not -1), for multiple VM selection (API parameter vmidipmap), e.g. assignToLoadBalancerRule API.
+    var multipleVmSecondaryIPSubselect = function(args) {        
+        var instance = args.context.instances[0];
+        var network = args.context.networks[0];
+
+        if (args.context.ipAddresses[0].isportable) { //portable IP which has multiple NICs. Each NIC has a different network ID.
             $.ajax({
                 url: createURL('listNics'),
                 data: {
@@ -49,73 +133,75 @@
                     var nics = json.listnicsresponse.nic;
                     var ipSelection = [];
 
+                    //portable IP has multiple NICs. Each NIC has a different network ID.
                     $(nics).map(function(index, nic) {
-                        var ips = nic.secondaryip ? nic.secondaryip : [];
+                        var primaryIp = nic.ipaddress;
+                    	var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
                         var prefix = '[NIC ' + (index + 1) + '] ';
 
                         // Add primary IP as default
                         ipSelection.push({
-                            id: nic.networkid + ',-1',
-                            description: prefix + nic.ipaddress + ' (Primary)'
+                            id: nic.networkid + ',' + primaryIp,
+                            description: prefix + primaryIp + ' (Primary)'
                         });
                         
                         // Add secondary IPs
-                        $(ips).map(function(index, ip) {
+                        $(secondaryIps).map(function(index, secondaryIp) {
                             ipSelection.push({
-                                id: nic.networkid + ',' + ip.ipaddress,
-                                description: prefix + ip.ipaddress
+                                id: nic.networkid + ',' + secondaryIp.ipaddress,
+                                description: prefix + secondaryIp.ipaddress
                             });
                         });
-                    });                  
+                    });  
+                    
+                    args.response.success({
+                        data: ipSelection
+                    });
+                }
+            });  
+            
+        } else { //non-portable IP which has only one NIC 
+            /*
+        	var nic = $.grep(instance.nic, function(nic) {
+                return nic.networkid == network.id;
+            })[0];
+            */
+        	
+            // Get NIC IPs
+            $.ajax({
+                url: createURL('listNics'),
+                data: {
+                    virtualmachineid: instance.id,
+                    nicId: instance.nic[0].id
+                },
+                success: function(json) {                	
+                    var nic = json.listnicsresponse.nic[0];
+                    var primaryIp = nic.ipaddress;
+                    var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                    var ipSelection = [];
 
+                    // Add primary IP as default
+                    ipSelection.push({
+                        id: primaryIp,
+                        description: primaryIp + ' (Primary)'
+                    });
+
+                    // Add secondary IPs
+                    $(secondaryIps).map(function(index, secondaryIp) {
+                        ipSelection.push({
+                            id: secondaryIp.ipaddress,
+                            description: secondaryIp.ipaddress
+                        });
+                    });
 
                     args.response.success({
                         data: ipSelection
                     });
                 }
             });
-            
-            return;
-        }
-        
-        var nic = $.grep(instance.nic, function(nic) {
-            return nic.networkid == network.id;
-        })[0];
-
-        // Get NIC IPs
-        $.ajax({
-            url: createURL('listNics'),
-            data: {
-                virtualmachineid: instance.id,
-                nicId: nic.id
-            },
-            success: function(json) {
-                var nic = json.listnicsresponse.nic[0];
-                var ips = nic.secondaryip ? nic.secondaryip : [];
-                var ipSelection = [];
-
-                // Add primary IP as default
-                ipSelection.push({
-                    id: -1,
-                    description: nic.ipaddress + ' (Primary)'
-                });
-
-                // Add secondary IPs
-                $(ips).map(function(index, ip) {
-                    ipSelection.push({
-                        id: ip.ipaddress,
-                        description: ip.ipaddress
-                    });
-                });
-
-
-                args.response.success({
-                    data: ipSelection
-                });
-            }
-        })
+        }        
     };
-
+    
     var ipChangeNotice = function() {
         cloudStack.dialog.confirm({
             message: 'message.ip.address.changed',
@@ -327,7 +413,7 @@
                 listView: {
                     actions: {
                         add: {
-                            label: 'Add Isolated Network',
+                            label: 'label.add.isolated.network',
 
                             preFilter: function(args) {
                                 if (advZoneObjs != null && advZoneObjs.length > 0) {
@@ -683,13 +769,13 @@
                             label: 'label.cidr'
                         },
                         ip6cidr: {
-                            label: 'IPv6 CIDR'
+                            label: 'label.ipv6.CIDR'
                         }
                     },
 
                     advSearchFields: {
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -713,7 +799,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -756,7 +842,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -765,10 +851,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -792,7 +878,7 @@
                     },
 
                     detailView: {
-                        name: 'Guest network details',
+                        name: 'label.guest.network.details',
                         viewAll: {
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
@@ -1162,7 +1248,7 @@
                                     },
                                     
                                     ispersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent',
                                         converter: cloudStack.converters.toBooleanText
 
                                     },
@@ -1180,7 +1266,7 @@
                                     },
                                     
                                     broadcasturi: {
-                                    	label: 'broadcasturi'
+                                    	label: 'label.broadcasturi'
                                     },
                                     
                                     networkofferingid: {
@@ -1240,20 +1326,20 @@
                                     },
 
                                     networkcidr: {
-                                        label: 'Network CIDR'
+                                        label: 'label.network.cidr'
                                     },
 
                                     ip6gateway: {
-                                        label: 'IPv6 Gateway'
+                                        label: 'label.ipv6.gateway'
                                     },
 
                                     ip6cidr: {
-                                        label: 'IPv6 CIDR'
+                                        label: 'label.ipv6.CIDR'
                                     },
 
 
                                     reservediprange: {
-                                        label: 'Reserved IP Range'
+                                        label: 'label.reserved.ip.range'
                                     },
 
 
@@ -1605,7 +1691,7 @@
                                                 }
                                             },
                                             'autoScale': {
-                                                label: 'AutoScale',
+                                                label: 'label.autoscale',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
@@ -2048,12 +2134,15 @@
                                 	$.ajax({
                                 		url: createURL('listRegions'),
                                 		success: function(json) {
+                                			var selectedRegionName = $(".region-switcher .title").text();
+                                			if ( selectedRegionName == undefined || selectedRegionName.length == 0) {
+                                				selectedRegionName = "Local";
+                                			}                                			
                                 		    var items = json.listregionsresponse.region;	
                                 		    if(items != null) {
-                                		    	for(var i = 0; i < items.length; i++) {
-                                		    		var region = items[0];  
-                                		    		if(region.name == 'Local') {
-	                                    		    	if(region.portableipserviceenabled == true) {
+                                		    	for(var i = 0; i < items.length; i++) {   		
+                                		    		if(items[i].name == selectedRegionName) {
+	                                    		    	if(items[i].portableipserviceenabled == true) {
 	                                    		    		args.$form.find('.form-item[rel=isportable]').css('display', 'inline-block');
 	                                    		    	} else {
 	                                    		    		args.$form.find('.form-item[rel=isportable]').hide();
@@ -2386,7 +2475,7 @@
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
-                                                    dataProvider: instanceSecondaryIPSubselect
+                                                    dataProvider: singleVmSecondaryIPSubselect
                                                 },
                                                 dataProvider: function(args) {
                                                     var data = {
@@ -2702,7 +2791,7 @@
                                         label: 'label.zone'
                                     },
                                     vlanname: {
-                                        label: 'label.vlan'
+                                        label: 'label.vlan.only'
                                     }
                                 }],
 
@@ -3232,6 +3321,13 @@
                                                     }
                                                 },
                                                 filters: false,
+                                                
+                                                //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, uncomment the following commented 4 lines. 
+                                                subselect: {
+                                                    label: 'label.use.vm.ip',
+                                                    dataProvider: multipleVmSecondaryIPSubselect                                                     
+                                                },
+                                                                                                
                                                 dataProvider: function(args) {
                                                     var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                                                         args.context.multiRule[0]['_itemData'] : [];
@@ -3387,7 +3483,7 @@
                                             },
 
                                             'health-check': {
-                                                label: 'Health Check',
+                                                label: 'label.health.check',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'Configure',
@@ -3397,7 +3493,7 @@
                                             },
 
                                             'autoScale': {
-                                                label: 'AutoScale',
+                                                label: 'label.autoscale',
                                                 custom: {
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
@@ -3485,7 +3581,7 @@
                                                 };
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
-
+                                                  
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
                                                     data: data,
@@ -3495,17 +3591,42 @@
                                                         var itemData = args.itemData;
                                                         var jobID = data.createloadbalancerruleresponse.jobid;
                                                         var lbID = data.createloadbalancerruleresponse.id;
-
+                                                        
+                                                        /*
+                                                        var inputData = {
+                                                            id: data.createloadbalancerruleresponse.id,
+                                                            virtualmachineids: $.map(itemData, function(elem) {
+                                                                return elem.id;
+                                                            }).join(',')
+                                                        }; 
+                                                        */
+                                                        //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, remove the above 6 lines and uncomment the commented section below.
+                                                                                                             
+                                                        var inputData = {
+                                                        	id: data.createloadbalancerruleresponse.id	
+                                                        };   
+                                                        if (args.context.ipAddresses[0].isportable) {                                                        	
+                                                        	if (args.itemData != null) {
+                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
+                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
+                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect.split(',')[1];  
+                                                        		}
+                                                        	}       
+                                                        	
+                                                        } else {                                                            
+                                                        	if (args.itemData != null) {
+                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
+                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
+                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect;  
+                                                        		}
+                                                        	}                                                        	
+                                                        }  
+                                                       
+                                                        //http://localhost:8080/client/api?command=assignToLoadBalancerRule&response=json&sessionkey=M6I8h6gBXuEMeBMb4pjSDTjYprc=&id=da97bae5-9389-4bbb-aef3-ccca8408a852&vmidipmap[0].vmid=667d1450-3cd9-4670-b22e-aebb77f521a3&vmidipmap[0].ip=10.1.1.23&vmidipmap[1].vmid=5128d30b-7747-4a05-bdbc-6262191d7642&vmidipmap[1].ip=10.1.1.82&vmidipmap[2].vmid=48c61d00-28d2-4048-aed5-774289470804&vmidipmap[2].ip=10.1.1.5&_=1393451067671
+                                                               
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
-                                                            data: {
-                                                                id: data.createloadbalancerruleresponse.id,
-                                                                virtualmachineids: $.map(itemData, function(elem) {
-                                                                    return elem.id;
-                                                                }).join(',')
-                                                            },
-                                                            dataType: 'json',
-                                                            async: true,
+                                                            data: inputData,                                                            
                                                             success: function(data) {
                                                                 var jobID = data.assigntoloadbalancerruleresponse.jobid;
                                                                 var lbStickyCreated = false;
@@ -3878,7 +3999,7 @@
                                                 filters: false,
                                                 subselect: {
                                                     label: 'label.use.vm.ip',
-                                                    dataProvider: instanceSecondaryIPSubselect
+                                                    dataProvider: singleVmSecondaryIPSubselect
                                                 },
                                                 dataProvider: function(args) {
                                                     var networkid;
@@ -4356,10 +4477,10 @@
 
                     advSearchFields: {
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -4894,10 +5015,10 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -4921,7 +5042,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -4964,7 +5085,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -4973,10 +5094,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -5067,7 +5188,7 @@
                                         label: 'label.DNS.domain.for.guest.networks'
                                     },
                                     publicLoadBalancerProvider: {
-                                        label: 'Public Load Balancer Provider',
+                                        label: 'label.public.load.balancer.provider',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
@@ -5310,7 +5431,7 @@
                                         label: 'label.state'
                                     },
                                     ispersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent',
                                         converter: cloudStack.converters.toBooleanText
 
                                     },
@@ -5485,8 +5606,8 @@
                                         }
                                     },
                                     cidrlist: {
-                                        label: 'CIDR list',
-                                        desc: 'Please enter a comma separated list of CIDRs if more than one',
+                                        label: 'label.CIDR.list',
+                                        desc: 'message.enter.seperated.list.multiple.cidrs',
                                         validation: {
                                             required: true
                                         }
@@ -5500,7 +5621,7 @@
                                     },
                                     cidrlist: {
                                         label: 'label.CIDR.list',
-                                        desc: 'Please enter a comma separated list of CIDRs if more than one',
+                                        desc: 'message.enter.seperated.list.multiple.cidrs',
                                         docID: 'helpVPNGatewayCIDRList',
                                         validation: {
                                             required: true

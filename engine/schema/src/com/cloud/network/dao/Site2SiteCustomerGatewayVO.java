@@ -30,6 +30,7 @@ import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
+
 @Entity
 @Table(name = ("s2s_customer_gateway"))
 public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
@@ -92,7 +93,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikeLifetime = ikeLifetime;
         this.espLifetime = espLifetime;
         this.dpd = dpd;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
     }
@@ -205,5 +206,10 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Site2SiteCustomerGateway.class;
     }
 }

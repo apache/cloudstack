@@ -52,11 +52,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 
-@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0")
+@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public final class AddS3Cmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddS3Cmd.class.getName());
 
-    private static final String COMMAND_NAME = "adds3response";
+    private static final String s_name = "adds3response";
 
     @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
@@ -189,7 +190,7 @@ public final class AddS3Cmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return COMMAND_NAME;
+        return s_name;
     }
 
     @Override

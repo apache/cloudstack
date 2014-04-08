@@ -201,7 +201,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """

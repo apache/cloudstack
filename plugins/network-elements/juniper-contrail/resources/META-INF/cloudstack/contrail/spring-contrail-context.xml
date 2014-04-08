@@ -32,6 +32,10 @@
 	class="org.apache.cloudstack.network.contrail.management.ContrailElementImpl">
     <property name="name" value="ContrailElement"/>
   </bean>
+  <bean id="ContrailVpcElement"
+	class="org.apache.cloudstack.network.contrail.management.ContrailVpcElementImpl">
+    <property name="name" value="ContrailVpcElement"/>
+  </bean>
 
   <bean id="ContrailGuru"
 	class="org.apache.cloudstack.network.contrail.management.ContrailGuru">

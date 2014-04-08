@@ -57,21 +57,18 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listNetworkOfferings,
                                   listResourceLimits,
                                   listVPCOfferings)
-from marvin.lib.base import (Configurations,
-                             NetScaler,
-                             Template,
-                             Resources,
-                             PhysicalNetwork,
-                             Host)
-from marvin.lib.utils import (get_process_status,
-                              xsplit)
+
+
+
 
 from marvin.sshClient import SshClient
+from marvin.codes import (PASS, ISOLATED_NETWORK, VPC_NETWORK,
+                          BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE)
 import random
-from utils import *
-from base import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
 from marvin.codes import PASS
-from marvin.lib.utils import validateList
+
 
 # Import System modules
 import time
@@ -240,8 +237,6 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     if validateList(cmd_out)[0] != PASS:
         return FAILED
     return cmd_out[0]
-
-
 def get_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
@@ -764,19 +759,23 @@ def update_resource_count(apiclient, domainid, accountid=None,
                           )
     return
 
-
-def find_suitable_host(apiclient, vm):
+def findSuitableHostForMigration(apiclient, vmid):
     """Returns a suitable host for VM migration"""
+    suitableHost = None
+    try:
+        hosts = Host.listForMigration(apiclient, virtualmachineid=vmid,
+                )
+    except Exception as e:
+        raise Exception("Exception while getting hosts list suitable for migration: %s" % e)
 
-    hosts = Host.list(apiclient,
-                      virtualmachineid=vm.id,
-                      listall=True)
+    suitablehosts = []
+    if isinstance(hosts, list) and len(hosts) > 0:
+        suitablehosts = [host for host in hosts if (str(host.resourcestate).lower() == "enabled"\
+                and str(host.state).lower() == "up")]
+        if len(suitablehosts)>0:
+            suitableHost = suitablehosts[0]
 
-    if isinstance(hosts, list):
-        assert len(hosts) > 0, "List host should return valid response"
-    else:
-        raise Exception("Exception: List host should return valid response")
-    return hosts[0]
+    return suitableHost
 
 
 def get_resource_type(resource_id):
@@ -973,3 +972,126 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         return None, None
 
     return physical_network, vlan
+
+def is_public_ip_in_correct_state(apiclient, ipaddressid, state):
+    """ Check if the given IP is in the correct state (given)
+    and return True/False accordingly"""
+    retriesCount = 10
+    while True:
+        portableips = PublicIPAddress.list(apiclient, id=ipaddressid)
+        assert validateList(portableips)[0] == PASS, "IPs list validation failed"
+        if str(portableips[0].state).lower() == state:
+            break
+        elif retriesCount == 0:
+           return False
+        else:
+            retriesCount -= 1
+            time.sleep(60)
+            continue
+    return True
+
+def setSharedNetworkParams(networkServices, range=20):
+    """Fill up the services dictionary for shared network using random subnet"""
+
+    # @range: range decides the endip. Pass the range as "x" if you want the difference between the startip
+    # and endip as "x"
+    # Set the subnet number of shared networks randomly prior to execution
+    # of each test case to avoid overlapping of ip addresses
+    shared_network_subnet_number = random.randrange(1,254)
+
+    networkServices["gateway"] = "172.16."+str(shared_network_subnet_number)+".1"
+    networkServices["startip"] = "172.16."+str(shared_network_subnet_number)+".2"
+    networkServices["endip"] = "172.16."+str(shared_network_subnet_number)+"."+str(range+1)
+    networkServices["netmask"] = "255.255.255.0"
+    return networkServices
+
+def createEnabledNetworkOffering(apiclient, networkServices):
+    """Create and enable network offering according to the type
+
+       @output: List, containing [ Result,Network Offering,Reason ]
+                 Ist Argument('Result') : FAIL : If exception or assertion error occurs
+                                          PASS : If network offering
+                                          is created and enabled successfully
+                 IInd Argument(Net Off) : Enabled network offering
+                                                In case of exception or
+                                                assertion error, it will be None
+                 IIIrd Argument(Reason) :  Reason for failure,
+                                              default to None
+    """
+    try:
+        resultSet = [FAIL, None, None]
+        # Create network offering
+        network_offering = NetworkOffering.create(apiclient, networkServices, conservemode=False)
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(network_offering, apiclient, id=network_offering.id,
+                               state="enabled")
+    except Exception as e:
+        resultSet[2] = e
+        return resultSet
+    return [PASS, network_offering, None]
+
+def shouldTestBeSkipped(networkType, zoneType):
+    """Decide which test to skip, according to type of network and zone type"""
+
+    # If network type is isolated or vpc and zone type is basic, then test should be skipped
+    skipIt = False
+    if ((networkType.lower() == str(ISOLATED_NETWORK).lower() or networkType.lower() == str(VPC_NETWORK).lower())
+            and (zoneType.lower() == BASIC_ZONE)):
+        skipIt = True
+    return skipIt
+
+def verifyNetworkState(apiclient, networkid, state):
+    """List networks and check if the network state matches the given state"""
+    try:
+        networks = Network.list(apiclient, id=networkid)
+    except Exception as e:
+        raise Exception("Failed while fetching network list with error: %s" % e)
+    assert validateList(networks)[0] == PASS, "Networks list validation failed, list is %s" % networks
+    assert str(networks[0].state).lower() == state, "network state should be %s, it is %s" % (state, networks[0].state)
+    return
+
+def verifyComputeOfferingCreation(apiclient, computeofferingid):
+    """List Compute offerings by ID and verify that the offering exists"""
+
+    cmd = listServiceOfferings.listServiceOfferingsCmd()
+    cmd.id = computeofferingid
+    serviceOfferings = None
+    try:
+        serviceOfferings = apiclient.listServiceOfferings(cmd)
+    except Exception:
+       return FAIL
+    if not (isinstance(serviceOfferings, list) and len(serviceOfferings) > 0):
+       return FAIL
+    return PASS
+
+def createNetworkRulesForVM(apiclient, virtualmachine, ruletype,
+                            account, networkruledata):
+    """Acquire IP, create Firewall and NAT/StaticNAT rule
+        (associating it with given vm) for that IP"""
+
+    try:
+        public_ip = PublicIPAddress.create(
+                apiclient,accountid=account.name,
+                zoneid=virtualmachine.zoneid,domainid=account.domainid,
+                networkid=virtualmachine.nic[0].networkid)
+
+        FireWallRule.create(
+            apiclient,ipaddressid=public_ip.ipaddress.id,
+            protocol='TCP', cidrlist=[networkruledata["fwrule"]["cidr"]],
+            startport=networkruledata["fwrule"]["startport"],
+            endport=networkruledata["fwrule"]["endport"]
+            )
+
+        if ruletype == NAT_RULE:
+            # Create NAT rule
+            NATRule.create(apiclient, virtualmachine,
+                                 networkruledata["natrule"],ipaddressid=public_ip.ipaddress.id,
+                                 networkid=virtualmachine.nic[0].networkid)
+        elif ruletype == STATIC_NAT_RULE:
+            # Enable Static NAT for VM
+            StaticNATRule.enable(apiclient,public_ip.ipaddress.id,
+                                     virtualmachine.id, networkid=virtualmachine.nic[0].networkid)
+    except Exception as e:
+        [FAIL, e]
+    return [PASS, public_ip]

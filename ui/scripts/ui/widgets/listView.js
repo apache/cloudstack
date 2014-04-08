@@ -1180,8 +1180,17 @@
                                 if (actionName == 'moveDrag') return false;
 
                                 rowActions[actionName]($tr);
+                                var map1 = {};
                                 $tr.closest('tbody').find('tr').each(function() {
+                                	/* 
+                                	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                                	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                                	 */
+                                	var objId = $(this).data('json-obj').id;
+                                	if(!(objId in map1)) { 
                                     sort($(this), action);
+                                		map1[objId] = 1;
+                                	}                                       
                                 });
                                 $tr.closest('.data-table').dataTable('selectRow', $tr.index());
 
@@ -1201,9 +1210,17 @@
                         },
                         stop: function(event, ui) {
                             rowActions._std($tr, function() {});
-
+                            var map1 = {};
                             $tr.closest('tbody').find('tr').each(function() {
+                            	/* 
+                            	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID. 
+                            	 * e.g. An Template/ISO of multiple zones have the same UUID.
+                            	 */
+                            	var objId = $(this).data('json-obj').id;
+                            	if(!(objId in map1)) { 
                                 sort($(this), reorder.moveDrag);
+                            	    map1[objId] = 1;
+                            	}
                             });
                         }
                     });
@@ -1258,13 +1275,13 @@
                         allowedActions: allowedActions
                     }
                 );
-
-                $listView.trigger('cloudStack.listView.addRow', {
-                    $tr: $tr
-                });
             }
 
-            // Add sub-select
+          $tr.closest('.list-view').trigger('cloudStack.listView.addRow', {
+            $tr: $tr
+          });
+
+          // Add sub-select
             if (subselect) {
                 var $td = $tr.find('td.first');
                 var $select = $('<div></div>').addClass('subselect').append(
@@ -1382,7 +1399,7 @@
                                         },
                                         onPerformAction: function() {
                                             $tr.addClass('loading').find('td:last').prepend($('<div>').addClass('loading'));
-                                            $quickViewTooltip.hide();
+                                            $quickViewTooltip.detach();
                                         },
                                         onActionComplete: function() {
                                             if (listViewArgs.onActionComplete) {

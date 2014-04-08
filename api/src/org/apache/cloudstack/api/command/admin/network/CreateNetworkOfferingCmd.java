@@ -41,10 +41,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
 
-@APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0")
+@APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
-    private static final String Name = "createnetworkofferingresponse";
+    private static final String s_name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -117,7 +118,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
                type = CommandType.BOOLEAN,
-               description = "true if default guest network egress policy is allow; false if default egress policy is deny")
+               description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
@@ -164,7 +165,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public static String getName() {
-        return Name;
+        return s_name;
     }
 
     public Long getServiceOfferingId() {
@@ -281,7 +282,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

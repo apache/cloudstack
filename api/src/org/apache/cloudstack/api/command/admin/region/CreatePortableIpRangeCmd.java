@@ -38,7 +38,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createPortableIpRange",
             responseObject = PortableIpRangeResponse.class,
             description = "adds a range of portable public IP's to a region",
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());

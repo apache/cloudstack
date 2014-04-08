@@ -354,13 +354,19 @@ public class DimeDelimitedInputStream extends FilterInputStream {
         }
 
         //OPTIONS_LENGTH
-        int optionsLength = ((((int)header[2]) << 8) & 0xff00) | ((int)header[3]);
+        int oneButLastByte = (((int)header[2]) << 8) & 0xff00;
+        int lastByte = (int)header[3] & 0xff;
+        int optionsLength = oneButLastByte | lastByte;
 
         //ID_LENGTH
-        int idLength = ((((int)header[4]) << 8) & 0xff00) | ((int)header[5]);
+        oneButLastByte = ((((int)header[4]) << 8) & 0xff00);
+        lastByte = ((int)header[5]) & 0xff;
+        int idLength = oneButLastByte | lastByte;
 
         //TYPE_LENGTH
-        int typeLength = ((((int)header[6]) << 8) & 0xff00) | ((int)header[7]);
+        oneButLastByte = ((((int)header[6]) << 8) & 0xff00);
+        lastByte = ((int)header[7]) & 0xff;
+        int typeLength = oneButLastByte | lastByte;
 
         //DATA_LENGTH
         recordLength =

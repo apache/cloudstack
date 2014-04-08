@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.vmsnapshot;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,11 +35,13 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since = "4.2.0")
+@APICommand(name = "deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVMSnapshotCmd.class.getName());
     private static final String s_name = "deletevmsnapshotresponse";
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID,
                type = CommandType.UUID,
                entityType = VMSnapshotResponse.class,
@@ -69,7 +73,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
         boolean result = _vmSnapshotService.deleteVMSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vm snapshot");
         }

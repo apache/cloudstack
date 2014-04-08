@@ -40,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNiciraNvpDevice", responseObject = SuccessResponse.class, description = " delete a nicira nvp device")
+@APICommand(name = "deleteNiciraNvpDevice", responseObject = SuccessResponse.class, description = " delete a nicira nvp device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "deleteniciranvpdeviceresponse";
     @Inject

@@ -34,7 +34,6 @@ import com.cloud.utils.component.ComponentContext;
 
 public class CloudStackPrimaryDataStoreProviderImpl implements PrimaryDataStoreProvider {
 
-    private final String providerName = DataStoreProvider.DEFAULT_PRIMARY;
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecycle;
@@ -45,12 +44,12 @@ public class CloudStackPrimaryDataStoreProviderImpl implements PrimaryDataStoreP
 
     @Override
     public String getName() {
-        return providerName;
+        return DataStoreProvider.DEFAULT_PRIMARY;
     }
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
-        return this.lifecycle;
+        return lifecycle;
     }
 
     @Override
@@ -63,12 +62,12 @@ public class CloudStackPrimaryDataStoreProviderImpl implements PrimaryDataStoreP
 
     @Override
     public PrimaryDataStoreDriver getDataStoreDriver() {
-        return this.driver;
+        return driver;
     }
 
     @Override
     public HypervisorHostListener getHostListener() {
-        return this.listener;
+        return listener;
     }
 
     @Override

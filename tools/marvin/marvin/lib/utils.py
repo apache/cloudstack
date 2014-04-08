@@ -28,8 +28,8 @@ import email
 import socket
 import urlparse
 import datetime
+from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters
 from platform import system
-from marvin.cloudstackAPI import cloudstackAPIClient, listHosts
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.sshClient import SshClient
 from marvin.codes import (
@@ -196,7 +196,8 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
 
     #SSH to the machine
     ssh = SshClient(hostip, port, username, password)
-    if str(hypervisor).lower() == 'vmware':
+    if (str(hypervisor).lower() == 'vmware'
+		or str(hypervisor).lower() == 'hyperv'):
         ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
     else:
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
@@ -434,7 +435,6 @@ def verifyElementInList(inp, toverify, responsevar=None,  pos=0):
     else:
         return [FAIL, MATCH_NOT_FOUND]
 
-
 def checkVolumeSize(ssh_handle=None,
                     volume_name="/dev/sda",
                     cmd_inp="/sbin/fdisk -l | grep Disk",
@@ -471,3 +471,28 @@ def checkVolumeSize(ssh_handle=None,
         print "\n Exception Occurred under getDiskUsage: " \
               "%s" %GetDetailExceptionInfo(e)
         return [FAILED,GetDetailExceptionInfo(e)]
+
+        
+def verifyRouterState(apiclient, routerid, allowedstates):
+    """List the router and verify that its state is in allowed states
+    @output: List, containing [Result, Reason]
+             Ist Argument ('Result'): FAIL: If router state is not
+                                                in allowed states
+                                          PASS: If router state is in
+                                                allowed states"""
+
+    try:
+        cmd = listRouters.listRoutersCmd()
+        cmd.id = routerid
+        cmd.listall = True
+        routers = apiclient.listRouters(cmd)
+    except Exception as e:
+        return [FAIL, e]
+    listvalidationresult = validateList(routers)
+    if listvalidationresult[0] == FAIL:
+        return [FAIL, listvalidationresult[2]]
+    if routers[0].redundantstate not in allowedstates:
+        return [FAIL, "Redundant state of the router should be in %s but is %s" %
+            (allowedstates, routers[0].redundantstate)]
+    return [PASS, None]
+        

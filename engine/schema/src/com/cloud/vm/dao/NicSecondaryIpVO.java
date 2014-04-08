@@ -36,7 +36,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     public NicSecondaryIpVO(long nicId, String ipaddr, long vmId, long accountId, long domainId, long networkId) {
         this.nicId = nicId;
         this.vmId = vmId;
-        this.ip4Address = ipaddr;
+        ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
@@ -123,5 +123,10 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     @Override
     public long getVmId() {
         return vmId;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return NicSecondaryIp.class;
     }
 }

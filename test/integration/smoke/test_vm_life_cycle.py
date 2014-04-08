@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 """ BVT tests for Virtual Machine Life Cycle
 """
 #Import Local Modules
-import marvin
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
@@ -29,7 +29,6 @@ from nose.plugins.attrib import attr
 import time
 
 _multiprocess_shared_ = True
-
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
@@ -152,6 +151,7 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(tags = ["simulator", "advanced"])
     def test_advZoneVirtualRouter(self):
+        #TODO: SIMENH: duplicate test, remove it
         """
         Test advanced zone virtual router
         1. Is Running
@@ -174,6 +174,7 @@ class TestDeployVM(cloudstackTestCase):
     @attr(hypervisor = ["simulator"])
     @attr(mode = ["basic"])
     def test_basicZoneVirtualRouter(self):
+        #TODO: SIMENH: duplicate test, remove it
         """
         Tests for basic zone virtual router
         1. Is Running
@@ -290,8 +291,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -327,7 +328,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_02_start_vm(self):
         """Test Start Virtual Machine
         """
@@ -365,7 +366,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_03_reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -402,7 +403,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -438,8 +439,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_07_restore_vm(self):
+        #TODO: SIMENH: add another test the data on the restored VM.
         """Test recover Virtual Machine
         """
 
@@ -478,7 +480,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost", "selfservice"])
     def test_08_migrate_vm(self):
         """Test migrate VM
         """
@@ -487,31 +489,37 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. DeployVM on suitable host (with another host in the cluster)
         # 3. Migrate the VM and assert migration successful
 
+        suitable_hosts = None
+
         hosts = Host.list(
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing'
         )
-        self.assertEqual(
-            isinstance(hosts, list),
-            True,
-            "Check the number of hosts in the zone"
-        )
-        self.assertGreaterEqual(
-            len(hosts),
-            2,
-            "Atleast 2 hosts should be present for VM migration"
-        )
+        self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed")
 
-        #identify suitable host
-        clusters = [h.clusterid for h in hosts]
-        #find hosts withe same clusterid
-        clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
+        if len(hosts) < 2:
+            self.skipTest("At least two hosts should be present in the zone for migration")
 
-        if len(clusters) <= 1:
-            self.skipTest("Migration needs a cluster with at least two hosts")
+        hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
 
-        suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
+        # For KVM, two hosts used for migration should  be present in same cluster
+        # For XenServer and VMware, migration is possible between hosts belonging to different clusters
+        # with the help of XenMotion and Vmotion respectively.
+
+        if hypervisor == "kvm":
+            #identify suitable host
+            clusters = [h.clusterid for h in hosts]
+            #find hosts withe same clusterid
+            clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
+
+            if len(clusters) <= 1:
+                self.skipTest("In KVM, Live Migration needs two hosts within same cluster")
+
+            suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
+        else:
+            suitable_hosts = hosts
+
         target_host = suitable_hosts[0]
         migrate_host = suitable_hosts[1]
 
@@ -559,7 +567,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -608,7 +616,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "provisioning"])
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 

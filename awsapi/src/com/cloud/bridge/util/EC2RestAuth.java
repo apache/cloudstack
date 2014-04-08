@@ -120,7 +120,7 @@ public class EC2RestAuth {
 
     public void setHTTPRequestURI(String uri) {
         if (null == uri || 0 == uri.length())
-            this.httpRequestURI = new String("/");
+            this.httpRequestURI = "/";
         else
             this.httpRequestURI = uri.trim();
     }

@@ -101,6 +101,9 @@ public class FirewallRuleVO implements FirewallRule {
     @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call firewallrules dao to load it.
@@ -188,7 +191,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     protected FirewallRuleVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
@@ -199,13 +202,13 @@ public class FirewallRuleVO implements FirewallRule {
         }
         this.accountId = accountId;
         this.domainId = domainId;
-        this.sourceIpAddressId = ipAddressId;
-        this.sourcePortStart = portStart;
-        this.sourcePortEnd = portEnd;
+        sourceIpAddressId = ipAddressId;
+        sourcePortStart = portStart;
+        sourcePortEnd = portEnd;
         this.protocol = protocol;
         this.purpose = purpose;
         this.networkId = networkId;
-        this.state = State.Staged;
+        state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         this.sourceCidrs = sourceCidrs;
@@ -215,8 +218,8 @@ public class FirewallRuleVO implements FirewallRule {
         }
 
         this.related = related;
-        this.uuid = UUID.randomUUID().toString();
-        this.type = FirewallRuleType.User;
+        uuid = UUID.randomUUID().toString();
+        type = FirewallRuleType.User;
         this.trafficType = trafficType;
     }
 
@@ -253,7 +256,7 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -267,5 +270,20 @@ public class FirewallRuleVO implements FirewallRule {
     @Override
     public TrafficType getTrafficType() {
         return trafficType;
+    }
+
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 }

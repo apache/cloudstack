@@ -73,7 +73,7 @@ public class NetworkPolicyModel extends ModelObjectBase {
 
         SearchCriteria<NetworkVO> sc = searchBuilder.create();
 
-        sc.setParameters("networkOfferingId", controller.getManager().getRouterOffering().getId());
+        sc.setParameters("networkOfferingId", controller.getManager().getVpcRouterOffering().getId());
         sc.setParameters("cidr", cidr);
         sc.setParameters("trafficType", Networks.TrafficType.Guest);
 
@@ -152,11 +152,11 @@ public class NetworkPolicyModel extends ModelObjectBase {
                 for (String cidr: cidrList) {
                     NetworkVO net = cidrToNetwork(controller, cidr);
                     String netName = projectName + ":" + controller.getManager().getCanonicalName(net);
-                    dstList.add(new PolicyRuleType.AddressType(null, netName, null));
+                    srcList.add(new PolicyRuleType.AddressType(null, netName, null));
                 }
                 dstPorts.add(new PolicyRuleType.PortType(portStart, portEnd));
 
-                srcList.add(new PolicyRuleType.AddressType(null, "any", null));
+                dstList.add(new PolicyRuleType.AddressType(null, "local", null));
                 srcPorts.add(new PolicyRuleType.PortType(0, 65535));
             }
 

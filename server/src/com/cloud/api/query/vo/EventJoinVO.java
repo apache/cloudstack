@@ -25,6 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.event.Event;
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.GenericDao;
 
@@ -105,6 +106,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "archived")
     private boolean archived;
+
+    @Column(name = "display")
+    protected boolean display = true;
 
     public EventJoinVO() {
     }
@@ -215,5 +219,14 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean getArchived() {
         return archived;
+    }
+
+    public boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Event.class;
     }
 }

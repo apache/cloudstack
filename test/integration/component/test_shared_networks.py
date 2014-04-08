@@ -257,7 +257,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_sharedNetworkOffering_01(self):
         """  Test shared network Offering 01 """
 
@@ -393,7 +393,7 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         self.debug("NetworkOffering created and enabled: %s" % self.shared_network_offering.id)
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_sharedNetworkOffering_02(self):
         """ Test Shared Network Offering 02 """
 
@@ -482,7 +482,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network Offering creation failed with vlan as False in advance mode and shared guest type. Exception: %s" % 
                         e)
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_sharedNetworkOffering_03(self):
         """ Test Shared Network Offering 03 """
 
@@ -572,7 +572,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network Offering creation failed with vlan as true and ip ranges as False in advance mode and with shared guest type.\
                         Exception : %s" % e)
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_createSharedNetwork_All(self):
         """ Test Shared Network ALL  """
 
@@ -843,7 +843,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_createSharedNetwork_accountSpecific(self):
         """ Test Shared Network with scope account """
 
@@ -1092,7 +1092,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_createSharedNetwork_domainSpecific(self):
         """ Test Shared Network with scope domain """
 
@@ -1436,7 +1436,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_createSharedNetwork_projectSpecific(self):
         """ Test Shared Network with scope project  """
 
@@ -1713,7 +1713,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
     @unittest.skip("skipped - This is a redundant case and also this is causing issue for rest fo the cases ")
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "NA"])
     def test_createSharedNetwork_usedVlan(self):
         """ Test Shared Network with used vlan 01 """
 
@@ -1857,7 +1857,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network creation failed because the valn id being used by another network. Exception: %s" % e)
 
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_createSharedNetwork_usedVlan2(self):
         """ Test Shared Network with used vlan 02 """
 
@@ -2039,7 +2039,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network. Exception: %s" % e)
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_deployVM_multipleSharedNetwork(self):
         """ Test Vm deployment with multiple shared networks """
 
@@ -2289,7 +2289,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.assertTrue(self.network1_admin_account_virtual_machine.nic[0].ipaddress is not None, "ip should be assigned to running virtual machine")
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "provisioning"])
     def test_deployVM_isolatedAndShared(self):
         """ Test VM deployment in shared and isolated networks """
 
@@ -2628,7 +2628,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % (self.isolated_network_admin_account_virtual_machine.ipaddress, e))
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_networkWithsubdomainaccessTrue(self):
         """ Test Shared Network with subdomainaccess=True """
 
@@ -2759,7 +2759,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except:
             self.debug("Network creation failed because subdomainaccess parameter was passed when scope was account.")
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "selfservice"])
     def test_networkWithsubdomainaccessFalse(self):
         """ Test shared Network with subdomainaccess=False """
 

@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,7 +40,9 @@ import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
             description = "Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules",
-            responseObject = IPAddressResponse.class)
+        responseObject = IPAddressResponse.class, entityType = {Network.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
@@ -46,7 +50,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The id of the network to restart.")
     private Long id;
 
@@ -91,7 +95,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         boolean result = _networkService.restartNetwork(this, getCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restart network");
         }

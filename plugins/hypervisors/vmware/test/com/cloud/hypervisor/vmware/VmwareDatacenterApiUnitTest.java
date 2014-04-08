@@ -85,7 +85,6 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -361,11 +360,6 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public ClusterManager clusterManager() {
             return Mockito.mock(ClusterManager.class);
-        }
-
-        @Bean
-        public SecondaryStorageVmManager secondaryStorageVmManager() {
-            return Mockito.mock(SecondaryStorageVmManager.class);
         }
 
         @Bean
