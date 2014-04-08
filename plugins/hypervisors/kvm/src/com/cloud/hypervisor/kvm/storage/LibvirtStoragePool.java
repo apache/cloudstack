@@ -123,8 +123,13 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public KVMPhysicalDisk getPhysicalDisk(String volumeUuid) {
+    public KVMPhysicalDisk getPhysicalDisk(String volumeUid) {
         KVMPhysicalDisk disk = null;
+        String volumeUuid = volumeUid;
+        if ( volumeUid.contains("/") ) {
+            String[] tokens = volumeUid.split("/");
+            volumeUuid = tokens[tokens.length -1];
+        }
         try {
             disk = this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
         } catch (CloudRuntimeException e) {
