@@ -278,10 +278,12 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
 
             // Check if GPU device is required by offering and host has the availability
-            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null
-                    && !_resourceMgr.isGPUDeviceAvailable(host.getId(), offeringDetails.getValue())){
-                s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
-                continue;
+            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
+                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    continue;
+                }
             }
 
             int cpu_requested = offering.getCpu() * offering.getSpeed();

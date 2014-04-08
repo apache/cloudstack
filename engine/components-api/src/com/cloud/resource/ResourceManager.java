@@ -151,26 +151,29 @@ public interface ResourceManager extends ResourceService {
     /**
      * Check if host has GPU devices available
      * @param hostId the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
-    boolean isGPUDeviceAvailable(long hostId, String vgpuType);
+    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
 
     /**
      * Get available GPU device
      * @param hostId the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return GPUDeviceTO[]
      */
-    GPUDeviceTO getGPUDevice(long hostId, String vgpuType);
+    GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Return listof available GPU devices
      * @param hostId, the host to be checked
+     * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
      * @return List of HostGpuGroupsVO.
      */
-    List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType);
+    List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Update GPU device details (post VM deployment)

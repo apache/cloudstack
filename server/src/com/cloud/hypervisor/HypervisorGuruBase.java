@@ -144,7 +144,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = null;
         if ((offeringDetail  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
-            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), offeringDetail.getValue()));
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration

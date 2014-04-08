@@ -558,19 +558,19 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(long hostId, String vgpuType) {
+    public boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(long hostId, String vgpuType) {
+    public GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType) {
+    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType) {
         // TODO Auto-generated method stub
         return null;
     }
