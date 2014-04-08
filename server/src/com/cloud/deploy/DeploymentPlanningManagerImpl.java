@@ -363,9 +363,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 s_logger.debug("The last Host, hostId: " + host.getId() +
                     " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
-            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null
-                    && !_resourceMgr.isGPUDeviceAvailable(host.getId(), offeringDetails.getValue())){
-                s_logger.debug("The last host of this VM does not have required GPU devices available");
+            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                    s_logger.debug("The last host of this VM does not have required GPU devices available");
+                }
             } else {
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     boolean hostTagsMatch = true;

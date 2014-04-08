@@ -97,7 +97,6 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.gpu.GPU.vGPUType;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -1349,6 +1348,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         _gpuAvailability = _hostGpuGroupsDao.createSearchBuilder();
         _gpuAvailability.and("hostId", _gpuAvailability.entity().getHostId(), Op.EQ);
+        _gpuAvailability.and("groupName", _gpuAvailability.entity().getGroupName(), Op.EQ);
         SearchBuilder<VGPUTypesVO> join1 = _vgpuTypesDao.createSearchBuilder();
         join1.and("vgpuType", join1.entity().getVgpuType(), Op.EQ);
         join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GT);
@@ -2508,21 +2508,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String vgpuType) {
-        if (vgpuType == null) {
-            vgpuType = vGPUType.passthrough.getType();
-        }
+    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType) {
         Filter searchFilter = new Filter(VGPUTypesVO.class, "remainingCapacity", false, null, null);
         SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
         sc.setParameters("hostId", hostId);
+        sc.setParameters("groupName", groupName);
         sc.setJoinParameters("groupId", "vgpuType", vgpuType);
         sc.setJoinParameters("groupId", "remainingCapacity", 0);
         return _hostGpuGroupsDao.customSearch(sc, searchFilter);
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(long hostId, String vgpuType) {
-        if(!listAvailableGPUDevice(hostId, vgpuType).isEmpty()) {
+    public boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType) {
+        if(!listAvailableGPUDevice(hostId, groupName, vgpuType).isEmpty()) {
             return true;
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -2533,8 +2531,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(long hostId, String vgpuType) {
-        HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, vgpuType).get(0);
+    public GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType) {
+        HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, groupName, vgpuType).get(0);
         return new GPUDeviceTO(gpuDevice.getGroupName(), vgpuType, null);
     }
 

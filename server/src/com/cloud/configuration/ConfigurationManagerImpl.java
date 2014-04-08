@@ -2084,47 +2084,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         offering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
         List<ServiceOfferingDetailsVO> detailsVO = null;
-            if (details != null) {
+        if (details != null) {
             // Check if the user has passed the gpu-type before passing the VGPU type
-            if (!details.containsKey(GPU.Keys.pciDevice.toString()) && details.containsKey(GPU.Keys.vgpuType.toString())) {
-                throw new InvalidParameterValueException("Please specify the gpu type");
+            if (!details.containsKey(GPU.Keys.pciDevice.toString()) || !details.containsKey(GPU.Keys.vgpuType.toString())) {
+                throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
             }
             detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
-                for (Entry<String, String> detailEntry : details.entrySet()) {
+            for (Entry<String, String> detailEntry : details.entrySet()) {
                 String value = null;
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
-                    for (GPU.Type type : GPU.Type.values()) {
-                        if (detailEntry.getValue().equals(type.toString())) {
-                            value = detailEntry.getValue();
-                        }
-                    }
-                    if (value == null) {
-                        throw new InvalidParameterValueException("Please specify valid gpu type");
+                    if (detailEntry.getValue() == null) {
+                        throw new InvalidParameterValueException("Please specify a GPU Card.");
                     }
                 }
                 if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
-                    if (details.get(GPU.Keys.pciDevice.toString()).equals(GPU.Type.GPU_Passthrough.toString())) {
-                        throw new InvalidParameterValueException("vgpuTypes are supported only with vGPU pciDevice");
-                    }
                     if (detailEntry.getValue() == null) {
-                        throw new InvalidParameterValueException("With vGPU as pciDevice, vGPUType value cannot be null");
+                        throw new InvalidParameterValueException("vGPUType value cannot be null");
                     }
                     for (GPU.vGPUType entry : GPU.vGPUType.values()) {
                         if (detailEntry.getValue().equals(entry.getType())) {
                             value = entry.getType();
                         }
                     }
-                    if (value == null || detailEntry.getValue().equals(GPU.vGPUType.passthrough.getType())) {
+                    if (value == null) {
                         throw new InvalidParameterValueException("Please specify valid vGPU type");
                     }
                 }
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
-                }
-            // If pciDevice type is passed, put the default VGPU type as 'passthrough'
-            if (details.containsKey(GPU.Keys.pciDevice.toString())
-                    && !details.containsKey(GPU.Keys.vgpuType.toString())) {
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(),
-                        GPU.Keys.vgpuType.toString(), GPU.vGPUType.passthrough.getType(), true));
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
             }
         }
 

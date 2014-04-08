@@ -370,24 +370,15 @@
                                                 description: ''
                                             });
                                             items.push({
-                                                id: 'GPU_Passthrough',
-                                                description: 'GPU-Passthrough'
+                                                id: 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs',
+                                                description: 'NVIDIA GRID K1'
                                             });
                                             items.push({
-                                                id: 'VGPU',
-                                                description: 'VGPU'
+                                                id: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
+                                                description: 'NVIDIA GRID K2'
                                             });
                                             args.response.success({
                                                 data: items
-                                            });
-                                            args.$select.change(function() {
-                                                var $form = $(this).closest('form');
-                                                var $fields = $form.find('.field');
-                                                if (($(this).val() == "") || $(this).val() == "GPU-Passthrough") {
-                                                  $form.find('[rel=vgpuType]').hide();
-                                                } else if ($(this).val() == "VGPU") {
-                                                  $form.find('[rel=vgpuType]').css('display', 'block');
-                                                }
                                             });
                                         }
                                     },
@@ -399,6 +390,10 @@
                                             items.push({
                                                 id: '',
                                                 description: ''
+                                            });
+                                            items.push({
+                                                id: 'passthrough',
+                                                description: 'passthrough'
                                             });
                                             items.push({
                                                 id: 'GRID K100',
@@ -499,7 +494,7 @@
                                     array1.push("&serviceofferingdetails[1].value" + "=" + args.data.pciDevice);
                                 }
 
-                                if (args.data.pciDevice == "VGPU") {
+                                if (args.data.vgpuType != "") {
                                     array1.push("&serviceofferingdetails[2].key" + "=" + "vgpuType");
                                     array1.push("&serviceofferingdetails[2].value" + "=" + args.data.vgpuType);
                                 }
