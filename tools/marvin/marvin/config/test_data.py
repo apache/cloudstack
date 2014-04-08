@@ -433,5 +433,14 @@ test_data = {
         "privateport": 22,
         "publicport": 22,
         "protocol": 'TCP',
-        "forvirtualnetwork": "true"
+        "forvirtualnetwork": "true",
+        "customdisksize": 1,
+        "diskname": "Test Volume",
+        "portableIpRange": {
+        "gateway" : "10.223.252.195",
+        "netmask" : "255.255.255.192",
+        "startip" : "10.223.252.196",
+        "endip"   : "10.223.252.197",
+        "vlan"    : "1001"
+       }
 }

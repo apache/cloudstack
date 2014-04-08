@@ -309,7 +309,7 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic","test"])
     def test_02_attach_volume(self):
         """Attach a created Volume to a Running VM
         """

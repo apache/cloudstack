@@ -120,7 +120,7 @@ class TestVMPlacement(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(
                           cls.api_client,
-                          zoneid=cls.zone.id)
+                          zone_id=cls.zone.id)
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,

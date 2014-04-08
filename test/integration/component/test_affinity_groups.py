@@ -720,7 +720,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -756,7 +756,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -797,7 +797,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         user1apiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=user1apiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1316,7 +1316,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1349,7 +1349,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user2.name,
                                         DomainName=self.user2.domain,
-                                        acctType=0)
+                                        type=0)
 
         self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1573,7 +1573,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1612,7 +1612,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1662,7 +1662,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp1 = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1698,7 +1698,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])
@@ -1730,7 +1730,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=self.user1.name,
                                         DomainName=self.user1.domain,
-                                        acctType=0)
+                                        type=0)
 
         aff_grp = self.create_aff_grp(api_client=userapiclient,
                             aff_grp=self.services["host_anti_affinity"])

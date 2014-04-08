@@ -110,7 +110,7 @@ class TestEgressAfterHostMaintenance(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.pod = get_pod(
                           cls.api_client,
-                          zoneid=cls.zone.id
+                          zone_id=cls.zone.id
                           )
 
         template = get_template(

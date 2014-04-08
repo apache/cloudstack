@@ -1936,7 +1936,7 @@ class TestVPC(cloudstackTestCase):
         userapiclient = self.testClient.getUserApiClient(
                                         UserName=user.name,
                                         DomainName=user.domain,
-                                        acctType=0)
+                                        type=0)
 
 
         vpc = VPC.create(
@@ -2016,8 +2016,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                account=user.name,
-                                domain=self.services["domain"]["name"],
+                                UserName=user.name,
+                                DomainName=self.services["domain"]["name"],
                                 type=2)
 
         vpc = VPC.create(
@@ -2091,8 +2091,8 @@ class TestVPC(cloudstackTestCase):
                                                     user.name)
 
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(
@@ -2170,8 +2170,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=domain_admin.domain,
+                                        UserName=domain_admin.name,
+                                        DomainName=domain_admin.domain,
                                         type=2)
 
         user = Account.create(
@@ -2187,8 +2187,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         with self.assertRaises(CloudstackAPIException):
@@ -2221,8 +2221,8 @@ class TestVPC(cloudstackTestCase):
         self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
-                                        account=domain_admin.name,
-                                        domain=self.services["domain"]["name"],
+                                        UserName=domain_admin.name,
+                                        DomaimName=self.services["domain"]["name"],
                                         type=2)
 
         user = Account.create(
@@ -2238,8 +2238,8 @@ class TestVPC(cloudstackTestCase):
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
         userapiclient = self.testClient.getUserApiClient(
-                                        account=user.name,
-                                        domain=user.domain,
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         type=0)
 
         vpc = VPC.create(
