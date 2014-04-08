@@ -173,7 +173,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.SetupCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.SetupCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -323,7 +323,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.RebootCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.RebootCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -367,7 +367,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DestroyCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DestroyCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -375,7 +375,7 @@ namespace HypervResource
                 try
                 {
                     // Assert
-                    String errMsg = "No 'volume' details in " + CloudStackTypes.DestroyCommand + " " + cmd.ToString();
+                    String errMsg = "No 'volume' details in " + CloudStackTypes.DestroyCommand + " " +  Utils.CleanString(cmd.ToString());
                     if (cmd.volume == null)
                     {
                         logger.Error(errMsg);
@@ -430,7 +430,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DestroyCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DestroyCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -756,7 +756,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CheckHealthCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CheckHealthCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -774,7 +774,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CheckOnHostCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CheckOnHostCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -793,7 +793,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CheckSshCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CheckSshCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -811,7 +811,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CheckVirtualMachineCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CheckVirtualMachineCommand +  Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
                 string vmName = cmd.vmName;
@@ -848,7 +848,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DeleteStoragePoolCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.DeleteStoragePoolCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -992,7 +992,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CleanupNetworkRulesCmd + cmd.ToString());
+                logger.Info(CloudStackTypes.CleanupNetworkRulesCmd +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                  {
                      result = false,
@@ -1010,7 +1010,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.CheckNetworkCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.CheckNetworkCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -1028,7 +1028,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.ReadyCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.ReadyCommand +  Utils.CleanString(cmd.ToString()));
                 object ansContent = new
                 {
                     result = true,
@@ -1113,7 +1113,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.StopCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.StopCommand +  Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
 
@@ -1209,7 +1209,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.MaintainCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.MaintainCommand +  Utils.CleanString(cmd.ToString()));
 
                 object ansContent = new
                 {
@@ -1232,7 +1232,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PingRoutingCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PingRoutingCommand +  Utils.CleanString(cmd.ToString()));
 
                 object ansContent = new
                 {
@@ -1254,7 +1254,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PingCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PingCommand +  Utils.CleanString(cmd.ToString()));
 
                 object ansContent = new
                 {
@@ -1275,7 +1275,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetVmStatsCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetVmStatsCommand +  Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 JArray vmNamesJson = cmd.vmNames;
                 string[] vmNames = vmNamesJson.ToObject<string[]>();
@@ -1786,7 +1786,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetHostStatsCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetHostStatsCommand +  Utils.CleanString(cmd.ToString()));
                 bool result = false;
                 string details = null;
                 object hostStats = null;
@@ -1848,7 +1848,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.PrepareForMigrationCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.PrepareForMigrationCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = true;
@@ -1882,7 +1882,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.MigrateCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.MigrateCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -2033,7 +2033,7 @@ namespace HypervResource
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.GetVncPortCommand + cmd.ToString());
+                logger.Info(CloudStackTypes.GetVncPortCommand +  Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
