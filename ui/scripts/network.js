@@ -3766,7 +3766,21 @@
                                             },
                                             destroy: {
                                                 label: 'label.remove.vm.from.lb',
-                                                action: function(args) {
+                                                action: function(args) {                                                	
+                                                	var inputData;
+                                                	if (args.item.itemIp == undefined) {
+                                                		inputData = {
+                                                            id: args.multiRule.id,
+                                                            virtualmachineids: args.item.id
+                                                        };
+                                                	} else {                                                		
+                                                		inputData = {
+                                                            id: args.multiRule.id,
+                                                            "vmidipmap[0].vmid": args.item.id,
+                                                            "vmidipmap[0].vmip": args.item.itemIp                                                            
+                                                        };   
+                                                	}                                                	
+                                                	
                                                     $.ajax({
                                                         url: createURL('removeFromLoadBalancerRule'),
                                                         data: {
