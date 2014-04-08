@@ -36,8 +36,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>net.java.dev.vcc.thirdparty</groupId>
-      <artifactId>xen-api</artifactId>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>xapi</artifactId>
       <version>${cs.xapi.version}</version>
     </dependency>
   </dependencies>

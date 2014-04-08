@@ -22,7 +22,7 @@
   <version>4.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
@@ -60,7 +60,7 @@
     <cs.ehcache.version>2.6.6</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava.version>14.0-rc1</cs.guava.version>
-    <cs.xapi.version>6.2.0-3</cs.xapi.version>
+    <cs.xapi.version>6.2.0-1-SNAPSHOT</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
     <cs.httpcore.version>4.2.1</cs.httpcore.version>
     <cs.mysql.version>5.1.21</cs.mysql.version>
@@ -174,6 +174,7 @@
     <module>server</module>
     <module>usage</module>
     <module>utils</module>
+    <module>deps/XenServerJava</module>
     <module>engine</module>
     <module>plugins</module>
     <module>framework</module>
@@ -448,11 +449,6 @@
       <artifactId>javax.inject</artifactId>
       <version>1</version>
     </dependency>
-    <dependency>
-        <groupId>net.java.dev.vcc.thirdparty</groupId>
-        <artifactId>xen-api</artifactId>
-        <version>${cs.xapi.version}</version>
-    </dependency>
   </dependencies>
 
   <build>
@@ -544,7 +540,7 @@
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
             <sourceDirectory>${project.basedir}</sourceDirectory>
             <includes>**\/*.java</includes>
-            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/apidoc\/</excludes>
+            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
           </configuration>
         </plugin>
         <plugin>
@@ -738,6 +734,9 @@
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>
               <exclude>debian/rules</exclude>
+              <exclude>deps/XenServerJava/src/com/xensource/xenapi/*.java</exclude>
+              <exclude>deps/XenServerJava/BSD</exclude>
+              <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/ServerResource.sln</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/packages/**</exclude>

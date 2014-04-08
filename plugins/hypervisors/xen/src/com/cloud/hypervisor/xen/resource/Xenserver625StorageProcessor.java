@@ -174,7 +174,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 }
                 String pUuid = poolsr.getUuid(conn);
                 boolean isISCSI = IsISCSI(poolsr.getType(conn));
-                Task task = srcVdi.copyAsync(conn, poolsr, null, null);
+                Task task = srcVdi.copyAsync2(conn, poolsr, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -233,7 +233,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 if (prevSnapshotUuid != null) {
                     previousSnapshotVdi = VDI.getByUuid(conn,prevSnapshotUuid);
                 }
-                task = snapshotvdi.copyAsync(conn, ssSR, previousSnapshotVdi, null);
+                task = snapshotvdi.copyAsync2(conn, ssSR, previousSnapshotVdi, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -344,7 +344,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                     snapshotSr = createFileSr(conn, secondaryStorageMountPath, folder);
 
-                    Task task = snapshotVdi.copyAsync(conn, snapshotSr, null, null);
+                    Task task = snapshotVdi.copyAsync2(conn, snapshotSr, null, null);
                     // poll every 1 seconds ,
                     hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                     hypervisorResource.checkForSuccess(conn, task);
@@ -462,7 +462,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             tmpltSR = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), installPath);
 
             // copy volume to template SR
-            Task task = vol.copyAsync(conn, tmpltSR, null, null);
+            Task task = vol.copyAsync2(conn, tmpltSR, null, null);
             // poll every 1 seconds ,
             hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
             hypervisorResource.checkForSuccess(conn, task);
@@ -578,7 +578,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             snapshotChains.add(snapshotVdi);
 
             for(VDI snapChain : snapshotChains) {
-                Task task = snapChain.copyAsync(conn, null, null, destVdi);
+                Task task = snapChain.copyAsync2(conn, null, null, destVdi);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -641,7 +641,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 // Look up the volume on the source primary storage pool
                 VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
-                Task task = srcVdi.copyAsync(conn, secondaryStorage, null, null);
+                Task task = srcVdi.copyAsync2(conn, secondaryStorage, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -693,7 +693,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             try {
                 SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
                 VDI srcVdi = VDI.getByUuid(conn, volumeUuid);
-                Task task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
+                Task task = srcVdi.copyAsync2(conn, primaryStoragePool, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -777,7 +777,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             String destVdiUuid = destVdi.getUuid(conn);
 
             for(VDI snapChain : snapshotChains) {
-                Task task = snapChain.copyAsync(conn, null, null, destVdi);
+                Task task = snapChain.copyAsync2(conn, null, null, destVdi);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
