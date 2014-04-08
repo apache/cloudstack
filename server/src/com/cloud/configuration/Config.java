@@ -701,7 +701,7 @@ public enum Config {
             "system.vm.use.local.storage",
             "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.",
-            null),
+            null, ConfigKey.Scope.Zone.toString()),
     SystemVMAutoReserveCapacity(
             "Advanced",
             ManagementServer.class,
