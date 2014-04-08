@@ -75,9 +75,9 @@ setJavaHome
 SCP=""
 DCP=""
 UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':'`
-JCP="/usr/share/java/commons-daemon.jar"
+JCP="/usr/share/java/commons-daemon.jar":"/usr/share/java/mysql-connector-java.jar"
 
-# We need to append the JSVC daemon JAR to the classpath
+# We need to append the JSVC daemon  and mysql-connector JAR to the classpath
 # AgentShell implements the JSVC daemon methods
 export CLASSPATH="$SCP:$DCP:$UCP:$JCP:/etc/cloudstack/usage"
 
