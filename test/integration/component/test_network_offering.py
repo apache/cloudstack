@@ -1180,15 +1180,15 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestNOWithOnlySourceNAT, cls).getClsTestClient()
-        cls.apiClient = cls.testClient.getApiClient()
+        cls.apiclient = cls.testClient.getApiClient()
 
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiClient)
-        cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
-            cls.apiClient,
+            cls.apiclient,
             cls.zone.id,
             cls.services["ostype"]
         )
@@ -1197,7 +1197,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
-            cls.apiClient,
+            cls.apiclient,
             cls.services["service_offering"]
         )
 

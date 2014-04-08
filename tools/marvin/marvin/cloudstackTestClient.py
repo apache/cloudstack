@@ -416,7 +416,7 @@ class CSTestClient(object):
         @Desc : FixME, httplib has issue if more than one thread submitted
         '''
         if self.__asyncJobMgr is None:
-            self.__asyncJobMgr = asyncJobMgr.asyncJobMgr(self.__apiClient,
+            self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
                                                          self.__dbConnection)
         return self.__asyncJobMgr.submitCmdsAndWait(cmds, workers)
 
