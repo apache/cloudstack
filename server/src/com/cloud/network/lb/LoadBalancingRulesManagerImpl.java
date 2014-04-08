@@ -1044,6 +1044,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 vmIpsList.add(priIp);
                 vmIdIpMap.put(instanceId, vmIpsList);
             } else {
+                // skip the primary ip from vm secondary ip comparisions
+                if (vmIpsList.contains(priIp)) {
+                    vmIpsList.remove(priIp);
+                }
+
                 //check if the ips belongs to nic secondary ip
                 for (String ip: vmIpsList) {
                     if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
