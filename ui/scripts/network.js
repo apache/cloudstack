@@ -3736,14 +3736,24 @@
                                             add: {
                                                 label: 'label.add.vms.to.lb',
                                                 action: function(args) {
+                                                    var inputData = {
+                                                    	id: args.multiRule.id	
+                                                    };                                              
+                                                    if (args.data != null) {
+                                                		for (var k = 0; k < args.data.length; k++) {                                                          			
+                                                			inputData['vmidipmap[' + k + '].vmid'] = args.data[k].id;
+                                                			
+                                                			if (args.context.ipAddresses[0].isportable) {
+                                                			    inputData['vmidipmap[' + k + '].vmip'] = args.data[k]._subselect.split(',')[1];  
+                                                			} else {
+                                                				inputData['vmidipmap[' + k + '].vmip'] = args.data[k]._subselect;
+                                                			}
+                                                		}
+                                                	}   
+                                                	
                                                     $.ajax({
                                                         url: createURL('assignToLoadBalancerRule'),
-                                                        data: {
-                                                            id: args.multiRule.id,
-                                                            virtualmachineids: $.map(args.data, function(elem) {
-                                                                return elem.id;
-                                                            }).join(',')
-                                                        },
+                                                        data: inputData,
                                                         success: function(json) {
                                                             args.response.success({
                                                                 notification: {
@@ -3783,10 +3793,7 @@
                                                 	
                                                     $.ajax({
                                                         url: createURL('removeFromLoadBalancerRule'),
-                                                        data: {
-                                                            id: args.multiRule.id,
-                                                            virtualmachineids: args.item.id
-                                                        },
+                                                        data: inputData,
                                                         success: function(json) {
                                                             args.response.success({
                                                                 notification: {
