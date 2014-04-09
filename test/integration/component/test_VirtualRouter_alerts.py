@@ -156,7 +156,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         return
 
     @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"])
     def test_01_VRServiceFailureAlerting(self):
 
 
@@ -229,7 +229,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         res = str(result)
         self.debug("apache process status: %s" % res)
 
-        time.sleep(300) #wait for 5 minutes meanwhile monitor service on VR starts the apache service
+        time.sleep(2400) #wait for 40 minutes meanwhile monitor service on VR starts the apache service (router.alerts.check.interval default value is 30minutes)
 
         qresultset = self.dbclient.execute(
             "select id from alert where subject = '%s' ORDER BY id DESC LIMIT 1;" \

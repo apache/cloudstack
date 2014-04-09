@@ -86,6 +86,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -370,6 +371,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+            } else if (cmd instanceof GetRouterAlertsCommand) {
+                return new Answer(cmd);
             } else if (cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand || cmd instanceof AggregationControlCommand) {
                 return new Answer(cmd);
             } else {

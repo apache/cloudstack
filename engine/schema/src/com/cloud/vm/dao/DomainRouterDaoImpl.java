@@ -60,6 +60,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
     protected SearchBuilder<DomainRouterVO> clusterSearch;
+    protected SearchBuilder<DomainRouterVO> SearchByStateAndManagementServerId;
     @Inject
     HostDao _hostsDao;
     @Inject
@@ -129,6 +130,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinHost.and("mgmtServerId", joinHost.entity().getManagementServerId(), Op.EQ);
         StateNetworkTypeSearch.join("host", joinHost, joinHost.entity().getId(), StateNetworkTypeSearch.entity().getHostId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
+
+        SearchByStateAndManagementServerId = createSearchBuilder();
+        SearchByStateAndManagementServerId.and("state", SearchByStateAndManagementServerId.entity().getState(), Op.EQ);
+
+        SearchBuilder<HostVO> joinHost2 = _hostsDao.createSearchBuilder();
+        joinHost2.and("mgmtServerId", joinHost2.entity().getManagementServerId(), Op.EQ);
+        SearchByStateAndManagementServerId.join("host", joinHost2, joinHost2.entity().getId(), SearchByStateAndManagementServerId.entity().getHostId(), JoinType.INNER);
+        SearchByStateAndManagementServerId.done();
 
         OutsidePodSearch = createSearchBuilder();
         SearchBuilder<RouterNetworkVO> joinRouterNetwork2 = _routerNetworkDao.createSearchBuilder();
@@ -291,6 +300,15 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
             routers.add(findById(router.getId()));
         }
         return routers;
+    }
+
+    @Override
+    public List<DomainRouterVO> listByStateAndManagementServer(State state, long mgmtSrvrId) {
+        SearchCriteria<DomainRouterVO> sc = SearchByStateAndManagementServerId.create();
+        sc.setParameters("state", state);
+        sc.setJoinParameters("host", "mgmtServerId", mgmtSrvrId);
+
+        return listBy(sc);
     }
 
     @Override

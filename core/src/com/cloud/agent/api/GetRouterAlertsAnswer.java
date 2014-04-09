@@ -22,7 +22,6 @@ import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 
 public class GetRouterAlertsAnswer extends Answer {
 
-    String routerName;
     String[] alerts;
     String timeStamp;
 
@@ -36,8 +35,8 @@ public class GetRouterAlertsAnswer extends Answer {
     }
 
 
-    public GetRouterAlertsAnswer(GetRouterAlertsCommand cmd, Exception ex) {
-        super(cmd, ex);
+    public GetRouterAlertsAnswer(GetRouterAlertsCommand cmd, String details) {
+        super(cmd, false, details);
     }
 
     public void setAlerts(String[] alerts) {
@@ -56,7 +55,4 @@ public class GetRouterAlertsAnswer extends Answer {
         return timeStamp;
     }
 
-    public String getRouterName() {
-        return routerName;
-    }
 }
