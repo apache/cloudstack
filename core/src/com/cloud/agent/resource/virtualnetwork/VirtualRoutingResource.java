@@ -649,25 +649,23 @@ public class VirtualRoutingResource {
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {
 
-        String args = null;
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        if (cmd.getPreviousAlertTimeStamp() != null) {
-            args = cmd.getPreviousAlertTimeStamp();
-        }
+        String args = cmd.getPreviousAlertTimeStamp();
 
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_ALERTS, args);
         String alerts[] = null;
         String lastAlertTimestamp = null;
-        // CallHostPlugin results "success" when there are no alerts on virtual router
-        if (result.isSuccess()) {
-            if (!result.getDetails().isEmpty() && !result.getDetails().equals("No Alerts")) {
-                alerts = result.getDetails().split("\\\\n");
-                String[] lastAlert = alerts[alerts.length - 1].split(" ");
-                lastAlertTimestamp = lastAlert[0] + " " + lastAlert[1];
-            }
-        }
 
-        return new GetRouterAlertsAnswer(cmd, alerts, lastAlertTimestamp);
+        if (result.isSuccess()) {
+            if (!result.getDetails().isEmpty() && !result.getDetails().trim().equals("No Alerts")) {
+                alerts = result.getDetails().trim().split("\\\\n");
+                String[] lastAlert = alerts[alerts.length - 1].split(",");
+                lastAlertTimestamp = lastAlert[0];
+            }
+            return new GetRouterAlertsAnswer(cmd, alerts, lastAlertTimestamp);
+        } else {
+            return new GetRouterAlertsAnswer(cmd, result.getDetails());
+        }
     }
 
     protected Answer execute(CheckRouterCommand cmd) {
@@ -757,21 +755,6 @@ public class VirtualRoutingResource {
         }
 
         cfg.add(new ConfigItem(VRScripts.MONITOR_SERVICE, args));
-        return cfg;
-    }
-
-    protected List<ConfigItem> generateConfig(GetRouterAlertsCommand cmd) {
-        LinkedList<ConfigItem> cfg = new LinkedList<>();
-
-        String args = null;
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        if (cmd.getPreviousAlertTimeStamp() != null) {
-            args = "getRouterAlerts.sh " + routerIp + " " + cmd.getPreviousAlertTimeStamp();
-        } else {
-            args = "getRouterAlerts.sh " + routerIp;
-        }
-
-        cfg.add(new ConfigItem(VRScripts.ROUTER_ALERTS, args));
         return cfg;
     }
 

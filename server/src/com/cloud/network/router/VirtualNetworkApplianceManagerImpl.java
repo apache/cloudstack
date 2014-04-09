@@ -17,6 +17,8 @@
 
 package com.cloud.network.router;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -824,6 +826,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.debug("router.check.interval - " + _routerCheckInterval + " so not scheduling the redundant router checking thread");
         }
 
+        int _routerAlertsCheckInterval = RouterAlertsCheckInterval.value();
+        if (_routerAlertsCheckInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new CheckRouterAlertsTask(), _routerAlertsCheckInterval, _routerAlertsCheckInterval, TimeUnit.SECONDS);
+        } else {
+            s_logger.debug("router.alerts.check.interval - " + _routerAlertsCheckInterval + " so not scheduling the router alerts checking thread");
+        }
+
         return true;
     }
 
@@ -1358,8 +1367,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                 updateSite2SiteVpnConnectionState(routers);
 
-                getRouterAlerts();
-
                 final List<NetworkVO> networks = _networkDao.listRedundantNetworks();
                 s_logger.debug("Found " + networks.size() + " networks to update RvR status. ");
                 for (final NetworkVO network : networks) {
@@ -1374,20 +1381,33 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    private void getRouterAlerts() {
-        try{
-            List<DomainRouterVO> routersInIsolatedNetwork = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
-            List<DomainRouterVO> routersInSharedNetwork = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Shared, mgmtSrvrId);
+    protected class CheckRouterAlertsTask extends ManagedContextRunnable {
+        public CheckRouterAlertsTask() {
+        }
 
-            List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
-            routers.addAll(routersInIsolatedNetwork);
-            routers.addAll(routersInSharedNetwork);
+        @Override
+        protected void runInContext() {
+            try {
+                getRouterAlerts();
+            } catch (final Exception ex) {
+                s_logger.error("Fail to complete the CheckRouterAlertsTask! ", ex);
+            }
+        }
+    }
+
+    protected void getRouterAlerts() {
+        try{
+            List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(State.Running, mgmtSrvrId);
+
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (final DomainRouterVO router : routers) {
-                if (router.getVpcId() != null) {
+                String serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
+                // Skip the routers in VPC network or skip the routers where Monitor service is not enabled in the corresponding Zone
+                if ( !Boolean.parseBoolean(serviceMonitoringFlag) || router.getVpcId() != null) {
                     continue;
                 }
+
                 String privateIP = router.getPrivateIpAddress();
 
                 if (privateIP != null) {
@@ -1395,23 +1415,49 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
                     GetRouterAlertsCommand command = null;
                     if (opRouterMonitorServiceVO == null) {
-                        command = new GetRouterAlertsCommand(null);
+                        command = new GetRouterAlertsCommand(new String("1970-01-01 00:00:00")); // To avoid sending null value
                     } else {
                         command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
                     }
 
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-                    GetRouterAlertsAnswer answer = null;
                     try {
-                        answer = (GetRouterAlertsAnswer) _agentMgr.easySend(router.getHostId(), command);
+                        final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                        GetRouterAlertsAnswer answer = null;
+
+                        if (origAnswer == null) {
+                            s_logger.warn("Unable to get alerts from router " + router.getHostName());
+                            continue;
+                        }
+                        if (origAnswer instanceof GetRouterAlertsAnswer) {
+                            answer = (GetRouterAlertsAnswer)origAnswer;
+                        } else {
+                            s_logger.warn("Unable to get alerts from router " + router.getHostName());
+                            continue;
+                        }
+                        if (!answer.getResult()) {
+                            s_logger.warn("Unable to get alerts from router " + router.getHostName() + " " + answer.getDetails());
+                            continue;
+                        }
+
                         String alerts[] = answer.getAlerts();
-                        if (alerts != null ) {
+                        if (alerts != null) {
+                            String lastAlertTimeStamp = answer.getTimeStamp();
+                            SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                            sdfrmt.setLenient(false);
+                            try
+                            {
+                                sdfrmt.parse(lastAlertTimeStamp);
+                            }
+                            catch (ParseException e)
+                            {
+                                s_logger.warn("Invalid last alert timestamp received while collecting alerts from router: " + router.getInstanceName());
+                                continue;
+                            }
                             for (String alert: alerts) {
                                 _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), "Monitoring Service on VR " + router.getInstanceName(), alert);
                             }
-                            String lastAlertTimeStamp = answer.getTimeStamp();
                             if (opRouterMonitorServiceVO == null) {
                                 opRouterMonitorServiceVO = new OpRouterMonitorServiceVO(router.getId(), router.getHostName(), lastAlertTimeStamp);
                                 _opRouterMonitorServiceDao.persist(opRouterMonitorServiceVO);
@@ -1421,7 +1467,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             }
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
+                        s_logger.warn("Error while collecting alerts from router: " + router.getInstanceName(), e);
                         continue;
                     }
                 }
@@ -1430,7 +1476,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.warn("Error while collecting alerts from router", e);
         }
     }
-
 
     private final static int DEFAULT_PRIORITY = 100;
     private final static int DEFAULT_DELTA = 2;
@@ -4333,7 +4378,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval};
     }
 
     @Override
