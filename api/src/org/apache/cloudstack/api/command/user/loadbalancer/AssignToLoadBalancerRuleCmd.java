@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -142,6 +143,11 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
                 }
 
+                //check wether the given ip is valid ip or not
+                if (vmIp == null || !NetUtils.isValidIp(vmIp)) {
+                    throw new InvalidParameterValueException("Invalid ip address "+ vmIp +" passed in vmidipmap for " +
+                            "vmid " + vmId);
+                }
                 Long longVmId = lbvm.getId();
 
                 List<String> ipsList = null;
