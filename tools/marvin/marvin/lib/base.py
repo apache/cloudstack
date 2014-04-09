@@ -2428,7 +2428,8 @@ class PublicIpRange:
         cmd.startip = services["startip"]
         cmd.endip = services["endip"]
         cmd.zoneid = services["zoneid"]
-        cmd.podid = services["podid"]
+        if "podid" in services:
+            cmd.podid = services["podid"]
         cmd.vlan = services["vlan"]
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)

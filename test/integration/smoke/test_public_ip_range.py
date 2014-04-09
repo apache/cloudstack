@@ -37,8 +37,6 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services["zoneid"] = cls.zone.id
-        pod = get_pod(cls.apiclient, cls.zone.id)
-        cls.services["podid"] = pod.id
         # Create Account
         cls.account = Account.create(
                             cls.apiclient,
