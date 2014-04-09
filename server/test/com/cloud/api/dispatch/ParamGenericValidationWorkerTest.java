@@ -95,6 +95,10 @@ public class ParamGenericValidationWorkerTest {
         params.put(ApiConstants.SIGNATURE, "");
         params.put(ApiConstants.CTX_ACCOUNT_ID, "");
         params.put(ApiConstants.CTX_START_EVENT_ID, "");
+        // Make sure it's case insensitive
+        params.put(ApiConstants.CTX_START_EVENT_ID, "");
+        params.put(ApiConstants.CTX_START_EVENT_ID.toLowerCase(), "");
+        params.put(ApiConstants.CTX_USER_ID.toUpperCase(), "");
         params.put(ApiConstants.CTX_USER_ID, "");
         params.put(ApiConstants.UUID, "");
         params.put(ApiConstants.ID, "");

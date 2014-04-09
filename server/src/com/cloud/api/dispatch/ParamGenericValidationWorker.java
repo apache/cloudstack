@@ -80,9 +80,17 @@ public class ParamGenericValidationWorker implements DispatchWorker {
 
         final StringBuilder errorMsg = new StringBuilder(ERROR_MSG_PREFIX);
         boolean foundUnknownParam = false;
-        for (final Object paramName : params.keySet()) {
-            if (!expectedParamNames.contains(paramName)) {
-                errorMsg.append(" ").append(paramName);
+        for (final Object actualParamName : params.keySet()) {
+            // If none of the expected params matches, we have an unknown param
+            boolean matchedCurrentParam = false;
+            for (final String expectedName : expectedParamNames) {
+                if (expectedName.equalsIgnoreCase((String) actualParamName)) {
+                    matchedCurrentParam = true;
+                    break;
+                }
+            }
+            if (!matchedCurrentParam) {
+                errorMsg.append(" ").append(actualParamName);
                 foundUnknownParam= true;
             }
         }
