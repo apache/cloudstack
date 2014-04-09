@@ -986,20 +986,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // check for conflict
         Set<Long> passedInstanceIds = vmIdIpMap.keySet();
         for (Long instanceId : passedInstanceIds) {
-            if (existingVmIdIps.containsKey(instanceId)) {
-                // now check for ip address
-                List<String> mappedIps = existingVmIdIps.get(instanceId);
-                List<String> newIps = vmIdIpMap.get(instanceId);
-
-                if (newIps !=  null) {
-                    for (String newIp: newIps) {
-                        if (mappedIps.contains(newIp)) {
-                            throw new InvalidParameterValueException("VM " + instanceId + " with " + newIp +" is already mapped to load balancer.");
-                        }
-                    }
-                }
-            }
-
             UserVm vm = _vmDao.findById(instanceId);
             if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Invalid instance id specified");
@@ -1036,27 +1022,54 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             String priIp = nicInSameNetwork.getIp4Address();
+
+            if (existingVmIdIps.containsKey(instanceId)) {
+                // now check for ip address
+                List<String> mappedIps = existingVmIdIps.get(instanceId);
+                List<String> newIps = vmIdIpMap.get(instanceId);
+
+                if (newIps == null) {
+                    newIps = new ArrayList<String>();
+                    newIps.add(priIp);
+                }
+
+                for (String newIp: newIps) {
+                    if (mappedIps.contains(newIp)) {
+                        throw new InvalidParameterValueException("VM " + instanceId + " with " + newIp +" is already mapped to load balancer.");
+                    }
+                }
+            }
+
             List<String> vmIpsList = vmIdIpMap.get(instanceId);
             String vmLbIp = null;
 
-            if (vmIpsList == null) {
-                vmIpsList = new ArrayList<String>();
-                vmIpsList.add(priIp);
-                vmIdIpMap.put(instanceId, vmIpsList);
-            } else {
-                // skip the primary ip from vm secondary ip comparisions
-                if (vmIpsList.contains(priIp)) {
-                    vmIpsList.remove(priIp);
-                }
+            if (vmIpsList != null) {
 
                 //check if the ips belongs to nic secondary ip
                 for (String ip: vmIpsList) {
+                    // skip the primary ip from vm secondary ip comparisions
+                    if (ip.equals(priIp)) {
+                        continue;
+                    }
                     if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
                         throw new InvalidParameterValueException("VM ip "+ ip + " specified does not belong to " +
                                 "nic in network " + nicInSameNetwork.getNetworkId());
                     }
                 }
+            } else {
+                vmIpsList = new ArrayList<String>();
+                vmIpsList.add(priIp);
             }
+
+            // when vm id is passed in instance ids and in vmidipmap
+            // assign for primary ip and ip passed in vmidipmap
+            if (instanceIds != null ) {
+                if (instanceIds.contains(instanceId)) {
+                    vmIpsList.add(priIp);
+                }
+            }
+
+            vmIdIpMap.put(instanceId, vmIpsList);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Adding " + vm + " to the load balancer pool");
@@ -1072,7 +1085,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             public void doInTransactionWithoutResult(TransactionStatus status) {
 
                 for (Long vmId : vmIds) {
-                    final List<String> lbVmIps = newMap.get(vmId);
+                    final Set<String> lbVmIps = new HashSet<String>(newMap.get(vmId));
                     for (String vmIp: lbVmIps) {
                         LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vmId, vmIp, false);
                         map = _lb2VmMapDao.persist(map);
