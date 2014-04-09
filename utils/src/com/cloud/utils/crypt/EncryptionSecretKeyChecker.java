@@ -20,10 +20,8 @@
 package com.cloud.utils.crypt;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -45,8 +43,8 @@ public class EncryptionSecretKeyChecker {
     private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
 
     // Two possible locations with the new packaging naming
-    private static final String s_altKeyFile = "/etc/cloudstack/management/key";
-    private static final String s_keyFile = "/etc/cloudstack/management/key";
+    private static final String s_altKeyFile = "key";
+    private static final String s_keyFile = "key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
@@ -78,17 +76,18 @@ public class EncryptionSecretKeyChecker {
         SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
 
         if (encryptionType.equals("file")) {
-            File keyFile = new File(s_keyFile);
-            if (!keyFile.exists()) {
-                keyFile = new File(s_altKeyFile);
+            InputStream is = this.getClass().getClassLoader().getResourceAsStream(s_keyFile);
+            if (is == null) {
+              is = this.getClass().getClassLoader().getResourceAsStream(s_altKeyFile);
+            }
+            if(is == null) {  //This is means we are not able to load key file from the classpath.
+              throw new CloudRuntimeException(s_keyFile + " File containing secret key not found in the classpath: ");
             }
             BufferedReader in = null;
             try {
-                in = new BufferedReader(new FileReader(keyFile));
+                in = new BufferedReader(new InputStreamReader(is));
                 secretKey = in.readLine();
                 //Check for null or empty secret key
-            } catch (FileNotFoundException e) {
-                throw new CloudRuntimeException("File containing secret key not found: " + s_keyFile, e);
             } catch (IOException e) {
                 throw new CloudRuntimeException("Error while reading secret key from: " + s_keyFile, e);
             } finally {
