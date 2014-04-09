@@ -19,14 +19,18 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.PoolPatch;
+import com.xensource.xenapi.Event;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.xmlrpc.XmlRpcException;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.HashSet;
 import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
-
+import java.util.concurrent.TimeoutException;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
 
@@ -105,4 +109,56 @@ public class XenServer620Resource extends XenServer610Resource {
         }
         cmd.setHostDetails(details);
     }
+
+
+    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+        long beginTime = System.currentTimeMillis();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
+                           "ms timeout");
+        }
+        Set<String> classes = new HashSet<String>();
+        classes.add("Task/" + task.toWireString());
+        String token = "";
+        Double t = new Double(timeout / 1000);
+        while (true) {
+            Map<?, ?> map = Event.properFrom(c, classes, token, t);
+            token = (String)map.get("token");
+            @SuppressWarnings("unchecked")
+            Set<Event.Record> events = (Set<Event.Record>)map.get("events");
+            if (events.size() == 0) {
+                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
+            }
+            for (Event.Record rec : events) {
+                if (!(rec.snapshot instanceof Task.Record)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skipping over " + rec);
+                    }
+                    continue;
+                }
+
+                Task.Record taskRecord = (Task.Record)rec.snapshot;
+
+                if (taskRecord.status != Types.TaskStatusType.PENDING) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task is done " + taskRecord.status);
+                    }
+                    return;
+                } else {
+                    s_logger.debug("Task is not done " + taskRecord);
+                }
+            }
+            if (System.currentTimeMillis() - beginTime > timeout) {
+                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
+            }
+        }
+    }
+
+
 }
