@@ -24,16 +24,9 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Dynamic+Compute+Offering+FS
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList)
-from marvin.integration.lib.base import (ServiceOffering,
-                                         VirtualMachine,
-                                         Account)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           verifyComputeOfferingCreation)
-
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, ADMIN_ACCOUNT, USER_ACCOUNT
 from ddt import ddt, data

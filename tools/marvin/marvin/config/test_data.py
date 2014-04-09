@@ -378,12 +378,10 @@ test_data = {
             },
             "securitygroupenabled": "true"
         },
-        "vlan": {
-            "part": ["4090-4091", "4092-4095"],
-            "full": "4090-4095",
-        },
+        "vlan_range": "4090-4091",
+        "vlan":"4444",
         "nfs": {
-            "url": "nfs://10.147.28.7/export/home/talluri/testprimary",
+            "url": "nfs://nfs/export/automation/1/testprimary",
             "name": "Primary XEN"
         },
         "iscsi": {

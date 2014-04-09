@@ -14,31 +14,31 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" Tests for Persistent Networks without running VMs feature
+""" Tests for Persistent Networks without running VMs feature"""
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 import netaddr
 from nose.plugins.attrib import attr
-
 from marvin.codes import PASS, FAIL
 from marvin.sshClient import SshClient
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
 import time
 
 @ddt
 class TestPersistentNetworks(cloudstackTestCase):
-    """Test Persistent Networks without running VMs
-    """
-
+    '''
+    Test Persistent Networks without running VMs
+    '''
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestPersistentNetworks, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

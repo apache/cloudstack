@@ -231,6 +231,7 @@ class TestSnapshots(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -960,6 +961,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -1115,6 +1117,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         cls.testClient = super(TestSnapshotEvents, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
+
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1169,6 +1172,7 @@ class TestSnapshotEvents(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return

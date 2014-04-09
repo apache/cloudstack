@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import time
 
@@ -148,6 +148,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
 
     def tearDown(self):
@@ -202,7 +203,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
 
         alertSubject = "Monitoring Service on VR " + router.name
 
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() == 'vmware':
             result = get_process_status(
                         self.apiclient.connection.mgtSvr,
                         22,
@@ -210,7 +211,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
                         self.apiclient.connection.passwd,
                         router.linklocalip,
                         "service dnsmasq status",
-                        hypervisor=self.apiclient.hypervisor
+                        hypervisor=self.hypervisor
                         )
         else:
             try:

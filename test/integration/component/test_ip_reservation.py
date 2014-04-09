@@ -23,8 +23,6 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+IP+Range+Reservation+within+a+Network
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.utils import *
 from marvin.lib.base import *

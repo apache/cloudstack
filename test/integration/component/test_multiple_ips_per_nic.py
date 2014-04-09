@@ -23,30 +23,9 @@
     Design Document: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Multiple+IP+address+per+NIC
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.utils import (cleanup_resources,
-                                          validateList,
-                                          random_gen)
-from marvin.integration.lib.base import (Account,
-                                         ServiceOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         VpcOffering,
-                                         VPC,
-                                         NIC,
-                                         Domain,
-                                         PublicIPAddress,
-                                         StaticNATRule,
-                                         FireWallRule,
-                                         NATRule,
-                                         Router)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           get_free_vlan,
-                                           setSharedNetworkParams,
-                                           createEnabledNetworkOffering,
-                                           shouldTestBeSkipped,
-                                           wait_for_cleanup)
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, ISOLATED_NETWORK, VPC_NETWORK, SHARED_NETWORK, FAIL

@@ -2222,7 +2222,7 @@ class TestVPC(cloudstackTestCase):
         self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
                                         UserName=domain_admin.name,
-                                        DomaimName=self.services["domain"]["name"],
+                                        DomainName=self.services["domain"]["name"],
                                         type=2)
 
         user = Account.create(

@@ -47,7 +47,7 @@ class Services():
     def __init__(self):
         self.services = {
 
-            "vlan":             {
+            "vlan_nc":             {
                                  "partial_range": ["",""],
                                  "full_range": "",
                                 },
@@ -125,7 +125,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.vlan = self.services["vlan"]
+        self.vlan = self.services["vlan_new"]
         self.apiClient = self.testClient.getApiClient()
 
         self.physicalnetwork, self.vlan = setNonContiguousVlanIds(self.apiclient, self.zone.id)

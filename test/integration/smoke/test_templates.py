@@ -261,14 +261,14 @@ class TestTemplates(cloudstackTestCase):
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
-
+        print "Before:",cls.services
         cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
-
+        print "After:",cls.services
         cls.user = Account.create(
                             cls.apiclient,
                             cls.services["account"],
@@ -382,7 +382,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "selfservice", "test"])
     def test_02_edit_template(self):
         """Test Edit template
         """

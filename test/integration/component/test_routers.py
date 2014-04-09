@@ -1264,8 +1264,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                     "Check end port of firewall rule"
                     )
         # For DNS and DHCP check 'dnsmasq' process status
-        if (self.apiclient.hypervisor.lower() == 'vmware'
-                         or self.apiclient.hypervisor.lower() == 'hyperv'):
+        if (self.hypervisor.lower() == 'vmware'
+                         or self.hypervisor.lower() == 'hyperv'):
             result = get_process_status(
                                self.apiclient.connection.mgtSvr,
                                22,
