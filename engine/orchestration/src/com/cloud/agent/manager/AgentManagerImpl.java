@@ -185,7 +185,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "The number of direct agents to load each time", false);
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.pool.size", "500",
             "Default size for DirectAgentPool", false);
-    protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>("Advanced", Float.class, "direct.agent.thread.cap", "0.1",
+    protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>("Advanced", Float.class, "direct.agent.thread.cap", "1",
             "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<Boolean>(
         "Developer",
