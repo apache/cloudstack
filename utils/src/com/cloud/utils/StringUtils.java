@@ -20,11 +20,11 @@
 package com.cloud.utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Map;
-
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.owasp.esapi.StringUtilities;
@@ -159,10 +159,16 @@ public class StringUtils {
     }
 
     // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?(password|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
 
     // removes a password/accesskey/ property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|accesskey|secretkey)\":\\s?\".*?\",?");
+
+    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)((p|P)assword|accesskey|secretkey)(?=(%26|[&'\"]))");
+
+    private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
+
+    private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(String stringToClean) {
@@ -170,7 +176,25 @@ public class StringUtils {
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+            Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
+            while (detailsMatcher.find()) {
+                Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
+                if (detailsIndexMatcher.find()) {
+                    cleanResult = cleanDetails(cleanResult, detailsIndexMatcher.group());
+                }
+            }
         }
+        return cleanResult;
+    }
+
+    public static String cleanDetails(String stringToClean, String detailsIndexSting) {
+        String cleanResult = stringToClean;
+        for (String log : stringToClean.split("&|%26")) {
+            if (log.contains(detailsIndexSting)) {
+                cleanResult = cleanResult.replace(log, "");
+            }
+        }
+        cleanResult = REGEX_REDUNDANT_AND.matcher(cleanResult).replaceAll("&");
         return cleanResult;
     }
 
