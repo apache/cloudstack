@@ -178,23 +178,23 @@ class TestResourceTags(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
+
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             admin=True,
                             )
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-
         # Create service offerings, disk offerings etc
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,

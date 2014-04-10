@@ -130,6 +130,14 @@ class Services:
                                   "protocol": 'TCP',
                         },
                         "ostype": 'CentOS 5.3 (64-bit)',
+                        "portableIpRange": {
+                            "gateway" : "10.223.252.195",
+                            "netmask" : "255.255.255.192",
+                            "startip" : "10.223.252.196",
+                            "endip"   : "10.223.252.197",
+                            "vlan"    : "1001"
+                        }
+
           }
 
 class TestCreatePortablePublicIpRanges(cloudstackTestCase):
@@ -187,7 +195,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with root admin api
         # 2. Portable ip range should be created successfully
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         self.debug(portable_ip_range_services)
 
@@ -231,7 +239,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
                                             DomainName=self.account.domain
                                             )
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -253,7 +261,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to create new portable ip range with invalid region id
         # 2. Portable ip range creation should fail
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -307,7 +315,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -482,7 +490,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.config)
+        self.portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -645,7 +653,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -989,7 +997,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1211,7 +1219,7 @@ class TestDeleteAccount(cloudstackTestCase):
                             )
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.config)
+        portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1488,7 +1496,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.config)
+        self.portable_ip_range_services = get_portable_ip_range_services(self.services)
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')

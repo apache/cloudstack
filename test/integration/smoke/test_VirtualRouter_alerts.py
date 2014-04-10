@@ -24,6 +24,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
+from marvin.codes import FAILED
 import time
 
 
@@ -96,12 +97,13 @@ class Services:
 class TestVRServiceFailureAlerting(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVRServiceFailureAlerting, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVRServiceFailureAlerting, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
         cls.services = Services().services
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -109,6 +111,9 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id

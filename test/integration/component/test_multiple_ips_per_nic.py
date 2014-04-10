@@ -119,21 +119,23 @@ class TestBasicOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestBasicOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestBasicOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -468,21 +470,23 @@ class TestNetworkRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworkRules,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestNetworkRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
@@ -841,21 +845,22 @@ class TestVmNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestVmNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestVmNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getConfigParser().parsedDict
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.mode = str(cls.zone.networktype).lower()
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(

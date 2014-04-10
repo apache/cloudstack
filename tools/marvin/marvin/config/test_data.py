@@ -158,6 +158,10 @@ test_data = {
                 "type": "host anti-affinity",
             },
         },
+        "virtual_machine2" : {
+             "name" : "testvm2",
+             "displayname" : "Test VM2",
+        },
         "server_without_disk": {
             "displayname": "Test VM-No Disk",
             "username": "root",

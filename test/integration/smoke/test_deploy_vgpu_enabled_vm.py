@@ -31,7 +31,10 @@ from marvin.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_template
 
+from marvin.codes import FAILED
+
 from nose.plugins.attrib import attr
+
 
 class Services:
     """Test VM Life Cycle Services
@@ -116,12 +119,14 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services["mode"] = self.zone.networktype
         # Before running this test, register a windows template with ostype as 'Windows 7 (32-bit)'
         self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"], templatetype='USER')
 
+        if self.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
         #create a user account
         self.account = Account.create(
             self.apiclient,

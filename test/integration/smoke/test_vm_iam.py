@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -103,7 +104,8 @@ class TestVMIam(cloudstackTestCase):
 
     @classmethod
     def setUpClass(self):
-        self.apiclient = super(TestVMIam, self).getClsTestClient().getApiClient()
+        testClient = super(TestVMIam, self).getClsTestClient()
+        self.apiclient = testClient.getApiClient()
         self.services = Services().services
         
         # backup default apikey and secretkey

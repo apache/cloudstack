@@ -23,8 +23,8 @@ from marvin.lib.base import (Host,
                              Zone,
                              Cluster,
                              StoragePool)
-from marvin.lib.common import get_zone
-
+from marvin.lib.common import get_zone, get_template
+from marvin.codes import FAILED
 class Services:
     """Test Resource Limits Services
     """
@@ -85,13 +85,23 @@ class TestAllocationState(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestAllocationState,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestAllocationState, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
+
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
+
         cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return

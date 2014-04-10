@@ -125,7 +125,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.vlan = self.services["vlan_new"]
+        self.vlan = self.services["vlan_nc"]
         self.apiClient = self.testClient.getApiClient()
 
         self.physicalnetwork, self.vlan = setNonContiguousVlanIds(self.apiclient, self.zone.id)

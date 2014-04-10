@@ -67,7 +67,7 @@ class TestUpdateOverProvision(cloudstackTestCase):
 
         self.poolId = pool.id
         """ list overprovisioning factor for storage pool """
-        factorOld = float(pool.overprovisionfactor)
+        factorOld = float(str(pool.overprovisionfactor))
         factorNew = str(factorOld + 1.0)
 
         """ update setting for the pool"""
@@ -85,7 +85,7 @@ class TestUpdateOverProvision(cloudstackTestCase):
                                 id = self.poolId
                                 )
         pool = storage_pools[0]
-        factorNew = float(pool.overprovisionfactor)
+        factorNew = float(str(pool.overprovisionfactor))
         self.assertNotEqual(int(factorNew), int(factorOld)," Check if overprovision factor of storage pool has changed")
         self.assertEqual(int(factorNew), int(factorOld + 1.0)," Check if overprovision factor of storage pool has increased by 1")
 
@@ -100,7 +100,7 @@ class TestUpdateOverProvision(cloudstackTestCase):
         pool = storage_pools[0]
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "storage.overprovisioning.factor"
-        factorOld = float(pool.overprovisionfactor)
+        factorOld = float(str(pool.overprovisionfactor))
         factorNew = str(factorOld - 1.0)
         updateConfigurationCmd.value = factorNew
         updateConfigurationCmd.storageid = pool.id

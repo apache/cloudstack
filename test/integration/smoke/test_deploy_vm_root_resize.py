@@ -31,6 +31,8 @@ from marvin.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_template, list_volumes
 
+from marvin.codes import FAILED
+
 from nose.plugins.attrib import attr
 
 class TestData(object):
@@ -74,10 +76,12 @@ class TestDeployVM(cloudstackTestCase):
         self.hypervisor = self.testClient.getHypervisorInfo()
 
         # Get Zone, Domain and Default Built-in template
-        self.domain = get_domain(self.apiclient, self.testdata)
-        self.zone = get_zone(self.apiclient, self.testdata)
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.testdata["mode"] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+        if self.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
 #       for testing with specific template
 #        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"], templatetype='USER', services = {"template":'31f52a4d-5681-43f7-8651-ad4aaf823618'})
         
