@@ -218,6 +218,10 @@ cloudStack.docs = {
         desc: 'Type of disk for the VM. Local storage is attached to the hypervisor host where the VM is running. Shared storage is accessible via NFS.',
         externalLink: ''
     },
+    helpComputeOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpComputeOfferingCPUCores: {
         desc: 'The number of cores which should be allocated to a VM with this offering',
         externalLink: ''
@@ -280,6 +284,10 @@ cloudStack.docs = {
     },
     helpDiskOfferingDescription: {
         desc: 'A short description of the offering that can be displayed to users',
+        externalLink: ''
+    },
+    helpDiskOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
         externalLink: ''
     },
     helpDiskOfferingStorageType: {

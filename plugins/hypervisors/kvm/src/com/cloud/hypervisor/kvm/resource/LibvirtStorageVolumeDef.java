@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.commons.lang.NotImplementedException;
+
 public class LibvirtStorageVolumeDef {
     public enum volFormat {
         RAW("raw"), QCOW2("qcow2"), DIR("dir"), TAR("tar");
@@ -44,6 +47,21 @@ public class LibvirtStorageVolumeDef {
                 return TAR;
             }
             return null;
+        }
+
+        public static volFormat getFormat(QemuImg.PhysicalDiskFormat format){
+            switch (format){
+                case RAW:
+                    return RAW;
+                case QCOW2:
+                    return QCOW2;
+                case DIR:
+                    return DIR;
+                case TAR:
+                    return TAR;
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 

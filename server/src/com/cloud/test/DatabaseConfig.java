@@ -53,6 +53,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
@@ -906,6 +907,7 @@ public class DatabaseConfig {
         long id = Long.parseLong(_currentObjectParams.get("id"));
         String name = _currentObjectParams.get("name");
         String displayText = _currentObjectParams.get("displayText");
+        ProvisioningType provisioningType = ProvisioningType.valueOf(_currentObjectParams.get("provisioningType"));
         int cpu = Integer.parseInt(_currentObjectParams.get("cpu"));
         int ramSize = Integer.parseInt(_currentObjectParams.get("ramSize"));
         int speed = Integer.parseInt(_currentObjectParams.get("speed"));
@@ -928,7 +930,8 @@ public class DatabaseConfig {
         }
 
         ServiceOfferingVO serviceOffering =
-            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText,
+                    provisioningType, useLocalStorage, false, null, false, null, false);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
         if ((bytesReadRate != null) && (bytesReadRate > 0))
@@ -971,6 +974,7 @@ public class DatabaseConfig {
         long domainId = Long.parseLong(_currentObjectParams.get("domainId"));
         String name = _currentObjectParams.get("name");
         String displayText = _currentObjectParams.get("displayText");
+        ProvisioningType provisioningType = ProvisioningType.valueOf(_currentObjectParams.get("provisioningtype"));
         long diskSpace = Long.parseLong(_currentObjectParams.get("diskSpace"));
         diskSpace = diskSpace * 1024 * 1024;
 //        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
@@ -990,7 +994,7 @@ public class DatabaseConfig {
             newTags.delete(newTags.length() - 1, newTags.length());
             tags = newTags.toString();
         }
-        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags, false, null, null, null);
+        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, provisioningType, diskSpace, tags, false, null, null, null);
         diskOffering.setUseLocalStorage(local);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));

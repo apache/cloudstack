@@ -1735,13 +1735,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vol = templateToPrimaryDownload(cmd.getTemplateUrl(), primaryPool, dskch.getPath());
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
-                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, dskch.getPath(), primaryPool, 0);
+                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol,
+                            dskch.getPath(), dskch.getProvisioningType(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(cmd, false, " Can't create storage volume on storage pool");
                 }
             } else {
-                vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getSize());
+                vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getProvisioningType(), dskch.getSize());
             }
             VolumeTO volume =
                     new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), pool.getPath(), vol.getName(), vol.getName(), disksize, null);

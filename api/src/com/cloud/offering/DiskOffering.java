@@ -22,6 +22,8 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.storage.Storage.ProvisioningType;
+
 /**
  * Represents a disk offering that specifies what the end user needs in
  * the disk offering.
@@ -60,6 +62,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     boolean getSystemUse();
 
     String getDisplayText();
+
+    public ProvisioningType getProvisioningType();
 
     public String getTags();
 

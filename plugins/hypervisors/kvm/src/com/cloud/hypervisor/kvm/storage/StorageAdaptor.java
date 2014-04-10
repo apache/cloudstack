@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StorageAdaptor {
@@ -35,7 +36,8 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size);
 
     // given disk path (per database) and pool, prepare disk on host
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
@@ -49,7 +51,9 @@ public interface StorageAdaptor {
 
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool);
 
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout);
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
+            String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size,
+            KVMStoragePool destPool, int timeout);
 
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool);
 

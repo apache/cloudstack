@@ -175,6 +175,7 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
@@ -2018,19 +2019,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(), localStorageRequired,
-                offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(),
-                cmd.isCustomizedIops(), cmd.getMinIops(), cmd.getMaxIops(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(),
-                cmd.getHypervisorSnapshotReserve());
+        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
+                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), cmd.isCustomizedIops(), cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(), cmd.getHypervisorSnapshotReserve());
     }
 
-    protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vmType, String name, Integer cpu, Integer ramSize, Integer speed,
-            String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag,
+    protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vmType,
+            String name, Integer cpu, Integer ramSize, Integer speed, String displayText, String provisioningType, boolean localStorageRequired,
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
             Integer networkRate, String deploymentPlanner, Map<String, String> details, Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, Integer hypervisorSnapshotReserve) {
+
+        ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
+
         tags = StringUtils.cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired,
-                false, tags, isSystem, vmType, domainId, hostTag, deploymentPlanner);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
+                limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
+                domainId, hostTag, deploymentPlanner);
 
         if (isCustomizedIops != null) {
             bytesReadRate = null;
@@ -2200,8 +2206,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    protected DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired,
-            boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate,
+    protected DiskOfferingVO createDiskOffering(Long domainId, String name, String description, String provisioningType,
+            Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired,
+            boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate,
             Integer hypervisorSnapshotReserve) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
@@ -2209,6 +2217,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else if (numGibibytes != null && (numGibibytes > _maxVolumeSizeInGb)) {
             throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
+        ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
 
         if (numGibibytes != null) {
             diskSize = numGibibytes * 1024 * 1024 * 1024;
@@ -2251,7 +2260,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         tags = StringUtils.cleanupTags(tags);
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized, isCustomizedIops, minIops, maxIops);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, typedProvisioningType, diskSize, tags, isCustomized,
+                isCustomizedIops, minIops, maxIops);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
 
@@ -2285,6 +2295,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) {
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
+        String provisioningType = cmd.getProvisioningType();
         Long numGibibytes = cmd.getDiskSize();
         boolean isDisplayOfferingEnabled = cmd.getDisplayOffering() != null ? cmd.getDisplayOffering() : true;
         boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; // false
@@ -2320,7 +2331,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRate = cmd.getIopsWriteRate();
         Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
-        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
+        return createDiskOffering(domainId, name, description, provisioningType, numGibibytes, tags, isCustomized,
+                localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate, hypervisorSnapshotReserve);
     }
 

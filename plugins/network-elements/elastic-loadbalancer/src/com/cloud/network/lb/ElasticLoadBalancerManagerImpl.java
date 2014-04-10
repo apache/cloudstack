@@ -83,6 +83,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.NumbersUtil;
@@ -294,8 +295,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
         _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
         _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmNumVcpu.key()), 1);
-        _elasticLbVmOffering = new ServiceOfferingVO("System Offering For Elastic LB VM", _elasticLbvmNumCpu, _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null,
-                useLocalStorage, true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
+        _elasticLbVmOffering = new ServiceOfferingVO("System Offering For Elastic LB VM", _elasticLbvmNumCpu,
+                _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null, Storage.ProvisioningType.THIN, useLocalStorage,
+                true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
         _elasticLbVmOffering.setUniqueName(ServiceOffering.elbVmDefaultOffUniqueName);
         _elasticLbVmOffering = _serviceOfferingDao.persistSystemServiceOffering(_elasticLbVmOffering);
 

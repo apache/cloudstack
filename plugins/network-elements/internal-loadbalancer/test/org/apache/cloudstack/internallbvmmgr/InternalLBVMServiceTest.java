@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Storage;
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -87,8 +88,8 @@ public class InternalLBVMServiceTest extends TestCase {
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
         Mockito.when(_accountMgr.getAccount(1L)).thenReturn(new AccountVO());
-        ServiceOfferingVO off =
-            new ServiceOfferingVO("alena", 1, 1, 1, 1, 1, false, "alena", false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
+        ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1,
+                1, 1, 1, false, "alena", Storage.ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
         off = setId(off, 1);
         Mockito.when(_svcOffDao.persistSystemServiceOffering(Matchers.any(ServiceOfferingVO.class))).thenReturn(off);
 

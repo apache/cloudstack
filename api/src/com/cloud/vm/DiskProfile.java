@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume;
 
 /**
@@ -35,6 +36,7 @@ public class DiskProfile {
     private Long templateId;
     private long volumeId;
     private String path;
+    private ProvisioningType provisioningType;
     private Long bytesReadRate;
     private Long bytesWriteRate;
     private Long iopsReadRate;
@@ -163,6 +165,14 @@ public class DiskProfile {
 
     public String getPath() {
         return this.path;
+    }
+
+    public void setProvisioningType(ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
+    public ProvisioningType getProvisioningType(){
+        return this.provisioningType;
     }
 
     public void setSize(long size) {

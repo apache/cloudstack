@@ -1402,6 +1402,9 @@
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     hypervisor: {
                                         label: 'label.hypervisor'
                                     },

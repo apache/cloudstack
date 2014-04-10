@@ -116,7 +116,7 @@ public class VolumeApiServiceImplTest {
         TransactionLegacy txn = TransactionLegacy.open("runVolumeDaoImplTest");
         try {
             // volume of running vm id=1
-            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", 1, null,
+            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             when(_svc._volsDao.findById(1L)).thenReturn(volumeOfRunningVm);
 
@@ -127,7 +127,7 @@ public class VolumeApiServiceImplTest {
             when(_svc._userVmDao.findById(1L)).thenReturn(runningVm);
 
             // volume of stopped vm id=2
-            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", 1, null,
+            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             volumeOfStoppedVm.setPoolId(1L);
             when(_svc._volsDao.findById(2L)).thenReturn(volumeOfStoppedVm);
@@ -146,7 +146,7 @@ public class VolumeApiServiceImplTest {
             hyperVVm.setDataCenterId(1L);
             when(_svc._userVmDao.findById(3L)).thenReturn(hyperVVm);
 
-            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", 1, null,
+            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             volumeOfStoppeHyperVVm.setPoolId(1L);
             when(_svc._volsDao.findById(3L)).thenReturn(volumeOfStoppeHyperVVm);
@@ -158,7 +158,7 @@ public class VolumeApiServiceImplTest {
             StoragePoolVO managedPool = new StoragePoolVO();
             managedPool.setManaged(true);
             when(_svc._storagePoolDao.findById(2L)).thenReturn(managedPool);
-            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", 1, null,
+            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             managedPoolVolume.setPoolId(2L);
             when(_svc._volsDao.findById(4L)).thenReturn(managedPoolVolume);
@@ -177,7 +177,7 @@ public class VolumeApiServiceImplTest {
             when(correctRootVolume.getInstanceId()).thenReturn(null);
             when(_svc.volFactory.getVolume(6L)).thenReturn(correctRootVolume);
 
-            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", 1, null,
+            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             when(_svc._volsDao.findById(6L)).thenReturn(correctRootVolumeVO);
 
@@ -190,7 +190,7 @@ public class VolumeApiServiceImplTest {
             when(managedVolume.getPoolId()).thenReturn(2L);
             when(_svc.volFactory.getVolume(7L)).thenReturn(managedVolume);
 
-            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", 1, null,
+            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             managedVolume1.setPoolId(2L);
             managedVolume1.setDataCenterId(1L);
@@ -216,7 +216,7 @@ public class VolumeApiServiceImplTest {
             when(uploadedVolume.getState()).thenReturn(Volume.State.Uploaded);
             when(_svc.volFactory.getVolume(8L)).thenReturn(uploadedVolume);
 
-            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", 1, null,
+            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
                     null, "root", Volume.Type.ROOT);
             upVolume.setPoolId(1L);
             upVolume.setDataCenterId(1L);

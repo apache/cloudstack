@@ -96,6 +96,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
@@ -218,14 +219,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");
 
             // Save default service offerings
-            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", false, false, null);
-            createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", false, false, null);
+            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", ProvisioningType.THIN, false, false, null);
+            createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", ProvisioningType.THIN, false, false, null);
             // Save default disk offerings
-            createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null, false, false);
-            createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null, false, false);
-            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null, false, false);
-            createdefaultDiskOffering(null, "Custom", "Custom Disk", 0, null, true, false);
+            createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", ProvisioningType.THIN, 5, null, false, false);
+            createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", ProvisioningType.THIN, 20, null, false, false);
+            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", ProvisioningType.THIN, 100, null, false, false);
+            createdefaultDiskOffering(null, "Custom", "Custom Disk", ProvisioningType.THIN, 0, null, true, false);
 
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
@@ -1026,24 +1027,24 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         return pod;
     }
 
-    private DiskOfferingVO createdefaultDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags, boolean isCustomized,
-            boolean isSystemUse) {
+    private DiskOfferingVO createdefaultDiskOffering(Long domainId, String name, String description, ProvisioningType provisioningType,
+            int numGibibytes, String tags, boolean isCustomized, boolean isSystemUse) {
         long diskSize = numGibibytes;
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized, null, null, null);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         newDiskOffering.setSystemUse(isSystemUse);
         newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
         return newDiskOffering;
     }
 
-    private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, String tags) {
+    private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText,
+            ProvisioningType provisioningType, boolean localStorageRequired, boolean offerHA, String tags) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering =
-                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, localStorageRequired, false, tags, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, provisioningType, localStorageRequired, false, tags, false, null, false);
         offering.setUniqueName("Cloud.Com-" + name);
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
         return offering;

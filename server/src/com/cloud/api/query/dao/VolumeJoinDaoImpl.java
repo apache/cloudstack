@@ -99,6 +99,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setVirtualMachineDisplayName(volume.getVmDisplayName());
         }
 
+        volResponse.setProvisioningType(volume.getProvisioningType().toString());
+
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
 

@@ -335,7 +335,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     templatePath = templatePath.substring(templatePath.lastIndexOf(File.separator) + 1);
                 }
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
-                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), BaseVol.getPool(), volume.getSize(), cmd.getWaitInMillSeconds());
+                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, volume.getUuid(), volume.getProvisioningType(),
+                        BaseVol.getPool(), volume.getSize(), cmd.getWaitInMillSeconds());
             }
             if (vol == null) {
                 return new CopyCmdAnswer(" Can't create storage volume on storage pool");
@@ -1074,7 +1075,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
 
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), disksize);
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());

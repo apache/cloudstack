@@ -209,8 +209,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, Long templateId) {
-        VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(),
-                oldVol.getSize(), oldVol.getMinIops(), oldVol.getMaxIops(), oldVol.get_iScsiName());
+        VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(),
+            oldVol.getName(),
+            oldVol.getDataCenterId(),
+            oldVol.getDomainId(),
+            oldVol.getAccountId(),
+            oldVol.getDiskOfferingId(),
+            oldVol.getProvisioningType(),
+            oldVol.getSize(),
+            oldVol.getMinIops(),
+            oldVol.getMaxIops(),
+            oldVol.get_iScsiName());
         if (templateId != null) {
             newVol.setTemplateId(templateId);
         } else {
@@ -584,7 +593,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         minIops = minIops != null ? minIops : offering.getMinIops();
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, minIops, maxIops, null);
+        VolumeVO vol = new VolumeVO(type,
+            name,
+            vm.getDataCenterId(),
+            owner.getDomainId(),
+            owner.getId(),
+            offering.getId(),
+            offering.getProvisioningType(),
+            size,
+            minIops,
+            maxIops,
+            null);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -635,8 +654,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         minIops = minIops != null ? minIops : offering.getMinIops();
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size, minIops, maxIops, null);
-
+        VolumeVO vol = new VolumeVO(type,
+            name,
+            vm.getDataCenterId(),
+            owner.getDomainId(),
+            owner.getId(),
+            offering.getId(),
+            offering.getProvisioningType(),
+            size,
+            minIops,
+            maxIops,
+            null);
         vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
         if (vm != null) {
             vol.setInstanceId(vm.getId());

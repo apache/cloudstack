@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.config.ApiServiceConfiguration;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -109,6 +110,7 @@ import com.cloud.storage.secondary.SecStorageVmAlertEventArgs;
 import com.cloud.storage.secondary.SecondaryStorageListener;
 import com.cloud.storage.secondary.SecondaryStorageVmAllocator;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.Storage;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -849,8 +851,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
             _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
             _serviceOffering =
-                new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null, _useLocalStorage, true, null, true,
-                    VirtualMachine.Type.SecondaryStorageVm, true);
+                new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null,
+                        Storage.ProvisioningType.THIN,  _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
             _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
             _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 

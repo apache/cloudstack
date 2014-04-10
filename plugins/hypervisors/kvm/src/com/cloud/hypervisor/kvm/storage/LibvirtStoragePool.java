@@ -25,6 +25,7 @@ import org.libvirt.StoragePool;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -113,13 +114,16 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, long size) {
-        return this._storageAdaptor.createPhysicalDisk(name, this, format, size);
+    public KVMPhysicalDisk createPhysicalDisk(String name,
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+        return this._storageAdaptor
+                .createPhysicalDisk(name, this, format, provisioningType, size);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, long size) {
-        return this._storageAdaptor.createPhysicalDisk(name, this, this.getDefaultFormat(), size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
+        return this._storageAdaptor.createPhysicalDisk(name, this,
+                this.getDefaultFormat(), provisioningType, size);
     }
 
     @Override

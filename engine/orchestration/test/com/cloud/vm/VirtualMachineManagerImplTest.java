@@ -83,16 +83,17 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -310,7 +311,7 @@ public class VirtualMachineManagerImplTest {
         boolean useLocalStorage = false;
 
         ServiceOfferingVO serviceOffering =
-                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, ProvisioningType.THIN, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 

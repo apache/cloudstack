@@ -187,6 +187,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Storage.ImageFormat getFormat();
 
+    Storage.ProvisioningType getProvisioningType();
+
     Long getVmSnapshotChainSize();
 
     Integer getHypervisorSnapshotReserve();

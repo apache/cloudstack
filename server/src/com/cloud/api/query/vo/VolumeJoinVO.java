@@ -56,6 +56,10 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Enumerated(EnumType.STRING)
     Volume.Type volumeType;
 
+    @Column(name = "provisioning_type")
+    @Enumerated(EnumType.STRING)
+    Storage.ProvisioningType provisioningType;
+
     @Column(name = "size")
     long size;
 
@@ -290,6 +294,10 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public Volume.Type getVolumeType() {
         return volumeType;
+    }
+
+    public Storage.ProvisioningType getProvisioningType(){
+        return provisioningType;
     }
 
     public long getSize() {

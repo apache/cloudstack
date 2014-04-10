@@ -536,6 +536,7 @@ dictionary = {
 'label.disk.read.bytes': '<fmt:message key="label.disk.read.bytes" />',
 'label.disk.read.io': '<fmt:message key="label.disk.read.io" />',
 'label.disk.offering': '<fmt:message key="label.disk.offering" />',
+'label.disk.provisioningtype': '<fmt:message key="label.disk.provisioningtype" />',
 'label.disk.size': '<fmt:message key="label.disk.size" />',
 'label.disk.size.gb': '<fmt:message key="label.disk.size.gb" />',
 'label.disk.total': '<fmt:message key="label.disk.total" />',

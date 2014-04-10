@@ -72,6 +72,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
+    @SerializedName(ApiConstants.PROVISIONINGTYPE)
+    @Param(description = "provisioning type used to create volumes.")
+    private String provisioningType;
+
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "size of the disk volume")
     private Long size;
@@ -276,6 +280,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setVirtualMachineState(String virtualMachineState) {
         this.virtualMachineState = virtualMachineState;
+    }
+
+    public void setProvisioningType(String provisioningType){
+        this.provisioningType = provisioningType;
     }
 
     public void setSize(Long size) {

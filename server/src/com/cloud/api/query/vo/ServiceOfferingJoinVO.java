@@ -23,6 +23,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.storage.Storage;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -44,6 +46,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     @Column(name = "display_text")
     private String displayText;
+
+    @Column(name = "provisioning_type")
+    Storage.ProvisioningType provisioningType;
 
     @Column(name = "tags", length = 4096)
     String tags;
@@ -154,6 +159,10 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getDisplayText() {
         return displayText;
+    }
+
+    public Storage.ProvisioningType getProvisioningType(){
+        return provisioningType;
     }
 
     public String getTags() {

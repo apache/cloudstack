@@ -85,6 +85,9 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "the storage type for this disk offering")
     private String storageType;
 
+    @SerializedName("provisioningtype") @Param(description="provisioning type used to create volumes. Valid values are thin, sparse, fat.", since = "4.4.0")
+    private String provisioningType;
+
     @SerializedName("diskBytesReadRate")
     @Param(description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
@@ -236,6 +239,14 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public String getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(String provisioningType){
+        this.provisioningType = provisioningType;
     }
 
     public void setBytesReadRate(Long bytesReadRate) {
