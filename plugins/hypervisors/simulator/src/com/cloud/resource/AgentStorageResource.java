@@ -54,7 +54,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
+    public Answer executeRequestInContext(Command cmd) {
         if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
         } else {
