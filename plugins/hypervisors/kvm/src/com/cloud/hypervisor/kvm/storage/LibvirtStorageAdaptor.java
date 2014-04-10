@@ -762,8 +762,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 s_logger.debug("Fetching list of snapshots of RBD image " + pool.getSourceDir() + "/" + uuid);
                 List<RbdSnapInfo> snaps = image.snapList();
                 for (RbdSnapInfo snap : snaps) {
-                    s_logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
-                    image.snapUnprotect(snap.name);
+                    if (image.snapIsProtected(snap.name)) {
+                        s_logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
+                        image.snapUnprotect(snap.name);
+                    } else {
+                        s_logger.debug("Snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name + " is not protected.");
+                    }
                     s_logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
                     image.snapRemove(snap.name);
                 }
