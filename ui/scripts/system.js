@@ -14755,6 +14755,74 @@
                                 }
                             },
                             
+                            enable: {
+                                label: 'Enable Host',
+                                action: function (args) {
+                                	var data = {
+                                     	id: args.context.hosts[0].id,
+                                     	allocationstate: "Enable"
+                                    };   
+                                    $.ajax({
+                                        url: createURL("updateHost"),
+                                        data: data,
+                                        success: function (json) {
+                                            var item = json.updatehostresponse.host;
+                                            args.response.success({
+                                                actionFilter: hostActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'Please confirm that you want to enable the host';
+                                    },
+                                    notification: function (args) {
+                                        return 'Enable Host';
+                                    }
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+
+                            disable: {
+                                label: 'Disable Host',
+                                action: function (args) {
+                                	var data = {
+                                     	id: args.context.hosts[0].id,
+                                     	allocationstate: "Disable"
+                                    };     
+                                    $.ajax({
+                                        url: createURL("updateHost"),
+                                        data: data,
+                                        success: function (json) {
+                                            var item = json.updatehostresponse.host;
+                                            args.response.success({
+                                                actionFilter: hostActionfilter,
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'Please confirm that you want to disable the host';
+                                    },
+                                    notification: function (args) {
+                                        return 'Disable Host';
+                                    }
+                                },
+                                notification: {
+                                    poll: function (args) {
+                                        args.complete();
+                                    }
+                                }
+                            },
+                           
                             'remove': {
                                 label: 'label.action.remove.host',
                                 messages: {
@@ -18911,6 +18979,7 @@
         if (jsonObj.resourcestate == "Enabled") {
             allowedActions.push("edit");
             allowedActions.push("enableMaintenanceMode");
+            allowedActions.push("disable");	
             
             if (jsonObj.state != "Disconnected")
             allowedActions.push("forceReconnect");
@@ -18927,6 +18996,7 @@
             allowedActions.push("remove");
         } else if (jsonObj.resourcestate == "Disabled") {
             allowedActions.push("edit");
+            allowedActions.push("enable");
             allowedActions.push("remove");
         }
         
