@@ -1061,7 +1061,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             applyLoadBalancerConfig(loadBalancerId);
             success = true;
         } catch (ResourceUnavailableException e) {
-            if (isRollBackAllowedForProvider(loadBalancer)) {
+            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            success = false;
+        } finally {
+            if (!success) {
                 final List<Long> vmInstanceIds = new ArrayList<Long>();
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -1078,17 +1081,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 }
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-            }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
-        }
-
-        if (!success) {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms "
+                CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms "
                     + instanceIds);
-            ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
-            // TBD: Also pack in the instanceIds in the exception using the
-            // right VO object or table name.
-            throw ex;
+                ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
+                // TBD: Also pack in the instanceIds in the exception using the
+                // right VO object or table name.
+                throw ex;
+            }
+
         }
 
         return success;
