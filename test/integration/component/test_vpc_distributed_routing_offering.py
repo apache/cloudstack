@@ -163,12 +163,12 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        template = get_template(
+        cls.template = get_template(
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"]
         )
-        if template == FAILED:
+        if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id

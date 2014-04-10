@@ -382,6 +382,7 @@ test_data = {
             },
             "securitygroupenabled": "true"
         },
+        "vlan": "10",
         "portableiprange_vlan": {
                 "part": ["4090-4091", "4092-4095"],
                 "full": "4090-4095"

@@ -195,7 +195,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Create new portable ip range with root admin api
         # 2. Portable ip range should be created successfully
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         self.debug(portable_ip_range_services)
 
@@ -239,7 +239,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
                                             DomainName=self.account.domain
                                             )
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -261,7 +261,7 @@ class TestCreatePortablePublicIpRanges(cloudstackTestCase):
         # 1. Try to create new portable ip range with invalid region id
         # 2. Portable ip range creation should fail
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -315,7 +315,7 @@ class TestDeletePortablePublicIpRanges(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -490,7 +490,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.services)
+        self.portable_ip_range_services = self.services["portableIpRange"]
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -653,7 +653,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["PortableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -997,7 +997,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1219,7 +1219,7 @@ class TestDeleteAccount(cloudstackTestCase):
                             )
         self.cleanup = []
 
-        portable_ip_range_services = get_portable_ip_range_services(self.services)
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
@@ -1496,7 +1496,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
 
         #create new portable ip range
-        self.portable_ip_range_services = get_portable_ip_range_services(self.services)
+        self.portable_ip_range_services = self.services["portableIpRange"]
 
         if self.portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')

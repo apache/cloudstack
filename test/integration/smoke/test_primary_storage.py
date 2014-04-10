@@ -199,7 +199,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
             self.assertEqual(
                 storage.type,
-                'NetworkFilesystem',
+                'IscsiLUN',
                 "Check storage pool type "
                 )
 

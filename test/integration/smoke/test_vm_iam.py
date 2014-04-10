@@ -193,7 +193,7 @@ class TestVMIam(cloudstackTestCase):
                                 self.services["service_offering"]["small"]
                                 )
         
-        self.zone = get_zone(self.apiclient, self.services)
+        self.zone = get_zone(self.apiclient, testClient.getZoneForTests())
         self.services['mode'] = self.zone.networktype
         self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"])
 

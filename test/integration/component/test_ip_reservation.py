@@ -84,7 +84,7 @@ class TestIpReservation(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -532,7 +532,7 @@ class TestRestartNetwork(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -657,7 +657,7 @@ class TestUpdateIPReservation(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -807,7 +807,7 @@ class TestRouterOperations(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -977,7 +977,7 @@ class TestFailureScnarios(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

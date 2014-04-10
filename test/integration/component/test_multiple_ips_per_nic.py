@@ -123,7 +123,7 @@ class TestBasicOperations(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -474,7 +474,7 @@ class TestNetworkRules(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -849,7 +849,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

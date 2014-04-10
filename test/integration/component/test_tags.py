@@ -182,6 +182,7 @@ class TestResourceTags(cloudstackTestCase):
         # Get Zone, Domain and templates
 
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

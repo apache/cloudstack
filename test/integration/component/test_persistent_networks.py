@@ -926,7 +926,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1082,7 +1082,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1239,7 +1239,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1497,7 +1497,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         # Fill services from the external config file
-        cls.services = cls.testClient.getConfigParser().parsedDict
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

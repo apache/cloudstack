@@ -123,7 +123,8 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.services["mode"] = self.zone.networktype
         # Before running this test, register a windows template with ostype as 'Windows 7 (32-bit)'
-        self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"], templatetype='USER')
+        self.services["ostype"] = 'Windows 7 (32-bit)'
+        self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"])
 
         if self.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
