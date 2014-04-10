@@ -142,7 +142,7 @@
       <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter" />
     </adapters>
     <adapters key="com.cloud.resource.Discoverer">
-      <adapter name="XenServer" class="com.cloud.resource.xen.XenServerDiscoverer" />
+      <adapter name="XenServer" class="com.cloud.resource.xenserver.XenServerDiscoverer" />
       <adapter name="SecondaryStorage"
         class="com.cloud.storage.secondary.SecondaryStorageDiscoverer" />
       <adapter name="DummyHostServer" class="com.cloud.resource.DummyHostDiscoverer" />

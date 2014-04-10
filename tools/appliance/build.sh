@@ -73,7 +73,7 @@ vboxmanage modifyhd $hdd_uuid --compact
 rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
 mkdir dist
 
-# Export for Xen
+# Export for XenServer
 which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
 if [ $? == 0 ]; then
   set -e
@@ -82,9 +82,9 @@ if [ $? == 0 ]; then
   faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o $appliance-$branch-xen.vhd
   rm *.bak
   bzip2 $appliance-$branch-xen.vhd
-  echo "$appliance exported for Xen: dist/$appliance-$branch-xen.vhd.bz2"
+  echo "$appliance exported for XenServer: dist/$appliance-$branch-xen.vhd.bz2"
 else
-  echo "** Skipping $appliance export for Xen: faketime or vhd-util command is missing. **"
+  echo "** Skipping $appliance export for XenServer: faketime or vhd-util command is missing. **"
   echo "** faketime source code is available from https://github.com/wolfcw/libfaketime **"
 fi
 

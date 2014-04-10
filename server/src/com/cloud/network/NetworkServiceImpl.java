@@ -3640,16 +3640,16 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String xenLabel = null;
         switch (trafficType) {
         case Public:
-            xenLabel = _configDao.getValue(Config.XenPublicNetwork.key());
+            xenLabel = _configDao.getValue(Config.XenServerPublicNetwork.key());
             break;
         case Guest:
-            xenLabel = _configDao.getValue(Config.XenGuestNetwork.key());
+            xenLabel = _configDao.getValue(Config.XenServerGuestNetwork.key());
             break;
         case Storage:
-            xenLabel = _configDao.getValue(Config.XenStorageNetwork1.key());
+            xenLabel = _configDao.getValue(Config.XenServerStorageNetwork1.key());
             break;
         case Management:
-            xenLabel = _configDao.getValue(Config.XenPrivateNetwork.key());
+            xenLabel = _configDao.getValue(Config.XenServerPrivateNetwork.key());
             break;
         case Control:
             xenLabel = "cloud_link_local_network";

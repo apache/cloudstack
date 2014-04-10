@@ -497,7 +497,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             if (allocationAlgorithm != null) {
                 _allocationAlgorithm = allocationAlgorithm;
             }
-            String value = configs.get("xen.check.hvm");
+            String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;

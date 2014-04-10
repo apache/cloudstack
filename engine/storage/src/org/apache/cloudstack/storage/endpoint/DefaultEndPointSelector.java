@@ -150,7 +150,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
-        // find any xen/kvm host in the scope
+        // find any xenserver/kvm host in the scope
         Scope srcScope = srcStore.getScope();
         Scope destScope = destStore.getScope();
         Scope selectedScope = null;

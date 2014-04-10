@@ -85,17 +85,17 @@ public class DirectAgentTest extends CloudStackTestNGBase {
 
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), getHostGateway(), getHostCidr(), 8, "test");
         pod = podDao.persist(pod);
-        // create xen cluster
+        // create xenserver cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
         cluster.setHypervisorType(HypervisorType.XenServer.toString());
         cluster.setClusterType(ClusterType.CloudManaged);
         cluster.setManagedState(ManagedState.Managed);
         cluster = clusterDao.persist(cluster);
         clusterId = cluster.getId();
-        // create xen host
+        // create xenserver host
 
         host = new HostVO(getHostGuid());
-        host.setName("devcloud xen host");
+        host.setName("devcloud xenserver host");
         host.setType(Host.Type.Routing);
         host.setHypervisorType(HypervisorType.XenServer);
         host.setPrivateIpAddress(getHostIp());

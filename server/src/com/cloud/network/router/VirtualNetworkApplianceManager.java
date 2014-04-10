@@ -45,7 +45,7 @@ import java.util.Map;
  *
  */
 public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkApplianceService {
-    static final String RouterTemplateXenCK = "router.template.xen";
+    static final String RouterTemplateXenCK = "router.template.xenserver";
     static final String RouterTemplateKvmCK = "router.template.kvm";
     static final String RouterTemplateVmwareCK = "router.template.vmware";
     static final String RouterTemplateHyperVCK = "router.template.hyperv";

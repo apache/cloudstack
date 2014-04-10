@@ -40,7 +40,7 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.XEN_NETWORK_LABEL)
+    @SerializedName(ApiConstants.XENSERVER_NETWORK_LABEL)
     @Param(description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
 
