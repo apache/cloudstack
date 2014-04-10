@@ -77,7 +77,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
+    public Answer executeRequestInContext(Command cmd) {
         try {
             if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
