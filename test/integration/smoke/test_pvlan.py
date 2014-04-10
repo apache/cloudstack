@@ -78,6 +78,4 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.endipv6="fc00:1234::20"
         err = 0
         createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
-        #FIXME: add assert for proper response
-
-
+        self.assertEqual(createNetworkResponse, FAILED, "Creating PVLAN with IPv6 should fail")

@@ -60,16 +60,13 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
-
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]
         )
 
         cls.ag = AffinityGroup.create(cls.apiclient, cls.services["virtual_machine"]["affinity"],
-            account=cls.services["account"], domainid=cls.domain.id)
+            account=cls.account.name, domainid=cls.domain.id)
 
         cls._cleanup = [
             cls.service_offering,

@@ -163,7 +163,6 @@ class TestISO(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.name
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
                     cls.apiclient,

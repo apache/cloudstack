@@ -7,8 +7,8 @@ test_data = {
         "zone": "NA",
         "hypervisor": "XenServer",
         "vdomain": { "name": "domain" },
-	"email" : "test@test.com",
-	"gateway" : "172.1.1.1",
+	    "email" : "test@test.com",
+	    "gateway" : "172.1.1.1",
         "netmask" : "255.255.255.0",
         "startip" : "172.1.1.10",
         "endip" : "172.1.1.20",
@@ -382,8 +382,10 @@ test_data = {
             },
             "securitygroupenabled": "true"
         },
-        "vlan_range": "4090-4091",
-        "vlan":"4444",
+        "portableiprange_vlan": {
+                "part": ["4090-4091", "4092-4095"],
+                "full": "4090-4095"
+        },
         "nfs": {
             "url": "nfs://nfs/export/automation/1/testprimary",
             "name": "Primary XEN"

@@ -55,8 +55,6 @@ class TestVmSnapshot(cloudstackTestCase):
                     domainid=cls.domain.id
                     )
 
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
                             cls.apiclient,
                             cls.services["service_offerings"]

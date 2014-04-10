@@ -74,8 +74,6 @@ class TestCreateVolume(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]
@@ -193,7 +191,7 @@ class TestCreateVolume(cloudstackTestCase):
                                                       reconnect=True
                                                       )
             ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
-            self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))                 
+            self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
             self.virtual_machine.detach_volume(self.apiClient, volume)
             self.assertEqual(ret[0],SUCCESS,"Check if promised disk size actually available")
             time.sleep(self.services["sleep"])
@@ -259,8 +257,6 @@ class TestVolumes(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]
