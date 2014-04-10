@@ -591,7 +591,13 @@ public class ApiConstants {
     public static final String GPUGROUPNAME = "gpugroupname";
     public static final String VGPU = "vgpu";
     public static final String VGPUTYPE = "vgputype";
+    public static final String VIDEORAM = "videoram";
+    public static final String MAXHEADS = "maxheads";
+    public static final String MAXRESOLUTIONX = "maxresolutionx";
+    public static final String MAXRESOLUTIONY = "maxresolutiony";
+    public static final String MAXVGPUPERPGPU = "maxvgpuperpgpu";
     public static final String REMAININGCAPACITY = "remainingcapacity";
+    public static final String MAXCAPACITY = "maxcapacity";
     public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
     public static final String READ_ONLY = "readonly";
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
