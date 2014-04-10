@@ -81,7 +81,7 @@ install_packages() {
   wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
   dpkg -i hv-kvp-daemon_3.1_amd64.deb
   #libraries required for rdp client (Hyper-V) 
-   apt-get --no-install-recommends -qq -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
+  DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -qq -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
