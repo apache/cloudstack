@@ -774,6 +774,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 rbd.close(image);
                 r.ioCtxDestroy(io);
+
+                s_logger.debug("Succesfully unprotected and removed any snapshots of " + pool.getSourceDir() + "/" + uuid +
+                               " Continuing to remove the RBD image");
             } catch (RadosException e) {
                 throw new CloudRuntimeException(e.toString());
             } catch (RbdException e) {
@@ -784,6 +787,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
+            s_logger.debug("Instructing libvirt to remove volume " + uuid + " from pool " + pool.getUuid());
             deleteVol(libvirtPool, vol);
             vol.free();
             return true;
