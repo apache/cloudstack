@@ -688,6 +688,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             snapshotDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
             primaryPool = snapshotDisk.getPool();
 
+            long size = 0;
             /**
              * RBD snapshots can't be copied using qemu-img, so we have to use
              * the Java bindings for librbd here.
@@ -731,6 +732,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         offset += bytes;
                     }
                     s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapFile.getAbsolutePath() + ". Bytes written: " + offset);
+                    size = offset;
                     bos.close();
 
                     s_logger.debug("Attempting to remove snapshot RBD " + snapshotName + " from image " + snapshotDisk.getName());
@@ -761,10 +763,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.debug("Failed to backup snaptshot: " + result);
                     return new CopyCmdAnswer(result);
                 }
+                File snapFile = new File(snapshotDestPath + "/" + snapshotName);
+                if(snapFile.exists()){
+                    size = snapFile.length();
+                }
             }
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(snapshotRelPath + File.separator + snapshotName);
+            newSnapshot.setPhysicalSize(size);
             return new CopyCmdAnswer(newSnapshot);
         } catch (LibvirtException e) {
             s_logger.debug("Failed to backup snapshot: " + e.toString());
