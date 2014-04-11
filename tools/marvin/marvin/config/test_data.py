@@ -47,6 +47,13 @@ test_data = {
             "publicport": 22,
             "protocol": 'TCP',
         },
+       "service_offering": {
+            "name": "Tiny Instance",
+            "displaytext": "Tiny Instance",
+            "cpunumber": 1,
+            "cpuspeed": 100,    # in MHz
+            "memory": 128,    # In MBs
+       },
         "service_offerings": {
             "name": "Tiny Instance",
             "displaytext": "Tiny Instance",
@@ -114,6 +121,21 @@ test_data = {
             "guestiptype": 'Isolated',
             "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
             "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList" : {
+                "Dhcp": 'VirtualRouter',
+                "Dns": 'VirtualRouter',
+                "SourceNat": 'VirtualRouter',
+                "PortForwarding": 'VirtualRouter',
+            },
+        },
+        "nw_off_isolated_persistent":{
+            "name": 'Test Nw off isolated persistent',
+            "displaytext": 'Test Nw off isolated persistent',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
+            "traffictype": 'GUEST',
+            "isPersistent":'True',
             "availability": 'Optional',
             "serviceProviderList" : {
                 "Dhcp": 'VirtualRouter',

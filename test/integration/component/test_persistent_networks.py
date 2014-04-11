@@ -57,7 +57,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offerings"]["small"]
+                                            cls.services["service_offering"]
                                             )
         cls.isolated_persistent_network_offering = cls.createNetworkOffering("nw_off_isolated_persistent")
         cls.isolated_persistent_network_offering_netscaler = cls.createNetworkOffering("nw_off_isolated_persistent_netscaler")
@@ -1514,7 +1514,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offerings"]["small"]
                                             )
         cls.persistent_network_offering_NoLB = NetworkOffering.create(cls.api_client, cls.services["nw_off_persistent_VPCVR_NoLB"],
                                                                        conservemode=False)

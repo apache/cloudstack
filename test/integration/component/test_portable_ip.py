@@ -653,7 +653,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         self.cleanup = []
 
-        portable_ip_range_services = self.services["PortableIpRange"]
+        portable_ip_range_services = self.services["portableIpRange"]
 
         if portable_ip_range_services is None:
             self.skipTest('Failed to read config values related to portable ip range')
