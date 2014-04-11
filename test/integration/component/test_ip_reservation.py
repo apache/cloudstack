@@ -92,10 +92,10 @@ class TestIpReservation(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testData["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -540,10 +540,10 @@ class TestRestartNetwork(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testData["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -665,10 +665,10 @@ class TestUpdateIPReservation(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testData["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -815,10 +815,10 @@ class TestRouterOperations(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testData["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id
@@ -985,10 +985,10 @@ class TestFailureScnarios(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testData["ostype"]
                             )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.testData["ostype"]
         cls.testData["domainid"] = cls.domain.id
         cls.testData["zoneid"] = cls.zone.id
         cls.testData["virtual_machine"]["zoneid"] = cls.zone.id

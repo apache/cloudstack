@@ -159,7 +159,7 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient)
+        cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 

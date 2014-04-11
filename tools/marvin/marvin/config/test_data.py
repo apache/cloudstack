@@ -1,12 +1,14 @@
 test_data = {
         "region": {
-                "regionid": "2",
-                "regionname": "Region2",
-                "regionendpoint": "http://region2:8080/client"
+            "regionid": "2",
+            "regionname": "Region2",
+            "regionendpoint": "http://region2:8080/client"
         },
         "zone": "NA",
         "hypervisor": "XenServer",
-        "vdomain": { "name": "domain" },
+        "vdomain": {
+            "name": "domain"
+        },
 	    "email" : "test@test.com",
 	    "gateway" : "172.1.1.1",
         "netmask" : "255.255.255.0",
@@ -298,7 +300,78 @@ test_data = {
                 "Dns": 'VirtualRouter',
                 "UserData": 'VirtualRouter',
             },
-        },        
+        },
+        "nw_off_persistent_RVR":{
+            "name": 'Network offering-RVR services',
+                    "displaytext": 'Network off-RVR services',
+                    "guestiptype": 'Isolated',
+                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat',
+                    "traffictype": 'GUEST',
+                    "isPersistent":'True',
+                    "availability": 'Optional',
+                    "serviceProviderList": {
+                            "Vpn": 'VirtualRouter',
+                            "Dhcp": 'VirtualRouter',
+                            "Dns": 'VirtualRouter',
+                            "SourceNat": 'VirtualRouter',
+                            "PortForwarding": 'VirtualRouter',
+                            "Firewall": 'VirtualRouter',
+                            "Lb": 'VirtualRouter',
+                            "UserData": 'VirtualRouter',
+                            "StaticNat": 'VirtualRouter',
+                        },
+                    "serviceCapabilityList": {
+                        "SourceNat": {
+                            "SupportedSourceNatTypes": "peraccount",
+                            "RedundantRouter": "true",
+                        },
+                        "lb": {
+                               "SupportedLbIsolation": "dedicated"
+                        },
+                    },
+        },
+        "nw_off_isolated_persistent_netscaler":{
+            "name": 'Netscaler',
+            "displaytext": 'Netscaler',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
+            "traffictype": 'GUEST',
+            "isPersistent":'True',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                    "Dhcp": 'VirtualRouter',
+                    "Dns": 'VirtualRouter',
+                    "SourceNat": 'VirtualRouter',
+                    "PortForwarding": 'VirtualRouter',
+                    "Vpn": 'VirtualRouter',
+                    "Firewall": 'VirtualRouter',
+                    "Lb": 'Netscaler',
+                    "UserData": 'VirtualRouter',
+                    "StaticNat": 'VirtualRouter',
+            },
+
+        },
+        "nw_off_persistent_VPCVR_NoLB":{
+             "name": 'VPC Network offering',
+                    "displaytext": 'VPC Network off',
+                    "guestiptype": 'Isolated',
+                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL',
+                    "traffictype": 'GUEST',
+                    "availability": 'Optional',
+                    "isPersistent":'True',
+                    "useVpc": 'on',
+                    "serviceProviderList": {
+                            "Vpn": 'VpcVirtualRouter',
+                            "Dhcp": 'VpcVirtualRouter',
+                            "Dns": 'VpcVirtualRouter',
+                            "SourceNat": 'VpcVirtualRouter',
+                            "PortForwarding": 'VpcVirtualRouter',
+                            "UserData": 'VpcVirtualRouter',
+                            "StaticNat": 'VpcVirtualRouter',
+                            "NetworkACL": 'VpcVirtualRouter'
+                        },
+
+        },
         "network_offering_internal_lb": {
             "name": "Network offering for internal lb service",
             "displaytext": "Network offering for internal lb service",
@@ -481,10 +554,10 @@ test_data = {
         "customdisksize": 1,
         "diskname": "Test Volume",
         "portableIpRange": {
-        "gateway" : "10.223.252.195",
-        "netmask" : "255.255.255.192",
-        "startip" : "10.223.252.196",
-        "endip"   : "10.223.252.197",
-        "vlan"    : "1001"
+            "gateway" : "10.223.252.195",
+            "netmask" : "255.255.255.192",
+            "startip" : "10.223.252.196",
+            "endip"   : "10.223.252.197",
+            "vlan"    : "1001"
        }
 }
