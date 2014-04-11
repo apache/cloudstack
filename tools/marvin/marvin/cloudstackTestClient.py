@@ -360,6 +360,10 @@ class CSTestClient(object):
                                         "User API Client Creation."
                                         " While Registering User Failed")
                     return FAILED
+            else:
+                mgtDetails = self.__mgmtDetails
+                mgtDetails.apiKey = apiKey
+                mgtDetails.securityKey = securityKey
 
             newUserConnection =\
                 CSConnection(mgtDetails,
