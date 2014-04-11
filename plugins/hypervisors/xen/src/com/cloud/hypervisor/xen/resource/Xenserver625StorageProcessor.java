@@ -93,6 +93,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     return srs.iterator().next();
                 }
             } catch (Exception e) {
+                // getByNameLabel may throw exception if sr is found
+                // ignore the exception since cs will create the SR
             }
             Map<String, String> smConfig = new HashMap<String, String>();
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
