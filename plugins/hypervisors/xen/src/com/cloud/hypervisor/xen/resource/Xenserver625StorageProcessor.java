@@ -86,11 +86,19 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         SR sr = null;
         PBD pbd = null;
         try {
+            String srname = hypervisorResource.getHost().uuid + path.trim();
+            try {
+                Set<SR> srs = SR.getByNameLabel(conn, srname);
+                if ( srs != null && !srs.isEmpty()) {
+                    return srs.iterator().next();
+                }
+            } catch (Exception e) {
+            }
             Map<String, String> smConfig = new HashMap<String, String>();
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             String uuid = UUID.randomUUID().toString();
 
-            sr = SR.introduce(conn,uuid, uuid, uuid, "file", "file", false, smConfig);
+            sr = SR.introduce(conn,uuid, srname, srname, "file", "file", false, smConfig);
             PBD.Record record = new PBD.Record();
             record.host = host;
             record.SR = sr;

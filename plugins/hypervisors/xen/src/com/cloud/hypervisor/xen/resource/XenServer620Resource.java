@@ -127,7 +127,7 @@ public class XenServer620Resource extends XenServer610Resource {
             @SuppressWarnings("unchecked")
             Set<Event.Record> events = (Set<Event.Record>)map.get("events");
             if (events.size() == 0) {
-                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                String msg = "No event for task " + task.toString();
                 s_logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
@@ -144,11 +144,14 @@ public class XenServer620Resource extends XenServer610Resource {
 
                 if (taskRecord.status != Types.TaskStatusType.PENDING) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Task is done " + taskRecord.status);
+                        s_logger.debug("Task: " + taskRecord.uuid + " is done " + taskRecord.status);
                     }
                     return;
                 } else {
-                    s_logger.debug("Task is not done " + taskRecord);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task: " + taskRecord.uuid +  " progress: " + taskRecord.progress);
+                    }
+
                 }
             }
             if (System.currentTimeMillis() - beginTime > timeout) {
