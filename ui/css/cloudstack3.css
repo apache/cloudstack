@@ -12908,3 +12908,49 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   display: inline-block;
 }
 
+
+/*GPU*/
+div.gpugroups div.list-view div.fixed-header {
+    position: relative;
+    left: 12px !important;
+    top: 0px !important;
+}
+
+div.gpugroups div.list-view div.fixed-header table {
+    width: auto;
+}
+
+div.gpugroups div.list-view div.data-table table {
+    margin-top: 0;
+}
+
+div.gpugroups div.list-view {
+  position: relative;
+  height: auto !important;
+  margin-top: 0 !important;
+  border: none !important;
+}
+
+.gpugroups {
+    float: left;
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+.gpugroups .gpugroup-container {
+    border: 1px solid #C8C2C2;
+    border-radius: 3px;
+    height: auto !important;
+    margin: 12px;
+    padding: 0;
+    position: relative;
+    float: left;
+    width: auto;
+}
+
+.gpugroups .gpugroup-container .title {
+    font-size: 13px;
+    font-weight: 100;
+    padding: 12px 12px 5px;
+}
