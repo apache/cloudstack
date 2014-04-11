@@ -14879,6 +14879,13 @@
                                 }
                             }
                         },
+                        tabFilter: function (args) {
+                            var hiddenTabs =[];
+                            if (args.context.hosts[0].gpugroup == null) {
+                                hiddenTabs.push("gpu");
+                            }
+                            return hiddenTabs;
+                        },
                         tabs: {
                             details: {
                                 title: 'label.details',
@@ -15071,6 +15078,81 @@
                                             });
                                         }
                                     });
+                                }
+                            },
+                            gpu: {
+                                title: 'label.gpu',
+                                custom: function (args) {
+                                    var gpugroups = null;
+                                    $.ajax({
+                                        url: createURL("listHosts&id=" + args.context.hosts[0].id),
+                                        dataType: "json",
+                                        async: false,
+                                        success: function (json) {
+                                            var item = json.listhostsresponse.host[0];
+                                            if (item != null && item.gpugroup != null)
+                                                gpugroups = item.gpugroup;
+                                        }
+                                    });
+
+                                    var $tabcontent = $('<div>').addClass('gpugroups');
+
+                                    $(gpugroups).each(function() {
+                                        var gpugroupObj = this;
+
+                                        var $groupcontainer = $('<div>').addClass('gpugroup-container');
+
+                                        //group name
+                                        $groupcontainer.append($('<div>').addClass('title')
+                                                            .append($('<span>').html(gpugroupObj.gpugroupname)));
+                                        //vgpu details
+                                        var $groupdetails = $('<div>').listView({
+                                            context: args.context,
+                                            listView: {
+                                                id: 'gputypes',
+                                                hideToolbar: true,
+                                                fields: {
+                                                    vgputype: {
+                                                        label: 'label.vgpu.type'
+                                                    },
+                                                    maxvgpuperpgpu: {
+                                                        label: 'label.vgpu.max.vgpu.per.gpu',
+                                                        converter: function (args) {
+                                                            return (args == null || args == 0) ? "" : args;
+                                                        }
+                                                    },
+                                                    videoram: {
+                                                        label: 'label.vgpu.video.ram',
+                                                        converter: function (args) {
+                                                            return (args == null || args == 0) ? "" : cloudStack.converters.convertBytes(args);
+                                                        }
+                                                    },
+                                                    maxresolution: {
+                                                        label: 'label.vgpu.max.resolution'
+                                                    },
+                                                    remainingcapacity: {
+                                                        label: 'label.vgpu.remaining.capacity'
+                                                    }
+                                                },
+                                                dataProvider: function (args) {
+                                                    var items = gpugroupObj.vgpu.sort(function(a, b) {
+                                                        return a.maxvgpuperpgpu >= b.maxvgpuperpgpu;
+                                                    });
+                                                    $(items).each(function () {
+                                                        this.maxresolution = (this.maxresolutionx == null || this.maxresolutionx == 0
+                                                                || this.maxresolutiony == null || this.maxresolutiony == 0)
+                                                                ? "" : this.maxresolutionx + " x " + this.maxresolutiony;
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            }
+                                        });
+                                        $groupcontainer.append($groupdetails);
+                                        $tabcontent.append($groupcontainer);
+                                    });
+                                    return $tabcontent;
                                 }
                             }
                         }
