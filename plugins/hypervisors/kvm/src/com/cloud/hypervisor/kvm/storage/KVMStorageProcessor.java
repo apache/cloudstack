@@ -21,7 +21,6 @@ package com.cloud.hypervisor.kvm.storage;
 import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.S3Utils.putFile;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -49,9 +48,7 @@ import org.libvirt.LibvirtException;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
 import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -690,66 +687,48 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             long size = 0;
             /**
-             * RBD snapshots can't be copied using qemu-img, so we have to use
-             * the Java bindings for librbd here.
+             * Since Ceph version Dumpling (0.67.X) librbd / Qemu supports converting RBD
+             * snapshots to RAW/QCOW2 files directly.
              *
-             * These bindings will read the snapshot and write the contents to
-             * the secondary storage directly
-             *
-             * It will stop doing so if the amount of time spend is longer then
-             * cmds.timeout
+             * This reduces the amount of time and storage it takes to back up a snapshot dramatically
              */
             if (primaryPool.getType() == StoragePoolType.RBD) {
+                String rbdSnapshot = snapshotDisk.getPath() +  "@" + snapshotName;
+                String snapshotFile = snapshotDestPath + "/" + snapshotName;
                 try {
-                    Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                    IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+                    s_logger.debug("Attempting to backup RBD snapshot " + rbdSnapshot);
 
                     File snapDir = new File(snapshotDestPath);
-                    s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively");
+                    s_logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively for snapshot storage");
                     FileUtils.forceMkdir(snapDir);
 
-                    File snapFile = new File(snapshotDestPath + "/" + snapshotName);
-                    s_logger.debug("Backing up RBD snapshot to " + snapFile.getAbsolutePath());
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(snapFile));
-                    int chunkSize = 4194304;
-                    long offset = 0;
-                    while (true) {
-                        byte[] buf = new byte[chunkSize];
+                    QemuImgFile srcFile =
+                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthUserName(),
+                                                                         primaryPool.getAuthSecret(), rbdSnapshot));
+                    srcFile.setFormat(PhysicalDiskFormat.RAW);
 
-                        int bytes = image.read(offset, buf, chunkSize);
-                        if (bytes <= 0) {
-                            break;
-                        }
-                        bos.write(buf, 0, bytes);
-                        offset += bytes;
+                    QemuImgFile destFile = new QemuImgFile(snapshotFile);
+                    destFile.setFormat(srcFile.getFormat());
+
+                    s_logger.debug("Backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile);
+                    QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
+                    q.convert(srcFile, destFile);
+
+                    File snapFile = new File(snapshotFile);
+                    if(snapFile.exists()) {
+                        size = snapFile.length();
                     }
-                    s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapFile.getAbsolutePath() + ". Bytes written: " + offset);
-                    size = offset;
-                    bos.close();
 
-                    s_logger.debug("Attempting to remove snapshot RBD " + snapshotName + " from image " + snapshotDisk.getName());
-                    image.snapRemove(snapshotName);
-
-                    r.ioCtxDestroy(io);
-                } catch (RadosException e) {
-                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
-                } catch (RbdException e) {
-                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
+                    s_logger.debug("Finished backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile + " Snapshot size: " + size);
                 } catch (FileNotFoundException e) {
                     s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
                 } catch (IOException e) {
-                    s_logger.debug("An I/O error occured during a snapshot operation on " + snapshotDestPath);
+                    s_logger.error("Failed to create " + snapshotDestPath + ". The error was: " + e.getMessage());
+                    return new CopyCmdAnswer(e.toString());
+                }  catch (QemuImgException e) {
+                    s_logger.error("Failed to backup the RBD snapshot from " + rbdSnapshot +
+                                   " to " + snapshotFile + " the error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
                 }
             } else {
