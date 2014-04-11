@@ -485,22 +485,23 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshotName = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
             return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
-        return new DeleteVMSnapshotAnswer(cmd, true, "success");
+        return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
     }
 
     @Override
     public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshot = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
+        if (vmVo == null) {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
-        return new RevertToVMSnapshotAnswer(cmd, true, "success");
+        return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getState());
     }
 
     @Override
