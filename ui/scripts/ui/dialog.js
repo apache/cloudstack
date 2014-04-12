@@ -274,17 +274,17 @@
                                         id = this[field.valueField];
                                     else
                                         id = this.id !== undefined ? this.id : this.name;
-                                    var description = this.description;
 
+                                    var desc;
                                     if (args.descriptionField)
-                                        description = this[args.descriptionField];
+                                        desc = this[args.descriptionField];
                                     else
-                                        description = this.description;
+                                        desc = _l(this.description);
 
                                     var $option = $('<option>')
                                             .appendTo($input)
                                             .val(_s(id))
-                                            .html(_s(description));
+                                            .html(_s(desc));
                                 });
 
                                 if (field.defaultValue) {
