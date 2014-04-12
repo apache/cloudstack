@@ -1569,7 +1569,7 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>"label.path":');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>' + _l('label.path') + ':');
 
                                 if (protocol == null)
                                     return;
