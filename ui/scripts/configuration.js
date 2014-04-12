@@ -835,6 +835,12 @@
                                     plannerMode: {
                                         label: 'Planner Mode'
                                     },                                    
+                                    pciDevice: {
+                                        label: 'GPU'
+                                    },
+                                    vgpuType: {
+                                        label: 'vGPU type'
+                                    },
                                     tags: {
                                         label: 'label.storage.tags'
                                     },
@@ -868,6 +874,11 @@
                                             	}
                                             }
                                                                                        
+                                            if (item.serviceofferingdetails != null) {
+                                                item.pciDevice = item.serviceofferingdetails.pciDevice;
+                                                item.vgpuType = item.serviceofferingdetails.vgpuType;
+                                            }
+
                                             args.response.success({
                                                 actionFitler: serviceOfferingActionfilter,
                                                 data: item
