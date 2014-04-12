@@ -384,7 +384,7 @@
                                     },
 
                                     pciDevice: {
-                                        label: 'GPU Type',
+                                        label: 'GPU',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
@@ -402,11 +402,43 @@
                                             args.response.success({
                                                 data: items
                                             });
+
+                                            var vGpuMap = {};
+                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K140Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K240Q', 'GRID K260Q'];
+
+                                            args.$select.change(function() {
+                                                var gpu = $(this).val();
+
+                                                if (gpu == '') {
+                                                    $(this).closest('form').find('.form-item[rel=\"vgpuType\"]').hide();
+                                                }
+                                                else {
+                                                    $(this).closest('form').find('.form-item[rel=\"vgpuType\"]').css('display', 'inline-block');
+
+                                                    // enable/disable vGPU type options, depending on selected GPU
+                                                    var $vGpuTypeSelect = $(this).closest('form').find('select[name=vgpuType]');
+                                                    var $vGpuTypeOptions = $vGpuTypeSelect.find('option');
+                                                    $vGpuTypeOptions.each(function(index) {
+                                                        var vGpuTypeOption = $(this).val();
+                                                        if (vGpuTypeOption == '' || (gpu in vGpuMap && $.inArray(vGpuTypeOption, vGpuMap[gpu]) > -1))
+                                                            $(this).attr('disabled', false);
+                                                        else
+                                                            $(this).attr('disabled', true);
+                                                    });
+
+                                                    //if selected option is disabled, select the first enabled option instead
+                                                    if ($vGpuTypeSelect.find('option:selected:disabled').length > 0) {
+                                                        $vGpuTypeSelect.val($vGpuTypeSelect.find('option:enabled:first').val());
+                                                    }
+                                                }
+                                            });
                                         }
                                     },
 
                                     vgpuType: {
-                                        label: 'VGPU Type',
+                                        label: 'vGPU Type',
+                                        isHidden: true,
                                         select: function(args) {
                                             var items = [];
                                             items.push({
