@@ -1744,9 +1744,12 @@ namespace HypervResource
         {
             // Tweak default settings by basing new VM on default global setting object 
             // with designed display name.
-
+            UInt16 startupAction = 2; // Do nothing.
+            UInt16 stopAction = 4; // Shutdown.
             VirtualSystemSettingData vs_gs_data = VirtualSystemSettingData.CreateInstance();
             vs_gs_data.LateBoundObject["ElementName"] = name;
+            vs_gs_data.LateBoundObject["AutomaticStartupAction"] = startupAction.ToString();
+            vs_gs_data.LateBoundObject["AutomaticShutdownAction"] = stopAction.ToString();
 
             System.Management.ManagementPath jobPath;
             System.Management.ManagementPath defined_sys;
