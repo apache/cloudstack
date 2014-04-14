@@ -489,6 +489,8 @@ namespace HypervResource
 
             logger.DebugFormat("Starting VM {0}", vmName);
             SetState(newVm, RequiredState.Enabled);
+            // Mark the VM as created by cloudstack tag
+            TagVm(newVm);
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
@@ -1514,9 +1516,6 @@ namespace HypervResource
             logger.DebugFormat("Setting network rate limit to {0}", limit);
 
             var vmVirtMgmtSvc = GetVirtualisationSystemManagementService();
-            //            EthernetSwitchPortBandwidthSettingData.GetInstances();
-
-            // Create NIC resource by cloning the default NIC
             var bandwidthSettings = EthernetSwitchPortBandwidthSettingData.GetInstances(vmVirtMgmtSvc.Scope, "InstanceID LIKE \"%Default\"");
 
             // Assert
@@ -1703,6 +1702,31 @@ namespace HypervResource
             }
         }
 
+        private static void ModifySystemSetting(VirtualSystemManagementService vmMgmtSvc, string systemSettings)
+        {
+            // Resource settings are changed through the management service
+            System.Management.ManagementPath jobPath;
+
+            var ret_val = vmMgmtSvc.ModifySystemSettings(
+                systemSettings,
+                out jobPath);
+
+            // If the Job is done asynchronously
+            if (ret_val == ReturnCode.Started)
+            {
+                JobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed to update system setting {0}",
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
         public void DeleteHostKvpItem(ComputerSystem vm, string key)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
@@ -1740,6 +1764,16 @@ namespace HypervResource
             }
         }
 
+        public Boolean TagVm(ComputerSystem vm)
+        {
+            VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+
+            vmSettings.LateBoundObject["Notes"] = new string[] { "Created by CloudStack, do not edit. \n" };
+            ModifySystemSetting(vmMgmtSvc, vmSettings.LateBoundObject.GetText(TextFormat.CimDtd20));
+            return true;
+        }
+
         private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
         {
             // Tweak default settings by basing new VM on default global setting object 
@@ -1750,6 +1784,7 @@ namespace HypervResource
             vs_gs_data.LateBoundObject["ElementName"] = name;
             vs_gs_data.LateBoundObject["AutomaticStartupAction"] = startupAction.ToString();
             vs_gs_data.LateBoundObject["AutomaticShutdownAction"] = stopAction.ToString();
+            vs_gs_data.LateBoundObject["Notes"] = new string[] { "CloudStack creating VM, do not edit. \n" };
 
             System.Management.ManagementPath jobPath;
             System.Management.ManagementPath defined_sys;
@@ -2455,6 +2490,22 @@ namespace HypervResource
                 vmProcessorInfo.Add(summaryInfo.ElementName, vmInfo);
             }
         }
+
+        public string GetVmNote(System.Management.ManagementPath sysPath)
+        {
+            uint[] requestedInfo = new uint[] { 3 };
+            System.Management.ManagementPath[] vmPaths = new System.Management.ManagementPath[] { sysPath };
+            var vmsvc = GetVirtualisationSystemManagementService();
+            System.Management.ManagementBaseObject[] sysSummary;
+            vmsvc.GetSummaryInformation(requestedInfo, vmPaths, out sysSummary);
+            foreach (var summary in sysSummary)
+            {
+                var summaryInfo = new SummaryInformation(summary);
+                return summaryInfo.Notes;
+            }
+
+            return null;
+        }
     }
 
     public class WmiException : Exception
@@ -2694,7 +2745,7 @@ namespace HypervResource
 
         public static string ToCloudStackPowerState(UInt16 value)
         {
-            string result = "Unknown";
+            string result = "PowerUnknown";
             switch (value)
             {
                 case Enabled: result = "PowerOn"; break;
