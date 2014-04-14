@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -75,7 +75,7 @@ do
   esac
 done
 
- 
+
 
 
 stop_start_system() {
@@ -86,46 +86,46 @@ length_console=(${#console[@]})
 
 
 echo -e "\nStopping and starting $length_secondary secondary storage vm(s)$inzone..."
-echo -e "Stopping and starting $length_secondary secondary storage vm(s)$inzone..." >>$LOGFILE
+echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_secondary secondary storage vm(s)$inzone..." >>$LOGFILE
 
 for d in "${secondary[@]}"; do
-	echo "INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
+	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
 	jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
 	    echo -e "ERROR: Failed to stop secondary storage vm with id $d \n"
-		echo "ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
-	else	
-		echo "INFO: Starting secondary storage vm with id $d" >>$LOGFILE
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
+	else
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Starting secondary storage vm with id $d" >>$LOGFILE
 		jobresult=$(send_request startSystemVm $d SSVM)
 		if [ "$jobresult" != "1" ]; then
-		    echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
-        	echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
+		    echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
+        	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
 		fi
 	fi
 done
 
 if [ "$length_secondary" == "0" ];then
 	echo -e "No running secondary storage vms found \n"
-else 
+else
 	echo -e "Done stopping and starting secondary storage vm(s)$inzone"
-	echo -e "Done stopping and starting secondary storage vm(s)$inzone." >>$LOGFILE
+	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting secondary storage vm(s)$inzone." >>$LOGFILE
 fi
 
 echo -e "\nStopping and starting $length_console console proxy vm(s)$inzone..."
-echo -e "Stopping and starting $length_console console proxy vm(s)$inzone..." >>$LOGFILE
+echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_console console proxy vm(s)$inzone..." >>$LOGFILE
 
 for d in "${console[@]}"; do
-	echo "INFO: Stopping console proxy with id $d" >>$LOGFILE
+	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Stopping console proxy with id $d" >>$LOGFILE
     jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
 	    echo -e "ERROR: Failed to stop console proxy vm with id $d \n"
-        echo "ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
-    else	
-		echo "INFO: Starting console proxy vm with id $d" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
+    else
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Starting console proxy vm with id $d" >>$LOGFILE
 		jobresult=$(send_request startSystemVm $d consoleProxy)
 		if [ "$jobresult" != "1" ]; then
 		    echo -e "ERROR: Failed to start console proxy vm with id $d \n"
-    		echo "ERROR: Failed to start console proxy vm with id $d" >>$LOGFILE
+    		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to start console proxy vm with id $d" >>$LOGFILE
 		fi
     fi
 done
@@ -134,33 +134,33 @@ if [ "$length_console" == "0" ];then
         echo -e "No running console proxy vms found \n"
 else
         echo "Done stopping and starting console proxy vm(s) $inzone."
-		echo "Done stopping and starting console proxy vm(s) $inzone." >>$LOGFILE
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting console proxy vm(s) $inzone." >>$LOGFILE
 fi
 }
 
 stop_start_router() {
 	router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone"`)
 	length_router=(${#router[@]})
-	
+
 	echo -e "\nStopping and starting $length_router running routing vm(s)$inzone... "
-	echo -e "Stopping and starting $length_router running routing vm(s)$inzone... " >>$LOGFILE
-	
+	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_router running routing vm(s)$inzone... " >>$LOGFILE
+
 	#Spawn reboot router in parallel - run commands in <n> chunks - number of threads is configurable
 
 	pids=()
 	for d in "${router[@]}"; do
-        
+
     	reboot_router $d &
 
     	pids=( "${pids[@]}" $! )
-    	
+
     	length_pids=(${#pids[@]})
     	unfinishedPids=(${#pids[@]})
-    	
+
     	if [ $maxthreads -gt $length_router ]; then
     		maxthreads=$length_router
     	fi
-  		
+
   		if [ $length_pids -ge $maxthreads ]; then
   			while [ $unfinishedPids -gt 0 ]; do
     			sleep 10
@@ -170,33 +170,33 @@ stop_start_router() {
 	    				count=`expr $count + 1`
 	    			fi
 	    		done
-	    		
+
 	    		if [ $count -eq $unfinishedPids ]; then
 	    			unfinishedPids=0
 	    		fi
-	    		
+
     		done
-    		
+
     		#remove all elements from pids
 	    	if [ $unfinishedPids -eq 0 ]; then
 	    		pids=()
 	    		length_pids=(${#pids[@]})
 	    	fi
-	    	
+
   		fi
-  		
+
 	done
-	
+
 	if [ "$length_router" == "0" ];then
-		echo -e "No running router vms found \n" >>$LOGFILE
-	else	
+		echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] No running router vms found \n" >>$LOGFILE
+	else
 		while [ $unfinishedPids -gt 0 ]; do
 			sleep 10
 		done
-		
+
 		echo -e "Done restarting router(s)$inzone. \n"
-		echo -e "Done restarting router(s)$inzone. \n" >>$LOGFILE
-		
+		echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done restarting router(s)$inzone. \n" >>$LOGFILE
+
 	fi
 }
 
@@ -212,56 +212,60 @@ send_request(){
 		return
 	fi
 	jobresult=$(query_async_job_result $jobid)
+    if [ "$jobresult" != "1" ]; then
+        echo -e "ERROR: Failed to $1 id=$2; jobId is $jobid \n"
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to $1 id=$2; jobId is $jobid" >>$LOGFILE
+    fi
 	echo $jobresult
 }
 
 
 reboot_router(){
-	echo "INFO: Restarting router with id $1" >>$LOGFILE
+	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Restarting router with id $1" >>$LOGFILE
 	jobid=`curl -sS "http://$ms:8096/?command=rebootRouter&id=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F: {'print $3'}`
 	if [ "$jobid" == "" ]; then
-		echo "ERROR: Failed to restart domainRouter with id $1" >>$LOGFILE
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart domainRouter with id $1; unable to submit the job" >>$LOGFILE
 		echo 2
 		return
 	fi
-	
+
 	jobresult=$(query_async_job_result $jobid)
-	
+
 	if [ "$jobresult" != "1" ]; then
 	    echo -e "ERROR: Failed to restart domainRouter with id $1 \n"
-		echo "ERROR: Failed to restart domainRouter with id $1" >>$LOGFILE
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart domainRouter with id $1; jobId $jobid" >>$LOGFILE
 		exit 0
 	else
-		echo "INFO: Successfully restarted domainRouter with id $1" >>$LOGFILE
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Successfully restarted domainRouter with id $1; jobId $jobid" >>$LOGFILE
 		exit 0
 	fi
-	
+
 }
 
 restart_networks(){
-    networks=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select n.id 
+    networks=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select n.id
     from networks n, network_offerings no where n.network_offering_id = no.id and no.system_only = 0 and n.removed is null$zone"`)
     length_networks=(${#networks[@]})
-    
+
     echo -e "\nRestarting $length_networks networks$inzone... "
-    echo -e "Restarting $length_networks networks$inzone... " >>$LOGFILE
-    
+    echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Restarting $length_networks networks$inzone... " >>$LOGFILE
+
     #Spawn restart network in parallel - run commands in <n> chunks - number of threads is configurable
 
     pids=()
     for d in "${networks[@]}"; do
-        
+
         restart_network $d &
 
         pids=( "${pids[@]}" $! )
-        
+
         length_pids=(${#pids[@]})
         unfinishedPids=(${#pids[@]})
-        
+
         if [ $maxthreads -gt $length_networks ]; then
             maxthreads=$length_networks
         fi
-        
+
         if [ $length_pids -ge $maxthreads ]; then
             while [ $unfinishedPids -gt 0 ]; do
                 sleep 10
@@ -271,74 +275,74 @@ restart_networks(){
                         count=`expr $count + 1`
                     fi
                 done
-                
+
                 if [ $count -eq $unfinishedPids ]; then
                     unfinishedPids=0
                 fi
-                
+
             done
-            
+
             #remove all elements from pids
             if [ $unfinishedPids -eq 0 ]; then
                 pids=()
                 length_pids=(${#pids[@]})
             fi
-            
+
         fi
-        
+
     done
 
-    
+
     if [ "$length_networks" == "0" ];then
-        echo -e "No networks found \n" >>$LOGFILE
-    else    
+        echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] No networks found \n" >>$LOGFILE
+    else
         while [ $unfinishedPids -gt 0 ]; do
             sleep 10
         done
-        
+
         echo -e "Done restarting networks$inzone. \n"
-        echo -e "Done restarting networks$inzone. \n" >>$LOGFILE
-        
+        echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done restarting networks$inzone. \n" >>$LOGFILE
+
     fi
 }
 
 restart_network(){
     jobid=`curl -sS "http://$ms:8096/?command=restartNetwork&id=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F: {'print $3'}`
     if [ "$jobid" == "" ]; then
-        echo "ERROR: Failed to restart network with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart network with id $1; unable to submit the job" >>$LOGFILE
         echo 2
         return
     fi
-    
+
     jobresult=$(query_async_job_result $jobid)
-    
+
     if [ "$jobresult" != "1" ]; then
-        echo "ERROR: Failed to restart network with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart network with id $1; jobId $jobid" >>$LOGFILE
     else
-        echo "INFO: Successfully restarted network with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Successfully restarted network with id $1; jobId $jobid" >>$LOGFILE
     fi
-    
+
 }
 
 
 restart_vpc(){
     echo -e "INFO: Restarting vpc with id $1"
-    echo "INFO: Restarting vpc with id $1" >>$LOGFILE
+    echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Restarting vpc with id $1" >>$LOGFILE
     jobid=`curl -sS "http://$ms:8096/?command=restartVPC&id=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F: {'print $3'}`
     if [ "$jobid" == "" ]; then
-        echo "ERROR: Failed to restart vpc with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart vpc with id $1; unable to submit the job" >>$LOGFILE
         echo 2
         return
     fi
-    
+
     jobresult=$(query_async_job_result $jobid)
-    
+
     if [ "$jobresult" != "1" ]; then
         echo -e "ERROR: Failed to restart vpc with id $1 \n"
-        echo "ERROR: Failed to restart vpc with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to restart vpc with id $1; jobId $jobid" >>$LOGFILE
     else
         echo -e "INFO: Successfully restarted vpc with id $1 \n"
-        echo "INFO: Successfully restarted vpc with id $1" >>$LOGFILE
+        echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Successfully restarted vpc with id $1; jobId $jobid" >>$LOGFILE
     fi
 }
 
@@ -346,26 +350,26 @@ restart_vpc(){
 restart_vpcs(){
     vpcs=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vpc WHERE removed is null$zone"`)
     length_vpcs=(${#vpcs[@]})
-    
+
     echo -e "\nRestarting $length_vpcs vpcs... "
-    echo -e "Restarting $length_vpcs vpcs... " >>$LOGFILE
-    
+    echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Restarting $length_vpcs vpcs... " >>$LOGFILE
+
     #Spawn restart vpcs in parallel - run commands in <n> chunks - number of threads is configurable
 
     pids=()
     for d in "${vpcs[@]}"; do
-        
+
         restart_vpc $d &
 
         pids=( "${pids[@]}" $! )
-        
+
         length_pids=(${#pids[@]})
         unfinishedPids=(${#pids[@]})
-        
+
         if [ $maxthreads -gt $length_vpcs ]; then
             maxthreads=$length_vpcs
         fi
-        
+
         if [ $length_pids -ge $maxthreads ]; then
             while [ $unfinishedPids -gt 0 ]; do
                 sleep 10
@@ -375,34 +379,34 @@ restart_vpcs(){
                         count=`expr $count + 1`
                     fi
                 done
-                
+
                 if [ $count -eq $unfinishedPids ]; then
                     unfinishedPids=0
                 fi
-                
+
             done
-            
+
             #remove all elements from pids
             if [ $unfinishedPids -eq 0 ]; then
                 pids=()
                 length_pids=(${#pids[@]})
             fi
-            
+
         fi
-        
+
     done
 
-    
+
     if [ "$length_vpcs" == "0" ];then
-        echo -e "No vpcs found \n" >>$LOGFILE
-    else    
+        echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] No vpcs found \n" >>$LOGFILE
+    else
         while [ $unfinishedPids -gt 0 ]; do
             sleep 10
         done
-        
+
         echo -e "Done restarting vpcs$inzone. \n"
-        echo -e "Done restarting vpcs$inzone. \n" >>$LOGFILE
-        
+        echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done restarting vpcs$inzone. \n" >>$LOGFILE
+
     fi
 }
 
