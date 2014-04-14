@@ -19,6 +19,7 @@ package com.cloud.api;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -236,6 +237,7 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
@@ -1070,6 +1072,26 @@ public class ApiDBUtils {
             List<ClusterVO> xenClusters = s_clusterDao.listByDcHyType(dcId, HypervisorType.XenServer.toString());
             if (xenClusters.isEmpty()) {
                 type = HypervisorType.Hyperv;
+            }
+        } if (format == ImageFormat.RAW) {
+            // Currently, KVM only suppoorts RBD images of type RAW.
+            // This results in a weird collision with OVM volumes which
+            // can only be raw, thus making KVM RBD volumes show up as OVM
+            // rather than RBD. This block of code can (hopefuly) by checking to
+            // see if the pool is using either RBD or NFS. However, it isn't
+            // quite clear what to do if both storage types are used. If the image
+            // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
+            // This would be better implemented at a cluster level.
+            List<StoragePoolVO> pools = s_storagePoolDao.listByDataCenterId(dcId);
+            ListIterator<StoragePoolVO> itr = pools.listIterator();
+            while(itr.hasNext()) {
+                StoragePoolVO pool = itr.next();
+                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                  // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
+                  // If this check is not passed, the hypervisor type will remain OVM.
+                  type = HypervisorType.KVM;
+                  break;
+                }
             }
         }
         return type;
