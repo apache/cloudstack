@@ -179,7 +179,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (!isAdmin && zoneId == null && !isRegionStore ) {
             // domain admin and user should also be able to register template on a region store
-            throw new InvalidParameterValueException("Please specify a valid zone Id.");
+            throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
         if (url.toLowerCase().contains("file://")) {
@@ -208,10 +208,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
-
-        if (!_accountMgr.isRootAdmin(templateOwner.getId()) && zoneId == null) {
-            throw new IllegalArgumentException("Only admins can create templates in all zones");
-        }
 
         // If a zoneId is specified, make sure it is valid
         if (zoneId != null) {
