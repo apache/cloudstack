@@ -195,7 +195,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
                 l.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return l;
     }

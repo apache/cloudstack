@@ -802,6 +802,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                  * Why this can happen? Ask God not me. I hate there was no piece of comment for code handling race condition.
                  * God knew what race condition the code dealt with!
                  */
+                s_logger.debug("Caught exception while getting agent's next status", ne);
             }
 
             if (nextStatus == Status.Alert) {

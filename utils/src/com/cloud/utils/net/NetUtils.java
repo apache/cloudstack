@@ -20,6 +20,7 @@
 package com.cloud.utils.net;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -172,7 +173,8 @@ public class NetUtils {
                     }
                     line = output.readLine();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
+                s_logger.debug("Caught IOException", e);
             }
             return null;
         } else {
@@ -425,7 +427,8 @@ public class NetUtils {
         try {
             byte[] mac = nic.getHardwareAddress();
             result[1] = byte2Mac(mac);
-        } catch (Exception e) {
+        } catch (SocketException e) {
+            s_logger.debug("Caught exception when trying to get the mac address ", e);
         }
 
         result[2] = prefix2Netmask(addr.getNetworkPrefixLength());

@@ -33,12 +33,15 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+
 
 //
 // Finding classes in a given package code is taken and modified from
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
 public class OnwireClassRegistry {
+    private static final Logger s_logger = Logger.getLogger(OnwireClassRegistry.class);
 
     private List<String> packages = new ArrayList<String>();
     private final Map<String, Class<?>> registry = new HashMap<String, Class<?>>();
@@ -121,6 +124,7 @@ public class OnwireClassRegistry {
                 }
             }
         } catch (IOException e) {
+            s_logger.debug("Encountered IOException", e);
         } catch (ClassNotFoundException e) {
         }
         return classes;
@@ -137,6 +141,7 @@ public class OnwireClassRegistry {
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
                     } catch (Exception e) {
+                        s_logger.debug("Encountered unexpect exception! ", e);
                     }
                 } else {
                     File f = new File(directory.getPath() + "/" + file);

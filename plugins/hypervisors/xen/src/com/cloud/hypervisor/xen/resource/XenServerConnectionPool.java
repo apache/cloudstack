@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -90,7 +92,10 @@ public class XenServerConnectionPool {
                 }
             };
             HttpsURLConnection.setDefaultHostnameVerifier(hv);
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
+            //ignore this
+        } catch (KeyManagementException e) {
+            s_logger.debug("Init SSLContext failed ", e);
         }
     }
 
@@ -228,6 +233,7 @@ public class XenServerConnectionPool {
                         try{
                             Session.logout(conn);
                         } catch (Exception e) {
+                            s_logger.debug("Caught exception during logout", e);
                         }
                         conn.dispose();
                     }

@@ -982,7 +982,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
                 try {
                     Thread.sleep(5000);
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
                 }
 
                 TemplateObjectTO newVol = new TemplateObjectTO();

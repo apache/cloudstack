@@ -137,7 +137,10 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
             if (clusterDefaultMinIops != null && clusterDefaultMinIops.trim().length() > 0) {
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
+                          ", using default value: " + lClusterDefaultMinIops +
+                          ". Exception: " + ex);
         }
 
         try {
@@ -146,7 +149,10 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
             if (clusterDefaultMaxIops != null && clusterDefaultMaxIops.trim().length() > 0) {
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
+                          ", using default value: " + lClusterDefaultMaxIops +
+                          ". Exception: " + ex);
         }
 
         try {
@@ -155,7 +161,10 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
             if (clusterDefaultBurstIopsPercentOfMaxIops != null && clusterDefaultBurstIopsPercentOfMaxIops.trim().length() > 0) {
                 fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
+            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+                          ", using default value: " + fClusterDefaultBurstIopsPercentOfMaxIops +
+                          ". Exception: " + ex);
         }
 
         if (lClusterDefaultMinIops > lClusterDefaultMaxIops) {

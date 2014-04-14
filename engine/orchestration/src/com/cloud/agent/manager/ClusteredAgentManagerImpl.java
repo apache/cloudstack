@@ -79,6 +79,7 @@ import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -412,7 +413,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             if (ch == null) {
                 try {
                     logD(bytes, "Unable to route to peer: " + Request.parse(bytes).toString());
-                } catch (Exception e) {
+                } catch (ClassNotFoundException | UnsupportedVersionException e) {
+                    // Request.parse thrown exception when we try to log it, log as much as we can
+                    logD(bytes, "Unable to route to peer, and Request.parse further caught exception" + e.getMessage());
                 }
                 return false;
             }
@@ -430,7 +433,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             } catch (IOException e) {
                 try {
                     logI(bytes, "Unable to route to peer: " + Request.parse(bytes).toString() + " due to " + e.getMessage());
-                } catch (Exception ex) {
+                } catch (ClassNotFoundException | UnsupportedVersionException ex) {
+                    // Request.parse thrown exception when we try to log it, log as much as we can
+                    logI(bytes, "Unable to route to peer due to" + e.getMessage()
+                          + ". Also caught exception when parsing request: " + ex.getMessage());
                 }
             }
         }

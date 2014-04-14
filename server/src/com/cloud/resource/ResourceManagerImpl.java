@@ -1591,6 +1591,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 dcId = Long.parseLong(dataCenter);
                 dc = _dcDao.findById(dcId);
             } catch (final NumberFormatException e) {
+                s_logger.debug("Cannot parse " + dataCenter + " into Long.");
             }
         }
         if (dc == null) {
@@ -1604,6 +1605,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 final long podId = Long.parseLong(pod);
                 p = _podDao.findById(podId);
             } catch (final NumberFormatException e) {
+                s_logger.debug("Cannot parse " + pod + " into Long.");
             }
         }
         /*

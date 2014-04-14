@@ -1930,6 +1930,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (OperationTimedoutException e) {
+                s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
 
             migrated = true;
@@ -3898,6 +3899,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (OperationTimedoutException e) {
+                s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
 
             migrated = true;

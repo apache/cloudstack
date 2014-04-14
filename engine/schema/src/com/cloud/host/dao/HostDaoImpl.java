@@ -871,7 +871,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 l.add(info);
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("SQLException caught", e);
         }
         return l;
     }

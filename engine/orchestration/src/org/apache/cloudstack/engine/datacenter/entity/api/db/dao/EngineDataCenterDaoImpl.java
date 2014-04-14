@@ -270,7 +270,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-
+                    s_logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
                 }
             }
         }

@@ -255,6 +255,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 try {
                     Session.logout(conn);
                 } catch (Exception e) {
+                    s_logger.debug("Caught exception during logout", e);
                 }
                 conn.dispose();
                 conn = null;
