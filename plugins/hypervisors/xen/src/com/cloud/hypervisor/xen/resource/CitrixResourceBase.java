@@ -3628,6 +3628,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return new StopAnswer(cmd, msg, platformstring, false);
                 }
 
+                if (cmd.checkBeforeCleanup() && vmr.powerState == VmPowerState.RUNNING) {
+                    String msg = "Vm " + vmName + " is running on host and checkBeforeCleanup flag is set, so bailing out";
+                    s_logger.debug(msg);
+                    return new StopAnswer(cmd, msg, false);
+                }
+
                 State state = s_vms.getState(_cluster, vmName);
 
                 synchronized (_cluster.intern()) {

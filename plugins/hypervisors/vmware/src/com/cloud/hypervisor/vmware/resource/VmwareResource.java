@@ -2740,6 +2740,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo != null) {
+                if (cmd.checkBeforeCleanup()) {
+                    if (getVmPowerState(vmMo) != PowerState.PowerOff) {
+                        String msg = "StopCommand is sent for cleanup and VM " + cmd.getVmName() + " is current running. ignore it.";
+                        s_logger.warn(msg);
+                        return new StopAnswer(cmd, msg, false);
+                    } else {
+                        String msg = "StopCommand is sent for cleanup and VM " + cmd.getVmName() + " is indeed stopped already.";
+                        s_logger.info(msg);
+                        return new StopAnswer(cmd, msg, true);
+                    }
+                }
+
                 State state = null;
                 synchronized (_vms) {
                     state = _vms.get(cmd.getVmName());
