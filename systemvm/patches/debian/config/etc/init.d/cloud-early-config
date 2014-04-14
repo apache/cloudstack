@@ -1100,6 +1100,7 @@ setup_storage_network() {
 
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
+  sysctl vm.min_free_kbytes=8192
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_storage_network
