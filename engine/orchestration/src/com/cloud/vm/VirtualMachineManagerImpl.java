@@ -1047,7 +1047,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
+                            StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if ( answer != null ) {
 
@@ -1225,9 +1225,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
+    protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force, boolean checkBeforeCleanup) {
         VirtualMachine vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
+        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         try {
             StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
             if (answer != null) {
@@ -1282,7 +1282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (step == Step.Started || step == Step.Starting || step == Step.Release) {
                 if (vm.getHostId() != null) {
-                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                         s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
                         return false;
                     }
@@ -1295,26 +1295,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } else if (state == State.Stopping) {
             if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Stopping + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Migrating) {
             if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             }
             if (vm.getLastHostId() != null) {
-                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Running) {
-            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
+            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                 s_logger.warn("Failed to stop vm " + vm + " in " + State.Running + " state as a part of cleanup process");
                 return false;
             }
@@ -1488,7 +1488,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vmGuru.prepareStop(profile);
 
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
+        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
 
         boolean stopped = false;
         StopAnswer answer = null;
@@ -2464,11 +2464,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(VirtualMachine vm) {
-        return new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
+        return new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
     }
 
     public Command cleanup(String vmName) {
-        return new StopCommand(vmName, getExecuteInSequence(null));
+        return new StopCommand(vmName, getExecuteInSequence(null), false);
 
     }
 
@@ -4257,7 +4257,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             VirtualMachineGuru vmGuru = getVmGuru(vm);
             VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            sendStop(vmGuru, profile, true);
+            sendStop(vmGuru, profile, true, true);
 
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);

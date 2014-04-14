@@ -281,7 +281,7 @@ namespace ServerResource.Tests
             HypervResourceController rsrcServer = new HypervResourceController();
             HypervResourceController.wmiCallsV2 = wmiCallsV2;
 
-            String sampleStop = "{\"isProxy\":false,\"vmName\":\"i-2-17-VM\",\"contextMap\":{},\"wait\":0}";
+            String sampleStop = "{\"isProxy\":false,\"vmName\":\"i-2-17-VM\",\"contextMap\":{},\"checkBeforeCleanup\":false,\"wait\":0}";
             dynamic jsonStopCmd = JsonConvert.DeserializeObject(sampleStop);
 
             // Act

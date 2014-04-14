@@ -465,12 +465,12 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
         VirtualMachine vm = mock(VirtualMachine.class);
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
-        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "ok", true);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false, false), "ok", true);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertTrue(actual);
     }
@@ -480,12 +480,12 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineGuru guru = mock(VirtualMachineGuru.class);
         VirtualMachine vm = mock(VirtualMachine.class);
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
-        StopAnswer answer = new StopAnswer(new StopCommand(vm, false), "fail", false);
+        StopAnswer answer = new StopAnswer(new StopCommand(vm, false, false), "fail", false);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
     }
@@ -499,7 +499,7 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(_agentMgr.send(anyLong(), (Command)any())).thenReturn(null);
 
-        boolean actual = _vmMgr.sendStop(guru, profile, false);
+        boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
     }

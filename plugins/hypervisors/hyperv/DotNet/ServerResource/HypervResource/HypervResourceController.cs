@@ -1135,7 +1135,18 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.StopCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
+                bool checkBeforeCleanup = cmd.checkBeforeCleanup;
+                String vmName = cmd.vmName;
 
+                if (checkBeforeCleanup == true)
+                {
+                    ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
+                    if (vm == null || vm.EnabledState == 2)
+                    {
+                        // VM is not available or vm in running state
+                        return ReturnCloudStackTypedJArray(new { result = false, details = "VM is running on host, bailing out", vm = vmName, contextMap = contextMap }, CloudStackTypes.StopAnswer);
+                    }
+                }
                 try
                 {
                     wmiCallsV2.DestroyVm(cmd);

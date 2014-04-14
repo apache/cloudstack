@@ -3484,6 +3484,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected Answer execute(StopCommand cmd) {
         final String vmName = cmd.getVmName();
 
+        if (cmd.checkBeforeCleanup()) {
+            try {
+                Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+                Domain vm = conn.domainLookupByName(cmd.getVmName());
+                if (vm != null && vm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
+                    return new StopAnswer(cmd, "vm is still running on host", false);
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to get vm status in case of checkboforecleanup is true", e);
+            }
+        }
+
         State state = null;
         synchronized (_vms) {
             state = _vms.get(vmName);
