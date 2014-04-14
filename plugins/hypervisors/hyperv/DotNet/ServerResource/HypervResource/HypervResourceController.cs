@@ -107,6 +107,21 @@ namespace HypervResource
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
         }
+
+        public List<string> getAllPrimaryStorages()
+        {
+            List<string> poolPaths = new List<string>();
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            KeyValueConfigurationCollection settings = config.AppSettings.Settings;
+            foreach (string key in settings.AllKeys)
+            {
+                if (key.Contains("primary_storage_"))
+                {
+                    poolPaths.Add(settings[key].Value);
+                }
+            }
+            return poolPaths;
+        }
     }
 
     /// <summary>
@@ -775,14 +790,65 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 logger.Info(CloudStackTypes.CheckOnHostCommand + Utils.CleanString(cmd.ToString()));
+                string details = "host is not alive";
+                bool result = true;
+                try
+                {
+                    foreach (string poolPath in config.getAllPrimaryStorages())
+                    {
+                        if (IsHostAlive(poolPath, (string)cmd.host.privateNetwork.ip))
+                        {
+                            result = false;
+                            details = "host is alive";
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.Error("Error Occurred in " + CloudStackTypes.CheckOnHostCommand + " : " + e.Message);
+                }
+
                 object ansContent = new
                 {
-                    result = true,
-                    details = "resource is alive",
+                    result = result,
+                    details = details,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckOnHostAnswer);
             }
+        }
+
+        private bool IsHostAlive(string poolPath, string privateIp)
+        {
+            bool hostAlive = false;
+            try
+            {
+                string hbFile = Path.Combine(poolPath, "hb-" + privateIp);
+                FileInfo file = new FileInfo(hbFile);
+                using (StreamReader sr = file.OpenText())
+                {
+                    string epoch = sr.ReadLine();
+                    string[] dateTime = epoch.Split('@');
+                    string[] date = dateTime[0].Split('-');
+                    string[] time = dateTime[1].Split(':');
+                    DateTime epochTime = new DateTime(Convert.ToInt32(date[0]), Convert.ToInt32(date[1]), Convert.ToInt32(date[2]), Convert.ToInt32(time[0]),
+                        Convert.ToInt32(time[1]), Convert.ToInt32(time[2]), DateTimeKind.Utc);
+                    DateTime currentTime = DateTime.UtcNow;
+                    DateTime ThreeMinuteLaterEpoch = epochTime.AddMinutes(3);
+                    if (currentTime.CompareTo(ThreeMinuteLaterEpoch) < 0)
+                    {
+                        hostAlive = true;
+                    }
+                    sr.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Info("Exception occurred in verifying host " + e.Message);
+            }
+
+            return hostAlive;
         }
 
         // POST api/HypervResource/CheckSshCommand
@@ -955,6 +1021,27 @@ namespace HypervResource
                     poolInfo = poolInfo,
                     contextMap = contextMap
                 };
+
+                if (result)
+                {
+                    try
+                    {
+                        if ((bool)cmd.add)
+                        {
+                            logger.Info("Adding HeartBeat Task to task scheduler for pool " + (string)cmd.pool.uuid);
+                            Utils.AddHeartBeatTask((string)cmd.pool.uuid, hostPath, config.PrivateIpAddress);
+                        }
+                        else
+                        {
+                            logger.Info("Deleting HeartBeat Task from task scheduler for pool " + (string)cmd.pool.uuid);
+                            Utils.RemoveHeartBeatTask(cmd.pool.uuid);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Error("Error occurred in adding/delete HeartBeat Task to/from Task Scheduler : " + e.Message);
+                    }
+                }
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
             }
@@ -2151,6 +2238,7 @@ namespace HypervResource
 
                 // Insert networking details
                 string privateIpAddress = strtRouteCmd.privateIpAddress;
+                config.PrivateIpAddress = privateIpAddress;
                 string subnet;
                 System.Net.NetworkInformation.NetworkInterface privateNic = GetNicInfoFromIpAddress(privateIpAddress, out subnet);
                 strtRouteCmd.privateIpAddress = privateIpAddress;

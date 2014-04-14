@@ -87,6 +87,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="heartbeat.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\WmiWrappers\WmiWrappers.csproj">
       <Project>{db824727-bdc3-437c-a364-7a811d8a160f}</Project>
       <Name>WmiWrappers</Name>
