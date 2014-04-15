@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
 dictionary = {
+'message.listView.subselect.multi': '<fmt:message key="message.listView.subselect.multi" />',
+'label.use.vm.ips': '<fmt:message key="label.use.vm.ips" />',
 'label.recover.vm': '<fmt:message key="label.recover.vm" />',
 'message.recover.vm': '<fmt:message key="message.recover.vm" />',
 'label.reinstall.vm': '<fmt:message key="label.reinstall.vm" />',

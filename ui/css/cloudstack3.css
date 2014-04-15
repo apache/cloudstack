@@ -1333,7 +1333,7 @@ div.list-view td.first {
   cursor: pointer;
 }
 
-div.list-view td.first:hover {
+div.list-view tr:not(.multi-edit-selected) td.first:hover {
   color: #3A82CD;
 }
 
@@ -1976,6 +1976,11 @@ div.copypasteicon:hover {
 
 .list-view .subselect span {
   margin: 4px 0 0 12px;
+}
+
+.list-view .subselect span.info {
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .list-view .subselect select {
@@ -7939,23 +7944,37 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /*List-view: subselect dropdown*/
 .list-view .subselect {
-  width: 116px;
+  width: 102px;
+  cursor: default;
   display: block;
   float: left;
-  background: url(../images/bg-gradients.png) 0px -42px;
+  background: #EFEFEF;
   padding: 0;
   margin: 8px 0 1px 7px;
   clear: both;
   border: 1px solid #A8A7A7;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
+  /*+border-radius:2px;*/
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  -khtml-border-radius: 2px;
+  border-radius: 2px;
+}
+
+.list-view .subselect:hover span {
+  color: initial;
 }
 
 .list-view .subselect span {
   margin: 4px 0 0 12px;
+  cursor: default;
+}
+
+.list-view .subselect span.info {
+  background: none;
+}
+
+.list-view .subselect span:hover {
+  color: initial;
 }
 
 .list-view .subselect select {
