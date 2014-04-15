@@ -314,7 +314,7 @@ class jsonLoader(object):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
                                       in self.__dict__.iteritems()))
 
-def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
+def configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no):
     vpconfig = jsonLoader(json.loads(json_config)).vpc
 
     if vpconfig is None:
@@ -389,7 +389,7 @@ def get_acl(vpcconfig, required_acl_id):
             return acl
     return None
 
-def configure_ovs_bridge_for_routing_policies(bridge, json_config):
+def configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no):
     vpconfig = jsonLoader(json.loads(json_config)).vpc
 
     if vpconfig is None:

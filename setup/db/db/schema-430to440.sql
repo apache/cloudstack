@@ -770,5 +770,11 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
 ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);
-
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.redundant.vrrp.interval', '1', 'seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router', '1') ON DUPLICATE KEY UPDATE category='Advanced';
+CREATE TABLE `cloud`.`op_vpc_distributed_router_sequence_no` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `vpc_id` bigint unsigned NOT NULL COMMENT 'vpc id.',
+  `sequence_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies topology or routing policy updates',
+  PRIMARY KEY (`id`),
+  UNIQUE `u_op_vpc_distributed_router_sequence_no_vpc_id`(`vpc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
