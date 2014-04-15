@@ -31,9 +31,11 @@ import subprocess
 import commands
 import traceback
 import filecmp
+import tempfile
 
 pathSep=os.sep
-TMP=os.path.expanduser("~") + os.sep + "tmp"	#Get Home Directory
+TMP=tempfile.gettempdir() + os.sep + "tmp"	#Get Home Directory
+print("Temp Directory is : %s" % TMP)
 MOUNTPATH=TMP + pathSep + "systemvm_mnt"
 TMPDIR=TMP + pathSep + "cloud" + pathSep + "systemvm"
 osType=os.name
@@ -81,7 +83,7 @@ def inject_into_iso(pubKey,systemiso):
 	try :
 		shutil.copytree(MOUNTPATH, TMPDIR)
 	except :
-		print ("Failed to copy from original iso %s" % isofile)
+		print ("Failed to copy from original iso %s to %s" % (MOUNTPATH, TMPDIR))
 		clean_up()
 		sys.exit(IOError)
 	try :
