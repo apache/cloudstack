@@ -5306,8 +5306,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
             String bridgeName = nw.getBridge(conn);
+            long sequenceNo = cmd.getSequenceNumber();
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
-                    bridgeName, "config", cmd.getVpcConfigInJson(), "host-id", ((Long)cmd.getHostId()).toString());
+                    bridgeName, "config", cmd.getVpcConfigInJson(), "host-id", ((Long)cmd.getHostId()).toString(),
+                    "seq-no", Long.toString(sequenceNo));
                 if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {
@@ -5324,10 +5326,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Network nw = findOrCreateTunnelNetwork(conn, cmd.getBridgeName());
             String bridgeName = nw.getBridge(conn);
+            long sequenceNo = cmd.getSequenceNumber();
 
             String result = callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_routing_policies", "bridge",
                     bridgeName, "host-id", ((Long)cmd.getHostId()).toString(), "config",
-                    cmd.getVpcConfigInJson());
+                    cmd.getVpcConfigInJson(), "seq-no", Long.toString(sequenceNo));
             if (result.startsWith("SUCCESS")) {
                 return new Answer(cmd, true, result);
             } else {

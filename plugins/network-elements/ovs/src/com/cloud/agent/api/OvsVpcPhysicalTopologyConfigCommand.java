@@ -32,6 +32,9 @@ public class OvsVpcPhysicalTopologyConfigCommand extends Command {
     long hostId;
     String bridgeName;
 
+    long sequenceNumber;
+    String schemaVersion;
+
     public static class Host {
         long hostId;
         String ipAddress;
@@ -127,4 +130,13 @@ public class OvsVpcPhysicalTopologyConfigCommand extends Command {
     public void setBridgeName(String bridgeName) {
         this.bridgeName = bridgeName;
     }
+
+    public long getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(long sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
 }

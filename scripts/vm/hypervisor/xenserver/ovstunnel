@@ -400,15 +400,17 @@ def configure_ovs_bridge_for_network_topology(session, args):
     bridge = args.pop("bridge")
     json_config = args.pop("config")
     this_host_id = args.pop("host-id")
+    sequence_no = args.pop("seq-no")
 
-    return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config)
+    return lib.configure_bridge_for_network_topology(bridge, this_host_id, json_config, sequence_no)
 
 @echo
 def configure_ovs_bridge_for_routing_policies(session, args):
     bridge = args.pop("bridge")
     json_config = args.pop("config")
+    sequence_no = args.pop("seq-no")
 
-    return lib.configure_ovs_bridge_for_routing_policies(bridge, json_config)
+    return lib.configure_ovs_bridge_for_routing_policies(bridge, json_config, sequence_no)
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,

@@ -78,9 +78,14 @@ import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
 import com.cloud.network.ovs.dao.OvsTunnel;
+import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoDao;
+import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoVO;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -128,6 +133,8 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     NetworkACLDao _networkACLDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    VpcDistributedRouterSeqNoDao _vpcDrSeqNoDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params)
@@ -683,7 +690,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return true;
     }
 
-    public void handleVmStateChange(VMInstanceVO vm) {
+    private void handleVmStateChange(VMInstanceVO vm) {
 
         // get the VPC's impacted with the VM start
         List<Long> vpcIds = _ovsNetworkToplogyGuru.getVpcIdsVmIsPartOf(vm.getId());
@@ -693,6 +700,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
         for (Long vpcId: vpcIds) {
             VpcVO vpc = _vpcDao.findById(vpcId);
+            // nothing to do if the VPC is not setup for distributed routing
             if (vpc == null || !vpc.usesDistributedRouter()) {
                 return;
             }
@@ -702,6 +710,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             String bridgeName=generateBridgeNameForVpc(vpcId);
 
             OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
+            topologyConfigCommand.setSequenceNumber(getNextSequenceNumber(vpcId));
+
+            // send topology change update to VPC spanned hosts
             for (Long id: vpcSpannedHostIds) {
                 if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
                     s_logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
@@ -809,6 +820,10 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
                     long vpcId = network.getVpcId();
                     OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
+                    cmd.setSequenceNumber(getNextSequenceNumber(vpcId));
+
+                    // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC
+                    // network ACL update)
                     List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
                     for (Long id: vpcSpannedHostIds) {
                         if (!sendVpcRoutingPolicyChangeUpdate(cmd, id, bridgeName)) {
@@ -867,7 +882,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return cmd;
     }
 
-    public boolean sendVpcRoutingPolicyChangeUpdate(OvsVpcRoutingPolicyConfigCommand updateCmd, long hostId, String bridgeName) {
+    private boolean sendVpcRoutingPolicyChangeUpdate(OvsVpcRoutingPolicyConfigCommand updateCmd, long hostId, String bridgeName) {
         try {
             s_logger.debug("Sending VPC routing policies change update to the host " + hostId);
             updateCmd.setHostId(hostId);
@@ -883,6 +898,28 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         } catch (Exception e) {
             s_logger.debug("Failed to updated the host " + hostId + " with latest routing policies due to" , e );
             return false;
+        }
+    }
+
+    private long getNextSequenceNumber(final long vpcId) {
+
+        try {
+            return  Transaction.execute(new TransactionCallback<Long>() {
+                @Override
+                public Long doInTransaction(TransactionStatus status) {
+                    VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
+                    if (seqVo == null) {
+                        seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
+                        _vpcDrSeqNoDao.persist(seqVo);
+                    }
+                    _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
+                    seqVo.incrSequenceNo();
+                    _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
+                    return seqVo.getSequenceNo();
+                }
+            });
+        } finally {
+
         }
     }
 }
