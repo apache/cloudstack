@@ -81,16 +81,14 @@ _failure() {
 }
 RETVAL=$?
 CLOUDSTACK_HOME="/usr/local/cloud"
+if [ -f  $CLOUDSTACK_HOME/systemvm/utils.sh ];
+then
+  . $CLOUDSTACK_HOME/systemvm/utils.sh
+else
+  _failure
+fi
 
 # mkdir -p /var/log/vmops
-
-get_pids() {
-  local i
-  for i in $(ps -ef| grep java | grep -v grep | awk '{print $2}'); 
-  do 
-    echo $(pwdx $i) | grep "$CLOUDSTACK_HOME"  | awk -F: '{print $1}'; 
-  done
-}
 
 start() {
    local pid=$(get_pids)
