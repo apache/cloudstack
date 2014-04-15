@@ -1285,10 +1285,18 @@
             if (subselect) {
                 var $td = $tr.find('td.first');
                 var $select = $('<div></div>').addClass('subselect').append(
-                    $('<span>').html(_l(subselect.label)),
-                    $('<select>')
+                    $('<span>').html(_l(subselect.label))
                 ).hide();
                 var $selectionArea = $tr.find('td:last').find('input');
+
+                if (subselect.isMultiple) {
+                    $select.append(
+                        $('<select multiple>'),
+                        $('<span>').addClass('info').html(_l('message.listView.subselect.multi'))
+                    );
+                } else {
+                  $select.append($('<select>'));
+                }
 
                 $td.append($select);
 
@@ -1317,6 +1325,7 @@
                                         $select.hide();
                                     }
 
+                                    $select.find('option:first').attr('selected', 'selected'); 
                                     $listView.find('.data-table').dataTable('refresh');
                                 }
                             }

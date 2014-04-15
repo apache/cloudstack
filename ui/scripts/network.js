@@ -3324,7 +3324,8 @@
                                                 
                                                 //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, uncomment the following commented 4 lines. 
                                                 subselect: {
-                                                    label: 'label.use.vm.ip',
+                                                    isMultiple: true,
+                                                    label: 'label.use.vm.ips',
                                                     dataProvider: multipleVmSecondaryIPSubselect                                                     
                                                 },
                                                                                                 
@@ -3617,7 +3618,12 @@
                                                         	if (args.itemData != null) {
                                                         		for (var k = 0; k < args.itemData.length; k++) {                                                          			
                                                         			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
-                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect;  
+
+                                                              // NOTE - multiple IP support not ready for API integration yet
+                                                              // for now, just use the first selected IP
+                                                              //
+                                                              // Please change this to pass multiple IPs
+                                                              inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect[0]; 
                                                         		}
                                                         	}                                                        	
                                                         }  
