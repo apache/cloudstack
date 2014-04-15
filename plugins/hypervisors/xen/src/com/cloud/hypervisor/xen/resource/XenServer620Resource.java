@@ -19,18 +19,20 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.PoolPatch;
+/*
+import java.util.HashSet;
 import com.xensource.xenapi.Event;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.apache.xmlrpc.XmlRpcException;
+import java.util.concurrent.TimeoutException;
+*/
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import javax.ejb.Local;
 import org.apache.log4j.Logger;
-import java.util.concurrent.TimeoutException;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.resource.ServerResource;
 
@@ -110,7 +112,7 @@ public class XenServer620Resource extends XenServer610Resource {
         cmd.setHostDetails(details);
     }
 
-
+/*
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
@@ -162,6 +164,6 @@ public class XenServer620Resource extends XenServer610Resource {
             }
         }
     }
-
+*/
 
 }
