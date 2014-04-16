@@ -458,7 +458,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
 
-        if (!_accountMgr.isAdmin(caller.getType())) {
+        if (!_accountMgr.isAdmin(caller.getId())) {
             accountId = caller.getId();
             domainId = null;
         } else {

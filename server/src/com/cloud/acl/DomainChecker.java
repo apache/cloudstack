@@ -350,6 +350,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 return true;
             }
+        } else if (action != null && ("DomainResourceCapability".equals(action))) {
+            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                return true;
+            }
         }
         return checkAccess(caller, entity, accessType);
     }

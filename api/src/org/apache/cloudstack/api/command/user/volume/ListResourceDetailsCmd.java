@@ -62,7 +62,7 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
     }
 
     public Boolean forDisplay() {
-        if (!_accountService.isAdmin(CallContext.current().getCallingAccount().getType())) {
+        if (!_accountService.isAdmin(CallContext.current().getCallingAccount().getId())) {
             return true;
         }
 

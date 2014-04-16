@@ -121,7 +121,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     public boolean listInReadyState() {
         Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
-        boolean isAccountSpecific = (account == null || _accountService.isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
+        boolean isAccountSpecific = (account == null || _accountService.isAdmin(account.getId())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
         TemplateFilter templateFilter = TemplateFilter.valueOf(getIsoFilter());
         boolean onlyReady =

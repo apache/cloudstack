@@ -2075,7 +2075,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getId();
         boolean expunge = cmd.getExpunge();
 
-        if (!_accountMgr.isAdmin(ctx.getCallingAccount().getType()) && expunge) {
+        if (!_accountMgr.isAdmin(ctx.getCallingAccount().getId()) && expunge) {
             throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only");
         }
 

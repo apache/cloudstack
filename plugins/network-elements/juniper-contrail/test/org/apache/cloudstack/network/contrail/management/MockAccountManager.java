@@ -165,7 +165,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public boolean isAdmin(short arg0) {
+    public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }

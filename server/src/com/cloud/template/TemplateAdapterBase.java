@@ -320,7 +320,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     private Long accountAndUserValidation(Account account, long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) throws PermissionDeniedException {
 
         if (account != null) {
-            if (!_accountMgr.isAdmin(account.getType())) {
+            if (!_accountMgr.isAdmin(account.getId())) {
                 if ((vmInstanceCheck != null) && (account.getId() != vmInstanceCheck.getAccountId())) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }

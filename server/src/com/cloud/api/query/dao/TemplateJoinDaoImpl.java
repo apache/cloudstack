@@ -302,7 +302,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
-        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getId())) {
             isAdmin = true;
         }
 
