@@ -421,7 +421,7 @@ class CSTestClient(object):
         '''
         if self.__asyncJobMgr is None:
             self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
-                                                         self.__dbConnection)
+                                             self.__dbConnection)
         return self.__asyncJobMgr.submitCmdsAndWait(cmds, workers)
 
     def submitJob(self, job, ntimes=1, nums_threads=10, interval=1):
@@ -431,7 +431,7 @@ class CSTestClient(object):
         '''
         if self.__asyncJobMgr is None:
             self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
-                                                         self.__dbConnection)
+                                             self.__dbConnection)
         self.__asyncJobMgr.submitJobExecuteNtimes(job, ntimes,
                                                   nums_threads,
                                                   interval)
@@ -443,5 +443,5 @@ class CSTestClient(object):
         '''
         if self.__asyncJobMgr is None:
             self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
-                                                         self.__dbConnection)
+                                             self.__dbConnection)
         self.__asyncJobMgr.submitJobs(jobs, nums_threads, interval)

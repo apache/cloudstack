@@ -40,10 +40,17 @@ from contextlib import closing
 class SshClient(object):
 
     '''
-    Added timeout flag for ssh connect calls.Default to 3.0 seconds
+    @Desc : SSH Library for Marvin.
+    Facilitates SSH,SCP services to marvin users
+    @Input: host: Host to connect
+            port: port on host to connect
+            user: Username to be used for connecting
+            passwd: Password for connection
+            retries and delay applies for establishing connection
+            timeout : Applies while executing command
     '''
 
-    def __init__(self, host, port, user, passwd, retries=20, delay=30,
+    def __init__(self, host, port, user, passwd, retries=60, delay=10,
                  log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0):
         self.host = None
         self.port = 22
@@ -73,7 +80,7 @@ class SshClient(object):
         if port is not None and port >= 0:
             self.port = port
         if self.createConnection() == FAILED:
-            raise internalError("Connection Failed")
+            raise internalError("SSH Connection Failed")
 
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
@@ -147,7 +154,7 @@ class SshClient(object):
                                   "createConnection: %s" % except_msg)
                 self.retryCnt = self.retryCnt - 1
                 time.sleep(self.delay)
-        return ret
+                return ret
 
     def runCommand(self, command):
         '''

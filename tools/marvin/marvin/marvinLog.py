@@ -143,7 +143,8 @@ class MarvinLog:
             if test_module_name is None:
                 temp_path = temp_ts + "_" + random_gen()
             else:
-                temp_path = str(test_module_name) + "__" + str(temp_ts) + "_" + random_gen()
+                temp_path = str(test_module_name) + \
+                    "__" + str(temp_ts) + "_" + random_gen()
 
             temp_dir = "MarvinLogs"
             if ((log_cfg is not None) and

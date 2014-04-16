@@ -112,7 +112,7 @@ class CSConnection(object):
                 timeout -= 5
                 self.logger.debug("=== JobId:%s is Still Processing, "
                                   "Will TimeOut in:%s ====" % (str(jobid),
-                                                          str(timeout)))
+                                                               str(timeout)))
             end_time = time.time()
             tot_time = int(start_time - end_time)
             self.logger.debug(
