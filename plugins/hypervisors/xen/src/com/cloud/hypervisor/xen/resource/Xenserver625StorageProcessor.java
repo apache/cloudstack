@@ -67,7 +67,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000,
                 "localDir", localDir, "remoteDir", remoteDir);
         if (results == null || results.isEmpty()) {
-            String errMsg = "Could not mount secondary storage " + remoteDir + " on host ";
+            String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
             s_logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -86,6 +86,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         SR sr = null;
         PBD pbd = null;
         try {
+            String srname = hypervisorResource.getHost().uuid + path.trim();
+            Set<SR> srs = SR.getByNameLabel(conn, srname);
+            if ( srs != null && !srs.isEmpty()) {
+                return srs.iterator().next();
+            }
             Map<String, String> smConfig = new HashMap<String, String>();
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             String uuid = UUID.randomUUID().toString();
@@ -136,6 +141,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         DataStoreTO srcStore = srcData.getDataStore();
         Connection conn = hypervisorResource.getConnection();
         SR srcSr = null;
+        Task task = null;
         try {
             if ((srcStore instanceof NfsTO) && (srcData.getObjectType() == DataObjectType.TEMPLATE)) {
                 NfsTO srcImageStore = (NfsTO)srcStore;
@@ -174,7 +180,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 }
                 String pUuid = poolsr.getUuid(conn);
                 boolean isISCSI = IsISCSI(poolsr.getType(conn));
-                Task task = srcVdi.copyAsync(conn, poolsr, null, null);
+                task = srcVdi.copyAsync(conn, poolsr, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -199,6 +205,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             s_logger.warn(msg, e);
             return new CopyCmdAnswer(msg);
         } finally {
+            if ( task != null ) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e) {
+                    s_logger.debug("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
+                }
+            }
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
             }
@@ -217,17 +230,16 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         SR ssSR = null;
 
         String remoteDir = secondaryStorageMountPath;
-
         try {
             ssSR = createFileSr(conn, remoteDir, path);
             filesrcreated = true;
 
             VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
-            Task task = null;
             if (wait == 0) {
                 wait = 2 * 60 * 60;
             }
             VDI dvdi = null;
+            Task task = null;
             try {
                 VDI previousSnapshotVdi = null;
                 if (prevSnapshotUuid != null) {
@@ -243,9 +255,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 if (task != null) {
                     try {
                         task.destroy(conn);
-                    } catch (Exception e1) {
-                        s_logger.warn("unable to destroy task(" + task.toString() + ") on host("
-                                + ") due to ", e1);
+                    } catch (Exception e) {
+                        s_logger.warn("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
                     }
                 }
             }
@@ -332,6 +343,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             String localMountPoint =  BaseMountPointOnHost + File.separator + UUID.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
             if (fullbackup) {
                 SR snapshotSr = null;
+                Task task = null;
                 try {
                     String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
                     mountNfs(conn, secondaryStorageMountPath, localDir);
@@ -344,7 +356,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                     snapshotSr = createFileSr(conn, secondaryStorageMountPath, folder);
 
-                    Task task = snapshotVdi.copyAsync(conn, snapshotSr, null, null);
+                    task = snapshotVdi.copyAsync(conn, snapshotSr, null, null);
                     // poll every 1 seconds ,
                     hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                     hypervisorResource.checkForSuccess(conn, task);
@@ -384,6 +396,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     }
 
                 } finally {
+                    if (task != null) {
+                        try {
+                            task.destroy(conn);
+                        } catch (Exception e) {
+                            s_logger.warn("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
+                        }
+                    }
                     if( snapshotSr != null) {
                         hypervisorResource.removeSR(conn, snapshotSr);
                     }
@@ -447,6 +466,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         boolean result = false;
         String secondaryStorageMountPath = null;
         String installPath = null;
+        Task task = null;
         try {
             URI uri = new URI(secondaryStoragePoolURL);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
@@ -462,7 +482,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             tmpltSR = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), installPath);
 
             // copy volume to template SR
-            Task task = vol.copyAsync(conn, tmpltSR, null, null);
+            task = vol.copyAsync(conn, tmpltSR, null, null);
             // poll every 1 seconds ,
             hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
             hypervisorResource.checkForSuccess(conn, task);
@@ -503,6 +523,14 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             }
             details = "Creating template from volume " + volumeUUID + " failed due to " + e.toString();
             s_logger.error(details, e);
+        } finally {
+            if (task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e) {
+                    s_logger.warn("unable to destroy task(" + task.toWireString() + ") due to " +  e.toString());
+                }
+            }
         }
         return new CopyCmdAnswer(details);
     }
@@ -582,6 +610,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+                task.destroy(conn);
             }
 
             result = true;
@@ -628,6 +657,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         if (destStore instanceof NfsTO) {
             SR secondaryStorage = null;
+            Task task = null;
             try {
                 NfsTO nfsStore = (NfsTO)destStore;
                 URI uri = new URI(nfsStore.getUrl());
@@ -641,7 +671,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 // Look up the volume on the source primary storage pool
                 VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
-                Task task = srcVdi.copyAsync(conn, secondaryStorage, null, null);
+                task = srcVdi.copyAsync(conn, secondaryStorage, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -656,6 +686,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 s_logger.debug("Failed to copy volume to secondary: " + e.toString());
                 return new CopyCmdAnswer("Failed to copy volume to secondary: " + e.toString());
             } finally {
+                if (task != null) {
+                    try {
+                        task.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.warn("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
+                    }
+                }
                 hypervisorResource.removeSR(conn, secondaryStorage);
             }
         }
@@ -690,10 +727,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 return new CopyCmdAnswer(e.toString());
             }
             SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
+            Task task = null;
             try {
                 SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
                 VDI srcVdi = VDI.getByUuid(conn, volumeUuid);
-                Task task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
+                task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
@@ -708,6 +746,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 s_logger.warn(msg, e);
                 return new CopyCmdAnswer(e.toString());
             } finally {
+                if (task != null) {
+                    try {
+                        task.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.warn("unable to destroy task(" + task.toString() + ") due to " + e.toString());
+                    }
+                }
                 if (srcSr != null) {
                     hypervisorResource.removeSR(conn, srcSr);
                 }
@@ -781,6 +826,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+                task.destroy(conn);
             }
 
             destVdi = VDI.getByUuid(conn, destVdiUuid);

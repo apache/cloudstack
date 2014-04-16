@@ -3328,6 +3328,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
                 s_logger.warn(msg);
                 task.cancel(c);
+                task.destroy(c);
                 throw new Types.BadAsyncResult(msg);
             }
         }
@@ -3343,6 +3344,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String msg = "Task failed! Task record: " + task.getRecord(c);
             s_logger.warn(msg);
             task.cancel(c);
+            task.destroy(c);
             throw new Types.BadAsyncResult(msg);
         }
     }
