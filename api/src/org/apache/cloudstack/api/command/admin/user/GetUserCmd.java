@@ -25,10 +25,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "getUser", description = "Find user account by API key", responseObject = UserResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, entityType = { Account.class })
 public class GetUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
 

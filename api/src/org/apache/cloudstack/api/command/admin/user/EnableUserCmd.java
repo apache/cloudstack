@@ -35,7 +35,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "enableUser", description = "Enables a user account", responseObject = UserResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, entityType = { Account.class })
 public class EnableUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
     private static final String s_name = "enableuserresponse";
