@@ -31,6 +31,8 @@ import org.apache.cloudstack.iam.api.IAMPolicy;
 import org.apache.cloudstack.iam.api.IAMPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 
@@ -40,6 +42,8 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
 
     @Inject
     IAMService _iamService;
+    @Inject
+    DomainDao _domainDao;
 
     @Override
     public List<Long> getAuthorizedDomains(Account caller, String action, AccessType accessType) {
@@ -61,11 +65,23 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
             if (pp != null) {
                 for (IAMPolicyPermission p : pp) {
                     if (p.getScopeId() != null) {
+                        Long domainId = null;
                         if (p.getScopeId().longValue() == -1) {
-                            domainIds.add(caller.getDomainId());
+                            domainId = caller.getDomainId();
+                            //domainIds.add(caller.getDomainId());
                         } else {
-                            domainIds.add(p.getScopeId());
+                            domainId = p.getScopeId();
+                            //domainIds.add(p.getScopeId());
                         }
+                        domainIds.add(domainId);
+                        // add all the domain children from this domain. Like RoleBasedEntityAccessChecker, we made an assumption, if DOMAIN scope is granted, it means that
+                        // the whole domain tree is granted access.
+                        DomainVO domain = _domainDao.findById(domainId);
+                        List<Long> childDomains = _domainDao.getDomainChildrenIds(domain.getPath());
+                        if (childDomains != null && childDomains.size() > 0) {
+                            domainIds.addAll(childDomains);
+                        }
+
                     }
                 }
             }
