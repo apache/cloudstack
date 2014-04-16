@@ -2035,7 +2035,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
             if (userAccount != null) {
                 if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
-                    if (!isInternalAccount(userAccount.getType())) {
+                    if (!isInternalAccount(userAccount.getId())) {
                         // Internal accounts are not disabled
                         int attemptsMade = userAccount.getLoginAttempts() + 1;
                         if (updateIncorrectLoginCount) {
