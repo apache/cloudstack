@@ -287,6 +287,7 @@
                                     var $option = $('<option>')
                                             .appendTo($input)
                                             .val(_s(id))
+                                            .data('json-obj', this)
                                             .html(_s(desc));
                                 });
 
