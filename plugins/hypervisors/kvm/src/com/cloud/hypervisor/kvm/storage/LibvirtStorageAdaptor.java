@@ -338,12 +338,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
+        s_logger.debug("Trying to fetch storage pool " + uuid + " from libvirt");
         StoragePool storage = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
             storage = conn.storagePoolLookupByUUIDString(uuid);
 
             if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+                s_logger.debug("Storage pool " + uuid + " was not found in libvirt. Attempting to create it");
                 storage.create(0);
             }
             LibvirtStoragePoolDef spd = getStoragePoolDef(conn, storage);
@@ -437,6 +439,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type) {
+        s_logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
+
         StoragePool sp = null;
         Connect conn = null;
         try {
@@ -561,6 +565,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deleteStoragePool(String uuid) {
+        s_logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
         Connect conn = null;
         try {
             conn = LibvirtConnection.getConnection();
@@ -574,6 +579,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             sp = conn.storagePoolLookupByUUIDString(uuid);
         } catch (LibvirtException e) {
+            s_logger.debug("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
             return true;
         }
 
@@ -619,6 +625,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+
+        s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
+                       + pool.getUuid() + " with size " + size);
 
         switch (pool.getType()){
             case RBD:
@@ -718,6 +727,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          * To have RBD function properly we want RBD images of format 2
          * libvirt currently defaults to format 1
          *
+         * This has been fixed in libvirt 1.2.2, but that's not upstream
+         * in all distributions
+         *
          * For that reason we use the native RBD bindings to create the
          * RBD image until libvirt creates RBD format 2 by default
          */
@@ -800,6 +812,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool) {
 
+        s_logger.info("Attempting to remove volume " + uuid + " from pool " + pool.getUuid());
+
         /**
          * RBD volume can have snapshots and while they exist libvirt
          * can't remove the RBD volume
@@ -869,6 +883,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
+
+        s_logger.info("Creating volume " + name + " from template " + template.getName() + " in pool " + destPool.getUuid() +
+                      " (" + destPool.getType().toString() + ") with size " + size);
 
         KVMPhysicalDisk disk = null;
 
