@@ -2339,6 +2339,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
             buf.append(" router_pr=").append(router.getPriority());
+
+            int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            buf.append(" advert_int=").append(advertInt);
         }
 
         //setup network domain

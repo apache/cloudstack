@@ -865,6 +865,12 @@ setup_redundant_router() {
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
+
+    if [ $ADVERT_INT ]
+    then
+        sed -i "s/advert_int 1/advert_int $ADVERT_INT/g" /etc/keepalived/keepalived.conf
+    fi
+
     chmod a+x $rrouter_bin_path/*.sh
 
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
@@ -1430,6 +1436,9 @@ for i in $CMDLINE
         ;;
       cidrsize)
         CIDR_SIZE=$VALUE
+        ;;
+      advert_int)
+        ADVERT_INT=$VALUE
         ;;
     esac
 done

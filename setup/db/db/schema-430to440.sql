@@ -770,3 +770,5 @@ ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN supports_region_level_vpc boolean
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_streched_l2 boolean default false;
 ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
+
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.redundant.vrrp.interval', '1', 'seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router', '1') ON DUPLICATE KEY UPDATE category='Advanced';

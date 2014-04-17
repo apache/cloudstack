@@ -1898,6 +1898,15 @@ public enum Config {
             "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
             null),
 
+    RedundantRouterVrrpInterval(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.redundant.vrrp.interval",
+            "1",
+            "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router",
+            null),
+
     ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null);
 
     private final String _category;
