@@ -2165,8 +2165,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
             String action) {
 
-        Account owner = null; // for impersonation
         Long domainId = domainIdRecursiveListProject.first();
+        Long accountId = null;
         if (id == null) {
             // if id is specified, it will ignore all other parameters
             if (domainId != null) {
@@ -2179,7 +2179,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkAccess(caller, domain);
             }
 
-            // specific account is specified, we need to impersonate that account instead of caller
+            // specific account is specified, we need to filter contents to only show contents owned by that account.
             if (accountName != null) {
                 if (projectId != null) {
                     throw new InvalidParameterValueException("Account and projectId can't be specified together");
@@ -2198,7 +2198,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (userAccount != null) {
                     //check permissions
                     checkAccess(caller, null, userAccount);
-                    owner = userAccount;
+                    accountId = userAccount.getId();
                 } else {
                     throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
                 }
@@ -2226,10 +2226,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
-            if (owner == null) {
-                // no impersonation, so we directly check permission for caller
-                owner = caller;
-            }
             AccessType accessType = AccessType.UseEntry;
             if (listAll || id != null) {
                 // listAll = true or id given should show all resources that owner has ListEntry access type.
@@ -2245,18 +2241,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return; // no futher filtering
 
             QuerySelector qs = _querySelectors.get(0);
-            boolean grantedAll = qs.isGrantedAll(owner, action, accessType);
+            boolean grantedAll = qs.isGrantedAll(caller, action, accessType);
+
             if ( grantedAll ){
-                if (domainId != null) {
+                if (accountId != null) {
+                    permittedAccounts.add(accountId);
+                    domainIdRecursiveListProject.second(false);  // isRecursive is only valid if only domainId is passed.
+                } else if (domainId != null) {
                     permittedDomains.add(domainId);
+                } else {
+                    domainIdRecursiveListProject.second(false);  // isRecursive is only valid if only domainId is passed.
                 }
             }
             else {
-                List<Long> grantedDomains = qs.getAuthorizedDomains(owner, action, accessType);
-                List<Long> grantedAccounts = qs.getAuthorizedAccounts(owner, action, accessType);
-                List<Long> grantedResources = qs.getAuthorizedResources(owner, action, accessType);
+                List<Long> grantedDomains = qs.getAuthorizedDomains(caller, action, accessType);
+                List<Long> grantedAccounts = qs.getAuthorizedAccounts(caller, action, accessType);
+                List<Long> grantedResources = qs.getAuthorizedResources(caller, action, accessType);
 
-                if (domainId != null) {
+                if (accountId != null) {
+                    // specific account filter is specified
+                    if (grantedAccounts.contains(accountId)) {
+                        permittedAccounts.add(accountId);
+                    } else {
+                        //TODO: we should also filter granted resources based on accountId passed.
+                        // potential bug, if accountId is passed, it may show some granted resources that may not be owned by that account.
+                        // to fix this, we need to change the interface to also pass ControlledEntity class to use EntityManager to find
+                        // ControlledEntity instance to check accountId. But this has some issues for those non controlled entities,
+                        // like NetworkACLItem
+                        permittedResources.addAll(grantedResources);
+                    }
+                    domainIdRecursiveListProject.second(false);  // isRecursive is only valid if only domainId is passed.
+                } else if (domainId != null) {
                     // specific domain and no account is specified
                     if (grantedDomains.contains(domainId)) {
                         permittedDomains.add(domainId);
@@ -2279,6 +2294,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     permittedDomains.addAll(grantedDomains);
                     permittedAccounts.addAll(grantedAccounts);
                     permittedResources.addAll(grantedResources);
+                    domainIdRecursiveListProject.second(false);  // isRecursive is only valid if only domainId is passed.
                 }
 
                 if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() & permittedResources.isEmpty()) {
