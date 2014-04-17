@@ -2347,10 +2347,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             buf.append(" domain=" + domain);
         }
 
+        long cidrSize = 0;
+
         //setup dhcp range
         if (dc.getNetworkType() == NetworkType.Basic) {
             if (guestNic.isDefaultNic()) {
-                final long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
+                cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
                 final String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
                 if (cidr != null) {
                     dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
@@ -2359,11 +2361,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         } else if (dc.getNetworkType() == NetworkType.Advanced) {
             final String cidr = guestNetwork.getCidr();
             if (cidr != null) {
+                cidrSize = NetUtils.getCidrSize(NetUtils.getCidrNetmask(cidr));
                 dhcpRange = NetUtils.getDhcpRange(cidr);
             }
         }
 
         if (dhcpRange != null) {
+            // To limit DNS to the cidr range
+            buf.append(" cidrsize=" + String.valueOf(cidrSize));
             buf.append(" dhcprange=" + dhcpRange);
         }
 
