@@ -188,8 +188,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
                 _accountMgr.getAccount(network.getAccountId()), params,
                 offering.getRedundantRouter());
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!",
+        int routerCounts = 1;
+        if (offering.getRedundantRouter()) {
+            routerCounts = 2;
+        }
+        if ((routers == null) || (routers.size() < routerCounts)) {
+            throw new ResourceUnavailableException("Can't find all necessary running routers!",
                     DataCenter.class, network.getDataCenterId());
         }
         
