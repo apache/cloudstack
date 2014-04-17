@@ -770,3 +770,5 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD COLUMN instance_ip VARCHAR(40);
 ALTER TABLE `cloud`.`load_balancer_vm_map` DROP KEY `load_balancer_id`, ADD UNIQUE KEY load_balancer_id (`load_balancer_id`, `instance_id`, `instance_ip`);
+
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.redundant.vrrp.interval', '1', 'seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router', '1') ON DUPLICATE KEY UPDATE category='Advanced';
