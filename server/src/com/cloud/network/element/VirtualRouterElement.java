@@ -188,10 +188,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        List<DomainRouterVO> routers =
-            _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, _accountMgr.getAccount(network.getAccountId()), params, offering.getRedundantRouter());
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest,
+                _accountMgr.getAccount(network.getAccountId()), params,
+                offering.getRedundantRouter());
+        int routerCounts = 1;
+        if (offering.getRedundantRouter()) {
+            routerCounts = 2;
+        }
+        if ((routers == null) || (routers.size() < routerCounts)) {
+            throw new ResourceUnavailableException("Can't find all necessary running routers!",
+                    DataCenter.class, network.getDataCenterId());
         }
 
         return true;
