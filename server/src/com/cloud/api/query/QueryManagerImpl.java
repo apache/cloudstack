@@ -685,7 +685,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
                 domainIdRecursiveListProject, cmd.listAll(), false, "listInstanceGroups");
-        Long domainId = domainIdRecursiveListProject.first();
+        // Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
