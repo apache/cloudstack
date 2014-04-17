@@ -18,8 +18,6 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import javax.naming.OperationNotSupportedException;
-
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -312,29 +310,5 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String getMountPoint(String storageUrl) {
         return _resource.getRootDir(storageUrl);
-    }
-
-    @Override
-    public ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
-        throw new OperationNotSupportedException();
-    }
-
-    @Override
-    public void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception {
-        throw new OperationNotSupportedException();
     }
 }

@@ -38,9 +38,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -62,14 +59,6 @@ import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
-import com.vmware.vim25.HostInternetScsiHbaAuthenticationProperties;
-import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
-import com.vmware.vim25.HostInternetScsiTargetTransport;
-import com.vmware.vim25.HostScsiDisk;
-import com.vmware.vim25.HostScsiTopology;
-import com.vmware.vim25.HostScsiTopologyInterface;
-import com.vmware.vim25.HostScsiTopologyLun;
-import com.vmware.vim25.HostScsiTopologyTarget;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
@@ -109,8 +98,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -202,8 +189,6 @@ import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -240,7 +225,6 @@ import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
-import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
@@ -276,7 +260,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -285,7 +268,6 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.PropertyMapDynamicBean;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
@@ -340,6 +322,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected volatile long _cmdSequence = 1;
 
     protected StorageSubsystemCommandHandler storageHandler;
+    private VmwareStorageProcessor _storageProcessor;
 
     protected VirtualRoutingResource _vrResource;
 
@@ -390,9 +373,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             mbean.addProp("Name", cmd.getClass().getSimpleName());
 
             Class<? extends Command> clz = cmd.getClass();
-            if (clz == CreateCommand.class) {
-                answer = execute((CreateCommand)cmd);
-            } else if (cmd instanceof NetworkElementCommand) {
+            if (cmd instanceof NetworkElementCommand) {
                 return _vrResource.executeRequest((NetworkElementCommand)cmd);
             } else if (clz == ReadyCommand.class) {
                 answer = execute((ReadyCommand)cmd);
@@ -430,8 +411,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((DeleteStoragePoolCommand)cmd);
             } else if (clz == CopyVolumeCommand.class) {
                 answer = execute((CopyVolumeCommand)cmd);
-            } else if (clz == AttachVolumeCommand.class) {
-                answer = execute((AttachVolumeCommand)cmd);
             } else if (clz == AttachIsoCommand.class) {
                 answer = execute((AttachIsoCommand)cmd);
             } else if (clz == ValidateSnapshotCommand.class) {
@@ -1160,88 +1139,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new ExecutionResult(true, null);
     }
 
-    private ExecutionResult NetworkElementCommandnup(IpAssocCommand cmd) {
-        VmwareContext context = getServiceContext();
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-
-            IpAddressTO[] ips = cmd.getIpAddresses();
-            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-            VmwareResource.getRouterSshControlIp(cmd);
-
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
-
-            // command may sometimes be redirect to a wrong host, we relax
-            // the check and will try to find it within cluster
-            if (vmMo == null) {
-                if (hyperHost instanceof HostMO) {
-                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO)hyperHost).getParentMor());
-                    vmMo = clusterMo.findVmOnHyperHost(routerName);
-                }
-            }
-
-            if (vmMo == null) {
-                String msg = "Router " + routerName + " no longer exists to execute IPAssoc command";
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            for (IpAddressTO ip : ips) {
-                /**
-                 * TODO support other networks
-                 */
-                URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
-                if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
-                    throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + ip.getBroadcastUri());
-                }
-                String vlanId = BroadcastDomainType.getValue(broadcastUri);
-
-                String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-                Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Find public NIC index, public network name: " + publicNeworkName + ", index: " + publicNicInfo.first());
-                }
-
-                boolean removeVif = false;
-                if (!ip.isAdd() && ip.isFirstIP()) {
-                    removeVif = true;
-
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unplug NIC " + publicNicInfo.first());
-                    }
-                }
-
-                if (publicNicInfo.first().intValue() < 0) {
-                    String msg = "Failed to find DomR VIF to associate/disassociate IP with.";
-                    s_logger.error(msg);
-                    throw new InternalErrorException(msg);
-                }
-
-                if (removeVif) {
-                    String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
-                    int nicMasks = Integer.parseInt(nicMasksStr);
-                    nicMasks &= ~(1 << publicNicInfo.first().intValue());
-                    vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
-
-                    HostMO hostMo = vmMo.getRunningHost();
-                    List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
-                    for (NetworkDetails netDetails : networks) {
-                        if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
-                            if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-                                cleanupNetwork(hostMo, netDetails);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
-            return new ExecutionResult(false, e.toString());
-        }
-        return new ExecutionResult(true, null);
-    }
-
     @Override
     public ExecutionResult executeInVR(String routerIP, String script, String args) {
         return executeInVR(routerIP, script, args, 120);
@@ -1824,32 +1721,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         vmMo.ensureScsiDeviceController();
     }
 
-    @Override
-    public ManagedObjectReference prepareManagedDatastore(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret) throws Exception {
-        return getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                VmwareResource.trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
-    }
-
-    @Override
-    public ManagedObjectReference prepareManagedStorage(VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
-        ManagedObjectReference morDs = prepareManagedDatastore(hyperHost, iScsiName, storageHost, storagePort,
-                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
-
-        DatastoreMO dsMo = new DatastoreMO(getServiceContext(null), morDs);
-
-        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeName != null ? volumeName : dsMo.getName());
-
-        if (!dsMo.fileExists(volumeDatastorePath)) {
-            createVmdk(cmd, dsMo, volumeDatastorePath, size);
-        }
-
-        return morDs;
-    }
-
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(Config.VmwareReserveMem.key()).equalsIgnoreCase("true")) {
             return (int)(vmSpec.getMinRam() / (1024 * 1024));
@@ -2348,7 +2219,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // if the datastore is not present, we need to discover the iSCSI device that will support it,
                         // create the datastore, and create a VMDK file in the datastore
                         if (morDatastore == null) {
-                            morDatastore = prepareManagedStorage(hyperHost, iScsiName,
+                            morDatastore = _storageProcessor.prepareManagedStorage(context, hyperHost, iScsiName,
                                     details.get(DiskTO.STORAGE_HOST), Integer.parseInt(details.get(DiskTO.STORAGE_PORT)),
                                     volumeTO.getVolumeType() == Volume.Type.ROOT ? volumeTO.getName() : null,
                                     details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
@@ -3383,404 +3254,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
-    private static String trimIqn(String iqn) {
-        String[] tmp = iqn.split("/");
-
-        if (tmp.length != 3) {
-            String msg = "Wrong format for iScsi path: " + iqn + ". It should be formatted as '/targetIQN/LUN'.";
-
-            s_logger.warn(msg);
-
-            throw new CloudRuntimeException(msg);
-        }
-
-        return tmp[1].trim();
-    }
-
-    private void createVmdk(Command cmd, DatastoreMO dsMo, String vmdkDatastorePath, Long volumeSize) throws Exception {
-        VmwareContext context = getServiceContext();
-        VmwareHypervisorHost hyperHost = getHyperHost(context);
-
-        String dummyVmName = getWorkerName(context, cmd, 0);
-
-        VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
-
-        if (vmMo == null) {
-            throw new Exception("Unable to create a dummy VM for volume creation");
-        }
-
-        Long volumeSizeToUse = volumeSize < dsMo.getSummary().getFreeSpace() ? volumeSize : dsMo.getSummary().getFreeSpace();
-
-        vmMo.createDisk(vmdkDatastorePath, getMBsFromBytes(volumeSizeToUse), dsMo.getMor(), vmMo.getScsiDeviceControllerKey());
-        vmMo.detachDisk(vmdkDatastorePath, false);
-        vmMo.destroy();
-    }
-
-    @Override
-    public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
-        VmwareContext context = getServiceContext();
-        VmwareHypervisorHost hyperHost = getHyperHost(context);
-
-        deleteVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iqn), storageHost, storagePort, VmwareResource.trimIqn(iqn));
-    }
-
-    protected Answer execute(AttachVolumeCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource AttachVolumeCommand: " + _gson.toJson(cmd));
-        }
-
-        /*
-         * AttachVolumeCommand { "attach":true,"vmName":"i-2-1-KY","pooltype":"NetworkFilesystem",
-         * "volumeFolder":"/export/home/kelven/vmware-test/primary", "volumePath":"uuid",
-         * "volumeName":"volume name","deviceId":1 }
-         */
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-            if (vmMo == null) {
-                String msg = "Unable to find the VM to execute AttachVolumeCommand, vmName: " + cmd.getVmName();
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            ManagedObjectReference morDs = null;
-
-            if (cmd.getAttach() && cmd.isManaged()) {
-                morDs = prepareManagedStorage(hyperHost, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(), null,
-                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
-                        cmd.getChapTargetUsername(), cmd.getChapTargetPassword(), cmd.getVolumeSize(), cmd);
-            }
-            else {
-                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
-            }
-
-            if (morDs == null) {
-                String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + cmd.getVmName();
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
-
-            String datastoreVolumePath = null;
-
-            if (cmd.isManaged()) {
-                datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
-            } else {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), cmd.getVmName(), dsMo, cmd.getVolumePath());
-
-                datastoreVolumePath = dsMo.searchFileInSubFolders(cmd.getVolumePath() + ".vmdk", true);
-            }
-
-            assert (datastoreVolumePath != null) : "Virtual disk file must exist in specified datastore for attach/detach operations.";
-            if (datastoreVolumePath == null) {
-                throw new CloudRuntimeException("Unable to find file " + cmd.getVolumePath() + ".vmdk in datastore " + dsMo.getName());
-            }
-
-            AttachVolumeAnswer answer = new AttachVolumeAnswer(cmd, cmd.getDeviceId(), datastoreVolumePath);
-            if (cmd.getAttach()) {
-                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
-            } else {
-                vmMo.removeAllSnapshots();
-                vmMo.detachDisk(datastoreVolumePath, false);
-
-                if (cmd.isManaged()) {
-                    handleDatastoreAndVmdkDetach(cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
-                } else {
-                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, cmd.getVolumePath());
-                }
-            }
-
-            return answer;
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new AttachVolumeAnswer(cmd, msg);
-        }
-    }
-
-    @Override
-    public void removeManagedTargetsFromCluster(List<String> iqns) throws Exception {
-        List<HostInternetScsiHbaStaticTarget> lstManagedTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
-
-        VmwareContext context = getServiceContext();
-        VmwareHypervisorHost hyperHost = getHyperHost(context);
-        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-        ClusterMO cluster = new ClusterMO(context, morCluster);
-        List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
-        HostMO host = new HostMO(context, lstHosts.get(0).first());
-        HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-
-        for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
-            if (hba instanceof HostInternetScsiHba) {
-                List<HostInternetScsiHbaStaticTarget> lstTargets = ((HostInternetScsiHba)hba).getConfiguredStaticTarget();
-
-                if (lstTargets != null) {
-                    for (HostInternetScsiHbaStaticTarget target : lstTargets) {
-                        if (iqns.contains(target.getIScsiName())) {
-                            lstManagedTargets.add(target);
-                        }
-                    }
-                }
-            }
-        }
-
-        addRemoveInternetScsiTargetsToAllHosts(false, lstManagedTargets, lstHosts);
-
-        rescanAllHosts(lstHosts);
-    }
-
-    private void addRemoveInternetScsiTargetsToAllHosts(final boolean add, final List<HostInternetScsiHbaStaticTarget> lstTargets,
-            final List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
-        VmwareContext context = getServiceContext();
-
-        ExecutorService executorService = Executors.newFixedThreadPool(lstHosts.size());
-
-        final List<Exception> exceptions = new ArrayList<Exception>();
-
-        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
-            HostMO host = new HostMO(context, hostPair.first());
-            HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-
-            boolean iScsiHbaConfigured = false;
-
-            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
-                if (hba instanceof HostInternetScsiHba) {
-                    // just finding an instance of HostInternetScsiHba means that we have found at least one configured iSCSI HBA
-                    // at least one iSCSI HBA must be configured before a CloudStack user can use this host for iSCSI storage
-                    iScsiHbaConfigured = true;
-
-                    final String iScsiHbaDevice = hba.getDevice();
-
-                    final HostStorageSystemMO hss = hostStorageSystem;
-
-                    executorService.submit(new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                if (add) {
-                                    hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
-                                } else {
-                                    hss.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
-                                }
-
-                                hss.rescanHba(iScsiHbaDevice);
-                                hss.rescanVmfs();
-                            } catch (Exception ex) {
-                                synchronized (exceptions) {
-                                    exceptions.add(ex);
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-
-            if (!iScsiHbaConfigured) {
-                throw new Exception("An iSCSI HBA must be configured before a host can use iSCSI storage.");
-            }
-        }
-
-        executorService.shutdown();
-
-        if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
-            throw new Exception("The system timed out before completing the task 'rescanAllHosts'.");
-        }
-
-        if (exceptions.size() > 0) {
-            throw new Exception(exceptions.get(0).getMessage());
-        }
-    }
-
-    private void rescanAllHosts(final List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
-        VmwareContext context = getServiceContext();
-
-        ExecutorService executorService = Executors.newFixedThreadPool(lstHosts.size());
-
-        final List<Exception> exceptions = new ArrayList<Exception>();
-
-        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
-            HostMO host = new HostMO(context, hostPair.first());
-            HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-
-            boolean iScsiHbaConfigured = false;
-
-            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
-                if (hba instanceof HostInternetScsiHba) {
-                    // just finding an instance of HostInternetScsiHba means that we have found at least one configured iSCSI HBA
-                    // at least one iSCSI HBA must be configured before a CloudStack user can use this host for iSCSI storage
-                    iScsiHbaConfigured = true;
-
-                    final String iScsiHbaDevice = hba.getDevice();
-
-                    final HostStorageSystemMO hss = hostStorageSystem;
-
-                    executorService.submit(new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                hss.rescanHba(iScsiHbaDevice);
-                                hss.rescanVmfs();
-                            } catch (Exception ex) {
-                                synchronized (exceptions) {
-                                    exceptions.add(ex);
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-
-            if (!iScsiHbaConfigured) {
-                throw new Exception("An iSCSI HBA must be configured before a host can use iSCSI storage.");
-            }
-        }
-
-        executorService.shutdown();
-
-        if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
-            throw new Exception("The system timed out before completing the task 'rescanAllHosts'.");
-        }
-
-        if (exceptions.size() > 0) {
-            throw new Exception(exceptions.get(0).getMessage());
-        }
-    }
-
-    private ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber,
-            String iqn, String chapName, String chapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
-        VmwareContext context = getServiceContext();
-        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-        ClusterMO cluster = new ClusterMO(context, morCluster);
-        List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
-
-        HostInternetScsiHbaStaticTarget target = new HostInternetScsiHbaStaticTarget();
-
-        target.setAddress(storageIpAddress);
-        target.setPort(storagePortNumber);
-        target.setIScsiName(iqn);
-
-        if (StringUtils.isNotBlank(chapName) && StringUtils.isNotBlank(chapSecret)) {
-            HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
-
-            String strAuthType = "chapRequired";
-
-            auth.setChapAuthEnabled(true);
-            auth.setChapInherited(false);
-            auth.setChapAuthenticationType(strAuthType);
-            auth.setChapName(chapName);
-            auth.setChapSecret(chapSecret);
-
-            if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
-                auth.setMutualChapInherited(false);
-                auth.setMutualChapAuthenticationType(strAuthType);
-                auth.setMutualChapName(mutualChapName);
-                auth.setMutualChapSecret(mutualChapSecret);
-            }
-
-            target.setAuthenticationProperties(auth);
-        }
-
-        final List<HostInternetScsiHbaStaticTarget> lstTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
-
-        lstTargets.add(target);
-
-        addRemoveInternetScsiTargetsToAllHosts(true, lstTargets, lstHosts);
-
-        rescanAllHosts(lstHosts);
-
-        HostMO host = new HostMO(context, lstHosts.get(0).first());
-        HostDatastoreSystemMO hostDatastoreSystem = host.getHostDatastoreSystemMO();
-
-        ManagedObjectReference morDs = hostDatastoreSystem.findDatastoreByName(datastoreName);
-
-        if (morDs != null) {
-            return morDs;
-        }
-
-        rescanAllHosts(lstHosts);
-
-        HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-        List<HostScsiDisk> lstHostScsiDisks = hostDatastoreSystem.queryAvailableDisksForVmfs();
-
-        HostScsiDisk hostScsiDisk = getHostScsiDisk(hostStorageSystem.getStorageDeviceInfo().getScsiTopology(), lstHostScsiDisks, iqn);
-
-        if (hostScsiDisk == null) {
-            // check to see if the datastore actually does exist already
-            morDs = hostDatastoreSystem.findDatastoreByName(datastoreName);
-
-            if (morDs != null) {
-                return morDs;
-            }
-
-            throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
-        }
-
-        morDs = hostDatastoreSystem.createVmfsDatastore(datastoreName, hostScsiDisk);
-
-        if (morDs != null) {
-            rescanAllHosts(lstHosts);
-
-            return morDs;
-        }
-
-        throw new Exception("Unable to create a datastore");
-    }
-
-    // the purpose of this method is to find the HostScsiDisk in the passed-in array that exists (if any) because
-    // we added the static iqn to an iSCSI HBA
-    private static HostScsiDisk getHostScsiDisk(HostScsiTopology hst, List<HostScsiDisk> lstHostScsiDisks, String iqn) {
-        for (HostScsiTopologyInterface adapter : hst.getAdapter()) {
-            if (adapter.getTarget() != null) {
-                for (HostScsiTopologyTarget target : adapter.getTarget()) {
-                    if (target.getTransport() instanceof HostInternetScsiTargetTransport) {
-                        String iScsiName = ((HostInternetScsiTargetTransport)target.getTransport()).getIScsiName();
-
-                        if (iqn.equals(iScsiName)) {
-                            for (HostScsiDisk hostScsiDisk : lstHostScsiDisks) {
-                                for (HostScsiTopologyLun hstl : target.getLun()) {
-                                    if (hstl.getScsiLun().contains(hostScsiDisk.getUuid())) {
-                                        return hostScsiDisk;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private void deleteVmfsDatastore(VmwareHypervisorHost hyperHost, String volumeUuid, String storageIpAddress, int storagePortNumber, String iqn) throws Exception {
-        // hyperHost.unmountDatastore(volumeUuid);
-
-        VmwareContext context = getServiceContext();
-        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-        ClusterMO cluster = new ClusterMO(context, morCluster);
-        List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
-
-        HostInternetScsiHbaStaticTarget target = new HostInternetScsiHbaStaticTarget();
-
-        target.setAddress(storageIpAddress);
-        target.setPort(storagePortNumber);
-        target.setIScsiName(iqn);
-
-        final List<HostInternetScsiHbaStaticTarget> lstTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
-
-        lstTargets.add(target);
-
-        addRemoveInternetScsiTargetsToAllHosts(false, lstTargets, lstHosts);
-
-        rescanAllHosts(lstHosts);
-    }
-
     protected Answer execute(AttachIsoCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource AttachIsoCommand: " + _gson.toJson(cmd));
@@ -4528,195 +4001,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error(msg, e);
             return new CopyVolumeAnswer(cmd, false, msg, null, null);
         }
-    }
-
-    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo, String vmdkName, ManagedObjectReference morDatastore,
-            ManagedObjectReference morPool) throws Exception {
-
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
-            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-
-        s_logger.info("creating full clone from template");
-        if (!vmTemplate.createFullClone(vmdkName, dcMo.getVmFolder(), morPool, morDatastore)) {
-            String msg = "Unable to create full clone from the template";
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
-
-        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
-        // to move files
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-flat.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-                String.format("[%s] %s-flat.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        return true;
-    }
-
-    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo, String vmdkName, ManagedObjectReference morDatastore,
-            ManagedObjectReference morPool) throws Exception {
-
-        ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
-        if (morBaseSnapshot == null) {
-            String msg = "Unable to find template base snapshot, invalid template";
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
-
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
-            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-
-        s_logger.info("creating linked clone from template");
-        if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
-            String msg = "Unable to clone from the template";
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
-
-        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
-        // to move files
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-                String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        return true;
-    }
-
-    @Override
-    public CreateAnswer execute(CreateCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CreateCommand: " + _gson.toJson(cmd));
-        }
-
-        StorageFilerTO pool = cmd.getPool();
-        DiskProfile dskch = cmd.getDiskCharacteristics();
-
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
-
-            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
-            if (morDatastore == null)
-                throw new Exception("Unable to find datastore in vSphere");
-
-            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
-
-            if (dskch.getType() == Volume.Type.ROOT) {
-                // attach volume id to make the name unique
-                String vmdkName = dskch.getName() + "-" + dskch.getVolumeId();
-                if (cmd.getTemplateUrl() == null) {
-                    // create a root volume for blank VM
-                    String dummyVmName = getWorkerName(context, cmd, 0);
-                    VirtualMachineMO vmMo = null;
-
-                    try {
-                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
-                        if (vmMo == null) {
-                            throw new Exception("Unable to create a dummy VM for volume creation");
-                        }
-
-                        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
-
-                        s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
-                        vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, -1);
-                        vmMo.detachDisk(volumeDatastorePath, false);
-
-                        VolumeTO vol =
-                                new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(),
-                                        null);
-                        return new CreateAnswer(cmd, vol);
-                    } finally {
-
-                        s_logger.info("Destroy dummy VM after volume creation");
-                        if (vmMo != null) {
-                            s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
-                            vmMo.detachAllDisks();
-                            vmMo.destroy();
-                        }
-                    }
-                } else {
-                    VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(cmd.getTemplateUrl()), true);
-                    if (vmTemplate == null) {
-                        s_logger.warn("Template host in vSphere is not in connected state, request template reload");
-                        return new CreateAnswer(cmd, "Template host in vSphere is not in connected state, request template reload", true);
-                    }
-
-                    ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                    ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                    if (!_fullCloneFlag) {
-                        createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-                    } else {
-                        createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-                    }
-
-                    VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
-                    assert (vmMo != null);
-
-                    s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-                    vmMo.detachAllDisks();
-
-                    s_logger.info("destroy volume-wrapper VM " + vmdkName);
-                    vmMo.destroy();
-
-                    String srcFile = String.format("[%s] %s/", dsMo.getName(), vmdkName);
-                    dsMo.deleteFile(srcFile, dcMo.getMor(), true);
-
-                    VolumeTO vol =
-                            new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(), null);
-                    return new CreateAnswer(cmd, vol);
-                }
-            } else {
-                // create data volume
-                VirtualMachineMO vmMo = null;
-                String volumeUuid = UUID.randomUUID().toString().replace("-", "");
-                String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeUuid);
-                String dummyVmName = getWorkerName(context, cmd, 0);
-                try {
-                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
-                    if (vmMo == null) {
-                        throw new Exception("Unable to create a dummy VM for volume creation");
-                    }
-
-                    // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
-
-                    vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, vmMo.getScsiDeviceControllerKey());
-                    vmMo.detachDisk(volumeDatastorePath, false);
-
-                    VolumeTO vol =
-                            new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), volumeUuid, dskch.getSize(),
-                                    null);
-                    return new CreateAnswer(cmd, vol);
-                } finally {
-                    s_logger.info("Destroy dummy VM after volume creation");
-                    if (vmMo != null) {
-                        s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
-                        vmMo.detachAllDisks();
-                        vmMo.destroy();
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CreateAnswer(cmd, new Exception(e));
-        }
-    }
-
-    private static int getMBsFromBytes(long bytes) {
-        return (int)(bytes / (1024L * 1024L));
     }
 
     @Override
@@ -5751,9 +5035,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            VmwareStorageProcessor storageProcessor =
-                    new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null);
-            storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
+            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null);
+            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor);
 
             _vrResource = new VirtualRoutingResource(this);
             if (!_vrResource.configure(name, params)) {
