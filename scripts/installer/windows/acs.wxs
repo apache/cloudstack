@@ -55,6 +55,12 @@
     </Property>
     <Condition Message="7Z is not installed please do install 7z and then try"><![CDATA[(Installed OR SEVENZ_HOME)]]></Condition>
 
+    <!-- Properties for Database Related Information to be collected -->
+    <Property Id="DB_USERNAME" Value="cloud" />
+    <Property Id="DB_PASSWORD" Value="cloud" Hidden="yes"/>
+    <Property Id="DB_HOSTNAME" Value="localhost" />
+    <Property Id="DB_ROOT_PASSWORD" Hidden="yes"/>
+
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
         <Directory Id='Acme' Name='Apache'>
@@ -109,10 +115,12 @@
         Type='expandable' Value='[TOMCATIMAGEPATH]' />
     </Component>
     <DirectoryRef Id="INSTALLDIR">
-      <Directory Id="WEBAPPS" Name="webapps">
-        <Component Id="webappsFolder" Guid="53c03092-438f-4da1-b14d-ceee90c79de0">
-          <CreateFolder />
-        </Component>
+      <Directory Id="CSMANAGEMENT" Name="cloudstack-management">
+        <Directory Id="WEBAPPS" Name="webapps">
+          <Component Id="webappsFolder" Guid="53c03092-438f-4da1-b14d-ceee90c79de0">
+            <CreateFolder />
+          </Component>
+        </Directory>
       </Directory>
     </DirectoryRef>
     <DirectoryRef Id="WEBAPPS">
@@ -170,14 +178,14 @@
         </File>
       </Component>
     </DirectoryRef>
-    <DirectoryRef Id="INSTALLDIR">
+    <DirectoryRef Id="CSMANAGEMENT">
       <Directory Id="CONF" Name="conf">
         <Component Id="confFolder" Guid="ad227f7d-6808-4bdf-8ac6-3b2954d51b96">
           <CreateFolder />
         </Component>
       </Directory>
     </DirectoryRef>
-    <DirectoryRef Id="INSTALLDIR">
+    <DirectoryRef Id="CSMANAGEMENT">
       <Directory Id="LIB" Name="lib">
         <Component Id="libFolder" Guid="d338841e-2ea4-48b3-ab48-9c42e2961600">
           <CreateFolder />
@@ -213,44 +221,57 @@
       Value="[TOMCATDIRECTORY]\bin\Tomcat6.exe">
     </CustomAction>
     <CustomAction Id="UpdateTomcatCatalinaBase"
-      ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[INSTALLDIR];-Djava.io.tmpdir=[INSTALLDIR]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m'
+      ExeCommand='//US//Tomcat6 --JvmOptions=-Dcatalina.base=[CSMANAGEMENT];-Djava.io.tmpdir=[CSMANAGEMENT]\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Dcatalina.home="[TOMCATDIRECTORY]";-Xms512m;-Xmx1024m;-XX:MaxPermSize=512m'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
     <CustomAction Id="UpdateTomcatClassPath"
-      ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[INSTALLDIR]\conf'
+      ExeCommand='//US//Tomcat6 --Classpath="[TOMCATDIRECTORY]\bin\bootstrap.jar";"[TOMCATDIRECTORY]\bin\tomcat-juli.jar";[CSMANAGEMENT]\conf;[CSMANAGEMENT]\lib;[CSMANAGEMENT]\setup'
       Property="TOMCATDIRECTORY1" Execute="commit" Return="check" />
-    <CustomAction Id="DeleteFiles" Directory='INSTALLDIR'
-      ExeCommand="[SystemFolder]cmd.exe /c del [INSTALLDIR]\webapps\client\WEB-INF\classes\db.properties [INSTALLDIR]\webapps\client\WEB-INF\classes\log4j*.xml"
+    <CustomAction Id="DeleteFiles" Directory='CSMANAGEMENT'
+      ExeCommand="[SystemFolder]cmd.exe /c del [CSMANAGEMENT]\webapps\client\WEB-INF\classes\db.properties [CSMANAGEMENT]\webapps\client\WEB-INF\classes\log4j*.xml"
       Execute="commit" Return="check" />
-    <CustomAction Id="GenerateSSLKey" Directory='INSTALLDIR'
-      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [INSTALLDIR]\lib"
+    <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
+      ExeCommand="[PYTHON_HOME]\python [CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py [CSMANAGEMENT]\lib"
+      Execute="commit" Return="check" />
+    <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
+      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\scripts\cloud-setup-databases [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c [CSMANAGEMENT]\lib -f [CSMANAGEMENT]\setup -j [CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar -n [CSMANAGEMENT]\lib\key"
+      Execute="commit" Return="check" />
+    <CustomAction Id="SetupDatabases" Directory='CSMANAGEMENT'
+      ExeCommand="[PYTHON_HOME]\python [INSTALLDIR]\scripts\cloud-setup-databases [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c [CSMANAGEMENT]\lib -f [CSMANAGEMENT]\setup -j [CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar -n [CSMANAGEMENT]\lib\key"
       Execute="commit" Return="check" />
 
     <InstallExecuteSequence>
       <InstallServices Sequence="4999"></InstallServices>
       <Custom Action="TomcatPath" Before="UpdateTomcatClassPath">NOT Installed</Custom>
-      <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed</Custom>
-      <Custom Action="UpdateTomcatCatalinaBase" Before="DeleteFiles">NOT Installed</Custom>
+      <Custom Action="UpdateTomcatClassPath" Before="UpdateTomcatCatalinaBase">NOT Installed
+      </Custom>
+      <Custom Action="UpdateTomcatCatalinaBase" Before="DeleteFiles">NOT
+        Installed</Custom>
       <Custom Action="DeleteFiles" Before="GenerateSSLKey">NOT Installed</Custom>
-      <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed</Custom>
+      <Custom Action="GenerateSSLKey" Before="InstallFinalize">NOT Installed
+      </Custom>
+      <Custom Action="DeployDB" Before="InstallFinalize">(NOT Installed) AND (CREATE_DATABASE = "1")
+      </Custom>
+      <Custom Action="SetupDatabases" Before="InstallFinalize">(NOT Installed) AND (<![CDATA[CREATE_DATABASE <> "1"]]>)
+      </Custom>
     </InstallExecuteSequence>
-    <UIRef Id="WixUI_Mondo" />
     <Feature Id='Complete' Title='ACS' Description='The complete package.'
       Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
       <Feature Id='MainProgram' Title='Program' Description='The main executable.'
         Level='1'>
         <ComponentRef Id='webappsFolder' />
         <ComponentGroupRef Id='ClientPath' />
+        <ComponentGroupRef Id='SetupPath' />
+        <ComponentGroupRef Id='UtilitiesPath' />
         <ComponentRef Id='ProgramMenuDir' />
         <ComponentRef Id='confFolder' />
         <ComponentRef Id='libFolder' />
-        <!-- ComponentRef Id='copyAllToConf' / -->
         <ComponentRef Id='copyToConf' />
         <ComponentRef Id='firewallRules' />
         <ComponentRef Id='MainExecutable' />
         <ComponentRef Id='ServiceInstaller' />
-        <!-- ComponentRef Id='TomcatInstalled' / -->
       </Feature>
     </Feature>
+    <UIRef Id="WixUI_Mondo_Custom" />
     <UIRef Id="WixUI_ErrorProgressText" />
   </Product>
 </Wix>

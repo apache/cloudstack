@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,7 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 package org.apache.cloudstack.wix;
 
 import java.io.File;
@@ -75,6 +73,13 @@ public class HeatMojo extends AbstractWixMojo {
   private File workingDirectory;
 
   /**
+  *
+  * variable names to be passed to heat command
+  * @parameter expression="${componentGroup}"
+  */
+  private String componentGroup;
+
+  /**
    *
    * <DirectoryName>  directory reference to root directories
    * @parameter expression="${directoryName}"
@@ -93,7 +98,7 @@ public class HeatMojo extends AbstractWixMojo {
 
       commandLine.addArgument("-gg");
       commandLine.addArgument("-cg");
-      commandLine.addArgument("ClientPath");
+      commandLine.addArgument(componentGroup);
       commandLine.addArgument("-ke");
       commandLine.addArgument("-sfrag");
 
