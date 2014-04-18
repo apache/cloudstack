@@ -127,7 +127,9 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
         formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id = %d and host_id is null)", dcId, podId, clusterId);
         formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id is null and host_id is null)", dcId, podId);
         formatter.format(" or (data_center_id = %d and pod_id is null and cluster_id is null and host_id is null)", dcId);
-        formatter.format(" or (data_center_id is null and pod_id is null and cluster_id is null and host_id is null)) LIMIT 1");
+        formatter.format(" or (data_center_id is null and pod_id is null and cluster_id is null and host_id is null))");
+        formatter.format(" and removed is NULL ORDER BY id ASC LIMIT 1 for update");
+        formatter.close();
 
         PreparedStatement pstmt = null;
         try {

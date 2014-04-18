@@ -106,7 +106,10 @@ CREATE TABLE `simulator`.`mockconfiguration` (
   `cluster_id` bigint unsigned,
   `host_id` bigint unsigned,
   `name` varchar(255),
-  `values` varchar(4095),
+  `values` varchar(4096),
+  `count` int,
+  `json_response` varchar(4096),
+  `removed` datetime,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
