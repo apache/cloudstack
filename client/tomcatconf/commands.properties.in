@@ -620,6 +620,8 @@ deleteStratoshereSsp=1
 #### host simulator commands
 
 configureSimulator=1
+querySimulatorMock=1
+cleanupSimulatorMock=1
 
 #### api discovery commands
 

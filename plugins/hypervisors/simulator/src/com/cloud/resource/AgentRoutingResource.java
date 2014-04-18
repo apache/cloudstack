@@ -50,10 +50,12 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -104,6 +106,28 @@ public class AgentRoutingResource extends AgentStorageResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            MockConfigurationVO config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingCommand");
+            if (config != null) {
+                Map<String, String> configParameters = config.getParameters();
+                for (Map.Entry<String, String> entry : configParameters.entrySet()) {
+                    if (entry.getKey().equalsIgnoreCase("result")) {
+                        String value = entry.getValue();
+                        if (value.equalsIgnoreCase("fail")) {
+                            return null;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            txn.rollback();
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
         if (isStopped()) {
             return null;
         }
