@@ -1484,7 +1484,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             otherConfig.put("ovs-host-setup", "");
             Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
                     + nwName + " -- set bridge " + nwName
-                    + " other_config:ovs_host_setup='-1'");
+                    + " other_config:ovs-host-setup='-1'");
             s_logger.debug("### KVM network for tunnels created:" + nwName);
         } catch (Exception e) {
             s_logger.warn("createTunnelNetwork failed", e);
@@ -1498,7 +1498,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             findOrCreateTunnelNetwork(nwName);
             String configuredHosts = Script
                     .runSimpleBashScript("ovs-vsctl get bridge " + nwName
-                            + " other_config:ovs_host_setup");
+                            + " other_config:ovs-host-setup");
             boolean configured = false;
             if (configuredHosts != null) {
                 String hostIdsStr[] = configuredHosts.split(",");
