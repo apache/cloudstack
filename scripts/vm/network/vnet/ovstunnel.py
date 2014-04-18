@@ -27,7 +27,7 @@ import os
 import sys
 import subprocess
 import time
-import simplejson as json
+import json
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 
 from time import localtime as _localtime, asctime as _asctime
@@ -73,7 +73,6 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
     logging.debug("Setup_ovs_bridge completed with result:%s" % result)
     return result
 
-@echo
 def setup_ovs_bridge_for_distributed_routing(bridge, cs_host_id):
 
     res = lib.check_switch()
@@ -281,7 +280,7 @@ if __name__ == '__main__':
     parser.add_option("--src_host", dest="src_host")
     parser.add_option("--dst_host", dest="dst_host")
     parser.add_option("--iface_name", dest="iface_name")
-    parser.ad_option("--config", dest="config")
+    parser.add_option("--config", dest="config")
     (option, args) = parser.parse_args()
     if len(args) == 0:
         logging.debug("No command to execute")
