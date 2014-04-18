@@ -57,6 +57,9 @@ public class GuestOSHypervisorVO implements GuestOSHypervisor {
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
+    @Column(name = "is_user_defined")
+    private boolean isUserDefined;
+
     @Override
     public long getId() {
         return id;
@@ -119,5 +122,14 @@ public class GuestOSHypervisorVO implements GuestOSHypervisor {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public boolean getIsUserDefined() {
+        return isUserDefined;
+    }
+
+    public void setIsUserDefined(boolean isUserDefined) {
+        this.isUserDefined = isUserDefined;
     }
 }

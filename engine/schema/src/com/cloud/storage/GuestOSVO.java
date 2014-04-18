@@ -54,6 +54,9 @@ public class GuestOSVO implements GuestOS {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
+    @Column(name = "is_user_defined")
+    private boolean isUserDefined;
+
     @Override
     public long getId() {
         return id;
@@ -107,5 +110,14 @@ public class GuestOSVO implements GuestOS {
     @Override
     public Date getRemoved() {
         return removed;
+    }
+
+    @Override
+    public boolean getIsUserDefined() {
+        return isUserDefined;
+    }
+
+    public void setIsUserDefined(boolean isUserDefined) {
+        this.isUserDefined = isUserDefined;
     }
 }
