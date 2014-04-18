@@ -90,6 +90,7 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install haproxy
 
   #32 bit architecture support:: not required for 32 bit template
+  DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -qq -y --force-yes install libssl-dev libapr1-dev
   dpkg --add-architecture i386
   apt-get update
   apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
