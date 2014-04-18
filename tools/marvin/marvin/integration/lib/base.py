@@ -1471,6 +1471,9 @@ class ServiceOffering:
         if "tags" in services:
             cmd.tags = services["tags"]
 
+        if "hosttags" in services:
+            cmd.hosttags = services["hosttags"]
+
         if "deploymentplanner" in services:
             cmd.deploymentplanner = services["deploymentplanner"]
 
@@ -1479,6 +1482,9 @@ class ServiceOffering:
 
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
+
+        if "offerha" in services:
+            cmd.offerha = services["offerha"]
 
         # Service Offering private to that domain
         if domainid:
@@ -3843,4 +3849,50 @@ class IAMPolicy:
         cmd.id = self.id
         cmd.accounts = [str(acct.id) for acct in accts]
         apiclient.removeIAMPolicyFromAccount(cmd)
-        return           
+        return
+
+class SimulatorMock:
+    """Manage simulator mock lifecycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+    
+    @classmethod
+    def create(cls, apiclient, command, zoneid=None, podid=None, clusterid=None, hostid=None, value="result:fail", count=None, jsonresponse=None):
+        """Creates simulator mock"""
+        
+        cmd = configureSimulator.configureSimulatorCmd()
+        cmd.zoneid = zoneid
+        cmd.podid = podid
+        cmd.clusterid = clusterid
+        cmd.hostid = hostid
+        cmd.name = command
+        cmd.value = value
+        cmd.count = count
+        cmd.jsonresponse = jsonresponse
+        try:
+            simulatormock = apiclient.configureSimulator(cmd)
+            if simulatormock is not None:
+                return SimulatorMock(simulatormock.__dict__)
+        except Exception as e:
+            raise e
+    
+    def delete(self, apiclient):
+        """Removes simulator mock"""
+        
+        cmd = cleanupSimulatorMock.cleanupSimulatorMockCmd()
+        cmd.id = self.id
+        return apiclient.cleanupSimulatorMock(cmd)
+    
+    def query(self, apiclient):
+        """Queries simulator mock"""
+        
+        cmd = querySimulatorMock.querySimulatorMockCmd()
+        cmd.id = self.id
+        try:
+            simulatormock = apiclient.querySimulatorMock(cmd)
+            if simulatormock is not None:
+                return SimulatorMock(simulatormock.__dict__)
+        except Exception as e:
+            raise e
+
+

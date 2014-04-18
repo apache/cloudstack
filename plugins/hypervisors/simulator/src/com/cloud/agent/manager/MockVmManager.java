@@ -27,6 +27,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -110,4 +111,6 @@ public interface MockVmManager extends Manager {
     Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd);
 
     Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd);
+
+    Answer fence(FenceCommand cmd);
 }

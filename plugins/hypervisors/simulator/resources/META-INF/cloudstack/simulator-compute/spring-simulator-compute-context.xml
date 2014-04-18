@@ -30,5 +30,10 @@
     <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
         <property name="name" value="Simulator Guru"/>
     </bean>
-
+    <bean id="SimulatorInvestigator" class="com.cloud.ha.SimulatorInvestigator">
+        <property name="name" value="Simulator Investigator"/>
+    </bean>
+    <bean id="SimulatorFencer" class="com.cloud.ha.SimulatorFencer">
+        <property name="name" value="Simulator Fencer"/>
+    </bean>
 </beans>
