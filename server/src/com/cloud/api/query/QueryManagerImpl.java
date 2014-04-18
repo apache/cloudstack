@@ -26,6 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -95,8 +98,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -1834,52 +1835,19 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        Long domainId = cmd.getDomainId();
-        Long accountId = cmd.getId();
-        String accountName = cmd.getSearchName();
-        boolean isRecursive = cmd.isRecursive();
+        List<Long> permittedDomains = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
         boolean listAll = cmd.listAll();
-        Boolean listForDomain = false;
-
-        if (accountId != null) {
-            Account account = _accountDao.findById(accountId);
-            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
-            }
-
-            _accountMgr.checkAccess(caller, null, account);
-        }
-
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-
-            _accountMgr.checkAccess(caller, domain);
-
-            if (accountName != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                }
-                _accountMgr.checkAccess(caller, null, account);
-            }
-        }
-
-        if (accountId == null) {
-            if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
-                listForDomain = true;
-                isRecursive = true;
-                if (domainId == null) {
-                    domainId = caller.getDomainId();
-                }
-            } else if (_accountMgr.isAdmin(caller.getType()) && domainId != null) {
-                listForDomain = true;
-            } else {
-                accountId = caller.getAccountId();
-            }
-        }
+        Long id = cmd.getId();
+        String accountName = cmd.getSearchName();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        // ListAccountsCmd is not BaseListAccountResourcesCmd, so no (domainId, accountName) combination
+        _accountMgr.buildACLSearchParameters(caller, id, null, null, permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, listAll, false, "listAccounts");
+        Boolean isRecursive = domainIdRecursiveListProject.second();
 
         Filter searchFilter = new Filter(AccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1890,7 +1858,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<AccountJoinVO> sb = _accountJoinDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -1898,11 +1865,31 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
 
-        if (listForDomain && isRecursive) {
-            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
-
         SearchCriteria<AccountJoinVO> sc = sb.create();
+        SearchCriteria<AccountJoinVO> aclSc = _accountJoinDao.createSearchCriteria();
+        // building ACL search criteria. Here we cannot use the common accountMgr.buildACLViewSearchCriteria because
+        // 1) AccountJoinVO does not have accountId field, permittedAccounts correspond to list of resource ids.
+        // 2) AccountJoinVO use type not accountType field to indicate its type
+        if (!permittedDomains.isEmpty() || !permittedAccounts.isEmpty() || !permittedResources.isEmpty()) {
+            if (!permittedDomains.isEmpty()) {
+                if (isRecursive) {
+                    for (int i = 0; i < permittedDomains.size(); i++) {
+                        Domain domain = _domainDao.findById(permittedDomains.get(i));
+                        aclSc.addOr("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
+                    }
+                } else {
+                    aclSc.addOr("domainId", SearchCriteria.Op.IN, permittedDomains.toArray());
+                }
+            }
+            if (!permittedAccounts.isEmpty()) {
+                aclSc.addOr("id", SearchCriteria.Op.IN, permittedAccounts.toArray());
+            }
+            if (!permittedResources.isEmpty()) {
+                aclSc.addOr("id", SearchCriteria.Op.IN, permittedResources.toArray());
+            }
+
+            sc.addAnd("id", SearchCriteria.Op.SC, aclSc);
+        }
 
         sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
 
@@ -1930,19 +1917,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         // don't return account of type project to the end user
-        sc.setParameters("typeNEQ", 5);
+        sc.setParameters("typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
 
-        if (accountId != null) {
-            sc.setParameters("id", accountId);
-        }
-
-        if (listForDomain) {
-            if (isRecursive) {
-                Domain domain = _domainDao.findById(domainId);
-                sc.setParameters("path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
+        if (id != null) {
+            sc.setParameters("id", id);
         }
 
         return _accountJoinDao.searchAndCount(sc, searchFilter);
