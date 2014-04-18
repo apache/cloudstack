@@ -463,10 +463,12 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.startVirtualMachine(cmd)
 
-    def stop(self, apiclient):
+    def stop(self, apiclient, forced=None):
         """Stop the instance"""
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.id
+        if forced:
+            cmd.forced = forced
         apiclient.stopVirtualMachine(cmd)
 
     def reboot(self, apiclient):
@@ -597,8 +599,15 @@ class VirtualMachine:
     def detach_iso(self, apiclient):
         """Detach ISO to instance"""
         cmd = detachIso.detachIsoCmd()
-        cmd.id = self.id
+        cmd.virtualmachineid = self.id
         return apiclient.detachIso(cmd)
+    
+    def scale_virtualmachine(self, apiclient, serviceOfferingId):
+        """ Scale up of service offering for the Instance"""
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.serviceofferingid = serviceOfferingId
+        return apiclient.scaleVirtualMachine(cmd)
 
     def change_service_offering(self, apiclient, serviceOfferingId):
         """Change service offering of the instance"""
@@ -3391,6 +3400,14 @@ class SSHKeyPair:
         if projectid is not None:
             cmd.projectid = projectid
         return (apiclient.createSSHKeyPair(cmd))
+
+    @classmethod
+    def register(cls, apiclient, name, publickey):
+        """Registers SSH keypair"""
+        cmd = registerSSHKeyPair.registerSSHKeyPairCmd()
+        cmd.name = name
+        cmd.publickey = publickey
+        return (apiclient.registerSSHKeyPair(cmd))
 
     def delete(self, apiclient):
         """Delete SSH key pair"""
