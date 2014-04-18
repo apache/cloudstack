@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,7 +32,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
+public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 
      /////////////////////////////////////////////////////
@@ -64,7 +64,6 @@ public class MigrateVolumeCmd extends BaseAsyncVolumeCmd {
         return volumeId;
     }
 
-    @Override
     public Long getId() {
         return getVolumeId();
     }

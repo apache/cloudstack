@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -24,7 +25,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncVolumeCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,7 +40,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {
         VirtualMachine.class, Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
+public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
 
@@ -70,7 +70,6 @@ public class AttachVolumeCmd extends BaseAsyncVolumeCmd {
         return deviceId;
     }
 
-    @Override
     public Long getId() {
         return id;
     }
