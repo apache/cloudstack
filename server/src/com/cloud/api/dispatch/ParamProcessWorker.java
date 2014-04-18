@@ -231,35 +231,39 @@ public class ParamProcessWorker implements DispatchWorker {
 
     private void doAccessChecks(final BaseCmd cmd, final Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        if (owner == null) {
+            owner = caller;
+        }
 
         APICommand commandAnnotation = cmd.getClass().getAnnotation(APICommand.class);
+
         String apiName = commandAnnotation != null ? commandAnnotation.name() : null;
 
         if (!entitiesToAccess.isEmpty()) {
             List<ControlledEntity> entitiesToOperate = new ArrayList<ControlledEntity>();
-
             for (Object entity : entitiesToAccess.keySet()) {
                 if (entity instanceof ControlledEntity) {
 
                     if (AccessType.OperateEntry == entitiesToAccess.get(entity)) {
                         entitiesToOperate.add((ControlledEntity) entity);
                     } else {
-                        _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), apiName,
+                        _accountMgr.checkAccess(owner, entitiesToAccess.get(entity), apiName,
                                 (ControlledEntity) entity);
                     }
                 } else if (entity instanceof InfrastructureEntity) {
                     if (entity instanceof DataCenter) {
-                        checkZoneAccess(caller, (DataCenter) entity);
+                        checkZoneAccess(owner, (DataCenter)entity);
                     } else if (entity instanceof ServiceOffering) {
-                        checkServiceOfferingAccess(caller, (ServiceOffering) entity);
+                        checkServiceOfferingAccess(owner, (ServiceOffering)entity);
                     } else if (entity instanceof DiskOffering) {
-                        checkDiskOfferingAccess(caller, (DiskOffering) entity);
+                        checkDiskOfferingAccess(owner, (DiskOffering)entity);
                     }
                 }
             }
 
             if (!entitiesToOperate.isEmpty()) {
-                _accountMgr.checkAccess(caller, AccessType.OperateEntry, false, apiName,
+                _accountMgr.checkAccess(owner, AccessType.OperateEntry, apiName,
                         entitiesToOperate.toArray(new ControlledEntity[entitiesToOperate.size()]));
             }
 

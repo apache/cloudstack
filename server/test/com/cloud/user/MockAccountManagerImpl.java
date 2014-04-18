@@ -219,10 +219,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
-    @Override
-    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-    }
 
     @Override
     public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
@@ -344,11 +340,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
-    @Override
-    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
-            ControlledEntity... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-    }
 
     @Override
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {

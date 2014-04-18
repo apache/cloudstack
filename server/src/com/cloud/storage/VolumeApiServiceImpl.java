@@ -1140,6 +1140,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // permission check
+        // TODO: remove this if we can annotate volume parameter in createVolumeCmd since this routine is used there as well.
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, volumeToAttach, vm);
 
         if (!(Volume.State.Allocated.equals(volumeToAttach.getState()) || Volume.State.Ready.equals(volumeToAttach.getState()) || Volume.State.Uploaded.equals(volumeToAttach
