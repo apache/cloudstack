@@ -382,8 +382,8 @@
                                             });
 
                                             var vGpuMap = {};
-                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K140Q'];
-                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K240Q', 'GRID K260Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q'];
 
                                             args.$select.change(function() {
                                                 var gpu = $(this).val();
@@ -432,12 +432,20 @@
                                                 description: 'GRID K100'
                                             });
                                             items.push({
+                                                id: 'GRID K120Q',
+                                                description: 'GRID K120Q'
+                                            });
+                                            items.push({
                                                 id: 'GRID K140Q',
                                                 description: 'GRID K140Q'
                                             });
                                             items.push({
                                                 id: 'GRID K200',
                                                 description: 'GRID K200'
+                                            });
+                                            items.push({
+                                                id: 'GRID K220Q',
+                                                description: 'GRID K220Q'
                                             });
                                             items.push({
                                                 id: 'GRID K240Q',
