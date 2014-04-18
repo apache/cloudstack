@@ -33,8 +33,6 @@ class TestNic(cloudstackTestCase):
 
     def setUp(self):
         self.cleanup = []
-        self.cleaning_up = 0
-
         def signal_handler(signal, frame):
             self.tearDown()
             sys.exit(0)
@@ -51,9 +49,6 @@ class TestNic(cloudstackTestCase):
             domain = get_domain(self.apiclient)
             zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
             self.services['mode'] = zone.networktype
-
-            if zone.networktype != 'Advanced':
-                self.skipTest("Cannot run this test with a basic zone, please use advanced!")
 
             #if local storage is enabled, alter the offerings to use localstorage
             #this step is needed for devcloud
@@ -265,14 +260,6 @@ class TestNic(cloudstackTestCase):
             self.assertEqual(True, False, "Exception during NIC test!: " + str(ex))
 
     def tearDown(self):
-        if self.services['mode'] != 'Advanced':
-            self.debug("Cannot run this test with a basic zone, please use advanced!")
-            return
-
-        if self.cleaning_up == 1:
-            return
-
-        self.cleaning_up = 1
         try:
             for obj in self.cleanup:
                 try:
@@ -280,8 +267,6 @@ class TestNic(cloudstackTestCase):
                     time.sleep(10)
                 except Exception as ex:
                     self.debug("Error deleting: " + str(obj) + ", exception: " + str(ex))
-
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
-        self.cleaning_up = 0
 
