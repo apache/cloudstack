@@ -134,6 +134,7 @@ public class VirtualRoutingResource {
     private int _sleep;
     private int _retry;
     private int _port;
+    private int _eachTimeout;
 
     private String _cfgVersion = "1.0";
 
@@ -972,6 +973,9 @@ public class VirtualRoutingResource {
         value = (String)params.get("ssh.port");
         _port = NumbersUtil.parseInt(value, 3922);
 
+        value = (String)params.get("router.aggregation.command.each.timeout");
+        _eachTimeout = NumbersUtil.parseInt(value, 3);
+
         if (_vrDeployer == null) {
             throw new ConfigurationException("Unable to find the resource for VirtualRouterDeployer!");
         }
@@ -1153,8 +1157,8 @@ public class VirtualRoutingResource {
                     return new Answer(cmd, false, result.getDetails());
                 }
 
-                // 3 second for each answer should be enough, and 120s is the minimal timeout
-                int timeout = answerCounts * 3;
+                // 120s is the minimal timeout
+                int timeout = answerCounts * _eachTimeout;
                 if (timeout < 120) {
                     timeout = 120;
                 }

@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -38,6 +29,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -1922,6 +1921,15 @@ public enum Config {
             "router.redundant.vrrp.interval",
             "1",
             "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router",
+            null),
+
+    RouterAggregationCommandEachTimeout(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.aggregation.command.each.timeout",
+            "3",
+            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 
     ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null);

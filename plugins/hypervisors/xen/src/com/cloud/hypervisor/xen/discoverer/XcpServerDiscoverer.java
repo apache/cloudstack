@@ -16,24 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.discoverer;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -75,7 +57,6 @@ import com.cloud.hypervisor.xen.resource.XenServer620Resource;
 import com.cloud.hypervisor.xen.resource.XenServer620SP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.Xenserver625Resource;
-import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
@@ -93,13 +74,30 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.PoolPatch;
 import com.xensource.xenapi.HostPatch;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.PoolPatch;
+import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
-import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.Types.UuidInvalid;
+import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 
 @Local(value = Discoverer.class)
@@ -344,6 +342,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));

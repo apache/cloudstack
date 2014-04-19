@@ -43,6 +43,7 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.configuration.Config;
 import com.cloud.alert.AlertManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -275,6 +276,8 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             details.put("cluster.guid", cluster.getGuid());
 
             params.putAll(details);
+
+            params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
             HypervDirectConnectResource resource = new HypervDirectConnectResource();
             resource.configure(agentIp, params);
