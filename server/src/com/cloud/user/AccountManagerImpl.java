@@ -2297,7 +2297,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     domainIdRecursiveListProject.second(false);  // isRecursive is only valid if only domainId is passed.
                 }
 
-                if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() & permittedResources.isEmpty()) {
+                if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() && permittedResources.isEmpty()) {
                     // if at this point, all permitted arrays are empty, that means that caller cannot see anything, we put -1 in permittedAccounts
                     // to distinguish this case from the case that caller can see everything
                     permittedAccounts.add(-1L);
