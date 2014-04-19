@@ -3977,9 +3977,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
             //Do not allow multiple private gateways with same Vlan within a VPC
-                        if (vpcId.equals(privateNetwork.getVpcId())) {
-                            throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId
-                                    + " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
+            if (vpcId != null && vpcId.equals(privateNetwork.getVpcId())) {
+                throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  " + cidr + "  already exists " + "for Vpc " + vpcId
+                        + " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
             }
         }
 
