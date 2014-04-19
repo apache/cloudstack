@@ -1,8 +1,8 @@
 # Update the box
-apt-get -y update
+DEBIAN_FRONTEND=noninteractive apt-get -qq -y update
 #apt-get -y install linux-headers-$(uname -r) build-essential
 #apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
-apt-get -y install curl unzip
+DEBIAN_FRONTEND=noninteractive apt-get -qq -y install curl unzip
 
 # Set up sudo
 echo 'vagrant ALL=NOPASSWD:ALL' > /etc/sudoers.d/vagrant
