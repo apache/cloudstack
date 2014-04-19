@@ -772,3 +772,4 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN streched_l2 boolean default false;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN region_level_vpc boolean default false;
 
 INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.redundant.vrrp.interval', '1', 'seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router', '1') ON DUPLICATE KEY UPDATE category='Advanced';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'NetworkOrchestrationService', 'router.aggregation.command.each.timeout', '3', 'timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ', '3') ON DUPLICATE KEY UPDATE category='Advanced';

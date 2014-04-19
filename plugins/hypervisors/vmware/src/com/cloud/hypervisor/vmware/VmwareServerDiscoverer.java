@@ -16,20 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware;
 
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
@@ -76,6 +62,18 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Local(value = Discoverer.class)
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
@@ -383,6 +381,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 }
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
+
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
                 VmwareResource resource = new VmwareResource();
                 try {
