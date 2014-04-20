@@ -150,9 +150,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -227,8 +225,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IPAddressDao _ipAddressDao;
     @Inject
     private VpcManager _vpcMgr;
-    @Inject
-    private DomainRouterDao _routerDao;
     @Inject
     Site2SiteVpnManager _vpnMgr;
     @Inject
@@ -455,9 +451,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account caller, AccessType accessType, String apiName, ControlledEntity... entities) throws PermissionDeniedException {
         boolean granted = false;
         // construct entities identification string
-        StringBuffer entityBuf = new StringBuffer("{");
+        StringBuilder entityBuf = new StringBuilder("{");
         for (ControlledEntity ent : entities) {
-            entityBuf.append(ent.toString());
+            entityBuf.append(ent);
         }
         entityBuf.append("}");
         String entityStr = entityBuf.toString();
@@ -732,8 +728,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
-                    accountCleanupNeeded = true;
+                        s_logger.warn("Failed to release ip address " + ip
+                                + " as a part of account id=" + accountId
+                                + " clenaup");
+                        accountCleanupNeeded = true;
                     }
                 }
             }
@@ -777,7 +775,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (ip.isPortable()) {
                 s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
                 _ipAddrMgr.releasePortableIpAddress(ip.getId());
-            }
+                }
             }
 
             // release dedication if any
@@ -861,15 +859,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (VMInstanceVO vm : vms) {
             try {
                 try {
-                    if (vm.getType() == Type.User) {
-                        _itMgr.advanceStop(vm.getUuid(), false);
-                    } else if (vm.getType() == Type.DomainRouter) {
-                        _itMgr.advanceStop(vm.getUuid(), false);
-                    } else {
-                        _itMgr.advanceStop(vm.getUuid(), false);
-                    }
+                    _itMgr.advanceStop(vm.getUuid(), false);
                 } catch (OperationTimedoutException ote) {
-                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
+                    s_logger.warn(
+                            "Operation for stopping vm timed out, unable to stop vm "
+                                    + vm.getHostName(), ote);
                     success = false;
                 }
             } catch (AgentUnavailableException aue) {
@@ -1298,8 +1292,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async = true)
     // This method deletes the account
-        public
-        boolean deleteUserAccount(long accountId) {
+    public boolean deleteUserAccount(long accountId) {
 
         CallContext ctx = CallContext.current();
         long callerUserId = ctx.getCallingUserId();
