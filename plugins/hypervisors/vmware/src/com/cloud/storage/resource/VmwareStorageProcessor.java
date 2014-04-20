@@ -139,8 +139,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-            String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
+    private VirtualMachineMO copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
+            String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
@@ -186,17 +186,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
-            // the same template may be deployed with multiple copies at per-datastore per-host basis,
-            // save the original template name from CloudStack DB as the UUID to associate them.
-            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
-            vmMo.markAsTemplate();
-        } else {
-            vmMo.destroy();
-            String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid;
-            s_logger.error(msg);
-            throw new Exception(msg);
+        if (createSnapshot) {
+            if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
+                // the same template may be deployed with multiple copies at per-datastore per-host basis,
+                // save the original template name from CloudStack DB as the UUID to associate them.
+                vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
+                vmMo.markAsTemplate();
+            } else {
+                vmMo.destroy();
+
+                String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid;
+
+                s_logger.error(msg);
+
+                throw new Exception(msg);
+            }
         }
+
+        return vmMo;
     }
 
     @Override
@@ -289,10 +296,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 dsMo = new DatastoreMO(context, morDs);
 
-                copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                        managed ? managedStoragePoolRootVolumeName : templateUuidName);
-
                 if (managed) {
+                    VirtualMachineMO vmMo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
+                            managedStoragePoolRootVolumeName, false);
+
+                    vmMo.unregisterVm();
+
                     String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName,
                         managedStoragePoolRootVolumeName, VmwareStorageLayoutType.VMWARE, false);
                     String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null,
@@ -303,6 +312,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                     String folderToDelete = dsMo.getDatastorePath(managedStoragePoolRootVolumeName, true);
                     dsMo.deleteFolder(folderToDelete, dcMo.getMor());
+                }
+                else {
+                    copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
+                            templateUuidName, true);
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");
