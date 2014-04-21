@@ -54,6 +54,23 @@ public interface VirtualMachineProfile {
         public String getName() {
             return name;
         }
+
+        @Override
+        public int hashCode() {
+            return this.getName() != null ? this.getName().hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Param other = (Param) obj;
+            return (other.getName().equals(this.getName()));
+        }
     }
 
     String getHostName();
