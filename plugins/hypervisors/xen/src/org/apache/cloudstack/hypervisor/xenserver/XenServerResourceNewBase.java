@@ -23,14 +23,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
+
 import com.xensource.xenapi.Event;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import org.apache.xmlrpc.XmlRpcException;
+import java.util.concurrent.TimeoutException;
+
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ClusterSyncAnswer;
@@ -95,6 +100,60 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
         return cmds;
     }
+
+
+    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+        long beginTime = System.currentTimeMillis();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
+                           "ms timeout");
+        }
+        Set<String> classes = new HashSet<String>();
+        classes.add("Task/" + task.toWireString());
+        String token = "";
+        Double t = new Double(timeout / 1000);
+        while (true) {
+            Map<?, ?> map = Event.properFrom(c, classes, token, t);
+            token = (String)map.get("token");
+            @SuppressWarnings("unchecked")
+            Set<Event.Record> events = (Set<Event.Record>)map.get("events");
+            if (events.size() == 0) {
+                String msg = "No event for task " + task.toWireString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
+            }
+            for (Event.Record rec : events) {
+                if (!(rec.snapshot instanceof Task.Record)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skipping over " + rec);
+                    }
+                    continue;
+                }
+
+                Task.Record taskRecord = (Task.Record)rec.snapshot;
+
+                if (taskRecord.status != Types.TaskStatusType.PENDING) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task, ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid + " is done " + taskRecord.status);
+                    }
+                    return;
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task: ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid +  " progress: " + taskRecord.progress);
+                    }
+
+                }
+            }
+            if (System.currentTimeMillis() - beginTime > timeout) {
+                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
+            }
+        }
+    }
+
 
 
     @Override
@@ -296,5 +355,6 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
             interrupt();
         }
     }
+
 
 }
