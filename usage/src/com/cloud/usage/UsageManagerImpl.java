@@ -1166,16 +1166,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         UsageEventDetailsVO cpuNumber = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.cpuNumber.name());
         if (cpuNumber != null) {
             usageInstance.setCpuCores(Long.parseLong(cpuNumber.getValue()));
+        } else {
+            usageInstance.setCpuCores(null);
         }
 
         UsageEventDetailsVO cpuSpeed = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.cpuSpeed.name());
         if (cpuSpeed != null) {
             usageInstance.setCpuSpeed(Long.parseLong(cpuSpeed.getValue()));
+        } else {
+            usageInstance.setCpuSpeed(null);
         }
 
         UsageEventDetailsVO memory = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.memory.name());
         if (memory != null) {
             usageInstance.setMemory(Long.parseLong(memory.getValue()));
+        } else {
+            usageInstance.setMemory(null);
         }
         m_usageInstanceDao.persist(usageInstance);
     }
