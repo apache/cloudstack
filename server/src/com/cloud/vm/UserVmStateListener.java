@@ -77,11 +77,11 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             return false;
         }
 
+        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+
         if (vo.getType() != VirtualMachine.Type.User) {
             return true;
         }
-
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
 
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
             generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_CREATE);
@@ -128,6 +128,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
         eventDescription.put("new-state", newState.name());
+        eventDescription.put("status", status);
 
         String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
