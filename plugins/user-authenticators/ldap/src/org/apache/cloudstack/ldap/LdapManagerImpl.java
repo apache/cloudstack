@@ -81,6 +81,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
                 s_logger.info("Added new ldap server with hostname: " + hostname);
                 return new LdapConfigurationResponse(hostname, port);
             } catch (final NamingException e) {
+                s_logger.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
             }
         } else {
@@ -98,6 +99,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             closeContext(context);
             return true;
         } catch (final NamingException e) {
+            s_logger.debug("NamingException: while doing an LDAP bind for user "+" "+username, e);
             s_logger.info("Failed to authenticate user: " + username + ". incorrect password.");
             return false;
         }
@@ -109,7 +111,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
                 context.close();
             }
         } catch (final NamingException e) {
-            s_logger.warn(e.getMessage());
+            s_logger.warn(e.getMessage(),e);
         }
     }
 
@@ -183,6 +185,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             context = _ldapContextFactory.createBindContext();
             return _ldapUserManager.getUsers(context);
         } catch (final NamingException e) {
+            s_logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException("*");
         } finally {
             closeContext(context);
@@ -196,6 +199,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             context = _ldapContextFactory.createBindContext();
             return _ldapUserManager.getUsersInGroup(groupName, context);
         } catch (final NamingException e) {
+            s_logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
         } finally {
             closeContext(context);
@@ -223,6 +227,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
             return _ldapUserManager.getUsers("*" + escapedUsername + "*", context);
         } catch (final NamingException e) {
+            s_logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException(username);
         } finally {
             closeContext(context);
