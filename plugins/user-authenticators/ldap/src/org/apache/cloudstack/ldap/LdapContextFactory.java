@@ -62,8 +62,9 @@ public class LdapContextFactory {
 	private DirContext createInitialDirContext(final String principal,
 			final String password, final String providerUrl,
 			final boolean isSystemContext) throws NamingException {
-		return new InitialDirContext(getEnvironment(principal, password,
-				providerUrl, isSystemContext));
+        Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext);
+        s_logger.debug("initializing ldap with provider url: "+ environment.get(Context.PROVIDER_URL));
+		return new InitialDirContext(environment);
 	}
 
 	public DirContext createUserContext(final String principal,
