@@ -73,6 +73,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -242,7 +243,7 @@ public class AccountManagerImplTest {
     }
 
     @Test
-    public void deleteAccount() {
+    public void deleteUserAccount() {
         AccountVO account = new AccountVO();
         account.setId(42l);
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
@@ -252,9 +253,35 @@ public class AccountManagerImplTest {
                         Mockito.any(ControlledEntity[].class)))
                 .thenReturn(true);
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
-        Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l)).thenReturn(true);
+        Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l))
+                .thenReturn(true);
         Assert.assertTrue(accountManager.deleteUserAccount(42));
-        //assert that this was a clean delete
-        Mockito.verify(_accountDao, Mockito.never()).markForCleanup(Mockito.eq(42l));
+        // assert that this was a clean delete
+        Mockito.verify(_accountDao, Mockito.never()).markForCleanup(
+                Mockito.eq(42l));
+    }
+
+    @Test
+    public void deleteUserAccountCleanup() {
+        AccountVO account = new AccountVO();
+        account.setId(42l);
+        Mockito.when(_accountDao.findById(42l)).thenReturn(account);
+        Mockito.when(
+                securityChecker.checkAccess(Mockito.any(Account.class),
+                        Mockito.any(AccessType.class), Mockito.anyString(),
+                        Mockito.any(ControlledEntity[].class)))
+                .thenReturn(true);
+        Mockito.when(_accountDao.remove(42l)).thenReturn(true);
+        Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l))
+                .thenReturn(true);
+        Mockito.when(_userVmDao.listByAccountId(42l)).thenReturn(
+                Arrays.asList(Mockito.mock(UserVmVO.class)));
+        Mockito.when(
+                _vmMgr.expunge(Mockito.any(UserVmVO.class), Mockito.anyLong(),
+                        Mockito.any(Account.class))).thenReturn(false);
+        Assert.assertTrue(accountManager.deleteUserAccount(42));
+        // assert that this was NOT a clean delete
+        Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(
+                Mockito.eq(42l));
     }
 }
