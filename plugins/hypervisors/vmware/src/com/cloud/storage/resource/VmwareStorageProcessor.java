@@ -358,10 +358,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
-            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-        }
-
         s_logger.info("creating linked clone from template");
 
         if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
@@ -372,24 +368,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know to move files
-        s_logger.info("Move volume out of volume-wrapper VM ");
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-            String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-            String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
         return true;
     }
 
     private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo, String vmdkName, ManagedObjectReference morDatastore,
             ManagedObjectReference morPool) throws Exception {
-        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
-            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-        }
-
         s_logger.info("creating full clone from template");
 
         if (!vmTemplate.createFullClone(vmdkName, dcMo.getVmFolder(), morPool, morDatastore)) {
@@ -399,15 +382,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             throw new Exception(msg);
         }
-
-        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know to move files
-        s_logger.info("Move volume out of volume-wrapper VM ");
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-            String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-flat.vmdk", dsMo.getName(), vmdkName, vmdkName), dcMo.getMor(), dsMo.getMor(),
-            String.format("[%s] %s-flat.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
 
         return true;
     }
