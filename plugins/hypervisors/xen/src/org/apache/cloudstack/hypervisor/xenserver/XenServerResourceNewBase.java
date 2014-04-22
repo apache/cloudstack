@@ -99,14 +99,14 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         return cmds;
     }
 
-    protected void waitForTask2(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+    protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
                            "ms timeout");
         }
         Set<String> classes = new HashSet<String>();
-        classes.add("Task/" + task.toString());
+        classes.add("Task/" + task.toWireString());
         String token = "";
         Double t = new Double(timeout / 1000);
         while (true) {
@@ -115,7 +115,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
             @SuppressWarnings("unchecked")
             Set<Event.Record> events = map.events;
             if (events.size() == 0) {
-                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                String msg = "No event for task " + task.toWireString();
                 s_logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
@@ -132,15 +132,25 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
 
                 if (taskRecord.status != Types.TaskStatusType.PENDING) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Task is done " + taskRecord.status);
+                        s_logger.debug("Task, ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid + " is done " + taskRecord.status);
                     }
                     return;
                 } else {
-                    s_logger.debug("Task is not done " + taskRecord);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Task: ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid +  " progress: " + taskRecord.progress);
+                    }
+
                 }
+            }
+            if (System.currentTimeMillis() - beginTime > timeout) {
+                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);
+                throw new TimeoutException(msg);
             }
         }
     }
+
 
     @Override
     protected Answer execute(final ClusterSyncCommand cmd) {
