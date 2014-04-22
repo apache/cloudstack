@@ -70,6 +70,7 @@ import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
@@ -111,6 +112,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     DataCenterDao _dcDao;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    VMTemplateDao _templateDao;
 
     @Override
     public String getName() {
@@ -400,9 +403,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     @DB
     public boolean delete(TemplateProfile profile) {
-        boolean success = true;
+        boolean success = false;
 
         VMTemplateVO template = profile.getTemplate();
+        Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
 
         // find all eligible image stores for this template
         List<DataStore> imageStores = templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
@@ -438,29 +442,71 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, null, null);
                 }
 
-                s_logger.info("Delete template from image store: " + imageStore.getName());
-                AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(template.getId(), imageStore));
-                try {
-                    TemplateApiResult result = future.get();
-                    success = result.isSuccess();
-                    if (!success) {
-                        s_logger.warn("Failed to delete the template " + template + " from the image store: " + imageStore.getName() + " due to: " + result.getResult());
-                        break;
-                    }
-
-                    // remove from template_zone_ref
-                    List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, template.getId());
-                    if (templateZones != null) {
-                        for (VMTemplateZoneVO templateZone : templateZones) {
-                            templateZoneDao.remove(templateZone.getId());
+                boolean dataDiskDeletetionResult = true;
+                List<VMTemplateVO> dataDiskTemplates = _templateDao.listByParentTemplatetId(template.getId());
+                if (dataDiskTemplates != null && dataDiskTemplates.size() > 0) {
+                    s_logger.info("Template: " + template.getId() + " has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template");
+                    for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
+                        s_logger.info("Delete Datadisk template: " + dataDiskTemplate.getId() + " from image store: " + imageStore.getName());
+                        AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(dataDiskTemplate.getId(), imageStore));
+                        try {
+                            TemplateApiResult result = future.get();
+                            dataDiskDeletetionResult = result.isSuccess();
+                            if (!dataDiskDeletetionResult) {
+                                s_logger.warn("Failed to delete datadisk template: " + dataDiskTemplate + " from image store: " + imageStore.getName() + " due to: "
+                                        + result.getResult());
+                                break;
+                            }
+                            // Remove from template_zone_ref
+                            List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, dataDiskTemplate.getId());
+                            if (templateZones != null) {
+                                for (VMTemplateZoneVO templateZone : templateZones) {
+                                    templateZoneDao.remove(templateZone.getId());
+                                }
+                            }
+                            // Mark datadisk template as Inactive
+                            List<DataStore> iStores = templateMgr.getImageStoreByTemplate(dataDiskTemplate.getId(), null);
+                            if (iStores == null || iStores.size() == 0) {
+                                dataDiskTemplate.setState(VirtualMachineTemplate.State.Inactive);
+                                _tmpltDao.update(dataDiskTemplate.getId(), dataDiskTemplate);
+                            }
+                            // Decrement total secondary storage space used by the account
+                            _resourceLimitMgr.recalculateResourceCount(dataDiskTemplate.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
+                        } catch (Exception e) {
+                            s_logger.debug("Delete datadisk template failed", e);
+                            throw new CloudRuntimeException("Delete datadisk template failed", e);
                         }
                     }
-                } catch (InterruptedException e) {
-                    s_logger.debug("delete template Failed", e);
-                    throw new CloudRuntimeException("delete template Failed", e);
-                } catch (ExecutionException e) {
-                    s_logger.debug("delete template Failed", e);
-                    throw new CloudRuntimeException("delete template Failed", e);
+                }
+
+                if (dataDiskDeletetionResult) {
+                    s_logger.info("Delete template: " + template.getId() + " from image store: " + imageStore.getName());
+                    AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(template.getId(), imageStore));
+                    try {
+                        TemplateApiResult result = future.get();
+                        success = result.isSuccess();
+                        if (!success) {
+                            s_logger.warn("Failed to delete the template: " + template + " from the image store: " + imageStore.getName() + " due to: " + result.getResult());
+                            break;
+                        }
+
+                        // remove from template_zone_ref
+                        List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, template.getId());
+                        if (templateZones != null) {
+                            for (VMTemplateZoneVO templateZone : templateZones) {
+                                templateZoneDao.remove(templateZone.getId());
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        s_logger.debug("Delete template Failed", e);
+                        throw new CloudRuntimeException("Delete template Failed", e);
+                    } catch (ExecutionException e) {
+                        s_logger.debug("Delete template Failed", e);
+                        throw new CloudRuntimeException("Delete template Failed", e);
+                    }
+                } else {
+                    s_logger.warn("Template: " + template.getId() + " won't be deleted from image store: " + imageStore.getName() + " because deletion of one of the Datadisk" +
+                            " templates that belonged to the template failed");
                 }
             }
         }
@@ -473,7 +519,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // delete all cache entries for this template
             List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
             for (TemplateInfo tmplOnCache : cacheTmpls) {
-                s_logger.info("Delete template from image cache store: " + tmplOnCache.getDataStore().getName());
+                s_logger.info("Delete template: " + tmplOnCache.getId() + " from image cache store: " + tmplOnCache.getDataStore().getName());
                 tmplOnCache.delete();
             }
 
@@ -486,7 +532,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                     // Decrement the number of templates and total secondary storage
                     // space used by the account
-                    Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
                     _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
 
