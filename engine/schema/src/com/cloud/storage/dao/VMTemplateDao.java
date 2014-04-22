@@ -75,4 +75,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
     void loadDetails(VMTemplateVO tmpl);
 
     void saveDetails(VMTemplateVO tmpl);
+
+    List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
 }

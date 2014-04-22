@@ -467,4 +467,9 @@ public class TemplateObject implements TemplateInfo {
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
     }
+
+    @Override
+    public Long getParentTemplateId() {
+        return imageVO.getParentTemplateId();
+    }
 }

@@ -180,6 +180,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         }
         templateResponse.setTemplateTag(template.getTemplateTag());
 
+        if (template.getParentTemplateId() != null) {
+            templateResponse.setParentTemplateId(template.getParentTemplateUuid());
+        }
+
         // set details map
         if (template.getDetailName() != null) {
             Map<String, String> details = new HashMap<String, String>();

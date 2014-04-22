@@ -28,10 +28,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -98,6 +99,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> NameSearch;
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     protected SearchBuilder<VMTemplateVO> ActiveTmpltSearch;
+    protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
@@ -278,6 +280,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId) {
+        SearchCriteria<VMTemplateVO> sc = ParentTemplateIdSearch.create();
+        sc.setParameters("parentTemplateId", parentTemplatetId);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        return listBy(sc);
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         boolean result = super.configure(name, params);
 
@@ -386,6 +396,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         CountTemplatesByAccount.and("account", CountTemplatesByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountTemplatesByAccount.and("state", CountTemplatesByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountTemplatesByAccount.done();
+
+        ParentTemplateIdSearch = createSearchBuilder();
+        ParentTemplateIdSearch.and("parentTemplateId", ParentTemplateIdSearch.entity().getParentTemplateId(), SearchCriteria.Op.EQ);
+        ParentTemplateIdSearch.and("state", ParentTemplateIdSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ParentTemplateIdSearch.done();
 
         //        updateStateSearch = this.createSearchBuilder();
         //        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);

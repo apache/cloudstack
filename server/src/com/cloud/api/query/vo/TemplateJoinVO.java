@@ -209,6 +209,12 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "destroyed")
     boolean destroyed = false;
 
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId;
+
+    @Column(name = "parent_template_uuid")
+    private String parentTemplateUuid;
+
     @Column(name = "lp_account_id")
     private Long sharedAccountId;
 
@@ -541,6 +547,14 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public State getTemplateState() {
         return templateState;
+    }
+
+    public Long getParentTemplateId() {
+        return parentTemplateId;
+    }
+
+    public String getParentTemplateUuid() {
+        return parentTemplateUuid;
     }
 
     @Override
