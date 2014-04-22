@@ -135,6 +135,9 @@
     <Compile Include="ROOT.virtualization.v2.Msvm_ResourceAllocationSettingData.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ShutdownComponent.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_StorageAllocationSettingData.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -181,8 +184,8 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="BeforeBuild" Condition="'$(BuildWithMono)' == 'true' ">
-    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" Condition="Exists('$(ProjectDir)$(BaseIntermediateOutputPath)')"/>
-    <RemoveDir Directories="$(ProjectDir)$(OutputPath)" Condition="Exists('$(ProjectDir)$(OutputPath)')"/>
+    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" Condition="Exists('$(ProjectDir)$(BaseIntermediateOutputPath)')" />
+    <RemoveDir Directories="$(ProjectDir)$(OutputPath)" Condition="Exists('$(ProjectDir)$(OutputPath)')" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

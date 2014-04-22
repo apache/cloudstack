@@ -1014,8 +1014,16 @@ namespace HypervResource
                 return;
             }
 
-            // Stop VM
-            logger.DebugFormat("Stop VM {0} (GUID {1})", vm.ElementName, vm.Name);
+            //try to shutdown vm first
+            ShutdownVm(vm);
+
+            if(GetComputerSystem(vm.ElementName).EnabledState != EnabledState.Disabled)
+            {
+                logger.Info("Could not shutdown system cleanly, will forcefully delete the system");
+            }
+
+            // Remove VM
+            logger.DebugFormat("Remove VM {0} (GUID {1})", vm.ElementName, vm.Name);
             SetState(vm, RequiredState.Disabled);
 
             // Delete SwitchPort
@@ -1049,6 +1057,32 @@ namespace HypervResource
                 vm = GetComputerSystem(displayName);
             }
             while (vm != null);
+        }
+
+        public void ShutdownVm(ComputerSystem vm)
+        {
+            ShutdownComponent sc = GetShutdownComponent(vm);
+            if (sc != null)
+            {
+                var ret_val = sc.InitiateShutdown(true, "need to shutdown");
+                if (ret_val != ReturnCode.Completed)
+                {
+                    logger.Info("Shutting down of system failed, may be shutdown integration services are missing");
+                }
+                else
+                {
+                    // shutdown job is not returned so checking for shutdown completion by checking the current state of system.
+                    // poll every one second and timeout after 10 minutes
+                    for (int period = 0 ; period < 600 && (GetComputerSystem(vm.ElementName).EnabledState != EnabledState.Disabled); period++)
+                    {
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
+            }
+            else
+            {
+                logger.Info("Shutting down of system failed; may be shutdown integration services are missing");
+            }
         }
 
         /// <summary>
@@ -2104,6 +2138,19 @@ namespace HypervResource
         {
             var wmiQuery = String.Format("Caption=\"Virtual Machine\"");
             return ComputerSystem.GetInstances(wmiQuery);
+        }
+
+        public ShutdownComponent GetShutdownComponent(ComputerSystem vm)
+        {
+            var wmiQuery = String.Format("SystemName=\"{0}\"", vm.Name);
+            ShutdownComponent.ShutdownComponentCollection vmCollection = ShutdownComponent.GetInstances(wmiQuery);
+
+            // Return the first one
+            foreach (ShutdownComponent sc in vmCollection)
+            {
+                return sc;
+            }
+            return null;
         }
 
         public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
