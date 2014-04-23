@@ -4665,7 +4665,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Account getVlanAccount(long vlanId) {
         Vlan vlan = _vlanDao.findById(vlanId);
-        Long accountId = null;
 
         // if vlan is Virtual Account specific, get vlan information from the
         // accountVlanMap; otherwise get account information
@@ -4681,11 +4680,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (networkId != null) {
             Network network = _networkModel.getNetwork(networkId);
             if (network != null) {
-                accountId = network.getAccountId();
+                return _accountMgr.getAccount(network.getAccountId());
             }
         }
-
-        return _accountMgr.getAccount(accountId);
+        return null;
     }
 
     @Override
