@@ -3583,6 +3583,7 @@
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
                                                   
+                                              //***** create new LB rule > Add VMs *****
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
                                                     data: data,
@@ -3593,6 +3594,10 @@
                                                         var jobID = data.createloadbalancerruleresponse.jobid;
                                                         var lbID = data.createloadbalancerruleresponse.id;
                                                         
+                                                        var inputData = {
+                                                        	id: data.createloadbalancerruleresponse.id	
+                                                        };    
+                                                        
                                                         /*
                                                         var inputData = {
                                                             id: data.createloadbalancerruleresponse.id,
@@ -3600,36 +3605,37 @@
                                                                 return elem.id;
                                                             }).join(',')
                                                         }; 
-                                                        */
-                                                        //when server-side change of adding new parameter "vmidipmap" to assignToLoadBalancerRule API is in, remove the above 6 lines and uncomment the commented section below.
-                                                                                                             
-                                                        var inputData = {
-                                                        	id: data.createloadbalancerruleresponse.id	
-                                                        };   
-                                                        if (args.context.ipAddresses[0].isportable) {                                                        	
-                                                        	if (args.itemData != null) {
-                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
-                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
-                                                        			inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect.split(',')[1];  
-                                                        		}
-                                                        	}       
-                                                        	
-                                                        } else {                                                            
-                                                        	if (args.itemData != null) {
-                                                        		for (var k = 0; k < args.itemData.length; k++) {                                                          			
-                                                        			inputData['vmidipmap[' + k + '].vmid'] = args.itemData[k].id;
-
-                                                              // NOTE - multiple IP support not ready for API integration yet
-                                                              // for now, just use the first selected IP
-                                                              //
-                                                              // Please change this to pass multiple IPs
-                                                              inputData['vmidipmap[' + k + '].vmip'] = args.itemData[k]._subselect[0]; 
-                                                        		}
-                                                        	}                                                        	
-                                                        }  
-                                                       
-                                                        //http://localhost:8080/client/api?command=assignToLoadBalancerRule&response=json&sessionkey=M6I8h6gBXuEMeBMb4pjSDTjYprc=&id=da97bae5-9389-4bbb-aef3-ccca8408a852&vmidipmap[0].vmid=667d1450-3cd9-4670-b22e-aebb77f521a3&vmidipmap[0].ip=10.1.1.23&vmidipmap[1].vmid=5128d30b-7747-4a05-bdbc-6262191d7642&vmidipmap[1].ip=10.1.1.82&vmidipmap[2].vmid=48c61d00-28d2-4048-aed5-774289470804&vmidipmap[2].ip=10.1.1.5&_=1393451067671
-                                                               
+                                                        */                                                        
+                                                        //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the 6 lines above.
+                                                        
+                                                        
+                                                        /* 
+                                                         * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
+                                                         * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
+                                                         * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
+                                                         * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
+                                                         * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
+                                                         * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                                                         */
+                                                        var selectedVMs = args.itemData;
+                                                        if (selectedVMs != null) {
+                                                        	var vmidipmapIndex = 0;
+                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                                    			var selectedIPs = selectedVMs[vmIndex]._subselect;
+                                                    			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
+                                                    				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
+                                                        			
+                                                    				if (args.context.ipAddresses[0].isportable) {
+                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                        			} else {
+                                                        				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                                                        			}
+                                                    				
+                                                    				vmidipmapIndex++;
+                                                    			}                                                			
+                                                    		}
+                                                    	}   
+                                                            
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
                                                             data: inputData,                                                            
@@ -3739,21 +3745,38 @@
                                         },
 
                                         itemActions: {
-                                            add: {
+                                        	//***** update existing LB rule > Add VMs *****
+                                        	add: {
                                                 label: 'label.add.vms.to.lb',
                                                 action: function(args) {
                                                     var inputData = {
                                                     	id: args.multiRule.id	
-                                                    };                                              
-                                                    if (args.data != null) {
-                                                		for (var k = 0; k < args.data.length; k++) {                                                          			
-                                                			inputData['vmidipmap[' + k + '].vmid'] = args.data[k].id;
-                                                			
-                                                			if (args.context.ipAddresses[0].isportable) {
-                                                			    inputData['vmidipmap[' + k + '].vmip'] = args.data[k]._subselect.split(',')[1];  
-                                                			} else {
-                                                				inputData['vmidipmap[' + k + '].vmip'] = args.data[k]._subselect;
-                                                			}
+                                                    }; 
+                                                    
+                                                    /* 
+                                                     * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
+                                                     * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
+                                                     * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
+                                                     * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
+                                                     * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
+                                                     * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                                                     */
+                                                    var selectedVMs = args.data;
+                                                    if (selectedVMs != null) {
+                                                    	var vmidipmapIndex = 0;
+                                                		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                                			var selectedIPs = selectedVMs[vmIndex]._subselect;
+                                                			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
+                                                				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
+                                                    			
+                                                				if (args.context.ipAddresses[0].isportable) {
+                                                    			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                    			} else {
+                                                    				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                                                    			}
+                                                				
+                                                				vmidipmapIndex++;
+                                                			}                                                			
                                                 		}
                                                 	}   
                                                 	
