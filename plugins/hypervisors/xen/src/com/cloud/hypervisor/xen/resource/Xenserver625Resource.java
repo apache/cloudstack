@@ -30,6 +30,7 @@ import org.apache.xmlrpc.XmlRpcException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
+import com.xensource.xenapi.Host;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 
@@ -107,7 +108,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected boolean setupServer(Connection conn) {
+    protected boolean setupServer(Connection conn,Host host) {
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.ip, 22);
         try {
             sshConnection.connect(null, 60000, 60000);
@@ -131,7 +132,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
         } finally {
             sshConnection.close();
         }
-        return super.setupServer(conn);
+        return super.setupServer(conn, host);
     }
 
     @Override
