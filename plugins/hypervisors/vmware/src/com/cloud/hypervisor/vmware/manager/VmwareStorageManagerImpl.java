@@ -1169,21 +1169,28 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         if (input == null) {
             return null;
         }
+
         String result = input;
-        if (result.endsWith(".vmdk")) { // get rid of vmdk file extension
-            result = result.substring(0, result.length() - (".vmdk").length());
+
+        final String fileType = ".vmdk";
+
+        if (result.endsWith(fileType)) {
+            // get rid of fileType
+            result = result.substring(0, result.length() - (fileType).length());
         }
-        if (result.split("-").length == 1) {
+
+        String[] str = result.split("-");
+        int length = str.length;
+
+        if (length == 1 || length == 2) {
             return result;
         }
-        if (result.split("-").length > 2) {
-            return result.split("-")[0] + "-" + result.split("-")[1];
+
+        if (length > 2) {
+            return str[0] + "-" + str[1];
         }
-        if (result.split("-").length == 2) {
-            return result.split("-")[0];
-        } else {
-            return result;
-        }
+
+        return result;
     }
 
     @Override
