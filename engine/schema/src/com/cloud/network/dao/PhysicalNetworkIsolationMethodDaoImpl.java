@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -27,7 +28,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<PhysicalNetworkIsolationMethodVO, Long> implements PhysicalNetworkIsolationMethodDao {
+public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<PhysicalNetworkIsolationMethodVO, Long> implements
+        GenericDao<PhysicalNetworkIsolationMethodVO, Long> {
     private final GenericSearchBuilder<PhysicalNetworkIsolationMethodVO, String> IsolationMethodSearch;
     private final SearchBuilder<PhysicalNetworkIsolationMethodVO> AllFieldsSearch;
 
@@ -45,7 +47,6 @@ public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<Physic
         AllFieldsSearch.done();
     }
 
-    @Override
     public List<String> getAllIsolationMethod(long physicalNetworkId) {
         SearchCriteria<String> sc = IsolationMethodSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
@@ -53,7 +54,6 @@ public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<Physic
         return customSearch(sc, null);
     }
 
-    @Override
     public String getIsolationMethod(long physicalNetworkId) {
         SearchCriteria<String> sc = IsolationMethodSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
@@ -61,7 +61,6 @@ public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<Physic
         return customSearch(sc, null).get(0);
     }
 
-    @Override
     public int clearIsolationMethods(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkIsolationMethodVO> sc = AllFieldsSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);

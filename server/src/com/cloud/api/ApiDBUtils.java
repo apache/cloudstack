@@ -181,7 +181,6 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.NetworkRuleConfigVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkIsolationMethodDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -410,7 +409,6 @@ public class ApiDBUtils {
     static ResourceMetaDataService s_resourceDetailsService;
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
-    static PhysicalNetworkIsolationMethodDao s_pNtwkIsolatinoMethodsDao;
 
     @Inject
     private ManagementServer ms;
@@ -633,8 +631,6 @@ public class ApiDBUtils {
     private HostGpuGroupsDao hostGpuGroupsDao;
     @Inject
     private VGPUTypesDao vgpuTypesDao;
-    @Inject
-    private PhysicalNetworkIsolationMethodDao pNtwkIsolatinoMethodsDao;
 
     @PostConstruct
     void init() {
@@ -749,7 +745,6 @@ public class ApiDBUtils {
         s_resourceDetailsService = resourceDetailsService;
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
-        s_pNtwkIsolatinoMethodsDao = pNtwkIsolatinoMethodsDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1840,9 +1835,4 @@ public class ApiDBUtils {
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
-
-    public static List<String> getIsolationMethodsForPhysicalNtwk(long pNtwkId) {
-        return s_pNtwkIsolatinoMethodsDao.getAllIsolationMethod(pNtwkId);
-    }
-
 }
