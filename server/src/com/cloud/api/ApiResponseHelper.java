@@ -2465,7 +2465,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (result.getBroadcastDomainRange() != null) {
             response.setBroadcastDomainRange(result.getBroadcastDomainRange().toString());
         }
-        response.setIsolationMethods(ApiDBUtils.getIsolationMethodsForPhysicalNtwk(result.getId()));
+        response.setIsolationMethods(result.getIsolationMethods());
         response.setTags(result.getTags());
         if (result.getState() != null) {
             response.setState(result.getState().toString());
