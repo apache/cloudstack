@@ -227,7 +227,11 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public boolean removeDomain(long domainId) {
-        return _domainDao.remove(domainId);
+        boolean removed = _domainDao.remove(domainId);
+        if (removed) {
+            _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domainId);
+        }
+        return removed;
     }
 
     @Override
@@ -324,6 +328,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     " because it can't be removed due to resources referencing to it");
                 domain.setState(Domain.State.Active);
                 _domainDao.update(domain.getId(), domain);
+            } else {
+                // succeeded in removing the domain
+                _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
             }
         }
     }
