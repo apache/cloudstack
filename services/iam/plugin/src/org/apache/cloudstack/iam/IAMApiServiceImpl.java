@@ -352,6 +352,21 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         sysAccts.add(Account.ACCOUNT_ID_SYSTEM);
         sysAccts.add(Account.ACCOUNT_ID_SYSTEM + 1);
         _iamSrv.addAccountsToGroup(sysAccts, new Long(Account.ACCOUNT_TYPE_ADMIN + 1));
+
+        // add the root domain group
+        Domain domain = _domainDao.findById(Domain.ROOT_DOMAIN);
+        if (domain != null) {
+            List<IAMGroup> domainGroups = listDomainGroup(domain);
+            if (domainGroups != null && !domainGroups.isEmpty()) {
+                return;
+            }
+            IAMGroup rootDomainGrp = _iamSrv.createIAMGroup("DomainGrp-" + domain.getUuid(), "Root Domain group",
+                    domain.getPath());
+            // add the system accounts to the root domain group
+            _iamSrv.addAccountsToGroup(sysAccts, rootDomainGrp.getId());
+
+        }
+
     }
 
     private void addDomainWideResourceAccess(Map<String, Object> params) {
