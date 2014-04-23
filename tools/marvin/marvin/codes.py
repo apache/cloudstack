@@ -47,13 +47,30 @@ YES = "yes"
 FAILED = "FAILED"
 UNKNOWN_ERROR = "Unknown Error"
 EXCEPTION = "EXCEPTION"
+INVALID_RESPONSE = "Invalid Response"
+'''
+Async Job Related Codes
+'''
+JOB_INPROGRESS = 0
+JOB_SUCCEEDED = 1
+JOB_FAILED = 2
+JOB_CANCELLED = 3
+'''
+User Related Codes
+'''
 BASIC_ZONE = "basic"
 ISOLATED_NETWORK = "ISOLATED"
 SHARED_NETWORK = "SHARED"
 VPC_NETWORK = "VPC"
-ERROR_NO_HOST_FOR_MIGRATION = "Could not find suitable host for migration, please ensure setup has required no. of hosts"
+ERROR_NO_HOST_FOR_MIGRATION = \
+    "Could not find suitable host for migration, " \
+    "please ensure setup has required no. of hosts"
 NAT_RULE = "nat rule"
 STATIC_NAT_RULE = "static nat rule"
 UNKNOWN = "UNKNOWN"
 FAULT = "FAULT"
 MASTER = "MASTER"
+ADMIN = 1
+DOMAIN_ADMIN = 2
+USER = 0
+XEN_SERVER = "XenServer"

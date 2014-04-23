@@ -18,138 +18,28 @@
 """
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (detachIso,
-                                  attachIso,
-                                  recoverVirtualMachine,
-                                  destroyVirtualMachine)
-from marvin.integration.lib.utils import (cleanup_resources,
-                                           validateList,
-                                           get_hypervisor_type)
-from marvin.integration.lib.base import (Account,
-                                         ServiceOffering,
-                                         VirtualMachine,
-                                         Iso,
-                                         Host)
-from marvin.integration.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           list_virtual_machines,
-                                           list_configurations,
-                                           list_routers,
-                                           list_isos)
-from marvin.codes import PASS
+from marvin.codes import FAILED
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackAPI import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
 
 _multiprocess_shared_ = True
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-                "disk_offering":{
-                    "displaytext": "Small",
-                    "name": "Small",
-                    "disksize": 1
-                },
-                "account": {
-                    "email": "test@test.com",
-                    "firstname": "Test",
-                    "lastname": "User",
-                    "username": "test",
-                    # Random characters are appended in create account to
-                    # ensure unique username generated each time
-                    "password": "password",
-                },
-                "small":
-                # Create a small virtual machine instance with disk offering
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "medium":   # Create a medium virtual machine instance
-                {
-                    "displayname": "testserver",
-                    "username": "root",
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-                "service_offerings":
-                {
-                 "tiny":
-                   {
-                        "name": "Tiny Instance",
-                        "displaytext": "Tiny Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100, # in MHz
-                        "memory": 128, # In MBs
-                    },
-                 "small":
-                    {
-                     # Small service offering ID to for change VM
-                     # service offering from medium to small
-                        "name": "Small Instance",
-                        "displaytext": "Small Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 256,
-                    },
-                "medium":
-                    {
-                    # Medium service offering ID to for
-                    # change VM service offering from small to medium
-                        "name": "Medium Instance",
-                        "displaytext": "Medium Instance",
-                        "cpunumber": 1,
-                        "cpuspeed": 100,
-                        "memory": 256,
-                    }
-                },
-                "iso":  # ISO settings for Attach/Detach ISO tests
-                {
-                    "displaytext": "Test ISO",
-                    "name": "testISO",
-                    "url": "http://people.apache.org/~tsp/dummy.iso",
-                     # Source URL where ISO is located
-                    "ostype": 'CentOS 5.3 (64-bit)',
-                    "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO
-                },
-                "template": {
-                    "displaytext": "Cent OS Template",
-                    "name": "Cent OS Template",
-                    "passwordenabled": True,
-                },
-            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
-
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.apiclient = super(TestDeployVM, cls).getClsTestClient().getApiClient()
+        testClient = super(TestDeployVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient, cls.services)
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         #If local storage is enabled, alter the offerings to use localstorage
@@ -164,13 +54,16 @@ class TestDeployVM(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
         cls.services["medium"]["zoneid"] = cls.zone.id
         cls.services["medium"]["template"] = template.id
-        cls.services["iso"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
 
         cls.account = Account.create(
             cls.apiclient,
@@ -303,12 +196,13 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestVMLifeCycle, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         #if local storage is enabled, alter the offerings to use localstorage
@@ -319,37 +213,40 @@ class TestVMLifeCycle(cloudstackTestCase):
             cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
         cls.services["medium"]["zoneid"] = cls.zone.id
         cls.services["medium"]["template"] = template.id
-        cls.services["iso"]["zoneid"] = cls.zone.id
+        cls.services["iso1"]["zoneid"] = cls.zone.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=domain.id
                             )
 
         cls.small_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["small"]
                                     )
 
         cls.medium_offering = ServiceOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["service_offerings"]["medium"]
                                     )
         #create small and large virtual machines
         cls.small_virtual_machine = VirtualMachine.create(
-                                        cls.api_client,
+                                        cls.apiclient,
                                         cls.services["small"],
                                         accountid=cls.account.name,
                                         domainid=cls.account.domainid,
@@ -357,7 +254,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         mode=cls.services["mode"]
                                         )
         cls.medium_virtual_machine = VirtualMachine.create(
-                                       cls.api_client,
+                                       cls.apiclient,
                                        cls.services["medium"],
                                        accountid=cls.account.name,
                                        domainid=cls.account.domainid,
@@ -365,7 +262,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                        mode=cls.services["mode"]
                                     )
         cls.virtual_machine = VirtualMachine.create(
-                                        cls.api_client,
+                                        cls.apiclient,
                                         cls.services["small"],
                                         accountid=cls.account.name,
                                         domainid=cls.account.domainid,
@@ -380,8 +277,8 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.api_client, cls._cleanup)
+        cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
+        cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
     def setUp(self):
@@ -628,7 +525,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         #deploy VM on target host
         self.vm_to_migrate = VirtualMachine.create(
-            self.api_client,
+            self.apiclient,
             self.services["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
@@ -641,7 +538,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         migrate_host.id
                                         ))
 
-        self.vm_to_migrate.migrate(self.api_client, migrate_host.id)
+        self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
 
         list_vm_response = list_virtual_machines(
                                             self.apiclient,
@@ -733,7 +630,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         iso = Iso.create(
                          self.apiclient,
-                         self.services["iso"],
+                         self.services["iso1"],
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
@@ -760,12 +657,13 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
-
-        cmds = "mkdir -p %s" % self.services["mount_dir"]
+        
+        mount_dir = "/mnt/tmp"
+        cmds = "mkdir -p %s" % mount_dir
         self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         for diskdevice in self.services["diskdevice"]:
-            res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, self.services["mount_dir"]))
+            res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, mount_dir))
             if res == []:
                 self.services["mount"] = diskdevice
                 break
@@ -790,7 +688,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         try:
             #Unmount ISO
-            command = "umount %s" % self.services["mount_dir"]
+            command = "umount %s" % mount_dir
             ssh_client.execute(command)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %

@@ -17,66 +17,13 @@
 """ Tests for configuring Internal Load Balancing Rules.
 """
 #Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
-
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-            "network_offering": {
-                "name": "Network offering for internal lb service",
-                "displaytext": "Network offering for internal lb service",
-                "guestiptype": "Isolated",
-                "traffictype": "Guest",
-                "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
-                "serviceProviderList": {
-                    "Dhcp": "VpcVirtualRouter",
-                    "Dns": "VpcVirtualRouter",
-                    "Vpn": "VpcVirtualRouter",
-                    "UserData": "VpcVirtualRouter",
-                    "Lb": "InternalLbVM",
-                    "SourceNat": "VpcVirtualRouter",
-                    "StaticNat": "VpcVirtualRouter",
-                    "PortForwarding": "VpcVirtualRouter",
-                    "NetworkACL": "VpcVirtualRouter",
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
-                }
-            }
-        }
-
 
 class TestInternalLb(cloudstackTestCase):
     """Test Internal LB
@@ -84,13 +31,15 @@ class TestInternalLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestInternalLb, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        testClient = super(TestInternalLb, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
         cls.template = get_template(
@@ -98,6 +47,10 @@ class TestInternalLb(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))
@@ -106,10 +59,10 @@ class TestInternalLb(cloudstackTestCase):
     @attr(tags=["smoke", "advanced", "provisioning"])
     def test_internallb(self):
         """Test create, delete, assign, remove of internal loadbalancer
+        """   
            #1) Create and enable network offering with Internal Lb vm service
-        """
+        self.networkOffering = NetworkOffering.create(self.apiclient, self.services["network_offering_internal_lb"], conservemode=False)
         #TODO: SIMENH:modify this test to verify lb rules by sending request from another tier
-        self.networkOffering = NetworkOffering.create(self.apiclient, self.services["network_offering"], conservemode=False)
         self.networkOffering.update(self.apiclient, state="Enabled")
 
         #2) Create VPC and network in it

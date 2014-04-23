@@ -21,9 +21,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 import telnetlib
 
@@ -76,12 +76,6 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.ip6cidr="fc00:1234::/64"
         createNetworkCmd.startipv6="fc00:1234::10"
         createNetworkCmd.endipv6="fc00:1234::20"
-        err = 0;
-        try:
-            createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
-        except Exception as e:
-            err = 1;
-            self.debug("Try alloc with ipv6, got:%s" % e)
-        self.assertEqual(err, 1, "Shouldn't allow create PVLAN network with IPv6");
-
-
+        err = 0
+        createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
+        self.assertEqual(createNetworkResponse, FAILED, "Creating PVLAN with IPv6 should fail")

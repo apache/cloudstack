@@ -17,18 +17,18 @@
 """ Test for baremetal
 """
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import createVlanIpRange
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (NetworkOffering,
+                             NetworkServiceProvider,
+                             PhysicalNetwork,
+                             Network,
+                             Pod)
+#from marvin.lib.common import *
 from nose.plugins.attrib import attr
-import telnetlib
 
 #Import System modules
-import time
 _multiprocess_shared_ = True
 
 class Services:
@@ -89,19 +89,19 @@ class TestBaremetal(cloudstackTestCase):
         
         physical_network = PhysicalNetwork.list(self.apiclient, zoneid=self.zoneid)[0];
         dhcp_provider = NetworkServiceProvider.list(self.apiclient, name="BaremetalDhcpProvider", physical_network_id=physical_network.id)[0]
-        response = NetworkServiceProvider.update(
+        NetworkServiceProvider.update(
                                           self.apiclient,
                                           id=dhcp_provider.id,
                                           state='Enabled'
                                           )
         pxe_provider = NetworkServiceProvider.list(self.apiclient, name="BaremetalPxeProvider", physical_network_id=physical_network.id)[0]
-        response = NetworkServiceProvider.update(
+        NetworkServiceProvider.update(
                                           self.apiclient,
                                           id=pxe_provider.id,
                                           state='Enabled'
                                           )
         userdata_provider = NetworkServiceProvider.list(self.apiclient, name="BaremetalUserdataProvider", physical_network_id=physical_network.id)[0]
-        response = NetworkServiceProvider.update(
+        NetworkServiceProvider.update(
                                           self.apiclient,
                                           id=userdata_provider.id,
                                           state='Enabled'
@@ -119,5 +119,5 @@ class TestBaremetal(cloudstackTestCase):
         cmd.startip = "10.1.1.20"
         cmd.endip = "10.1.1.40"
         cmd.forVirtualNetwork="false"
-        response = self.apiclient.createVlanIpRange(cmd)
+        self.apiclient.createVlanIpRange(cmd)
         

@@ -16,118 +16,18 @@
 # under the License.
 """ NIC tests for VM """
 import marvin
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 import signal
 import sys
 import time
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "disk_offering":{
-                "displaytext": "Small",
-                "name": "Small",
-                "disksize": 1
-            },
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended in create account to
-                # ensure unique username generated each time
-                "password": "password",
-            },
-            # Create a small virtual machine instance with disk offering
-            "small": {
-                "displayname": "testserver",
-                "username": "root", # VM creds for SSH
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "service_offerings": {
-                "tiny": {
-                    "name": "Tiny Instance",
-                    "displaytext": "Tiny Instance",
-                    "cpunumber": 1,
-                    "cpuspeed": 100, # in MHz
-                    "memory": 128, # In MBs
-                },
-            },
-            "network_offering": {
-                "name": 'Test Network offering',
-                "displaytext": 'Test Network offering',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "serviceProviderList" : {
-                    "Dhcp": 'VirtualRouter',
-                    "Dns": 'VirtualRouter',
-                    "SourceNat": 'VirtualRouter',
-                    "PortForwarding": 'VirtualRouter',
-                },
-            },
-            "network_offering_shared": {
-                "name": 'Test Network offering shared',
-                "displaytext": 'Test Network offering Shared',
-                "guestiptype": 'Shared',
-                "supportedservices": 'Dhcp,Dns,UserData',
-                "traffictype": 'GUEST',
-                "specifyVlan" : "True",
-                "specifyIpRanges" : "True",
-                "serviceProviderList" : {
-                    "Dhcp": 'VirtualRouter',
-                    "Dns": 'VirtualRouter',
-                    "UserData": 'VirtualRouter',
-                },
-            },
-            "network": {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-                "acltype": "Account",
-            },
-            "network2": {
-                "name": "Test Network Shared",
-                "displaytext": "Test Network Shared",
-                "vlan" :1201,
-                "gateway" :"172.16.15.1",
-                "netmask" :"255.255.255.0",
-                "startip" :"172.16.15.21",
-                "endip" :"172.16.15.41",
-                "acltype": "Account",
-            },
-            # ISO settings for Attach/Detach ISO tests
-            "iso": {
-                "displaytext": "Test ISO",
-                "name": "testISO",
-                "url": "http://people.apache.org/~tsp/dummy.iso",
-                 # Source URL where ISO is located
-                "ostype": 'CentOS 5.3 (64-bit)',
-                "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
-            },
-            "template": {
-                "displaytext": "Cent OS Template",
-                "name": "Cent OS Template",
-                "passwordenabled": True,
-            },
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
 
 class TestNic(cloudstackTestCase):
 
@@ -145,11 +45,11 @@ class TestNic(cloudstackTestCase):
         try:
             self.apiclient = self.testClient.getApiClient()
             self.dbclient  = self.testClient.getDbConnection()
-            self.services  = Services().services
+            self.services  = self.testClient.getParsedTestDataConfig()
 
             # Get Zone, Domain and templates
-            domain = get_domain(self.apiclient, self.services)
-            zone = get_zone(self.apiclient, self.services)
+            domain = get_domain(self.apiclient)
+            zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
             self.services['mode'] = zone.networktype
 
             if zone.networktype != 'Advanced':
@@ -169,7 +69,7 @@ class TestNic(cloudstackTestCase):
             self.services["small"]["zoneid"] = zone.id
             self.services["small"]["template"] = template.id
 
-            self.services["iso"]["zoneid"] = zone.id
+            self.services["iso1"]["zoneid"] = zone.id
             self.services["network"]["zoneid"] = zone.id
 
             # Create Account, VMs, NAT Rules etc

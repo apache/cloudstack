@@ -21,9 +21,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import datetime
 
 
@@ -174,30 +174,28 @@ class TestResourceTags(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestResourceTags,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestResourceTags, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.services = Services().services
+
+        # Get Zone, Domain and templates
+
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             admin=True,
                             )
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-
         # Create service offerings, disk offerings etc
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,

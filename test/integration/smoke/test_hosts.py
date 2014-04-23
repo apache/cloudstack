@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 #Import System modules
@@ -30,81 +30,15 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Hosts & Clusters Services
-    """
-
-    def __init__(self):
-        self.services = {
-                       "clusters": {
-                                   0: {
-                                        "clustername": "Xen Cluster",
-                                        "clustertype": "CloudManaged",
-                                        # CloudManaged or ExternalManaged"
-                                        "hypervisor": "XenServer",
-                                        # Hypervisor type
-                                    },
-                                   1: {
-                                        "clustername": "KVM Cluster",
-                                        "clustertype": "CloudManaged",
-                                        # CloudManaged or ExternalManaged"
-                                        "hypervisor": "KVM",
-                                        # Hypervisor type
-                                        },
-                                   2: {
-                                        "hypervisor": 'VMware',
-                                        # Hypervisor type
-                                        "clustertype": 'ExternalManaged',
-                                        # CloudManaged or ExternalManaged"
-                                        "username": 'administrator',
-                                        "password": 'fr3sca',
-                                        "url": 'http://192.168.100.17/CloudStack-Clogeny-Pune/Pune-1',
-                                        # Format:http://vCenter Host/Datacenter/Cluster
-                                        "clustername": 'VMWare Cluster',
-                                        },
-                                    },
-                       "hosts": {
-                                 "xenserver": {
-                                # Must be name of corresponding Hypervisor type
-                                # in cluster in small letters
-                                          "hypervisor": 'XenServer',
-                                          # Hypervisor type
-                                          "clustertype": 'CloudManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.211',
-                                          "username": "root",
-                                          "password": "fr3sca",
-                                          },
-                                 "kvm": {
-                                          "hypervisor": 'KVM',
-                                          # Hypervisor type
-                                          "clustertype": 'CloudManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.212',
-                                          "username": "root",
-                                          "password": "fr3sca",
-                                          },
-                                 "vmware": {
-                                          "hypervisor": 'VMware',
-                                          # Hypervisor type
-                                          "clustertype": 'ExternalManaged',
-                                          # CloudManaged or ExternalManaged"
-                                          "url": 'http://192.168.100.203',
-                                          "username": "administrator",
-                                          "password": "fr3sca",
-                                         },
-                                 },
-                       }
-
 class TestHosts(cloudstackTestCase):
 
     def setUp(self):
-
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
-        self.services = Services().services
-        self.zone = get_zone(self.apiclient, self.services)
-        self.pod = get_pod(self.apiclient, self.zone.id, self.services)
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.pod = get_pod(self.apiclient, self.zone.id)
         self.cleanup = []
 
         return
@@ -136,7 +70,8 @@ class TestHosts(cloudstackTestCase):
                                      self.apiclient,
                                      v,
                                      zoneid=self.zone.id,
-                                     podid=self.pod.id
+                                     podid=self.pod.id,
+                                     hypervisor=self.hypervisor
                                      )
             self.debug(
                 "Created Cluster for hypervisor type %s & ID: %s" %(
@@ -167,8 +102,11 @@ class TestHosts(cloudstackTestCase):
                                cluster,
                                self.services["hosts"][hypervisor_type],
                                zoneid=self.zone.id,
-                               podid=self.pod.id
+                               podid=self.pod.id,
+                               hypervisor=self.hypervisor
                                )
+                if host == FAILED:
+                    self.fail("Host Creation Failed")
                 self.debug(
                     "Created host (ID: %s) in cluster ID %s" %(
                                                                 host.id,

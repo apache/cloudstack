@@ -20,24 +20,13 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Disk offerings Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "off": {
-                                        "name": "Disk offering",
-                                        "displaytext": "Disk offering",
-                                        "disksize": 1   # in GB
-                                },
                          "sparse": {
                                         "name": "Sparse Type Disk offering",
                                         "displaytext": "Sparse Type Disk offering",
@@ -50,12 +39,10 @@ class Services:
                                         "disksize": 1,   # in GB
                                         "provisioningtype" : "fat"
                                 }
-                         }
-
 class TestCreateDiskOffering(cloudstackTestCase):
 
     def setUp(self):
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -80,7 +67,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
         """
         disk_offering = DiskOffering.create(
                                         self.apiclient,
-                                        self.services["off"]
+                                        self.services["disk_offering"]
                                         )
         self.cleanup.append(disk_offering)
 
@@ -104,12 +91,12 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
         self.assertEqual(
                             disk_response.displaytext,
-                            self.services["off"]["displaytext"],
+                            self.services["disk_offering"]["displaytext"],
                             "Check server id in createServiceOffering"
                         )
         self.assertEqual(
                             disk_response.name,
-                            self.services["off"]["name"],
+                            self.services["disk_offering"]["name"],
                             "Check name in createServiceOffering"
                         )
         return
@@ -214,15 +201,17 @@ class TestDiskOfferings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestDiskOfferings, cls).getClsTestClient().getApiClient()
+        testClient = super(TestDiskOfferings, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        
         cls.disk_offering_1 = DiskOffering.create(
-                                                  cls.api_client,
-                                                  cls.services["off"]
+                                                  cls.apiclient,
+                                                  cls.services["disk_offering"]
                                                   )
         cls.disk_offering_2 = DiskOffering.create(
-                                                  cls.api_client,
-                                                  cls.services["off"]
+                                                  cls.apiclient,
+                                                  cls.services["disk_offering"]
                                                   )
         cls._cleanup = [cls.disk_offering_1]
         return
@@ -230,8 +219,8 @@ class TestDiskOfferings(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestDiskOfferings, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(TestDiskOfferings, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

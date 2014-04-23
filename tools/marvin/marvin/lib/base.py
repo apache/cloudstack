@@ -22,6 +22,9 @@
 import marvin
 from utils import is_server_ssh_ready, random_gen
 from marvin.cloudstackAPI import *
+from marvin.codes import FAILED, PASS
+from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.lib.utils import validateList
 # Import System modules
 import time
 import hashlib
@@ -324,7 +327,7 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET',hypervisor=None,
                     customcpunumber=None, customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
@@ -339,7 +342,7 @@ class VirtualMachine:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
             cmd.zoneid = services["zoneid"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
 
         if "displayname" in services:
             cmd.displayname = services["displayname"]
@@ -825,6 +828,16 @@ class Volume:
         return
 
     @classmethod
+    def extract(cls, apiclient, volume_id, zoneid, mode):
+        """Extracts the volume"""
+        
+        cmd = extractVolume.extractVolumeCmd()
+        cmd.id = volume_id
+        cmd.zoneid = zoneid
+        cmd.mode = mode
+        return Volume(apiclient.extractVolume(cmd).__dict__)
+
+    @classmethod
     def migrate(cls, apiclient, **kwargs):
         """Migrate a volume"""
         cmd = migrateVolume.migrateVolumeCmd()
@@ -917,7 +930,7 @@ class Template:
 
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
-                                                account=None, domainid=None):
+                                                account=None, domainid=None, hypervisor=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -925,7 +938,7 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor 
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
@@ -1786,11 +1799,11 @@ class Cluster:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, zoneid=None, podid=None):
+    def create(cls, apiclient, services, zoneid=None, podid=None, hypervisor=None):
         """Create Cluster"""
         cmd = addCluster.addClusterCmd()
         cmd.clustertype = services["clustertype"]
-        cmd.hypervisor = apiclient.hypervisor
+        cmd.hypervisor = hypervisor
 
         if zoneid:
             cmd.zoneid = zoneid
@@ -1836,36 +1849,59 @@ class Host:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, cluster, services, zoneid=None, podid=None):
-        """Create Host in cluster"""
+    def create(cls, apiclient, cluster, services, zoneid=None, podid=None, hypervisor=None):
+        """
+        1. Creates the host based upon the information provided.
+        2. Verifies the output of the adding host and its state post addition
+           Returns FAILED in case of an issue, else an instance of Host
+        """
+        try:
+            cmd = addHost.addHostCmd()
+            cmd.hypervisor = hypervisor
+            cmd.url = services["url"]
+            cmd.clusterid = cluster.id
 
-        cmd = addHost.addHostCmd()
-        cmd.hypervisor = apiclient.hypervisor
-        cmd.url = services["url"]
-        cmd.clusterid = cluster.id
+            if zoneid:
+                cmd.zoneid = zoneid
+            else:
+                cmd.zoneid = services["zoneid"]
 
-        if zoneid:
-            cmd.zoneid = zoneid
-        else:
-            cmd.zoneid = services["zoneid"]
+            if podid:
+                cmd.podid = podid
+            else:
+                cmd.podid = services["podid"]
 
-        if podid:
-            cmd.podid = podid
-        else:
-            cmd.podid = services["podid"]
+            if "clustertype" in services:
+                cmd.clustertype = services["clustertype"]
+            if "username" in services:
+                cmd.username = services["username"]
+            if "password" in services:
+                cmd.password = services["password"]
 
-        if "clustertype" in services:
-            cmd.clustertype = services["clustertype"]
-        if "username" in services:
-            cmd.username = services["username"]
-        if "password" in services:
-            cmd.password = services["password"]
-
-        # Add host
-        host = apiclient.addHost(cmd)
-
-        if isinstance(host, list):
-            return Host(host[0].__dict__)
+            '''
+            Adds a Host,
+            If response is valid and host is up return
+            an instance of Host.
+            If response is invalid, returns FAILED.
+            If host state is not up, verify through listHosts call
+            till host status is up and return accordingly. Max 3 retries
+            '''
+            host = apiclient.addHost(cmd)
+            ret = validateList(host)
+            if ret[0] == PASS:
+                if str(host[0].state).lower() == 'up':
+                    return Host(host[0].__dict__)
+                retries = 3
+                while retries:
+                    lh_resp = apiclient.listHosts(host[0].id)
+                    ret = validateList(lh_resp)
+                    if (ret[0] == PASS) and (str(ret[1].state).lower() == 'up'):
+                        return Host(host[0].__dict__)
+                    retries += -1
+            return FAILED
+        except Exception, e:
+            print "Exception Occurred Under Host.create : %s" % GetDetailExceptionInfo(e)
+            return FAILED
 
     def delete(self, apiclient):
         """Delete Host"""
@@ -2398,7 +2434,8 @@ class PublicIpRange:
         cmd.startip = services["startip"]
         cmd.endip = services["endip"]
         cmd.zoneid = services["zoneid"]
-        cmd.podid = services["podid"]
+        if "podid" in services:
+            cmd.podid = services["podid"]
         cmd.vlan = services["vlan"]
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)

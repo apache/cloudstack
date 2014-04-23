@@ -28,17 +28,17 @@
 
 
 from marvin.cloudstackTestCase import (cloudstackTestCase,unittest)
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          ServiceOffering,
                                          PhysicalNetwork,
                                          VirtualMachine,
                                          )
-from marvin.integration.lib.common import (get_zone,
+from marvin.lib.common import (get_zone,
                                            get_pod,
                                            get_domain,
                                            get_template,
                                            setNonContiguousVlanIds)
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           xsplit)
 
 from nose.plugins.attrib import attr
@@ -47,7 +47,7 @@ class Services():
     def __init__(self):
         self.services = {
 
-            "vlan":             {
+            "vlan_nc":             {
                                  "partial_range": ["",""],
                                  "full_range": "",
                                 },
@@ -89,12 +89,14 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestNonContiguousVLANRanges, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestNonContiguousVLANRanges, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, pod, domain
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
-        cls.domain = get_domain(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.api_client, cls.zone.id)
+        cls.domain = get_domain(cls.api_client)
 
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,
@@ -123,7 +125,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.vlan = self.services["vlan"]
+        self.vlan = self.services["vlan_nc"]
         self.apiClient = self.testClient.getApiClient()
 
         self.physicalnetwork, self.vlan = setNonContiguousVlanIds(self.apiclient, self.zone.id)
