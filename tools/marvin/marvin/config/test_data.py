@@ -205,6 +205,10 @@ test_data = {
         "name": "testvm2",
         "displayname": "Test VM2",
     },
+    "virtual_machine3": {
+        "name": "testvm3",
+        "displayname": "Test VM3",
+    },
     "server_without_disk": {
         "displayname": "Test VM-No Disk",
         "username": "root",
@@ -586,5 +590,25 @@ test_data = {
         "startip": "10.223.252.196",
         "endip": "10.223.252.197",
         "vlan": "1001"
+    },
+    "sparse": {
+        "name": "Sparse Type Disk offering",
+        "displaytext":
+        "Sparse Type Disk offering",
+        "disksize": 1,   # in GB
+        "provisioningtype": "sparse"
+    },
+    "fat": {
+        "name": "Fat Type Disk offering",
+        "displaytext":
+        "Fat Type Disk offering",
+        "disksize": 1,   # in GB
+        "provisioningtype": "fat"
+    },
+    "sparse_disk_offering": {
+        "displaytext": "Sparse",
+        "name": "Sparse",
+        "provisioningtype": "sparse",
+        "disksize": 1
     }
 }

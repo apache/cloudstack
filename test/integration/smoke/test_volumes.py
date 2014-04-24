@@ -35,12 +35,6 @@ import tempfile
 
 _multiprocess_shared_ = True
 
-                        "sparse_disk_offering": {
-                                    "displaytext": "Sparse",
-                                    "name": "Sparse",
-                                    "provisioningtype": "sparse",
-                                    "disksize": 1
-                        },
 class TestCreateVolume(cloudstackTestCase):
 
     @classmethod

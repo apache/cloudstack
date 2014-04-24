@@ -127,7 +127,8 @@ class MarvinLog:
 
     def createLogs(self,
                    test_module_name=None,
-                   log_cfg=None):
+                   log_cfg=None,
+                   user_provided_logpath=None):
         '''
         @Name : createLogs
         @Desc : Gets the Logger with file paths initialized and created
@@ -135,6 +136,10 @@ class MarvinLog:
                  creating log folder path
                  log_cfg: Log Configuration provided inside of
                  Configuration
+                 user_provided_logpath:LogPath provided by user
+                                       If user provided log path
+                                       is available, then one in cfg
+                                       will  not be picked up.
         @Output : SUCCESS\FAILED
         '''
         try:
@@ -146,8 +151,9 @@ class MarvinLog:
                 temp_path = str(test_module_name) + \
                     "__" + str(temp_ts) + "_" + random_gen()
 
-            temp_dir = "MarvinLogs"
-            if ((log_cfg is not None) and
+            if user_provided_logpath:
+                temp_dir = user_provided_logpath
+            elif ((log_cfg is not None) and
                     ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
                 temp_dir = \

@@ -43,7 +43,8 @@ class MarvinInit:
                  deploy_dc_flag=None,
                  test_mod_name="deploydc",
                  zone=None,
-                 hypervisor_type=None):
+                 hypervisor_type=None,
+                 user_logfolder_path=None):
         self.__configFile = config_file
         self.__deployFlag = deploy_dc_flag
         self.__logFolderPath = None
@@ -55,6 +56,7 @@ class MarvinInit:
         self.__zoneForTests = zone
         self.__parsedConfig = None
         self.__hypervisorType = hypervisor_type
+        self.__userLogFolderPath = user_logfolder_path
 
     def __parseConfig(self):
         '''
@@ -162,7 +164,8 @@ class MarvinInit:
             if log_obj:
                 ret = log_obj.\
                     createLogs(self.__testModName,
-                               self.__parsedConfig.logger)
+                               self.__parsedConfig.logger,
+                               self.__userLogFolderPath)
                 if ret != FAILED:
                     self.__logFolderPath = log_obj.getLogFolderPath()
                     self.__tcRunLogger = log_obj.getLogger()

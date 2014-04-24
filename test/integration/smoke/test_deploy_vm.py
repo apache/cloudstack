@@ -34,10 +34,6 @@ from marvin.lib.common import get_zone, get_domain, get_template
 
 from nose.plugins.attrib import attr
 
-            "virtual_machine3" : {
-                "name" : "testvm3",
-                "displayname" : "Test VM3",
-            },
 class TestDeployVM(cloudstackTestCase):
     """Test deploy a VM into a user account
     """

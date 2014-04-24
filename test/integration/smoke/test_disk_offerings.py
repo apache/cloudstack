@@ -27,18 +27,6 @@ from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
 
-                         "sparse": {
-                                        "name": "Sparse Type Disk offering",
-                                        "displaytext": "Sparse Type Disk offering",
-                                        "disksize": 1,   # in GB
-                                        "provisioningtype" : "sparse"
-                                },
-                                 "fat": {
-                                        "name": "Fat Type Disk offering",
-                                        "displaytext": "Fat Type Disk offering",
-                                        "disksize": 1,   # in GB
-                                        "provisioningtype" : "fat"
-                                }
 class TestCreateDiskOffering(cloudstackTestCase):
 
     def setUp(self):
