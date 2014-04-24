@@ -173,6 +173,11 @@ table tbody td.truncated > span {
   text-overflow: ellipsis;
 }
 
+.list-view-select table th.name,
+.list-view-select table td.name {
+  width: 170px;
+}
+
 /** Multiselect*/
 table thead th.multiselect,
 table tbody td.multiselect {
@@ -208,6 +213,23 @@ table tbody td.actions input {
   left: 10px;
   top: -6px;
   margin: 11px 0 0px;
+}
+
+.list-view-select table tbody td.actions {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+}
+
+.list-view-select table tbody td.actions input {
+  margin: 0 0 0 -7px;
+}
+
+.list-view-select table thead th.actions {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-indent: 5px;
 }
 
 /** Quick view table cell*/
@@ -7944,13 +7966,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /*List-view: subselect dropdown*/
 .list-view .subselect {
-  width: 102px;
+  width: 173px;
   cursor: default;
   display: block;
   float: left;
-  background: #EFEFEF;
+  background: #E8E8E8;
   padding: 0;
-  margin: 8px 0 1px 7px;
+  margin: 0 0 0 -3px;
   clear: both;
   border: 1px solid #A8A7A7;
   /*+border-radius:2px;*/
@@ -7978,8 +8000,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .list-view .subselect select {
-  width: 85%;
-  margin: 5px 0 4px;
+  width: 175px;
+  margin: 0 0 0 -11px;
   font-size: 10px;
 }
 
@@ -12908,20 +12930,19 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   display: inline-block;
 }
 
-
 /*GPU*/
 div.gpugroups div.list-view div.fixed-header {
-    position: relative;
-    left: 12px !important;
-    top: 0px !important;
+  position: relative;
+  left: 12px !important;
+  top: 0px !important;
 }
 
 div.gpugroups div.list-view div.fixed-header table {
-    width: auto;
+  width: auto;
 }
 
 div.gpugroups div.list-view div.data-table table {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 div.gpugroups div.list-view {
@@ -12932,25 +12953,27 @@ div.gpugroups div.list-view {
 }
 
 .gpugroups {
-    float: left;
-    height: 100%;
-    width: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+  float: left;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
+
 .gpugroups .gpugroup-container {
-    border: 1px solid #C8C2C2;
-    border-radius: 3px;
-    height: auto !important;
-    margin: 12px;
-    padding: 0;
-    position: relative;
-    float: left;
-    width: auto;
+  border: 1px solid #C8C2C2;
+  border-radius: 3px;
+  height: auto !important;
+  margin: 12px;
+  padding: 0;
+  position: relative;
+  float: left;
+  width: auto;
 }
 
 .gpugroups .gpugroup-container .title {
-    font-size: 13px;
-    font-weight: 100;
-    padding: 12px 12px 5px;
+  font-size: 13px;
+  font-weight: 100;
+  padding: 12px 12px 5px;
 }
+
