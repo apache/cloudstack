@@ -3320,7 +3320,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Override
     public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
-        Boolean forDisplay = cmd.forDisplay();
+        Boolean forDisplay = cmd.getDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceIdStr = cmd.getResourceId();
         Long resourceId = null;
