@@ -1864,5 +1864,23 @@ dictionary = {
 'message.enabling.network.offering': '<fmt:message key="message.enabling.network.offering" />',
 'message.confirm.remove.network.offering': '<fmt:message key="message.confirm.remove.network.offering" />',
 'message.confirm.disable.network.offering': '<fmt:message key="message.confirm.disable.network.offering" />',
+'label.supportsstrechedl2subnet': '<fmt:message key="label.supportsstrechedl2subnet" />',
+'label.menu.vpc.offerings': '<fmt:message key="label.menu.vpc.offerings" />',
+'label.vpc.offering': '<fmt:message key="label.vpc.offering" />',
+'label.add.vpc.offering': '<fmt:message key="label.add.vpc.offering" />',
+'label.distributedrouter': '<fmt:message key="label.distributedrouter" />',
+'label.regionlevelvpc': '<fmt:message key="label.regionlevelvpc" />',
+'label.vpc.offering.details': '<fmt:message key="label.vpc.offering.details" />',
+'label.disable.vpc.offering': '<fmt:message key="label.disable.vpc.offering" />',
+'label.enable.vpc.offering': '<fmt:message key="label.enable.vpc.offering" />',
+'label.remove.vpc.offering': '<fmt:message key="label.remove.vpc.offering" />',
+'label.vpc.distributedvpcrouter': '<fmt:message key="label.vpc.distributedvpcrouter" />',
+'label.vpc.supportsregionlevelvpc': '<fmt:message key="label.vpc.supportsregionlevelvpc" />',
+'message.disabling.vpc.offering': '<fmt:message key="message.disabling.vpc.offering" />',
+'message.confirm.enable.vpc.offering': '<fmt:message key="message.confirm.enable.vpc.offering" />',
+'message.enabling.vpc.offering': '<fmt:message key="message.enabling.vpc.offering" />',
+'message.confirm.remove.vpc.offering': '<fmt:message key="message.confirm.remove.vpc.offering" />',
+'message.confirm.disable.vpc.offering': '<fmt:message key="message.confirm.disable.vpc.offering" />'
+
 };
 </script>

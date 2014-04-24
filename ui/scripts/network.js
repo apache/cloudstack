@@ -5178,7 +5178,16 @@
                             url: createURL('listVPCs'),
                             data: data,
                             success: function(json) {
-                                var items = json.listvpcsresponse.vpc;
+                                var items = json.listvpcsresponse.vpc ? json.listvpcsresponse.vpc : { };
+
+                                //If we are coming from Home > Regions, show only regional vpcs
+                                if (args.context.regions)
+                                    items = $.grep(
+                                        items,
+                                        function (vpc, i) {
+                                            return vpc.regionlevelvpc;
+                                    });
+
                                 args.response.success({
                                     data: items
                                 });
@@ -5272,30 +5281,49 @@
                                                 data: items
                                             });
                                         }
+                                    },
+                                    vpcoffering: {
+                                        label: 'label.vpc.offering',
+                                        validation: {
+                                            required: true
+                                        },
+
+                                        select: function(args) {
+                                            var data = {
+                                                listAll: true
+                                            };
+                                            $.ajax({
+                                                url: createURL('listVPCOfferings'),
+                                                data: {
+                                                    listAll: true
+                                                },
+                                                success: function(json) {
+                                                      var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
+                                                      var filteredofferings = $.grep(offerings, function(offering) {
+                                                          return offering.state == 'Enabled';
+                                                      });
+                                                    args.response.success({
+                                                        data: $.map(filteredofferings, function(vpco) {
+                                                            return {
+                                                                id: vpco.id,
+                                                                description: vpco.name
+                                                            };
+                                                        })
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
                             action: function(args) {
-                                var vpcOfferingName;
-                                if (args.data.publicLoadBalancerProvider == 'VpcVirtualRouter')
-                                    vpcOfferingName = 'Default VPC offering';
-                                else if (args.data.publicLoadBalancerProvider == 'Netscaler')
-                                    vpcOfferingName = 'Default VPC  offering with Netscaler';
-
-                                $.ajax({
-                                    url: createURL('listVPCOfferings'),
-                                    data: {
-                                        name: vpcOfferingName
-                                    },
-                                    success: function(json) {
-                                        var vpcofferingid = json.listvpcofferingsresponse.vpcoffering[0].id;
-
+                                var vpcOfferingName = args.data.vpcoffering
                                         var dataObj = {
                                             name: args.data.name,
                                             displaytext: args.data.displaytext,
                                             zoneid: args.data.zoneid,
                                             cidr: args.data.cidr,
-                                            vpcofferingid: vpcofferingid
+                                            vpcofferingid: args.data.vpcoffering
                                         };
 
                                         if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
@@ -5323,8 +5351,6 @@
                                                 args.response.error(parseXMLHttpResponse(data));
                                             }
                                         });
-                                    }
-                                });
 
                             },
                             notification: {

@@ -223,7 +223,10 @@
                     });
 
                     if ($dependsOn.is('[type=checkbox]')) {
-                        var isReverse = args.form.fields[dependsOn].isReverse;
+                        
+                        var isReverse = false;
+                        if (args.form.fields[dependsOn])
+                            isReverse = args.form.fields[dependsOn].isReverse;
 
                         // Checkbox
                         $dependsOn.bind('click', function(event) {
