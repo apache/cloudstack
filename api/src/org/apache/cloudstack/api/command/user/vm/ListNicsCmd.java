@@ -99,11 +99,10 @@ public class ListNicsCmd extends BaseListCmd {
 
 
     public Boolean getDisplay() {
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            return true;
+        if (display != null) {
+            return display;
         }
-        return display;
+        return true;
     }
 
     /////////////////////////////////////////////////////
