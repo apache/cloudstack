@@ -295,6 +295,8 @@ public class NetscalerResource implements ServerResource {
                 _netscalerService = new nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
                 _netscalerService.set_timeout(_timeout);
+                _netscalerService.set_certvalidation(false);
+                _netscalerService.set_hostnameverification(false);
                 apiCallResult = _netscalerService.login();
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " +
