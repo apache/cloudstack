@@ -36,7 +36,7 @@ from marvin.config.test_data import test_data
 from sys import exit
 import os
 import pickle
-from time import sleep, time, strftime
+from time import sleep, strftime, localtime
 from optparse import OptionParser
 
 
@@ -67,8 +67,7 @@ class DeployDataCenters(object):
             if self.__logFolderPath:
                 dc_file_path = self.__logFolderPath + "/dc_entries.obj"
             else:
-                ts = strftime("%b_%d_%Y_%H_%M_%S",
-                                   time.localtime())
+                ts = strftime("%b_%d_%Y_%H_%M_%S", localtime())
                 dc_file_path = "dc_entries_" + str(ts) + ".obj"
             file_to_write = open(dc_file_path, 'w')
             if file_to_write:
