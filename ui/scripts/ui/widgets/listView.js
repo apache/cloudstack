@@ -899,6 +899,7 @@
                 return true;
 
             if (action.type == 'radio') {
+                $td.closest('.list-view').addClass('list-view-select');
                 $td.append(
                     $('<div></div>')
                     .addClass('action')
@@ -918,6 +919,7 @@
 
                 return true;
             } else if (action.type == 'checkbox') {
+                $td.closest('.list-view').addClass('list-view-select');
                 $td.append(
                     $('<div></div>')
                     .addClass('action')
@@ -1317,6 +1319,7 @@
                                             var $option = $('<option>');
 
                                             $option.attr('value', item.id);
+                                            $option.attr('title', item.description);
                                             $option.append(item.description);
                                             $option.appendTo($select.find('select'));
                                         });
