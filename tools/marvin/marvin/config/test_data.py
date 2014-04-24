@@ -434,7 +434,14 @@ test_data = {
         "publicport": 2222,
         "protocol": 'TCP'
     },
-
+    "iso": {
+            "displaytext": "Test ISO",
+            "name": "ISO",
+            "url": "http://people.apache.org/~tsp/dummy.iso",
+            "bootable": False,
+            "ispublic": False,
+            "ostype": "CentOS 5.6 (64-bit)",
+    }, 
     "iso1": {
         "displaytext": "Test ISO 1",
         "name": "ISO 1",
@@ -488,6 +495,14 @@ test_data = {
         "startport": "22",
         "endport": "22",
         "cidrlist": "0.0.0.0/0"
+    },
+    "vpncustomergateway": {
+            "ipsecpsk": "secreatKey",
+            "ikepolicy": "aes128-sha1",
+            "ikelifetime": "86400",
+            "esppolicy": "aes128-sha1",
+            "epslifetime": "3600",
+            "dpd": "false"
     },
     "ostype": "CentOS 5.6 (64-bit)",
     "sleep": 90,

@@ -1086,6 +1086,25 @@ class Template:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateTemplatePermissions(cmd))
 
+    def update(self, apiclient, **kwargs):
+        """Updates the template details"""
+
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateTemplate(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
+        "Copy Template from source Zone to Destination Zone"
+
+        cmd = copyTemplate.copyTemplateCmd()
+        cmd.id = id
+        cmd.sourcezoneid = sourcezoneid
+        cmd.destzoneid = destzoneid
+
+        return apiclient.copyTemplate(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all templates matching criteria"""
@@ -1184,6 +1203,36 @@ class Iso:
             else:
                 timeout = timeout - 1
         return
+
+    @classmethod
+    def extract(cls, apiclient, id, mode, zoneid=None):
+        "Extract ISO "
+
+        cmd = extractIso.extractIsoCmd()
+        cmd.id = id
+        cmd.mode = mode
+        cmd.zoneid = zoneid
+
+        return apiclient.extractIso(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the ISO details"""
+
+        cmd = updateIso.updateIsoCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateIso(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
+        "Copy ISO from source Zone to Destination Zone"
+
+        cmd = copyIso.copyIsoCmd()
+        cmd.id = id
+        cmd.sourcezoneid = sourcezoneid
+        cmd.destzoneid = destzoneid
+
+        return apiclient.copyIso(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -1679,6 +1728,20 @@ class SnapshotPolicy:
         cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listSnapshotPolicies(cmd))
+
+class Hypervisor:
+    """Manage Hypervisor"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists hypervisors"""
+
+        cmd = listHypervisors.listHypervisorsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listHypervisors(cmd))
 
 
 class LoadBalancerRule:
@@ -2678,7 +2741,7 @@ class SecurityGroup:
         """Create security group"""
         cmd = createSecurityGroup.createSecurityGroupCmd()
 
-        cmd.name = services["name"]
+        cmd.name = "-".join([services["name"], random_gen()])
         if account:
             cmd.account = account
         if domainid:
@@ -2778,6 +2841,76 @@ class SecurityGroup:
         cmd = listSecurityGroups.listSecurityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listSecurityGroups(cmd))
+
+
+class VpnCustomerGateway:
+    """Manage VPN Customer Gateway"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name, gateway, cidrlist,
+                        account=None, domainid=None):
+        """Create VPN Customer Gateway"""
+        cmd = createVpnCustomerGateway.createVpnCustomerGatewayCmd()
+        cmd.name = name
+        cmd.gateway = gateway
+        cmd.cidrlist = cidrlist
+        if "ipsecpsk" in services:
+            cmd.ipsecpsk = services["ipsecpsk"]
+        if "ikepolicy" in services:
+            cmd.ikepolicy = services["ikepolicy"]
+        if "ikelifetime" in services:
+            cmd.ikelifetime = services["ikelifetime"]
+        if "esppolicy" in services:
+            cmd.esppolicy = services["esppolicy"]
+        if "esplifetime" in services:
+            cmd.esplifetime = services["esplifetime"]
+        if "dpd" in services:
+            cmd.dpd = services["dpd"]
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        return VpnCustomerGateway(apiclient.createVpnCustomerGateway(cmd).__dict__)
+
+    def update(self, apiclient, services, name, gateway, cidrlist):
+        """Updates VPN Customer Gateway"""
+
+        cmd = updateVpnCustomerGateway.updateVpnCustomerGatewayCmd()
+        cmd.id = self.id
+        cmd.name = name
+        cmd.gateway = gateway
+        cmd.cidrlist = cidrlist
+        if "ipsecpsk" in services:
+            cmd.ipsecpsk = services["ipsecpsk"]
+        if "ikepolicy" in services:
+            cmd.ikepolicy = services["ikepolicy"]
+        if "ikelifetime" in services:
+            cmd.ikelifetime = services["ikelifetime"]
+        if "esppolicy" in services:
+            cmd.esppolicy = services["esppolicy"]
+        if "esplifetime" in services:
+            cmd.esplifetime = services["esplifetime"]
+        if "dpd" in services:
+            cmd.dpd = services["dpd"]
+        return(apiclient.updateVpnCustomerGateway(cmd))
+
+    def delete(self, apiclient):
+        """Delete VPN Customer Gateway"""
+
+        cmd = deleteVpnCustomerGateway.deleteVpnCustomerGatewayCmd()
+        cmd.id = self.id
+        apiclient.deleteVpnCustomerGateway(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all VPN customer Gateway"""
+
+        cmd = listVpnCustomerGateways.listVpnCustomerGatewaysCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listVpnCustomerGateways(cmd))
 
 
 class Project:
