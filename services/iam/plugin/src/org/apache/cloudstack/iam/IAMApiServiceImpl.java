@@ -243,7 +243,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                 Long domainId = ((Long) obj);
                 if (domainId != null) {
                     s_logger.debug("MessageBus message: Domain removed: " + domainId + ", removing the domain group");
-                    Domain domain = _domainDao.findById(domainId);
+                    Domain domain = _domainDao.findByIdIncludingRemoved(domainId);
                     List<IAMGroup> groups = listDomainGroup(domain);
                     for (IAMGroup group : groups) {
                         _iamSrv.deleteIAMGroup(group.getId());
