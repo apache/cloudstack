@@ -2283,7 +2283,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 if (accountId != null) {
                     // specific account filter is specified
-                    if (grantedAccounts.contains(accountId)) {
+                    if (grantedDomains.contains(domainId)) {
+                        // the account domain is granted to the caller
+                        permittedAccounts.add(accountId);
+                    }
+                    else if (grantedAccounts.contains(accountId)) {
                         permittedAccounts.add(accountId);
                     } else {
                         //TODO: we should also filter granted resources based on accountId passed.
