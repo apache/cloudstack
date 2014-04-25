@@ -936,14 +936,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             synchronized (_tmpDom0Vif) {
                 _tmpDom0Vif.add(dom0vif);
             }
+            try {
+                dom0vif.plug(conn);
+            } catch (Exception e) {
+                // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
+            }
+            dom0vif.unplug(conn);
         }
-        // At this stage we surely have a VIF
-        try {
-            dom0vif.plug(conn);
-        } catch (Exception e) {
-            // though an exception is thrown here, VIF actually gets plugged-in to dom0, so just ignore the exception
-        }
-        dom0vif.unplug(conn);
     }
 
     private synchronized Network setupvSwitchNetwork(Connection conn) {
